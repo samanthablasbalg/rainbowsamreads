@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:18
+    environment:
+      # Matches Railway, where the database user you are handed is a `postgres`
+      # superuser. Same owner role name in every environment.
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: reading_tracker
+    ports:
+      # Defaulted inline so a fresh clone runs `docker compose up db` with no
+      # .env file at all. Overridable for per-worktree stacks later (#179).
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # NOT /var/lib/postgresql/data. Postgres 18 moved PGDATA to a
+      # version-specific path (/var/lib/postgresql/18/docker) and moved the
+      # declared VOLUME up to /var/lib/postgresql. Mounting the old path still
+      # *starts cleanly* — it just silently persists nothing.
+      - pgdata:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d reading_tracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
