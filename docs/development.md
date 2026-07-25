@@ -8,8 +8,26 @@ and runs migrations, and a restricted `app_user` role the running app connects a
 ## Prerequisites
 
 - **Python 3.14**
-- **PostgreSQL 18**
+- **Docker** (for the database)
 - **Node.js** (for the Angular 22 frontend)
+
+You don't need Postgres installed. If you already run it natively, stop it before starting the
+container — both want port 5432.
+
+---
+
+## Database
+
+```bash
+docker compose up db -d
+```
+
+That's the whole setup. The container creates the three databases (dev, test, and
+[e2e](decisions/0018-e2e-testing-database-strategy.md)) on first start and keeps them in a named
+volume, so they survive `docker compose down`. To start over, `docker compose down -v` throws the
+volume away and the next start rebuilds all three, empty.
+
+Set `POSTGRES_PORT` if 5432 is taken.
 
 ---
 
@@ -24,25 +42,21 @@ pip install -r requirements.txt
 
 > The pre-commit hook looks for the virtualenv at `backend/venv`, so that's the path to use.
 
-**1. Create the databases.** In Postgres, create a development database and a test database (any
-names you like — you'll point the env vars at them).
-
-**2. Create the `backend/.env` file** (loaded automatically). See the variable table below.
-
-**3. Create the restricted role.** This creates the `app_user` role and grants it CRUD — but not
-ownership — on both databases:
+**1. Run migrations** (as the owner — this builds the schema _and_ installs the RLS policies):
 
 ```bash
-python scripts/setup_db_role.py
-```
-
-**4. Run migrations** (as the owner — this builds the schema _and_ installs the RLS policies):
-
-```bash
+python -m app.provision   # only on a brand-new database
 alembic upgrade head
 ```
 
-**5. Run the app:**
+`app.provision` creates the restricted `app_user` role and sets its password. It's idempotent, and
+the container start command runs it on every boot, so you only need it by hand against a database
+nothing has booted against yet — a fresh volume, or right after `docker compose down -v`.
+
+**2. Create `backend/.env`** — copy `backend/.env.example` and fill in your Google OAuth client (see
+below). Nothing database-related goes in it.
+
+**3. Run the app:**
 
 ```bash
 uvicorn app.main:app --reload   # http://localhost:8000
@@ -50,21 +64,43 @@ uvicorn app.main:app --reload   # http://localhost:8000
 
 ### Environment variables (`backend/.env`)
 
-| Variable                | Required  | Purpose                                                                                     |
-| ----------------------- | --------- | ------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`          | ✅        | **Owner** connection to the dev DB. Used by migrations, the role-setup script, and seeding. |
-| `APP_DATABASE_URL`      | ✅        | **`app_user`** connection to the dev DB. What the running app connects as, so RLS applies.  |
-| `SESSION_SECRET`        | ✅        | Signs the session cookie.                                                                   |
-| `GOOGLE_CLIENT_ID`      | ✅        | Google OAuth client.                                                                        |
-| `GOOGLE_CLIENT_SECRET`  | ✅        | Google OAuth client secret.                                                                 |
-| `ALLOWED_EMAILS`        | ✅        | Allowlist of emails permitted to log in (the app is invite-only).                           |
-| `TEST_DATABASE_URL`     | for tests | **Owner** connection to the test DB.                                                        |
-| `APP_TEST_DATABASE_URL` | for tests | **`app_user`** connection to the test DB.                                                   |
-| `APP_DB_PASSWORD`       | optional  | Sets the `app_user` role's password in `setup_db_role.py`.                                  |
-| `GOOGLE_REDIRECT_URI`   | optional  | Override the OAuth redirect URI (otherwise derived from the request).                       |
-| `FRONTEND_URL`          | optional  | Where to redirect after login (default `http://localhost:4200`).                            |
-| `SESSION_COOKIE_SECURE` | optional  | Set to `true` for https-only cookies (production).                                          |
-| `GOOGLE_BOOKS_API_KEY`  | optional  | Key for the Google Books search proxy.                                                      |
+Everything about reaching the database is derived rather than configured. `DATABASE_URL` defaults to
+the compose database, and the `app_user` connection is built from it by swapping the credentials —
+so a fresh clone runs migrations and tests with no `.env` at all. What's left is what nobody can
+guess for you.
+
+Copy `backend/.env.example` as a starting point.
+
+| Variable               | Purpose                                                                    |
+| ---------------------- | -------------------------------------------------------------------------- |
+| `SESSION_SECRET`       | Signs the session cookie.                                                  |
+| `GOOGLE_CLIENT_ID`     | Google OAuth client.                                                       |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret.                                                |
+| `ALLOWED_EMAILS`       | Allowlist of emails permitted to log in (the app is invite-only).          |
+| `GOOGLE_BOOKS_API_KEY` | Book search. Unkeyed requests share one global quota, so they always fail. |
+| `ALLOW_TEST_LOGIN`     | Enables `POST /auth/test-login`, which `seed_dev.py` needs. Never in prod. |
+
+Optional, and mostly for deployment:
+
+| Variable                | Purpose                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| `DATABASE_URL`          | **Owner** connection. Defaults to the compose dev database.                          |
+| `TEST_DATABASE_URL`     | **Owner** connection for pytest. Defaults to the compose test database.              |
+| `APP_DB_PASSWORD`       | `app_user`'s password. Defaulted for local databases; **required** anywhere else.    |
+| `POSTGRES_PORT`         | Host port the container binds (default `5432`). Read by `compose.yaml`, not the app. |
+| `GOOGLE_REDIRECT_URI`   | Override the OAuth redirect URI (otherwise derived from the request).                |
+| `FRONTEND_URL`          | Where to redirect after login (default `http://localhost:4200`).                     |
+| `SESSION_COOKIE_SECURE` | Set to `true` for https-only cookies (production).                                   |
+
+`APP_DATABASE_URL` and `APP_TEST_DATABASE_URL` are still honoured if set, but they exist only so the
+e2e suite can point its backend at the owner connection until #181 lands. Don't set them.
+
+### Deploying somewhere new
+
+Point `DATABASE_URL` at the database and set `APP_DB_PASSWORD` to something random. There is no
+setup script to run: the container's start command provisions the role, migrates, and starts the
+app, in that order, on every boot. Rotating the password is a matter of changing the variable and
+redeploying.
 
 ---
 
@@ -116,9 +152,10 @@ python scripts/seed_dev.py   # backend must be running; override its URL with BA
   pytest
   ```
 
-  Requires `TEST_DATABASE_URL` and `APP_TEST_DATABASE_URL`. The suite resets the schema, runs
-  migrations, and truncates between tests against a
-  [dedicated test database](decisions/0014-dedicated-test-database.md).
+  Needs the database container running, and nothing else configured. The suite provisions the role,
+  resets the schema, runs migrations, and truncates between tests against a
+  [dedicated test database](decisions/0014-dedicated-test-database.md). It connects as `app_user`,
+  so the RLS policies are actually exercised.
 
 - **Frontend** — from `frontend/`:
 
@@ -139,8 +176,8 @@ python scripts/seed_dev.py   # backend must be running; override its URL with BA
 
   Playwright against a
   [purpose-built e2e database strategy](decisions/0018-e2e-testing-database-strategy.md). The e2e
-  run uses a test-auth bypass (`E2E_TEST_AUTH=true`) so it doesn't need real Google login; that flag
-  must never be set in production.
+  run uses a test-auth bypass (`ALLOW_TEST_LOGIN=true`) so it doesn't need real Google login; that
+  flag must never be set in production.
 
 - **Static checks** — Ruff, mypy (strict), ESLint, and Prettier run via pre-commit
   (`.pre-commit-config.yaml`); install the hooks with `pre-commit install`.
