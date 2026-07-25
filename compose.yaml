@@ -1,3 +1,25 @@
+# Shared by every dev service: one image, one view of the repo. They differ only
+# in what they run.
+#
+# The repo is mounted at ${PWD} — its own absolute host path — rather than the
+# conventional /workspaces/<name>. A git worktree's .git is a file holding an
+# absolute host path into the main repo's .git/worktrees/; mounting anywhere
+# else leaves that pointer dangling inside the container, and `git worktree
+# repair` is not an option because it would break the host side in turn.
+# Identical paths mean the pointer resolves untouched.
+x-dev: &dev
+  build:
+    context: .
+    dockerfile: Dockerfile.dev
+  image: reading-tracker-dev
+  volumes:
+    - .:${PWD}
+    # node_modules is kept out of the bind mount. Every file a container reads
+    # through a bind mount crosses the macOS filesystem boundary; for tens of
+    # thousands of tiny files, that is the difference between a fast rebuild and
+    # an unusable one. A named volume lives inside Docker's VM instead.
+    - node_modules:${PWD}/frontend/node_modules
+
 services:
   db:
     image: postgres:18
@@ -24,5 +46,48 @@ services:
       timeout: 5s
       retries: 10
 
+  api:
+    <<: *dev
+    working_dir: ${PWD}/backend
+    environment:
+      # "db" is the compose service name, resolved on the compose network.
+      # backend/app/db_url.py already counts it among LOCAL_HOSTS, so the
+      # app_user password default still applies and no secret is needed here.
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/reading_tracker
+    # The same three steps as the production CMD, for the same reasons: create
+    # the app role, apply migrations, then serve. Both leading steps are
+    # idempotent, so they re-run harmlessly on every restart.
+    command: >
+      sh -c "python -m app.provision
+      && alembic upgrade head
+      && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    <<: *dev
+    working_dir: ${PWD}/frontend
+    # The named volume starts empty, so install into it on first boot and skip
+    # the install on every boot after. postCreateCommand will cover the VS Code
+    # path; this covers a plain `docker compose up`.
+    command: >
+      sh -c "[ -e node_modules/.package-lock.json ] || npm ci;
+      exec npm start -- --host 0.0.0.0"
+    ports:
+      - "${FRONTEND_PORT:-4200}:4200"
+
+  # Runs nothing on purpose. VS Code attaches with overrideCommand set, which
+  # replaces the attached service's command with `sleep infinity` — attaching to
+  # api would therefore kill uvicorn. This is also where `docker compose exec`
+  # lands for tests, git, pre-commit and claude.
+  workspace:
+    <<: *dev
+    working_dir: ${PWD}
+    command: sleep infinity
+
 volumes:
   pgdata:
+  node_modules:
