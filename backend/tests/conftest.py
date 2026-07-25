@@ -14,22 +14,23 @@ from sqlalchemy import Connection, create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.database import Base, get_current_user_id, get_db, get_unscoped_db
+from app.db_url import app_database_url, test_database_url
 from app.main import app
 from app.models.user import User
+from app.provision import provision
 
 load_dotenv()
 
 SEED_USER_EMAIL = "test-user@example.com"
 
-_test_database_url = os.getenv("TEST_DATABASE_URL")
-if not _test_database_url:
-    raise ValueError("TEST_DATABASE_URL environment variable is not set")
-TEST_DATABASE_URL: str = _test_database_url
+TEST_DATABASE_URL: str = test_database_url()
 
-_app_test_database_url = os.getenv("APP_TEST_DATABASE_URL")
-if not _app_test_database_url:
-    raise ValueError("APP_TEST_DATABASE_URL environment variable is not set")
-APP_TEST_DATABASE_URL: str = _app_test_database_url
+# Derived, not configured — same rule as the app (see app/db_url.py). The suite
+# must connect as the restricted role or RLS silently does nothing and the
+# isolation tests pass against no isolation at all (ADR-0023).
+APP_TEST_DATABASE_URL: str = os.getenv("APP_TEST_DATABASE_URL") or app_database_url(
+    TEST_DATABASE_URL
+)
 
 owner_engine = create_engine(TEST_DATABASE_URL)
 app_engine = create_engine(APP_TEST_DATABASE_URL)
@@ -54,6 +55,10 @@ def _truncate_all() -> None:
 @pytest.fixture(scope="session", autouse=True)
 def create_tables() -> Generator[None]:
     os.environ["DATABASE_URL"] = TEST_DATABASE_URL
+    # pytest is the one consumer that never boots through a container, so
+    # nothing else has created the role it is about to be granted privileges
+    # on. Cheap and idempotent when the role already exists.
+    provision(TEST_DATABASE_URL)
     _reset_schema()
     command.upgrade(Config(str(ALEMBIC_INI)), "head")
     _truncate_all()

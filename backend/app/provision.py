@@ -16,58 +16,15 @@ tables are added, and applying them once at a known point in history is right.
 
 from __future__ import annotations
 
-import os
 from urllib.parse import urlsplit
 
 import psycopg2
 from dotenv import load_dotenv
 from psycopg2 import sql
 
+from app.db_url import APP_ROLE, app_db_password, owner_database_url
+
 load_dotenv()
-
-APP_ROLE = "app_user"
-
-# Must agree with compose.yaml's POSTGRES_* settings and its
-# `${POSTGRES_PORT:-5432}` mapping.
-DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/reading_tracker"
-
-# Named to be recognisable on sight in a connection string: seeing this value
-# anywhere that is not a disposable local database means something is wrong.
-DEFAULT_APP_DB_PASSWORD = "local-dev-only"
-
-# Hosts whose databases are disposable, so a default password is harmless.
-# "localhost" also covers CI, where the service container is reached that way
-# and the database is destroyed minutes later. "db" is the compose service name,
-# for when the app itself runs in a container.
-LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "db"})
-
-
-def owner_database_url() -> str:
-    """The owner connection: migrations, seeding, and this module."""
-    return os.getenv("DATABASE_URL") or DEFAULT_DATABASE_URL
-
-
-def _is_local(database_url: str) -> bool:
-    return (urlsplit(database_url).hostname or "") in LOCAL_HOSTS
-
-
-def app_db_password(database_url: str) -> str:
-    """The password ``app_user`` connects with.
-
-    Defaulted against a local database so a fresh clone needs no .env at all;
-    required anywhere else, so a deployed environment can never silently come
-    up on a publicly known password.
-    """
-    password = os.getenv("APP_DB_PASSWORD")
-    if password:
-        return password
-    if not _is_local(database_url):
-        raise RuntimeError(
-            "APP_DB_PASSWORD must be set when DATABASE_URL points at a "
-            f"non-local host (got {urlsplit(database_url).hostname!r}). "
-            "It is only defaulted for disposable local databases."
-        )
-    return DEFAULT_APP_DB_PASSWORD
 
 
 def provision(database_url: str | None = None) -> None:
@@ -80,9 +37,8 @@ def provision(database_url: str | None = None) -> None:
     # commits the transaction but does *not* close the connection.
     connection = psycopg2.connect(database_url)
     try:
-        # CREATE ROLE cannot run inside a transaction block that later rolls
-        # back cleanly here, and autocommit also means a caught duplicate-role
-        # error leaves the connection usable rather than aborted.
+        # Autocommit means a caught duplicate-role error leaves the connection
+        # usable rather than aborted.
         connection.autocommit = True
         with connection.cursor() as cursor:
             try:
