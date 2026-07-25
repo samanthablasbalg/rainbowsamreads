@@ -1,4 +1,3 @@
-import os
 from logging.config import fileConfig
 
 from dotenv import load_dotenv
@@ -9,6 +8,7 @@ from alembic import context
 load_dotenv()
 
 from app.database import Base  # noqa: E402
+from app.db_url import owner_database_url  # noqa: E402
 import app.models  # noqa: E402, F401
 
 config = context.config
@@ -36,7 +36,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = os.environ["DATABASE_URL"]
+    url = owner_database_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -49,7 +49,7 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    connectable = create_engine(os.environ["DATABASE_URL"], poolclass=pool.NullPool)
+    connectable = create_engine(owner_database_url(), poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
         context.configure(

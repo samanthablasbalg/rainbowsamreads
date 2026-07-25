@@ -1,4 +1,3 @@
-import os
 import uuid
 from collections.abc import Generator
 
@@ -7,12 +6,12 @@ from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
+from app.db_url import configured_app_database_url
+
 load_dotenv()
 
-_database_url = os.getenv("APP_DATABASE_URL")
-if not _database_url:
-    raise ValueError("APP_DATABASE_URL environment variable is not set")
-APP_DATABASE_URL: str = _database_url
+# Derived from DATABASE_URL rather than configured: see app/db_url.py.
+APP_DATABASE_URL: str = configured_app_database_url()
 
 engine = create_engine(APP_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
