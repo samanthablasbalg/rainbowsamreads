@@ -1,0 +1,55 @@
+# Development image: toolchains only, no source.
+#
+# The root Dockerfile is the production image — it builds Angular to static
+# files and copies the backend in, freezing the code at build time. This one is
+# the inverse. It installs tools and nothing else; the source arrives at run
+# time as a bind mount, so edits on the host are live in the container.
+#
+# Deliberately does NOT run `pip install` or `npm ci`. Those install into
+# backend/venv and frontend/node_modules, which compose mounts as named volumes
+# — anything baked in here would be shadowed by the volume. Dependencies are
+# installed by postCreateCommand instead.
+#
+# Runs as root. Devcontainer convention is a non-root user, but Docker Desktop
+# on macOS remaps bind-mount ownership anyway, so a non-root user buys nothing
+# and adds a uid-matching problem. HOME is /root — where the host mounts for
+# ~/.claude, ~/.gitconfig and gh auth land.
+
+FROM python:3.14-slim
+
+# Node, lifted out of the official image rather than installed from an apt repo
+# or a curl-pipe-bash script: same source of truth as the production
+# Dockerfile's build stage, and no network script runs at build time.
+# npm and npx are symlinks in the real Node image, so they are recreated here.
+COPY --from=node:24-slim /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:24-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+
+# git   worktrees, commits, and pre-commit's own machinery
+# curl  fetching the gh release below
+# less  git's default pager; without it `git log` fails
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        git \
+        curl \
+        ca-certificates \
+        less \
+    && rm -rf /var/lib/apt/lists/*
+
+# gh drives the issue workflow (gh issue view, gh pr view). Debian does not
+# package it, so this pulls the release tarball. Pinned rather than tracking an
+# apt repo so the version is visible in this file and gets bumped deliberately.
+ARG GH_VERSION=2.96.0
+RUN arch="$(dpkg --print-architecture)" \
+    && curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${arch}.tar.gz" \
+        | tar -xz -C /tmp \
+    && mv "/tmp/gh_${GH_VERSION}_linux_${arch}/bin/gh" /usr/local/bin/gh \
+    && rm -rf /tmp/gh_*
+
+# Claude Code runs inside the container. Only the binary lives here; config,
+# auth and memory are mounted from the host at run time.
+RUN npm install -g @anthropic-ai/claude-code
+
+# No WORKDIR. The working directory differs per stack — the main checkout for
+# the main repo, .claude/worktrees/<name> for a worktree — so compose sets it.
