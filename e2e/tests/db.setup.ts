@@ -23,12 +23,20 @@ setup('provision e2e database', async () => {
   await client.end();
 
   const backendDir = path.resolve(__dirname, '../../backend');
+  // The e2e app is single-user, so both URLs point at the same database.
+  // APP_DATABASE_URL is the owner connection on purpose: switching e2e to
+  // app_user turns RLS on underneath the suite, which is #181's job.
+  const env = { ...process.env, DATABASE_URL: dbUrl, APP_DATABASE_URL: dbUrl };
+
+  // Migrations grant privileges to app_user, so the role has to exist first.
+  // Nothing else creates it on this path — the e2e backend is started by
+  // Playwright's webServer as a bare uvicorn, not through the container start
+  // command that provisions it in a deployment.
+  execSync('python -m app.provision', { cwd: backendDir, env, stdio: 'inherit' });
+
   execSync('python -m alembic upgrade head', {
     cwd: backendDir,
-    // app/database.py requires APP_DATABASE_URL at import time, and alembic's
-    // env.py imports it for Base — even though migrations use DATABASE_URL. The
-    // e2e app is single-user, so point both at the same database.
-    env: { ...process.env, DATABASE_URL: dbUrl, APP_DATABASE_URL: dbUrl },
+    env,
     stdio: 'inherit',
   });
 });
