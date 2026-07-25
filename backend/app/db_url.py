@@ -17,11 +17,13 @@ from urllib.parse import quote, urlsplit, urlunsplit
 
 APP_ROLE = "app_user"
 
-# Must agree with compose.yaml's POSTGRES_* settings and its
-# `${POSTGRES_PORT:-5432}` mapping.
-DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/reading_tracker"
+# Must agree with compose.yaml's POSTGRES_* settings. "db" is the compose service
+# name, resolved on the compose network: the default addresses the database from
+# *inside* a container, because that is where every command now runs — the app,
+# pytest, and CI alike. Nothing has to configure these.
+DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@db:5432/reading_tracker"
 DEFAULT_TEST_DATABASE_URL = (
-    "postgresql://postgres:postgres@localhost:5432/reading_tracker_test"
+    "postgresql://postgres:postgres@db:5432/reading_tracker_test"
 )
 
 # Named to be recognisable on sight in a connection string: seeing this value
@@ -29,9 +31,8 @@ DEFAULT_TEST_DATABASE_URL = (
 DEFAULT_APP_DB_PASSWORD = "local-dev-only"
 
 # Hosts whose databases are disposable, so a default password is harmless.
-# "localhost" also covers CI, where the service container is reached that way
-# and the database is destroyed minutes later. "db" is the compose service name,
-# for when the app itself runs in a container.
+# "db" is how containers reach it; "localhost" covers the e2e suite, which
+# reaches the same compose database through its published port.
 LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "db"})
 
 

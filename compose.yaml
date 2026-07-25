@@ -49,11 +49,8 @@ services:
   api:
     <<: *dev
     working_dir: ${PWD}/backend
-    environment:
-      # "db" is the compose service name, resolved on the compose network.
-      # backend/app/db_url.py already counts it among LOCAL_HOSTS, so the
-      # app_user password default still applies and no secret is needed here.
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/reading_tracker
+    # No DATABASE_URL: db_url.py defaults to the db service, which is correct
+    # from inside any container here.
     # The same three steps as the production CMD, for the same reasons: create
     # the app role, apply migrations, then serve. Both leading steps are
     # idempotent, so they re-run harmlessly on every restart.
@@ -87,6 +84,29 @@ services:
     <<: *dev
     working_dir: ${PWD}
     command: sleep infinity
+    # Listed in full rather than inherited: a service's own `volumes:` replaces
+    # the anchor's list outright — YAML merge keys work key by key and cannot
+    # append to a list — so dropping the first two would leave a container with
+    # config mounts and no repo in it.
+    #
+    # These are personal, which is why CI runs its checks against the api
+    # service instead: none of these paths exist on a runner, and a bind mount
+    # pointing at a missing path silently creates an empty directory rather
+    # than failing.
+    volumes:
+      - .:${PWD}
+      - node_modules:${PWD}/frontend/node_modules
+      # Claude's settings, skills, memory and session history. The memory
+      # directory is keyed by project path, which the identical-path mount
+      # leaves unchanged, so sessions carry over from host to container.
+      #
+      # Credentials do NOT carry over: macOS keeps them in the Keychain, which a
+      # Linux container cannot read. `claude` and `gh` each need one login
+      # inside, after which both persist here through the bind mount.
+      - ${HOME}/.claude:/root/.claude
+      - ${HOME}/.claude.json:/root/.claude.json
+      - ${HOME}/.gitconfig:/root/.gitconfig
+      - ${HOME}/.config/gh:/root/.config/gh
 
 volumes:
   pgdata:
