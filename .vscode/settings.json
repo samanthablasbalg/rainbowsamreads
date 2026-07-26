@@ -1,7 +1,8 @@
 {
-    "python.defaultInterpreterPath": "${workspaceFolder}/backend/venv/bin/python3",
-    "python.terminal.activateEnvironment": true,
-    "python.terminal.activateEnvInCurrentTerminal": true,
+    // No python.defaultInterpreterPath here. Workspace settings outrank the
+    // devcontainer's, so a value in this file would override
+    // .devcontainer/devcontainer.json's /opt/venv/bin/python and break
+    // resolution inside the container. The interpreter is set there.
     "editor.formatOnSave": true,
     "[typescript]": {
       "editor.defaultFormatter": "esbenp.prettier-vscode"

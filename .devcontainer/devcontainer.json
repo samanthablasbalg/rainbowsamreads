@@ -1,0 +1,46 @@
+// Tells VS Code that this project's real environment is the `workspace`
+// container. "Reopen in Container" moves the language servers, extensions,
+// terminal and debugger inside it; the UI stays native on the Mac.
+{
+  "name": "reading-tracker",
+  "dockerComposeFile": "../compose.yaml",
+  "service": "workspace",
+
+  // The repo is bind-mounted at its own host path (see compose.yaml), so the
+  // folder to open inside the container is the same path VS Code opened on the
+  // Mac. Not the conventional /workspaces/<name>.
+  "workspaceFolder": "${localWorkspaceFolder}",
+
+  // Leave the workspace service's own command alone. If VS Code replaced it
+  // with `sleep infinity` — which it does for image-based devcontainers — the
+  // `pre-commit install` in that command would silently stop running.
+  "overrideCommand": false,
+
+  // Closing the VS Code window leaves the stack up. The default for a compose
+  // devcontainer is "stopCompose", which takes the app and database down with
+  // the editor; `docker compose down` should be something done deliberately.
+  "shutdownAction": "none",
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        // The container's interpreter. .vscode/settings.json still points at
+        // the Mac's venv and is read by VS Code running on the Mac; these two
+        // do not conflict, they are read by different processes.
+        "python.defaultInterpreterPath": "/opt/venv/bin/python",
+        "terminal.integrated.defaultProfile.linux": "zsh"
+      },
+      // Extensions do not carry in from the Mac — they install into the
+      // container, so the list has to exist here. This duplicates
+      // .vscode/extensions.json, which only *recommends*; this one installs.
+      "extensions": [
+        "ms-python.python",
+        "ms-python.debugpy",
+        "eamodio.gitlens",
+        "rangav.vscode-thunder-client",
+        "esbenp.prettier-vscode",
+        "angular.ng-template"
+      ]
+    }
+  }
+}

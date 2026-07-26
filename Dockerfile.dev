@@ -29,12 +29,14 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 # git   worktrees, commits, and pre-commit's own machinery
 # curl  fetching the gh release below
 # less  git's default pager; without it `git log` fails
+# zsh   the interactive shell; the image otherwise has only bash and sh
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         git \
         curl \
         ca-certificates \
         less \
+        zsh \
     && rm -rf /var/lib/apt/lists/*
 
 # gh drives the issue workflow (gh issue view, gh pr view). Debian does not
@@ -46,6 +48,17 @@ RUN arch="$(dpkg --print-architecture)" \
         | tar -xz -C /tmp \
     && mv "/tmp/gh_${GH_VERSION}_linux_${arch}/bin/gh" /usr/local/bin/gh \
     && rm -rf /tmp/gh_*
+
+# oh-my-zsh, cloned rather than run through its curl-pipe-sh installer, for the
+# same reason Node is copied from the official image above: no network script
+# executes at build time. The upstream installer only does these two steps
+# unattended anyway.
+#
+# The host's own ~/.zshrc is not mounted, so this is a fresh oh-my-zsh with
+# stock settings, not a copy of the Mac's shell.
+RUN git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git /root/.oh-my-zsh \
+    && cp /root/.oh-my-zsh/templates/zshrc.zsh-template /root/.zshrc \
+    && chsh -s /usr/bin/zsh root
 
 # Claude Code runs inside the container. Only the binary lives here; config,
 # auth and memory are mounted from the host at run time.
@@ -68,9 +81,19 @@ RUN python -m venv /opt/venv \
     && rm /tmp/requirements.txt
 
 # The venv goes first on PATH, so python, pytest, ruff, mypy and pre-commit
-# resolve to it in every shell with no activation step. This is what makes
+# resolve to it with no activation step. This is what makes
 # `source .venv/bin/activate` unnecessary inside the container.
 ENV PATH=/opt/venv/bin:$PATH
+
+# ENV alone is not enough. A *login* shell runs /etc/profile, which on Debian
+# assigns PATH outright rather than appending to it — wiping /opt/venv/bin and
+# leaving `pytest` as command-not-found in that shell while it still works in
+# another. zsh reaches the same code path via /etc/zsh/zprofile, which sources
+# /etc/profile.
+#
+# /etc/profile sources this directory *after* that assignment, so re-prepending
+# here covers bash and zsh, login and non-login alike.
+RUN printf 'PATH=/opt/venv/bin:$PATH\n' > /etc/profile.d/venv.sh
 
 # No WORKDIR. The working directory differs per stack — the main checkout for
 # the main repo, .claude/worktrees/<name> for a worktree — so compose sets it.
