@@ -14,7 +14,7 @@ from sqlalchemy import Connection, create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.database import Base, get_current_user_id, get_db, get_unscoped_db
-from app.db_url import app_database_url, test_database_url
+from app.db_url import TEST_DATABASE_URL, app_database_url
 from app.main import app
 from app.models.user import User
 from app.provision import provision
@@ -22,8 +22,6 @@ from app.provision import provision
 load_dotenv()
 
 SEED_USER_EMAIL = "test-user@example.com"
-
-TEST_DATABASE_URL: str = test_database_url()
 
 # Derived, not configured — same rule as the app (see app/db_url.py). The suite
 # must connect as the restricted role or RLS silently does nothing and the

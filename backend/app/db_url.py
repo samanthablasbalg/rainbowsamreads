@@ -22,9 +22,11 @@ APP_ROLE = "app_user"
 # *inside* a container, because that is where every command now runs — the app,
 # pytest, and CI alike. Nothing has to configure these.
 DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@db:5432/reading_tracker"
-DEFAULT_TEST_DATABASE_URL = (
-    "postgresql://postgres:postgres@db:5432/reading_tracker_test"
-)
+
+# Not overridable, unlike the owner URL above: pytest only ever runs inside a
+# container, where this address is always right, and no deployment runs the test
+# suite at all. An env var here would be a knob with no caller.
+TEST_DATABASE_URL = "postgresql://postgres:postgres@db:5432/reading_tracker_test"
 
 # Named to be recognisable on sight in a connection string: seeing this value
 # anywhere that is not a disposable local database means something is wrong.
@@ -39,11 +41,6 @@ LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "db"})
 def owner_database_url() -> str:
     """The owner connection: migrations, seeding, and role provisioning."""
     return os.getenv("DATABASE_URL") or DEFAULT_DATABASE_URL
-
-
-def test_database_url() -> str:
-    """The owner connection to the pytest database (ADR-0014)."""
-    return os.getenv("TEST_DATABASE_URL") or DEFAULT_TEST_DATABASE_URL
 
 
 def _is_local(database_url: str) -> bool:
