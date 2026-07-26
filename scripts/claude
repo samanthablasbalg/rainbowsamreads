@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Launch Claude Code inside the workspace container.
+#
+# Claude runs in the container rather than on the Mac because the two halves
+# have to match: the permission rules in .claude/settings.json match bare
+# commands (`python -m pytest`), and the Stop hook resolves pre-commit from
+# PATH. Wrapping either in `docker compose exec` from the host breaks both.
+set -euo pipefail
+
+# The repo root, resolved from this script's own location rather than the
+# caller's directory, so it works from anywhere. compose.yaml mounts the repo at
+# ${PWD}, so compose must run with the repo root as its working directory.
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$root"
+
+# Idempotent and near-instant when it is already up. Deliberately only the
+# workspace service: Claude needs the repo and the toolchains, not uvicorn and
+# ng serve. Starting the app stays an explicit `docker compose up`.
+docker compose up workspace -d >/dev/null
+
+# -e NAME with no value forwards the host's value if it is set, and does nothing
+# if it is not. `docker compose exec` passes no host environment by default, so
+# without this, settings you export in ~/.zshrc silently stop applying the
+# moment Claude moves into the container.
+exec docker compose exec \
+  -e CLAUDE_CODE_DISABLE_MOUSE_CLICKS \
+  workspace claude "$@"

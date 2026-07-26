@@ -35,7 +35,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0\ncd \"$root\" || exit 0\nPC=\"$root/backend/venv/bin/pre-commit\"\n[ -x \"$PC\" ] || exit 0\nlist=$( { git diff --name-only HEAD; git ls-files --others --exclude-standard; } | sort -u )\n[ -n \"$list\" ] || exit 0\noldIFS=$IFS\nIFS=\"\n\"\nset --\nfor f in $list; do\n  set -- \"$@\" \"$f\"\ndone\nIFS=$oldIFS\n\"$PC\" run --files \"$@\" >/dev/null 2>&1 || { out=$(\"$PC\" run --files \"$@\" 2>&1) || { printf \"%s\\n\" \"$out\" >&2; exit 2; }; }",
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0\ncd \"$root\" || exit 0\nPC=$(command -v pre-commit) || { printf \"pre-commit not found on PATH\\n\" >&2; exit 1; }\nlist=$( { git diff --name-only HEAD; git ls-files --others --exclude-standard; } | sort -u )\n[ -n \"$list\" ] || exit 0\noldIFS=$IFS\nIFS=\"\n\"\nset --\nfor f in $list; do\n  set -- \"$@\" \"$f\"\ndone\nIFS=$oldIFS\n\"$PC\" run --files \"$@\" >/dev/null 2>&1 || { out=$(\"$PC\" run --files \"$@\" 2>&1) || { printf \"%s\\n\" \"$out\" >&2; exit 2; }; }",
             "statusMessage": "pre-commit"
           }
         ]

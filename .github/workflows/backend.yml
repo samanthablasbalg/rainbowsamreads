@@ -12,53 +12,36 @@ jobs:
   backend:
     runs-on: ubuntu-latest
 
-    # Every database URL is derived from a default pointing at the compose
-    # database (backend/app/db_url.py), so nothing here needs configuring.
-    env:
-      SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-
+    # No env at all. Every database URL is derived from a default pointing at the
+    # compose database (backend/app/db_url.py), and SESSION_SECRET comes from the
+    # service definition in compose.yaml — the same one development uses.
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # The same container definition used locally, rather than a separately
-      # maintained service block that can drift from it.
+      # Every check below runs inside the same image used for development, so a
+      # green run here means the same toolchain agreed. Nothing is installed on
+      # the runner. The api service is used rather than workspace because
+      # workspace mounts personal config from $HOME, which does not exist here.
+      - name: Build the dev image
+        run: docker compose build api
+
       - name: Start the database
         run: docker compose up db -d --wait
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.14'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: |
-          cd backend
-          pip install -r requirements.txt
-
       - name: Run Ruff linter
-        run: |
-          cd backend
-          ruff check .
+        run: docker compose run --rm api ruff check .
 
       - name: Run Ruff formatter
-        run: |
-          cd backend
-          ruff format --check .
+        run: docker compose run --rm api ruff format --check .
 
       - name: Run mypy
-        run: |
-          cd backend
-          mypy app
+        run: docker compose run --rm api mypy app
 
       - name: Run tests
-        run: |
-          cd backend
-          pytest || [ $? -eq 5 ]
+        run: docker compose run --rm api sh -c 'pytest || [ $? -eq 5 ]'
 
       - name: Check committed OpenAPI schema is up to date
         run: |
-          cd backend
-          python scripts/export_openapi.py
-          git diff --exit-code openapi.json
+          docker compose run --rm api python scripts/export_openapi.py
+          git diff --exit-code backend/openapi.json

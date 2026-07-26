@@ -17,32 +17,30 @@ from urllib.parse import quote, urlsplit, urlunsplit
 
 APP_ROLE = "app_user"
 
-# Must agree with compose.yaml's POSTGRES_* settings and its
-# `${POSTGRES_PORT:-5432}` mapping.
-DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/reading_tracker"
-DEFAULT_TEST_DATABASE_URL = (
-    "postgresql://postgres:postgres@localhost:5432/reading_tracker_test"
-)
+# Must agree with compose.yaml's POSTGRES_* settings. "db" is the compose service
+# name, resolved on the compose network: the default addresses the database from
+# *inside* a container, because that is where every command now runs — the app,
+# pytest, and CI alike. Nothing has to configure these.
+DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@db:5432/reading_tracker"
+
+# Not overridable, unlike the owner URL above: pytest only ever runs inside a
+# container, where this address is always right, and no deployment runs the test
+# suite at all. An env var here would be a knob with no caller.
+TEST_DATABASE_URL = "postgresql://postgres:postgres@db:5432/reading_tracker_test"
 
 # Named to be recognisable on sight in a connection string: seeing this value
 # anywhere that is not a disposable local database means something is wrong.
 DEFAULT_APP_DB_PASSWORD = "local-dev-only"
 
 # Hosts whose databases are disposable, so a default password is harmless.
-# "localhost" also covers CI, where the service container is reached that way
-# and the database is destroyed minutes later. "db" is the compose service name,
-# for when the app itself runs in a container.
+# "db" is how containers reach it; "localhost" covers the e2e suite, which
+# reaches the same compose database through its published port.
 LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "db"})
 
 
 def owner_database_url() -> str:
     """The owner connection: migrations, seeding, and role provisioning."""
     return os.getenv("DATABASE_URL") or DEFAULT_DATABASE_URL
-
-
-def test_database_url() -> str:
-    """The owner connection to the pytest database (ADR-0014)."""
-    return os.getenv("TEST_DATABASE_URL") or DEFAULT_TEST_DATABASE_URL
 
 
 def _is_local(database_url: str) -> bool:

@@ -15,7 +15,12 @@ jobs:
 
     env:
       E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/reading_tracker_e2e
-      SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+      # Set here rather than inherited from compose.yaml like the backend job
+      # does, because Playwright's webServer starts a bare uvicorn on the runner
+      # rather than a container. A literal, not a secret: Dependabot runs resolve
+      # secrets.* to empty, and this signs sessions in a database the job drops.
+      # Goes away when e2e moves into containers (#181).
+      SESSION_SECRET: ci-only
 
     steps:
       - name: Checkout code

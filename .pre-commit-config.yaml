@@ -1,46 +1,63 @@
+# Every hook is `language: system` — it runs a tool already installed in the dev
+# image rather than having pre-commit build a private copy of it.
+#
+# The usual reason to let pre-commit manage hook environments is that it can't
+# assume the tool is present. Development happens in the container
+# (Dockerfile.dev), where it is. A managed copy would buy nothing and cost a
+# second version of ruff and mypy to keep in step with backend/requirements.txt
+# by hand. So those versions are written down in one place only.
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.16
-    hooks:
-      - id: ruff
-        files: ^backend/
-        args: [--fix]
-      - id: ruff-format
-        files: ^backend/
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.1.0
-    hooks:
-      - id: mypy
-        files: ^backend/
-        args: ["--config-file", "backend/pyproject.toml"]
-        additional_dependencies:
-          - sqlalchemy
-          - fastapi
-  - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.12
-    hooks:
-      - id: actionlint
-        files: ^\.github/workflows/
   - repo: local
     hooks:
+      - id: ruff
+        name: ruff
+        language: system
+        # --force-exclude makes ruff honour its own exclude settings even though
+        # pre-commit passes explicit filenames, which normally override them.
+        entry: ruff check --force-exclude --fix
+        types_or: [python, pyi]
+        files: ^backend/
+        require_serial: true
+
+      - id: ruff-format
+        name: ruff format
+        language: system
+        entry: ruff format --force-exclude
+        types_or: [python, pyi]
+        files: ^backend/
+        require_serial: true
+
+      - id: mypy
+        name: mypy
+        language: system
+        # No additional_dependencies: the image's venv already has sqlalchemy
+        # and fastapi, which is the whole reason that list existed.
+        entry: mypy --config-file backend/pyproject.toml
+        types_or: [python, pyi]
+        files: ^backend/
+        require_serial: true
+
       - id: frontend-lint-staged
         name: Lint staged (frontend)
         language: system
         files: ^frontend/.*\.(ts|html|css|scss|json)$
         entry: bash -c 'cd frontend && npx lint-staged'
         pass_filenames: false
+
       - id: regenerate-api-client
         name: Regenerate OpenAPI schema and client
         language: system
         files: ^backend/app/.*\.py$
         entry: bash -c 'python3 backend/scripts/export_openapi.py && npm --prefix frontend run generate:api && git add backend/openapi.json frontend/src/app/api/generated'
         pass_filenames: false
+
       - id: frontend-typecheck
         name: TypeScript (frontend)
         language: system
         files: ^(frontend/.*\.ts|backend/app/.*\.py)$
         entry: bash -c 'cd frontend && npm run typecheck'
         pass_filenames: false
+
       - id: prettier-docs
         name: Prettier (docs markdown)
         language: system

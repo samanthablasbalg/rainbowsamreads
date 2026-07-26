@@ -1,0 +1,101 @@
+# Development image: toolchains only, no source.
+#
+# The root Dockerfile is the production image — it builds Angular to static
+# files and copies the backend in, freezing the code at build time. This one is
+# the inverse. It installs tools and nothing else; the source arrives at run
+# time as a bind mount, so edits on the host are live in the container.
+#
+# The two dependency stores are handled oppositely. Python IS installed here,
+# into /opt/venv at the bottom of this file — outside the repo, so no mount
+# shadows it. `npm ci` deliberately is NOT: frontend/node_modules is a named
+# volume in compose.yaml, and anything baked in here would be hidden the moment
+# that volume mounts over it. The frontend service installs it on first boot.
+#
+# Runs as root. Devcontainer convention is a non-root user, but Docker Desktop
+# on macOS remaps bind-mount ownership anyway, so a non-root user buys nothing
+# and adds a uid-matching problem. HOME is /root — where the host mounts for
+# ~/.claude, ~/.gitconfig and gh auth land.
+
+FROM python:3.14-slim
+
+# Node, lifted out of the official image rather than installed from an apt repo
+# or a curl-pipe-bash script: same source of truth as the production
+# Dockerfile's build stage, and no network script runs at build time.
+# npm and npx are symlinks in the real Node image, so they are recreated here.
+COPY --from=node:24-slim /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:24-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+
+# git   worktrees, commits, and pre-commit's own machinery
+# curl  fetching the gh release below
+# less  git's default pager; without it `git log` fails
+# zsh   the interactive shell; the image otherwise has only bash and sh
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        git \
+        curl \
+        ca-certificates \
+        less \
+        zsh \
+        openssh-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# gh drives the issue workflow (gh issue view, gh pr view). Debian does not
+# package it, so this pulls the release tarball. Pinned rather than tracking an
+# apt repo so the version is visible in this file and gets bumped deliberately.
+ARG GH_VERSION=2.96.0
+RUN arch="$(dpkg --print-architecture)" \
+    && curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${arch}.tar.gz" \
+        | tar -xz -C /tmp \
+    && mv "/tmp/gh_${GH_VERSION}_linux_${arch}/bin/gh" /usr/local/bin/gh \
+    && rm -rf /tmp/gh_*
+
+# oh-my-zsh, cloned rather than run through its curl-pipe-sh installer, for the
+# same reason Node is copied from the official image above: no network script
+# executes at build time. The upstream installer only does these two steps
+# unattended anyway.
+#
+# The host's own ~/.zshrc is not mounted, so this is a fresh oh-my-zsh with
+# stock settings, not a copy of the Mac's shell.
+RUN git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git /root/.oh-my-zsh \
+    && cp /root/.oh-my-zsh/templates/zshrc.zsh-template /root/.zshrc \
+    && chsh -s /usr/bin/zsh root
+
+# Claude Code runs inside the container. Only the binary lives here; config,
+# auth and memory are mounted from the host at run time.
+RUN npm install -g @anthropic-ai/claude-code
+
+# Python dependencies, at /opt/venv — outside the repo on purpose. A venv inside
+# the repo would sit under the bind mount and need a named volume to stay fast,
+# and named volumes start empty, so uvicorn would not exist on a first
+# `docker compose up` and the api service would crash-loop until something
+# installed it. Outside the repo, this installs at build time and is simply
+# there.
+#
+# requirements.txt is the only file from the repo this image contains. That is
+# deliberate: when it changes, Docker invalidates this layer and a rebuild picks
+# the change up. It is last in the file so a dependency bump does not invalidate
+# the toolchain layers above.
+COPY backend/requirements.txt /tmp/requirements.txt
+RUN python -m venv /opt/venv \
+    && /opt/venv/bin/pip install --no-cache-dir -r /tmp/requirements.txt \
+    && rm /tmp/requirements.txt
+
+# The venv goes first on PATH, so python, pytest, ruff, mypy and pre-commit
+# resolve to it with no activation step. This is what makes
+# `source .venv/bin/activate` unnecessary inside the container.
+ENV PATH=/opt/venv/bin:$PATH
+
+# ENV alone is not enough. A *login* shell runs /etc/profile, which on Debian
+# assigns PATH outright rather than appending to it — wiping /opt/venv/bin and
+# leaving `pytest` as command-not-found in that shell while it still works in
+# another. zsh reaches the same code path via /etc/zsh/zprofile, which sources
+# /etc/profile.
+#
+# /etc/profile sources this directory *after* that assignment, so re-prepending
+# here covers bash and zsh, login and non-login alike.
+RUN printf 'PATH=/opt/venv/bin:$PATH\n' > /etc/profile.d/venv.sh
+
+# No WORKDIR. The working directory differs per stack — the main checkout for
+# the main repo, .claude/worktrees/<name> for a worktree — so compose sets it.
