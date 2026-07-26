@@ -83,7 +83,14 @@ services:
   workspace:
     <<: *dev
     working_dir: ${PWD}
-    command: sleep infinity
+    # `pre-commit install` writes .git/hooks/pre-commit, which git never clones —
+    # so without this a fresh clone commits with no checks at all, silently
+    # (#164). Idempotent and near-instant, so it runs every boot rather than
+    # carrying a guard. `;` rather than `&&`: a failure here should not leave the
+    # workspace container dead.
+    command: >
+      sh -c "pre-commit install;
+      exec sleep infinity"
     # Listed in full rather than inherited: a service's own `volumes:` replaces
     # the anchor's list outright — YAML merge keys work key by key and cannot
     # append to a list — so dropping the first two would leave a container with
