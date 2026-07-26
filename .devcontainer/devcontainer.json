@@ -21,6 +21,18 @@
   // the editor; `docker compose down` should be something done deliberately.
   "shutdownAction": "none",
 
+  // VS Code auto-forwards a local SSH agent into the container and points
+  // SSH_AUTH_SOCK at its own forwarding socket, overriding the value
+  // compose.yaml already sets for the workspace service. Its forwarding has
+  // nothing to forward from, since 1Password exposes itself via ssh_config's
+  // IdentityAgent rather than a host-side SSH_AUTH_SOCK env var, so the
+  // result is a live socket with no identities. remoteEnv re-asserts the
+  // working socket for the whole remote session — terminals, tasks, and the
+  // Source Control panel's own git calls alike — not just interactive shells.
+  "remoteEnv": {
+    "SSH_AUTH_SOCK": "/tmp/1password-agent.sock"
+  },
+
   "customizations": {
     "vscode": {
       "settings": {
