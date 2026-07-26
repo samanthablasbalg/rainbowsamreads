@@ -1,3 +1,19 @@
+# Environment shared by every dev service. Its own anchor rather than being
+# inline below, because a service that declares `environment:` replaces the
+# merged one outright (see workspace) — this way the values are written once.
+x-dev-env: &dev-env
+  # Signs the session cookie. Deliberately a known value, not a secret: local
+  # and CI sessions live in a database that gets thrown away, and CI runs its
+  # backend checks through these same service definitions rather than a parallel
+  # setup. Production sets a real one in its own environment, where main.py
+  # still refuses to boot without it.
+  #
+  # Being non-secret is also what unbreaks Dependabot: GitHub withholds repo
+  # secrets from Dependabot-triggered runs, so a workflow reading
+  # secrets.SESSION_SECRET got an empty string and every job that imports the
+  # app died on the start-up check.
+  SESSION_SECRET: local-dev-only
+
 # Shared by every dev service: one image, one view of the repo. They differ only
 # in what they run.
 #
@@ -12,6 +28,7 @@ x-dev: &dev
     context: .
     dockerfile: Dockerfile.dev
   image: reading-tracker-dev
+  environment: *dev-env
   volumes:
     - .:${PWD}
     # node_modules is kept out of the bind mount. Every file a container reads
@@ -129,7 +146,11 @@ services:
       # would override SSH_AUTH_SOCK below. Only known_hosts is wanted, to skip
       # the first-connection host key prompt.
       - ${HOME}/.ssh/known_hosts:/root/.ssh/known_hosts
+    # Merged rather than replaced, for the reason the volumes above spell out: a
+    # service's own block wins outright, so without the merge key this container
+    # would lose SESSION_SECRET and `pytest` in here would fail on import.
     environment:
+      <<: *dev-env
       SSH_AUTH_SOCK: /tmp/1password-agent.sock
 
 volumes:

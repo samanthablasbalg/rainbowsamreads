@@ -12,11 +12,9 @@ jobs:
   backend:
     runs-on: ubuntu-latest
 
-    # Every database URL is derived from a default pointing at the compose
-    # database (backend/app/db_url.py), so nothing here needs configuring.
-    env:
-      SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-
+    # No env at all. Every database URL is derived from a default pointing at the
+    # compose database (backend/app/db_url.py), and SESSION_SECRET comes from the
+    # service definition in compose.yaml — the same one development uses.
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -41,9 +39,9 @@ jobs:
         run: docker compose run --rm api mypy app
 
       - name: Run tests
-        run: docker compose run --rm -e SESSION_SECRET api sh -c 'pytest || [ $? -eq 5 ]'
+        run: docker compose run --rm api sh -c 'pytest || [ $? -eq 5 ]'
 
       - name: Check committed OpenAPI schema is up to date
         run: |
-          docker compose run --rm -e SESSION_SECRET api python scripts/export_openapi.py
+          docker compose run --rm api python scripts/export_openapi.py
           git diff --exit-code backend/openapi.json
