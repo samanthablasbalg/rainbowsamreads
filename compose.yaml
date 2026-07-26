@@ -85,8 +85,8 @@ services:
     <<: *dev
     working_dir: ${PWD}/frontend
     # The named volume starts empty, so install into it on first boot and skip
-    # the install on every boot after. postCreateCommand will cover the VS Code
-    # path; this covers a plain `docker compose up`.
+    # the install on every boot after. Nothing else populates it: the image
+    # deliberately does not bake node_modules in (see Dockerfile.dev).
     command: >
       sh -c "[ -e node_modules/.package-lock.json ] || npm ci;
       exec npm start -- --host 0.0.0.0"

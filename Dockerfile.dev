@@ -5,10 +5,11 @@
 # the inverse. It installs tools and nothing else; the source arrives at run
 # time as a bind mount, so edits on the host are live in the container.
 #
-# Deliberately does NOT run `pip install` or `npm ci`. Those install into
-# backend/venv and frontend/node_modules, which compose mounts as named volumes
-# — anything baked in here would be shadowed by the volume. Dependencies are
-# installed by postCreateCommand instead.
+# The two dependency stores are handled oppositely. Python IS installed here,
+# into /opt/venv at the bottom of this file — outside the repo, so no mount
+# shadows it. `npm ci` deliberately is NOT: frontend/node_modules is a named
+# volume in compose.yaml, and anything baked in here would be hidden the moment
+# that volume mounts over it. The frontend service installs it on first boot.
 #
 # Runs as root. Devcontainer convention is a non-root user, but Docker Desktop
 # on macOS remaps bind-mount ownership anyway, so a non-root user buys nothing

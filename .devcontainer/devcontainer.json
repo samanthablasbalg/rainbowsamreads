@@ -36,9 +36,10 @@
   "customizations": {
     "vscode": {
       "settings": {
-        // The container's interpreter. .vscode/settings.json still points at
-        // the Mac's venv and is read by VS Code running on the Mac; these two
-        // do not conflict, they are read by different processes.
+        // The container's interpreter, and the only one set anywhere.
+        // .vscode/settings.json deliberately sets none: workspace settings
+        // outrank these, so a value there would override this one inside the
+        // container.
         "python.defaultInterpreterPath": "/opt/venv/bin/python",
         "terminal.integrated.defaultProfile.linux": "zsh"
       },
