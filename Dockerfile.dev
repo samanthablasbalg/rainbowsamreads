@@ -29,6 +29,7 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 
 # git   worktrees, commits, and pre-commit's own machinery
 # curl  fetching the gh release below
+# jq    the host's ~/.claude/statusline.sh mounts in and shells out to it
 # less  git's default pager; without it `git log` fails
 # zsh   the interactive shell; the image otherwise has only bash and sh
 RUN apt-get update \
@@ -36,6 +37,7 @@ RUN apt-get update \
         git \
         curl \
         ca-certificates \
+        jq \
         less \
         zsh \
         openssh-client \
