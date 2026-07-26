@@ -119,6 +119,18 @@ services:
       # as untracked in here.
       - ${HOME}/.config/git:/root/.config/git
       - ${HOME}/.config/gh:/root/.config/gh
+      # The origin remote is ssh, and the keys live in 1Password rather than on
+      # disk — reachable only through its agent socket, which runs on the Mac.
+      # Forwarding the socket lets git push from in here with the same key and
+      # the same approval prompt as on the host; no key material is copied.
+      - ${HOME}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock:/tmp/1password-agent.sock
+      # Deliberately not ~/.ssh as a whole: that directory's config sets
+      # IdentityAgent to the socket's *macOS* path, which does not exist here and
+      # would override SSH_AUTH_SOCK below. Only known_hosts is wanted, to skip
+      # the first-connection host key prompt.
+      - ${HOME}/.ssh/known_hosts:/root/.ssh/known_hosts
+    environment:
+      SSH_AUTH_SOCK: /tmp/1password-agent.sock
 
 volumes:
   pgdata:

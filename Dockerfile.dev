@@ -37,6 +37,7 @@ RUN apt-get update \
         ca-certificates \
         less \
         zsh \
+        openssh-client \
     && rm -rf /var/lib/apt/lists/*
 
 # gh drives the issue workflow (gh issue view, gh pr view). Debian does not
