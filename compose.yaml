@@ -113,6 +113,11 @@ services:
       - ${HOME}/.claude:/root/.claude
       - ${HOME}/.claude.json:/root/.claude.json
       - ${HOME}/.gitconfig:/root/.gitconfig
+      # Not covered by .gitconfig above. With core.excludesFile unset, git reads
+      # global ignore rules from the XDG path instead, so without this mount
+      # none of them apply in the container and files ignored on the Mac show up
+      # as untracked in here.
+      - ${HOME}/.config/git:/root/.config/git
       - ${HOME}/.config/gh:/root/.config/gh
 
 volumes:
