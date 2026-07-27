@@ -1,0 +1,16 @@
+:8080 {
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	# frontend's dev server checks the Host header against Angular's
+	# allowedHosts config (["frontend"]). Rewriting it here means that stays
+	# true no matter what hostname a client used to reach this proxy, so the
+	# Angular side never has to change when the proxy is addressed differently
+	# (a new published port, a different compose project name in CI).
+	handle {
+		reverse_proxy frontend:4200 {
+			header_up Host frontend:4200
+		}
+	}
+}

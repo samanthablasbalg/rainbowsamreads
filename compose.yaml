@@ -112,6 +112,28 @@ services:
       retries: 30
       start_period: 60s
 
+  # Puts the dev stack on one origin: /api/* goes to api, everything else to
+  # frontend. Not just for e2e — a human hitting the published port gets the
+  # same single-origin view.
+  proxy:
+    image: caddy:2.11.4-alpine
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - "${PROXY_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    # wget, not curl: the alpine image only ships BusyBox's applet.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   # Not built from Dockerfile.dev like the services above — the browser binaries
   # come from Microsoft's own image, pinned to the same version as
   # @playwright/test in e2e/package.json (Playwright checks the two against
@@ -134,13 +156,10 @@ services:
     volumes:
       - .:${PWD}
       - e2e_node_modules:${PWD}/e2e/node_modules
-    # Without this, nothing waits for api/frontend to actually be serving
-    # requests — the suite would race their startup and the first test would
-    # flake, not fail loudly.
+    # Depending on proxy alone is enough: compose walks the chain, and proxy
+    # already requires api and frontend to be healthy first.
     depends_on:
-      api:
-        condition: service_healthy
-      frontend:
+      proxy:
         condition: service_healthy
 
   # Runs nothing on purpose. VS Code attaches with overrideCommand set, which
