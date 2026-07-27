@@ -93,6 +93,29 @@ services:
     ports:
       - "${FRONTEND_PORT:-4200}:4200"
 
+  # Not built from Dockerfile.dev like the services above — the browser binaries
+  # come from Microsoft's own image, pinned to the same version as
+  # @playwright/test in e2e/package.json (Playwright checks the two against
+  # each other at launch and refuses to run on a mismatch).
+  #
+  # No `command:` on purpose: this service is only ever invoked as
+  # `docker compose run --rm e2e <command>`, and `run` replaces a service's
+  # `command:` outright, so anything written here would never actually execute.
+  #
+  # GOTCHA: e2e_node_modules starts life as an empty named volume, and unlike
+  # frontend above, there's no boot-time `npm ci` guard installing into it —
+  # `run`'s command-replacing behavior is exactly what rules that pattern out
+  # here. Run `docker compose run --rm e2e npm ci` by hand the first time, and
+  # again whenever e2e/package-lock.json changes; skipping it looks like a
+  # broken container ("playwright: command not found") when it's really just
+  # an empty volume.
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.62.0-noble
+    working_dir: ${PWD}/e2e
+    volumes:
+      - .:${PWD}
+      - e2e_node_modules:${PWD}/e2e/node_modules
+
   # Runs nothing on purpose. VS Code attaches with overrideCommand set, which
   # replaces the attached service's command with `sleep infinity` — attaching to
   # api would therefore kill uvicorn. This is also where `docker compose exec`
@@ -166,3 +189,4 @@ services:
 volumes:
   pgdata:
   node_modules:
+  e2e_node_modules:
