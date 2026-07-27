@@ -80,6 +80,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # /docs is FastAPI's built-in Swagger page — free, always present if the
+    # app booted, and the same URL webServer used to poll before this moved
+    # into a container. start_period covers provision + migrate before uvicorn
+    # is even listening, so those don't burn through retries.
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   frontend:
     <<: *dev
@@ -92,6 +102,15 @@ services:
       exec npm start -- --host 0.0.0.0"
     ports:
       - "${FRONTEND_PORT:-4200}:4200"
+    # Same idea as api's healthcheck above. start_period is generous because a
+    # cold volume means npm ci first, then Angular's own build/compile — both
+    # slower than the backend's boot.
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4200"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
 
   # Not built from Dockerfile.dev like the services above — the browser binaries
   # come from Microsoft's own image, pinned to the same version as
@@ -115,6 +134,14 @@ services:
     volumes:
       - .:${PWD}
       - e2e_node_modules:${PWD}/e2e/node_modules
+    # Without this, nothing waits for api/frontend to actually be serving
+    # requests — the suite would race their startup and the first test would
+    # flake, not fail loudly.
+    depends_on:
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
 
   # Runs nothing on purpose. VS Code attaches with overrideCommand set, which
   # replaces the attached service's command with `sleep infinity` — attaching to
