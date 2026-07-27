@@ -7,7 +7,7 @@ description:
 when_to_use:
   Auto-invoke when the user says "write a Playwright test", "add an e2e test", "create a test for
   <feature>", "test that <behavior>", or points at a issue/plan and asks for an e2e test.
-allowed-tools: Bash(npx playwright test:*), Bash(npx playwright-cli:*), Bash(npm test:*)
+allowed-tools: Bash(npx playwright test:*), Bash(npx playwright cli:*), Bash(npm test:*)
 ---
 
 # Author a new Playwright e2e test
@@ -41,14 +41,14 @@ Playwright test for the reading tracker app.
   command. When in doubt, you have already taken too many actions — stop and read.
 - **You run in the main conversation loop.** Do NOT spawn sub-agents — the user needs to see
   progress and step in. Work the steps yourself, in order.
-- **CLI-first.** Drive the browser with `npx playwright-cli` through the seed test; it **prints the
+- **CLI-first.** Drive the browser with `npx playwright cli` through the seed test; it **prints the
   Playwright TypeScript for every action** — that emitted code is what goes into the Page Object /
   spec.
 - **The live snapshot is the source of truth for locators.** Angular source is a _hint_.
 - **Conventions are auto-loaded** from `.claude/rules/playwright-e2e.md` (it loads whenever you
   touch `e2e/**`). This file is the _procedure_; that rule is the _standards_ — follow both, and
   don't restate the rule's contents here.
-- **Always tear down by calling `npx playwright-cli --s=<session> resume` when you are done
+- **Always tear down by calling `npx playwright cli --s=<session> resume` when you are done
   driving.** This unblocks `page.pause()`, the test completes, the browser closes, and the process
   exits — all automatically. Never use `close`, `kill`, `pkill`, or `TaskStop`.
 - **Stop and ask — don't spin.** If the _environment_ is broken — the app is a blank screen or
@@ -125,7 +125,7 @@ tests almost never meet the bar when a Vitest spec already exists.
 > **HARD GATE — no code, no plan, no confirmation request.** After Step 2 (including the Vitest
 > triage) your next action is launching the seed (Step 3). Do not write POM or spec code. Do not
 > present a plan and ask the user to confirm it. The user invoking this skill is already the
-> confirmation. Candidate locators from source are unconfirmed until a live `playwright-cli
+> confirmation. Candidate locators from source are unconfirmed until a live `playwright cli
 > snapshot` validates them — writing tests from source locators is the mistake this gate exists to
 > prevent. The Vitest triage is the other mistake this gate exists to prevent.
 
@@ -151,14 +151,14 @@ npx playwright test --project=seed --debug=cli
 
 # 2. Attach (give the WebSocket ~3s; retry once if the first command errors), then resume —
 #    that runs the seed (navigate to /) and stops at page.pause(), leaving the app open to drive.
-npx playwright-cli attach tw-abcdef
-npx playwright-cli resume
+npx playwright cli attach tw-abcdef
+npx playwright cli resume
 
 # 3. Rehearse the scenario; each action echoes the Playwright TS to reuse.
-npx playwright-cli snapshot                     # refs = source of truth
-npx playwright-cli click e15
-npx playwright-cli fill e3 "hello"
-npx playwright-cli --raw generate-locator e15   # robust locator for the POM
+npx playwright cli snapshot                     # refs = source of truth
+npx playwright cli click e15
+npx playwright cli fill e3 "hello"
+npx playwright cli --raw generate-locator e15   # robust locator for the POM
 ```
 
 Confirm every candidate locator against the snapshot. The seed ends in `page.pause()` so the page
@@ -170,7 +170,7 @@ means — not `curl`/HTTP, and not through the app UI either (adding a book hits
 API). If the scenario needs something the seeded DB doesn't already have, **STOP and ask the user.**
 Full stop — never conjure the data yourself.
 
-**When done driving, call `npx playwright-cli --s=<session> resume` one more time.** This unblocks
+**When done driving, call `npx playwright cli --s=<session> resume` one more time.** This unblocks
 `page.pause()`, the test completes naturally, the browser closes, and the background process exits
 on its own (exit code 0). No `close`, no `kill`, no `TaskStop` needed.
 
@@ -203,7 +203,7 @@ npm test -- tests/<feature>/<name>.spec.ts --reporter=dot
 
 Up to **3 fix-and-rerun cycles**. **Timeouts are almost never the real problem** — if it times out,
 the element probably isn't appearing at all; fix the **locator in the POM** (re-derive from a fresh
-`playwright-cli snapshot`) or improve source a11y (Step 4) rather than extending timeouts.
+`playwright cli snapshot`) or improve source a11y (Step 4) rather than extending timeouts.
 
 **Stop and ask the user** if: the 3 cycles are exhausted; you can't find a working locator; you're
 unsure whether the behavior is a bug; or you're guessing rather than working from
@@ -217,5 +217,5 @@ snapshot/console/network evidence. State what you tried, what failed, what would
    `.claude/rules/playwright-e2e.md`. Check it against that list (don't rely on memory).
 4. Format: `npm run format` (also enforced on commit via husky/lint-staged).
 
-Confirm no background `playwright` / `playwright-cli` process is still running, then summarize what
+Confirm no background `playwright` / `playwright cli` process is still running, then summarize what
 you created (POM + spec) and the validation results.

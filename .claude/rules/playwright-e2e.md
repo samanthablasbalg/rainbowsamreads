@@ -43,7 +43,7 @@ so the bypass can never mint a session for an arbitrary address.
   fixture, hitting the e2e backend on :8001 directly.
 
 The **authoring seed** (`tests/seed.spec.ts`, the `seed` project) runs `seed_dev.py`, logs the
-browser in, then navigates to `/` and `page.pause()`s so `playwright-cli` can drive one live
+browser in, then navigates to `/` and `page.pause()`s so `playwright cli` can drive one live
 session under `--debug=cli`. It is excluded from the browser projects via `testIgnore`, from CI via
 a `process.env['CI']` check in `playwright.config.ts` (it's an interactive tool, not a regression
 check), and runs with `timeout: 0`. The authoring loop is in the skill. `seed_dev.py`, the dev-data

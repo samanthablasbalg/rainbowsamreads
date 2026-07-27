@@ -56,7 +56,7 @@ export default defineConfig({
       testIgnore: /seed\.spec\.ts/,
     },
     // Authoring seed for the playwright-new-test skill: a single paused
-    // session to drive with playwright-cli under --debug=cli. timeout: 0 so
+    // session to drive with playwright cli under --debug=cli. timeout: 0 so
     // the pause never expires — never run in CI, only interactively.
     ...(process.env['CI']
       ? []
