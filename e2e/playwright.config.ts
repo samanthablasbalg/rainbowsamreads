@@ -15,8 +15,10 @@ export default defineConfig({
     ? [['github'], ['list'], ['html', { open: 'never' }]]
     : [['html', { open: 'never' }]],
   use: {
-    // Resolved by service name on the compose network.
-    baseURL: 'http://frontend:4200',
+    // The Caddy proxy, resolved by service name on the compose network —
+    // the same single origin for /api/* and everything else that a human
+    // browsing the published port would see.
+    baseURL: 'http://proxy:8080',
     trace: 'retain-on-failure',
   },
   projects: [
