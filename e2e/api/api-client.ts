@@ -1,9 +1,9 @@
 import { APIRequestContext } from '@playwright/test';
 
-// The e2e backend runs on :8001 (dev is on :8000). This client seeds data by
-// calling the API directly, bypassing the frontend proxy, so it needs the port.
+// Resolved by service name on the compose network. This client seeds data by
+// calling the API directly, bypassing the frontend proxy.
 // Exported so tests/auth.setup.ts can log in against the same origin.
-export const BACKEND_URL = 'http://127.0.0.1:8001';
+export const BACKEND_URL = 'http://api:8000';
 
 export class ApiClient {
   /** @param request - Playwright's request context, used to call the backend. */
