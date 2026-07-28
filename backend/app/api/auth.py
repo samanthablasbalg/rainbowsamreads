@@ -40,7 +40,7 @@ def _allowlist() -> set[str]:
 
 
 def _frontend_url() -> str:
-    return os.getenv("FRONTEND_URL", "http://localhost:4200")
+    return os.getenv("FRONTEND_URL", "http://localhost:8080")
 
 
 @router.get("/login")
