@@ -66,6 +66,14 @@ services:
   api:
     <<: *dev
     working_dir: ${PWD}/backend
+    # Here rather than in the anchor because `api` is the only service that reads
+    # it. Local dev already had it via backend/.env; this makes it true on a CI
+    # runner too, where that gitignored file doesn't exist and `auth setup` would
+    # 404. Never reaches production — compose.yaml isn't deployed, and
+    # test_auth.py:118 asserts the endpoint is absent without it.
+    environment:
+      <<: *dev-env
+      ALLOW_TEST_LOGIN: "true"
     # No DATABASE_URL: db_url.py defaults to the db service, which is correct
     # from inside any container here.
     # The same three steps as the production CMD, for the same reasons: create
@@ -207,10 +215,12 @@ services:
       retries: 20
       start_period: 30s
 
-  # Not built from Dockerfile.dev like the services above — the browser binaries
-  # come from Microsoft's own image, pinned to the same version as
-  # @playwright/test in e2e/package.json (Playwright checks the two against
-  # each other at launch and refuses to run on a mismatch).
+  # The suite's test process — the thing that reads the specs, talks to the API,
+  # and drives browsers in `browsers` over a websocket. Built from Dockerfile.dev
+  # like api and frontend, NOT from Microsoft's Playwright image: this container
+  # never launches a browser, so it needs Node and nothing else that image adds.
+  # Sharing the dev image also means CI builds one image for every job rather
+  # than pulling a second, larger one just for this.
   #
   # No `command:` on purpose: this service is only ever invoked as
   # `docker compose run --rm e2e <command>`, and `run` replaces a service's
@@ -224,24 +234,38 @@ services:
   # broken container ("playwright: command not found") when it's really just
   # an empty volume.
   e2e:
-    image: mcr.microsoft.com/playwright:v1.62.0-noble
-    # Excludes this from `docker compose up` — it has no command (see below)
+    <<: *dev
+    # Excludes this from `docker compose up` — it has no command (see above)
     # and would just start and exit immediately as part of the standing stack.
     # `docker compose run --rm e2e <command>` still works: profiles only gate
-    # `up`, not `run`, and its dependencies (proxy, which needs api/frontend
-    # healthy) still get started either way.
+    # `up`, not `run`, and its dependencies still get started either way.
     profiles: ["tools"]
     working_dir: ${PWD}/e2e
-    # No bridge mounts here: browsers no longer run in this container, so nothing
-    # publishes a session from it. They live on `browsers` instead — see the
-    # comment there for why bind() writes server-side.
+    # Listed rather than inherited from the anchor, which would bring the
+    # frontend's node_modules and not this one. No bridge mounts either:
+    # browsers no longer run in this container, so nothing publishes a session
+    # from it — see the comment on `browsers` for why bind() writes server-side.
     volumes:
       - .:${PWD}
       - e2e_node_modules:${PWD}/e2e/node_modules
-    # Depending on proxy alone is enough: compose walks the chain, and proxy
-    # already requires api and frontend to be healthy first.
+    environment:
+      <<: *dev-env
+      # `docker compose run` does NOT forward the host's environment into the
+      # container, so a CI runner's CI=true is invisible in here without this
+      # line — and playwright.config.ts reads it to decide forbidOnly, whether
+      # to retry, and whether to emit GitHub annotations. Unset, a CI run would
+      # silently behave like a local one: a stray test.only would pass the job
+      # instead of failing it. `:-` leaves it empty locally, which is what those
+      # same branches want.
+      CI: ${CI:-}
+    # proxy alone would be enough to reach the app — compose walks the chain and
+    # proxy already requires api and frontend healthy. browsers is the separate
+    # one: nothing else waits for it, and a test process that starts first dies
+    # in connect() with no useful error.
     depends_on:
       proxy:
+        condition: service_healthy
+      browsers:
         condition: service_healthy
 
   # Runs nothing on purpose. VS Code attaches with overrideCommand set, which
