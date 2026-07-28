@@ -83,9 +83,9 @@ Both forces have since expired, and one of them was quietly doing harm.
   it happens silently.
 - **`e2e/node_modules` needs one manual `npm ci`.** It is a named volume that starts empty, and
   `docker compose run` replaces a service's `command:`, so the first-boot install guard the
-  `frontend` service uses cannot work here. Run `docker compose run --rm e2e npm ci` on first use
-  and whenever `e2e/package-lock.json` changes. Skipping it presents as a broken container
-  (`playwright: command not found`) rather than as an empty volume.
+  `frontend` service uses cannot work here. `workspace` mounts the same volume, so locally it is
+  `cd e2e && npm ci` like any other install; CI does it as its own `run` step. Skipping it presents
+  as a broken container (`playwright: command not found`) rather than as an empty volume.
 - **The test process and the browser are on different machines.** `request` and `ApiClient` are HTTP
   clients in the test process; `page` and `page.request` run in the remote browser and resolve
   `baseURL` from there. Anything written as `localhost` would mean two different things. Nothing

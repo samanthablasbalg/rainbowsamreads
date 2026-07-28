@@ -66,9 +66,10 @@ else to `frontend:4200`.**
   old `:4200` URI no longer matches what the backend derives. An unregistered URI fails with
   `Error 400: invalid_request` before the sign-in prompt, and the e2e suite will not catch it,
   because the suite logs in through the `test-login` bypass rather than Google.
-- **`:4200` still answers, and its `/api` is dead.** There is no dev-server proxy any more, so
-  hitting the frontend directly gets an app that cannot reach its backend. It presents as a backend
-  outage rather than as a wrong address.
+- **The frontend stops publishing a port at all.** With no dev-server proxy behind it, `:4200` would
+  serve an app that cannot reach its backend — a second address that looks like a backend outage
+  rather than like a wrong address. Removing the mapping makes that state unreachable instead of
+  documented, at the cost of no longer being able to bypass the proxy when debugging it.
 - **One more container in the standing stack**, and it sits between you and every request, so a
   routing mistake looks like an app bug.
 - **Two files know the hostname Angular expects** — the `Caddyfile` and `angular.json` — and they
