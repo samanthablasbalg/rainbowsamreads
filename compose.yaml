@@ -49,7 +49,7 @@ services:
     ports:
       # Defaulted inline so a fresh clone runs `docker compose up db` with no
       # .env file at all. Overridable for per-worktree stacks later (#179).
-      - "${POSTGRES_PORT:-5432}:5432"
+      - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       # NOT /var/lib/postgresql/data. Postgres 18 moved PGDATA to a
       # version-specific path (/var/lib/postgresql/18/docker) and moved the
@@ -58,7 +58,7 @@ services:
       - pgdata:/var/lib/postgresql
       - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d reading_tracker"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d reading_tracker']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -73,18 +73,17 @@ services:
     # test_auth.py:118 asserts the endpoint is absent without it.
     environment:
       <<: *dev-env
-      ALLOW_TEST_LOGIN: "true"
+      ALLOW_TEST_LOGIN: 'true'
     # No DATABASE_URL: db_url.py defaults to the db service, which is correct
     # from inside any container here.
     # The same three steps as the production CMD, for the same reasons: create
     # the app role, apply migrations, then serve. Both leading steps are
     # idempotent, so they re-run harmlessly on every restart.
     command: >
-      sh -c "python -m app.provision
-      && alembic upgrade head
-      && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+      sh -c "python -m app.provision && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0
+      --port 8000 --reload"
     ports:
-      - "${API_PORT:-8000}:8000"
+      - '${API_PORT:-8000}:8000'
     depends_on:
       db:
         condition: service_healthy
@@ -93,7 +92,7 @@ services:
     # into a container. start_period covers provision + migrate before uvicorn
     # is even listening, so those don't burn through retries.
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/docs']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -106,15 +105,13 @@ services:
     # the install on every boot after. Nothing else populates it: the image
     # deliberately does not bake node_modules in (see Dockerfile.dev).
     command: >
-      sh -c "[ -e node_modules/.package-lock.json ] || npm ci;
-      exec npm start -- --host 0.0.0.0"
-    ports:
-      - "${FRONTEND_PORT:-4200}:4200"
+      sh -c "[ -e node_modules/.package-lock.json ] || npm ci; exec npm start -- --host 0.0.0.0"
+
     # Same idea as api's healthcheck above. start_period is generous because a
     # cold volume means npm ci first, then Angular's own build/compile — both
     # slower than the backend's boot.
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4200"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:4200']
       interval: 5s
       timeout: 5s
       retries: 30
@@ -128,7 +125,7 @@ services:
     volumes:
       - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
     ports:
-      - "${PROXY_PORT:-8080}:8080"
+      - '${PROXY_PORT:-8080}:8080'
     depends_on:
       api:
         condition: service_healthy
@@ -136,7 +133,7 @@ services:
         condition: service_healthy
     # wget, not curl: the alpine image only ships BusyBox's applet.
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/"]
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:8080/']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -199,16 +196,16 @@ services:
     # playwright@1.62.0`: it is the same package the specs import, so the
     # client/server version check cannot drift, and no fetch happens on boot.
     command: >
-      sh -c "[ -e node_modules/.bin/playwright ] || npm ci;
-      exec npx playwright run-server --host 0.0.0.0 --port 5000"
+      sh -c "[ -e node_modules/.bin/playwright ] || npm ci; exec npx playwright run-server --host
+      0.0.0.0 --port 5000"
     # node, not curl or wget: the endpoint is a websocket, so an HTTP probe
     # proves nothing, and a bare TCP connect is what "accepting clients" means.
     # node is the one interpreter this image is guaranteed to have.
     healthcheck:
       test:
-        - "CMD"
-        - "node"
-        - "-e"
+        - 'CMD'
+        - 'node'
+        - '-e'
         - "require('net').connect(5000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"
       interval: 5s
       timeout: 5s
@@ -239,7 +236,7 @@ services:
     # and would just start and exit immediately as part of the standing stack.
     # `docker compose run --rm e2e <command>` still works: profiles only gate
     # `up`, not `run`, and its dependencies still get started either way.
-    profiles: ["tools"]
+    profiles: ['tools']
     working_dir: ${PWD}/e2e
     # Listed rather than inherited from the anchor, which would bring the
     # frontend's node_modules and not this one. No bridge mounts either:
@@ -281,8 +278,7 @@ services:
     # carrying a guard. `;` rather than `&&`: a failure here should not leave the
     # workspace container dead.
     command: >
-      sh -c "pre-commit install;
-      exec sleep infinity"
+      sh -c "pre-commit install; exec sleep infinity"
     # Listed in full rather than inherited: a service's own `volumes:` replaces
     # the anchor's list outright — YAML merge keys work key by key and cannot
     # append to a list — so dropping the first two would leave a container with
@@ -332,7 +328,8 @@ services:
       # disk — reachable only through its agent socket, which runs on the Mac.
       # Forwarding the socket lets git push from in here with the same key and
       # the same approval prompt as on the host; no key material is copied.
-      - ${HOME}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock:/tmp/1password-agent.sock
+      - ${HOME}/Library/Group
+        Containers/2BUA8C4S2C.com.1password/t/agent.sock:/tmp/1password-agent.sock
       # Deliberately not ~/.ssh as a whole: that directory's config sets
       # IdentityAgent to the socket's *macOS* path, which does not exist here and
       # would override SSH_AUTH_SOCK below. Only known_hosts is wanted, to skip
