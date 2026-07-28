@@ -159,9 +159,48 @@ services:
     # healthy) still get started either way.
     profiles: ["tools"]
     working_dir: ${PWD}/e2e
+    # Half of the authoring bridge (#181 workflow 3); the volumes below are the
+    # other half, and carry the full explanation.
+    #
+    # The socket a paused session listens on is derived from os.tmpdir(), so by
+    # default it lands in /tmp — private to each container and therefore
+    # unreachable from `workspace`. This relocates it somewhere shareable.
+    #
+    # PWTEST_SOCKETS_DIR is an internal Playwright escape hatch, not public API:
+    # the PWTEST_ prefix is upstream's own marker for "may move without notice".
+    # Accepted deliberately, because it is load-bearing for authoring only —
+    # nothing in the suite or in CI touches this plumbing, so the worst a version
+    # bump can do is stop `playwright cli attach` from working until the paths
+    # are found again.
+    environment:
+      PWTEST_SOCKETS_DIR: /tmp/pw-sockets
     volumes:
       - .:${PWD}
       - e2e_node_modules:${PWD}/e2e/node_modules
+      # Bridges a paused test out to `workspace`, so Claude can drive the browser
+      # while authoring specs. `playwright cli attach <name>` needs two things
+      # from whichever container is hosting the browser, and neither one is where
+      # you would guess:
+      #
+      #   1. The browser descriptor. A paused test calls browser.bind(<name>),
+      #      which writes a JSON descriptor into ~/.cache/ms-playwright/**b**.
+      #      NOT .../daemon — that sibling directory is only the CLI *client's*
+      #      scratch space for daemons it spawns itself, and the hosting side
+      #      never writes to it. Sharing .../daemon (as this file used to) shares
+      #      nothing the other end ever reads.
+      #   2. The Unix socket that descriptor points at — moved out of /tmp by
+      #      PWTEST_SOCKETS_DIR above.
+      #
+      # Both have to be shared, and shared *together*. serverRegistry.list()
+      # probes every descriptor it can see and DELETES any it cannot connect to,
+      # so a `workspace` that can read b/ but cannot reach the socket does not
+      # merely fail to attach — it erases the descriptor of a live, running
+      # session.
+      #
+      # Named volumes rather than bind mounts: Docker Desktop's virtiofs does not
+      # carry Unix domain sockets across the macOS host boundary.
+      - playwright_registry:/root/.cache/ms-playwright/b
+      - playwright_sockets:/tmp/pw-sockets
     # Depending on proxy alone is enough: compose walks the chain, and proxy
     # already requires api and frontend to be healthy first.
     depends_on:
@@ -195,6 +234,16 @@ services:
     volumes:
       - .:${PWD}
       - node_modules:${PWD}/frontend/node_modules
+      # `e2e`'s own node_modules, populated by `docker compose run --rm e2e
+      # npm ci` (see the GOTCHA on that service). Shared here too so `npx
+      # playwright cli` and `npx playwright test` resolve @playwright/test
+      # from inside `workspace` — the client half of the authoring loop below.
+      - e2e_node_modules:${PWD}/e2e/node_modules
+      # The other half: see the matching comment on the `e2e` service. Both
+      # mounts are required together — one without the other destroys live
+      # sessions rather than failing cleanly.
+      - playwright_registry:/root/.cache/ms-playwright/b
+      - playwright_sockets:/tmp/pw-sockets
       # Claude's settings, skills, memory and session history. The memory
       # directory is keyed by project path, which the identical-path mount
       # leaves unchanged, so sessions carry over from host to container.
@@ -234,11 +283,20 @@ services:
     environment:
       <<: *dev-env
       SSH_AUTH_SOCK: /tmp/1password-agent.sock
+
       # See the comment on the .claude mount above: this redirects
       # .claude.json into that already-mounted, already-persisted directory.
       CLAUDE_CONFIG_DIR: /root/.claude
+
+      # Strictly, this side only needs the matching *mount* above: it connects to
+      # the absolute socket path recorded in the descriptor, which `e2e` wrote.
+      # Set anyway so both ends declare the same path, and so this container's
+      # own CLI daemon does not scatter sockets somewhere unshared.
+      PWTEST_SOCKETS_DIR: /tmp/pw-sockets
 
 volumes:
   pgdata:
   node_modules:
   e2e_node_modules:
+  playwright_registry:
+  playwright_sockets:
