@@ -1,8 +1,9 @@
 # Development guide
 
-Development happens in containers. `docker compose up` starts the database, the API and the
-frontend; the tools you develop _with_ — pytest, ruff, mypy, npm, git, `gh`, Claude Code — live in a
-dev image (`Dockerfile.dev`) rather than on the Mac. A clean machine needs Docker and nothing else.
+Development happens in containers. `docker compose up` starts the database, the API, the frontend, a
+reverse proxy that puts them on one origin, and a browser server for Playwright; the tools you
+develop _with_ — pytest, ruff, mypy, npm, git, `gh`, Claude Code — live in a dev image
+(`Dockerfile.dev`) rather than on the Mac. A clean machine needs Docker and nothing else.
 
 Two consequences are worth knowing before anything below makes sense:
 
@@ -36,17 +37,27 @@ or set `POSTGRES_PORT` — both want port 5432.
 docker compose up
 ```
 
-| Service     | Port   | What it runs                                                       |
-| ----------- | ------ | ------------------------------------------------------------------ |
-| `db`        | `5432` | PostgreSQL 18                                                      |
-| `api`       | `8000` | `uvicorn --reload` — restarts on backend edits                     |
-| `frontend`  | `4200` | `ng serve --host 0.0.0.0` — rebuilds on frontend edits             |
-| `workspace` | —      | Nothing. It exists to be attached to and `exec`'d into (see below) |
+| Service     | Port   | What it runs                                                         |
+| ----------- | ------ | -------------------------------------------------------------------- |
+| `db`        | `5432` | PostgreSQL 18                                                        |
+| `api`       | `8000` | `uvicorn --reload` — restarts on backend edits                       |
+| `frontend`  | —      | `ng serve --host 0.0.0.0` — rebuilds on frontend edits               |
+| `proxy`     | `8080` | Caddy. `/api/*` → `api`, everything else → `frontend`                |
+| `browsers`  | —      | `playwright run-server`. Browser binaries live here and nowhere else |
+| `workspace` | —      | Nothing. It exists to be attached to and `exec`'d into (see below)   |
+| `e2e`       | —      | CI's entry point for the Playwright suite. Not started by `up`       |
 
-The app is at **http://localhost:4200** and the API docs at **http://localhost:8000/docs**.
+The app is at **http://localhost:8080** — the proxy, which is the only address where the app and its
+API share an origin, the shape production has (see
+[ADR-0029](decisions/0029-single-origin-via-a-reverse-proxy.md)). The frontend deliberately
+publishes no port of its own, so there is no second address where the app loads but every API call
+fails.
+
+The API docs stay at **http://localhost:8000/docs**. FastAPI serves them from the app root, outside
+the `/api` prefix the proxy routes, so that one is reached directly.
 
 On the very first `up`, expect a few minutes: Docker builds the dev image, the database container
-creates its three databases, and the frontend runs `npm ci`. After that, starting is quick.
+creates its two databases, and the frontend runs `npm ci`. After that, starting is quick.
 
 `api` starts with the same three steps as the production image's `CMD`, for the same reasons:
 
@@ -69,7 +80,7 @@ way (per-worktree stacks are #184):
 | --------------- | ------- |
 | `POSTGRES_PORT` | `5432`  |
 | `API_PORT`      | `8000`  |
-| `FRONTEND_PORT` | `4200`  |
+| `PROXY_PORT`    | `8080`  |
 
 ---
 
@@ -106,6 +117,7 @@ All from inside the container:
 | ------------------ | ------------------------------------------------------------ |
 | Backend tests      | `cd backend && pytest`                                       |
 | Frontend tests     | `cd frontend && npm test`                                    |
+| E2E tests          | `cd e2e && npm test`                                         |
 | Apply migrations   | `cd backend && alembic upgrade head`                         |
 | Write a migration  | `cd backend && alembic revision --autogenerate -m "…"`       |
 | All static checks  | `pre-commit run --all-files`                                 |
@@ -184,20 +196,26 @@ copied in the Dockerfile, so this invalidates only that layer, not the whole too
 Frontend dependencies work differently: `node_modules` lives in a named volume (a bind mount of tens
 of thousands of tiny files across the macOS filesystem boundary is unusably slow), populated by
 `npm ci` on first boot only. After a `package.json` change, run `cd frontend && npm ci` inside the
-container.
+container. The e2e suite has its own copy of this arrangement, with one difference — nothing
+populates it on boot, so that `npm ci` is run by hand (see [Tests](#tests)).
 
-`docker compose down -v` throws away **both** named volumes — the databases as well as
-`node_modules`. The next `up` rebuilds all three databases, empty, and reinstalls.
+`docker compose down -v` throws away every named volume — the databases, both `node_modules`, and
+the pair carrying the Playwright authoring session. The next `up` rebuilds both databases, empty,
+and reinstalls.
 
 ---
 
 ## Database
 
-The `db` container creates all three databases (dev, test, and
-[e2e](decisions/0018-e2e-testing-database-strategy.md)) on first start and keeps them in a named
-volume, so they survive `docker compose down`. Only creation happens there: init scripts run once,
-when the data directory is empty, and never again — which suits creating a database and nothing that
-has to be reconciled on every boot.
+The `db` container creates both databases — dev and
+[test](decisions/0014-dedicated-test-database.md) — on first start and keeps them in a named volume,
+so they survive `docker compose down`. Only creation happens there: init scripts run once, when the
+data directory is empty, and never again — which suits creating a database and nothing that has to
+be reconciled on every boot.
+
+There is no separate database for e2e. The Playwright suite runs against the dev database
+([ADR-0030](decisions/0030-e2e-runs-against-the-compose-dev-stack.md)), which means **an e2e run
+wipes the dev data.** `python -m scripts.seed_dev` puts it back.
 
 Nothing database-related needs configuring. `DATABASE_URL` defaults to the compose database, and the
 `app_user` connection is _derived_ from it by swapping the credentials (`backend/app/db_url.py`), so
@@ -238,16 +256,11 @@ get a container that can't reach its own database.
 | `APP_DB_PASSWORD`       | yes      | `RuntimeError` at boot, deliberately — never a default off-laptop.               |
 | `SESSION_SECRET`        | yes      | `ValueError` at boot.                                                            |
 | `GOOGLE_REDIRECT_URI`   | yes      | The derived URI comes out `http://` behind the TLS proxy, and Google rejects it. |
-| `FRONTEND_URL`          | yes      | **Silently** redirects users to `localhost:4200` after login.                    |
+| `FRONTEND_URL`          | yes      | **Silently** redirects users to `localhost:8080` after login.                    |
 | `SESSION_COOKIE_SECURE` | yes      | **Silently** allows the session cookie over plain http.                          |
 
 The bottom three fail quietly, which is the reason they're worth listing rather than leaving to be
 discovered.
-
-### Overrides that exist but nothing sets
-
-`APP_DATABASE_URL` and `APP_TEST_DATABASE_URL` are honoured if set, but only so the e2e suite can
-point its backend at the owner connection until #181 lands. Don't set them anywhere else.
 
 ### Deploying somewhere new
 
@@ -267,16 +280,16 @@ the same OAuth client, in the Google Cloud console under **APIs & Services → C
 
 | Environment | URI                                       |
 | ----------- | ----------------------------------------- |
-| Local       | `http://localhost:4200/api/auth/callback` |
+| Local       | `http://localhost:8080/api/auth/callback` |
 | Each deploy | `https://<domain>/api/auth/callback`      |
 
 Google only permits plain `http` for `localhost` / `127.0.0.1`; anything else must be `https`. An
 unregistered URI fails with `Error 400: invalid_request` before the sign-in prompt.
 
 The backend derives the redirect URI from the request's `Host` header
-(`request.url_for("callback")`) unless `GOOGLE_REDIRECT_URI` is set. That's why
-`frontend/proxy.conf.json` keeps `"changeOrigin": false` — with it `true`, the dev server rewrites
-`Host` to `api:8000`, which Google refuses.
+(`request.url_for("callback")`) unless `GOOGLE_REDIRECT_URI` is set. That's why the Caddyfile
+rewrites `Host` on its frontend route only and passes `/api/*` through untouched — the backend has
+to see the address the browser actually used, or Google gets a URI it doesn't recognise.
 
 ### Environment variables
 
@@ -286,7 +299,7 @@ The backend derives the redirect URI from the request's `Host` header
 | `GOOGLE_CLIENT_SECRET`  | Its secret.                                                                                       |
 | `SESSION_SECRET`        | Signs the session cookie. Supplied by `compose.yaml` locally; the app refuses to boot without it. |
 | `ALLOWED_EMAILS`        | Comma-separated, compared case-insensitively. An address not on it gets a 403 after sign-in.      |
-| `FRONTEND_URL`          | Where `/callback` redirects on success (default `http://localhost:4200`).                         |
+| `FRONTEND_URL`          | Where `/callback` redirects on success (default `http://localhost:8080`).                         |
 | `SESSION_COOKIE_SECURE` | `true` makes the session cookie https-only. Production.                                           |
 | `GOOGLE_REDIRECT_URI`   | Pins the redirect URI instead of deriving it. Unset locally; required in deployment.              |
 | `ALLOW_TEST_LOGIN`      | `true` enables `POST /api/auth/test-login`, which skips Google. Never in production.              |
@@ -364,46 +377,68 @@ Run these inside the container ([why](#why-the-checks-have-to-run-in-here)):
   pre-commit run --all-files
   ```
 
-- **End-to-end** — not yet runnable in this setup. Moving Playwright into containers is #181; until
-  then the e2e suite is CI's.
+- **End-to-end** — Playwright, from `e2e/`, with the stack up:
+
+  ```bash
+  npm ci        # first time only, and after a lockfile change
+  npm test
+  ```
+
+  The test process carries no browsers of its own. It drives the ones in the `browsers` service over
+  a websocket, and reaches the app through the proxy — both by service name, so the same commands
+  work from any container and on a CI runner
+  ([ADR-0030](decisions/0030-e2e-runs-against-the-compose-dev-stack.md)).
+
+  That `npm ci` is the one thing that isn't automatic. `e2e/node_modules` is a named volume like the
+  frontend's, but nothing populates it on boot, and an empty one presents as
+  `playwright: command not found` rather than as a missing install.
+
+  **A run truncates the dev database before every test.** `python -m scripts.seed_dev` reseeds it.
+
+  Reports land at `e2e/playwright-report/` and `e2e/test-results/`.
 
 ---
 
 ## CI runs the same image
 
-The backend and frontend workflows install nothing on the runner. They `docker compose build` the
-dev image and run every check through it — `docker compose run --rm api ruff check .`,
-`docker compose run --rm frontend npm test`, and so on — against the same `db` service used locally.
-A green run therefore means the toolchain you develop with agreed, not a similar one.
+No workflow installs anything on the runner. They `docker compose build` the dev image and run every
+check through it — `docker compose run --rm api ruff check .`,
+`docker compose run --rm frontend npm test`, `docker compose run --rm e2e npx playwright test` —
+against the same services used locally. A green run therefore means the toolchain you develop with
+agreed, not a similar one.
 
-They use the `api` and `frontend` services rather than `workspace`, because `workspace` mounts
-personal config from `$HOME`, and a bind mount pointing at a path that doesn't exist silently
-creates an empty directory rather than failing.
-
-The e2e workflow is the exception: it still installs Python, Node and browsers on the runner, and
-uses the containerized database only. That's #181.
+They use the `api`, `frontend` and `e2e` services rather than `workspace`, because `workspace`
+mounts personal config from `$HOME`, and a bind mount pointing at a path that doesn't exist silently
+creates an empty directory rather than failing. The e2e job uploads `e2e/playwright-report/` as an
+artifact when it fails.
 
 ---
 
 ## How it fits together locally
 
 ```
-                    Docker
-   ┌──────────────────────────────────────────────────────┐
-   │  frontend :4200 ──/api proxy──▶ api :8000            │
-   │       (ng serve)                 (uvicorn)           │
-   │                                     │ app_user       │
-   │                                     ▼                │
-   │                                  db :5432            │
-   │                                                      │
-   │  workspace — tests, git, pre-commit, Claude Code     │
-   └──────────────────────────────────────────────────────┘
-        │                    ▲
-   localhost:4200      repo bind-mounted at its host path
+                            Docker
+   ┌────────────────────────────────────────────────────────────┐
+   │                    proxy :8080  (Caddy)                    │
+   │                      │              │                      │
+   │            /api/*    │              │  everything else     │
+   │                      ▼              ▼                      │
+   │                  api :8000      frontend :4200             │
+   │                   (uvicorn)      (ng serve)                │
+   │                      │ app_user                            │
+   │                      ▼                                     │
+   │                   db :5432                                 │
+   │                                                            │
+   │   workspace ──playwright──▶ browsers ──requests──▶ proxy   │
+   │   (tests, git, pre-commit, Claude Code)                    │
+   └────────────────────────────────────────────────────────────┘
+        │                          ▲
+   localhost:8080        repo bind-mounted at its host path
 ```
 
-The frontend proxy targets `http://api:8000` — the compose service name — so it resolves on the
-compose network and nowhere else.
+Every arrow crosses the compose network by service name, so the same addresses work from any
+container — including on a CI runner, where the `e2e` service runs the test process in `workspace`'s
+place. Only `proxy` and `api` publish a port to the Mac.
 
 For the bigger picture — the request path, the RLS boundary, the data model — see the
 [architecture overview](architecture.md).
