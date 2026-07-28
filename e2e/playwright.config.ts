@@ -1,9 +1,5 @@
-import { defineConfig, devices } from '@playwright/test'
-import dotenv from 'dotenv'
-import path from 'path'
-import { AUTH_FILE } from './auth-file'
-
-dotenv.config({ path: path.resolve(__dirname, '.env') })
+import { defineConfig, devices } from '@playwright/test';
+import { AUTH_FILE } from './auth-file';
 
 export default defineConfig({
   testDir: './tests',
@@ -34,28 +30,21 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'db setup',
-      testMatch: /db\.setup\.ts/,
-    },
-    {
       // Logs in once via the env-gated /auth/test-login bypass and saves the
       // session to AUTH_FILE; the projects below load it as storageState so
       // every page/request starts already authenticated.
       name: 'auth setup',
       testMatch: /auth\.setup\.ts/,
-      dependencies: ['db setup'],
     },
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'], storageState: AUTH_FILE },
-      dependencies: ['db setup', 'auth setup'],
-      testIgnore: /seed\.spec\.ts/,
+      dependencies: ['auth setup'],
     },
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'], storageState: AUTH_FILE },
-      dependencies: ['db setup', 'auth setup'],
-      testIgnore: /seed\.spec\.ts/,
+      dependencies: ['auth setup'],
     },
     {
       // The only project that exercises the small-screen path: at ≤599px the
@@ -64,22 +53,7 @@ export default defineConfig({
       // device emulation, so the mobile project is Chromium-engine.)
       name: 'mobile',
       use: { ...devices['Pixel 7'], storageState: AUTH_FILE },
-      dependencies: ['db setup', 'auth setup'],
-      testIgnore: /seed\.spec\.ts/,
+      dependencies: ['auth setup'],
     },
-    // Authoring seed for the playwright-new-test skill: a single paused
-    // session to drive with playwright cli under --debug=cli. timeout: 0 so
-    // the pause never expires — never run in CI, only interactively.
-    ...(process.env['CI']
-      ? []
-      : [
-          {
-            name: 'seed',
-            testMatch: /seed\.spec\.ts/,
-            timeout: 0,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['db setup'],
-          },
-        ]),
   ],
-})
+});

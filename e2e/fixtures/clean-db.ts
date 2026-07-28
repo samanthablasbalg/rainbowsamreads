@@ -6,8 +6,11 @@ import { Client } from 'pg';
 // database before each test, so tests never see each other's data. Scenario
 // fixtures (e.g. a "five books in the library" one) extend this to inherit both.
 
-const dbUrl = process.env['E2E_DATABASE_URL'];
-if (!dbUrl) throw new Error('E2E_DATABASE_URL is not set');
+// Hardcoded rather than read from the environment: there is one database now, and
+// this string is correct from inside any container on the compose network. It
+// connects as the owner (`postgres`), not the app's restricted `app_user`, because
+// truncating is exactly what RLS is there to stop.
+const dbUrl = 'postgresql://postgres:postgres@db:5432/reading_tracker';
 
 export const test = base.extend<{ cleanDb: void }>({
   // `auto: true` means this runs for every test without the test having to ask for it.
