@@ -19,6 +19,17 @@ export default defineConfig({
     // the same single origin for /api/* and everything else that a human
     // browsing the published port would see.
     baseURL: 'http://proxy:8080',
+    // Browsers run in the `browsers` service, not in whatever container this
+    // process is in — so the test process only ever needs Node, and the browser
+    // binaries stay out of the dev image. Resolved by service name, which works
+    // identically from `workspace` (authoring) and from `e2e` (CI), keeping the
+    // two topologies the same.
+    //
+    // Note the split this introduces: `request` / ApiClient are HTTP clients in
+    // *this* process, while `page` and `page.request` run in the remote browser
+    // and resolve baseURL from there. Anything pointed at localhost would see
+    // two different machines; every URL here is a service name, so nothing does.
+    connectOptions: { wsEndpoint: 'ws://browsers:5000/' },
     trace: 'retain-on-failure',
   },
   projects: [

@@ -134,6 +134,79 @@ services:
       retries: 10
       start_period: 10s
 
+  # Browser binaries live here and nowhere else.
+  #
+  # The test *process* runs on the dev image and drives these over a websocket
+  # (playwright.config.ts sets connectOptions). That split is the point: browsers
+  # and their system libraries never enter Dockerfile.dev, which the api and
+  # frontend CI jobs both build on every run — and it is what lets a test process
+  # in `workspace` reach the full browser matrix without a Docker socket, so
+  # authoring and running the suite need no human in the loop.
+  #
+  # Not profiled: this is part of the standing stack, because anything running
+  # tests needs it already up.
+  browsers:
+    image: mcr.microsoft.com/playwright:v1.62.0-noble
+    working_dir: ${PWD}/e2e
+    # Half of the authoring bridge; `workspace` holds the other half. Needed here
+    # rather than on the test-process side because browser.bind() — what a
+    # --debug=cli run calls to publish a paused session — is a channel call
+    # executed by the *server*, so the descriptor and socket are created in this
+    # container no matter where the test process runs.
+    #
+    # PWTEST_SOCKETS_DIR is an internal Playwright escape hatch (the PWTEST_
+    # prefix is upstream's marker for "may move without notice"), accepted
+    # because it is load-bearing for authoring only: nothing in the suite or CI
+    # reads it, so the worst a version bump can do is stop `playwright cli
+    # attach` working until the paths are found again.
+    environment:
+      PWTEST_SOCKETS_DIR: /tmp/pw-sockets
+    volumes:
+      - .:${PWD}
+      - e2e_node_modules:${PWD}/e2e/node_modules
+      # `playwright cli attach <name>` needs two things from whichever container
+      # hosts the browser, and neither is where you would guess:
+      #
+      #   1. The descriptor bind() writes, which lands in
+      #      ~/.cache/ms-playwright/**b** — NOT the .../daemon sibling, which is
+      #      only the CLI *client's* scratch space for daemons it spawns itself.
+      #   2. The Unix socket that descriptor points at, built from os.tmpdir()
+      #      and so relocated out of the private /tmp by the env var above.
+      #
+      # Both must be shared, and shared *together*: serverRegistry.list() probes
+      # every descriptor it can see and DELETES the ones it cannot connect to, so
+      # a client that can read b/ but cannot reach the socket erases live
+      # sessions rather than failing cleanly.
+      #
+      # Named volumes, not bind mounts: virtiofs does not carry Unix domain
+      # sockets across the macOS host boundary.
+      - playwright_registry:/root/.cache/ms-playwright/b
+      - playwright_sockets:/tmp/pw-sockets
+    # The same first-boot guard the frontend service uses, for the same reason:
+    # the named volume starts empty and nothing else fills it. Legal here but not
+    # on `e2e` below, because that one is only ever reached through
+    # `docker compose run`, which replaces `command:` outright.
+    #
+    # The locally installed playwright rather than the docs' `npx -y
+    # playwright@1.62.0`: it is the same package the specs import, so the
+    # client/server version check cannot drift, and no fetch happens on boot.
+    command: >
+      sh -c "[ -e node_modules/.bin/playwright ] || npm ci;
+      exec npx playwright run-server --host 0.0.0.0 --port 5000"
+    # node, not curl or wget: the endpoint is a websocket, so an HTTP probe
+    # proves nothing, and a bare TCP connect is what "accepting clients" means.
+    # node is the one interpreter this image is guaranteed to have.
+    healthcheck:
+      test:
+        - "CMD"
+        - "node"
+        - "-e"
+        - "require('net').connect(5000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
   # Not built from Dockerfile.dev like the services above — the browser binaries
   # come from Microsoft's own image, pinned to the same version as
   # @playwright/test in e2e/package.json (Playwright checks the two against
@@ -159,48 +232,12 @@ services:
     # healthy) still get started either way.
     profiles: ["tools"]
     working_dir: ${PWD}/e2e
-    # Half of the authoring bridge (#181 workflow 3); the volumes below are the
-    # other half, and carry the full explanation.
-    #
-    # The socket a paused session listens on is derived from os.tmpdir(), so by
-    # default it lands in /tmp — private to each container and therefore
-    # unreachable from `workspace`. This relocates it somewhere shareable.
-    #
-    # PWTEST_SOCKETS_DIR is an internal Playwright escape hatch, not public API:
-    # the PWTEST_ prefix is upstream's own marker for "may move without notice".
-    # Accepted deliberately, because it is load-bearing for authoring only —
-    # nothing in the suite or in CI touches this plumbing, so the worst a version
-    # bump can do is stop `playwright cli attach` from working until the paths
-    # are found again.
-    environment:
-      PWTEST_SOCKETS_DIR: /tmp/pw-sockets
+    # No bridge mounts here: browsers no longer run in this container, so nothing
+    # publishes a session from it. They live on `browsers` instead — see the
+    # comment there for why bind() writes server-side.
     volumes:
       - .:${PWD}
       - e2e_node_modules:${PWD}/e2e/node_modules
-      # Bridges a paused test out to `workspace`, so Claude can drive the browser
-      # while authoring specs. `playwright cli attach <name>` needs two things
-      # from whichever container is hosting the browser, and neither one is where
-      # you would guess:
-      #
-      #   1. The browser descriptor. A paused test calls browser.bind(<name>),
-      #      which writes a JSON descriptor into ~/.cache/ms-playwright/**b**.
-      #      NOT .../daemon — that sibling directory is only the CLI *client's*
-      #      scratch space for daemons it spawns itself, and the hosting side
-      #      never writes to it. Sharing .../daemon (as this file used to) shares
-      #      nothing the other end ever reads.
-      #   2. The Unix socket that descriptor points at — moved out of /tmp by
-      #      PWTEST_SOCKETS_DIR above.
-      #
-      # Both have to be shared, and shared *together*. serverRegistry.list()
-      # probes every descriptor it can see and DELETES any it cannot connect to,
-      # so a `workspace` that can read b/ but cannot reach the socket does not
-      # merely fail to attach — it erases the descriptor of a live, running
-      # session.
-      #
-      # Named volumes rather than bind mounts: Docker Desktop's virtiofs does not
-      # carry Unix domain sockets across the macOS host boundary.
-      - playwright_registry:/root/.cache/ms-playwright/b
-      - playwright_sockets:/tmp/pw-sockets
     # Depending on proxy alone is enough: compose walks the chain, and proxy
     # already requires api and frontend to be healthy first.
     depends_on:
