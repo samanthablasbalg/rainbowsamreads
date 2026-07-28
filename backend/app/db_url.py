@@ -33,8 +33,8 @@ TEST_DATABASE_URL = "postgresql://postgres:postgres@db:5432/reading_tracker_test
 DEFAULT_APP_DB_PASSWORD = "local-dev-only"
 
 # Hosts whose databases are disposable, so a default password is harmless.
-# "db" is how containers reach it; "localhost" covers the e2e suite, which
-# reaches the same compose database through its published port.
+# "db" is how every container reaches it; the loopback addresses cover anything
+# run against the published port from outside the compose network.
 LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "db"})
 
 
