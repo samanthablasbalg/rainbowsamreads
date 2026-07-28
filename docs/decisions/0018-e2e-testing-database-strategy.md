@@ -1,6 +1,6 @@
 # 0018. End-to-end testing database strategy
 
-- Status: Accepted
+- Status: Superseded by [[0030-e2e-runs-against-the-compose-dev-stack]]
 - Date: 2026-06-14
 
 ## Context
