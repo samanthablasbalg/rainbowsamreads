@@ -152,6 +152,12 @@ services:
   # an empty volume.
   e2e:
     image: mcr.microsoft.com/playwright:v1.62.0-noble
+    # Excludes this from `docker compose up` — it has no command (see below)
+    # and would just start and exit immediately as part of the standing stack.
+    # `docker compose run --rm e2e <command>` still works: profiles only gate
+    # `up`, not `run`, and its dependencies (proxy, which needs api/frontend
+    # healthy) still get started either way.
+    profiles: ["tools"]
     working_dir: ${PWD}/e2e
     volumes:
       - .:${PWD}
