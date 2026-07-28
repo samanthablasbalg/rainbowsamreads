@@ -310,18 +310,19 @@ failing.
 ## Seeding development data
 
 `backend/scripts/seed_dev.py` populates the dev database by calling the running backend's API. From
-inside the container, with the stack up:
+`backend/`, with the stack up:
 
 ```bash
-DATABASE_URL=postgresql://postgres:postgres@db:5432/reading_tracker \
-  BASE_URL=http://api:8000 \
-  python backend/scripts/seed_dev.py
+python -m scripts.seed_dev
 ```
 
-Both variables are needed, and neither is optional: the script reads `DATABASE_URL` directly rather
-than through `db_url.py` (so it fails with a `KeyError` when unset), and its default `BASE_URL` of
-`127.0.0.1:8000` means _this container_, not the `api` service. It authenticates through
-`POST /auth/test-login`, so the API needs `ALLOW_TEST_LOGIN=true`.
+Run as a module, not as a file: executing it directly puts `scripts/` on `sys.path` instead of
+`backend/`, and the import of `db_url` fails.
+
+`DATABASE_URL` and `BASE_URL` both default correctly inside the stack — the database through
+`db_url.py`, so it matches what the app and migrations use — and either can still be set to point
+the seed somewhere else. It authenticates through `POST /auth/test-login`, so the API needs
+`ALLOW_TEST_LOGIN=true`.
 
 That leaves 8 books and 5 engagements — 3 reading, 1 finished, 1 DNF.
 

@@ -9,10 +9,12 @@ from typing import cast
 import psycopg2
 from dotenv import load_dotenv
 
+from app.db_url import owner_database_url
+
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env"))
 
-DATABASE_URL = os.environ["DATABASE_URL"]
-BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:8000")
+DATABASE_URL = os.environ.get("DATABASE_URL") or owner_database_url()
+BASE_URL = os.environ.get("BASE_URL", "http://proxy:8080")
 
 # A plain urllib call carries no cookies, so without this, every request below
 # would look like an anonymous visitor and get 401'd — see login().
