@@ -5,6 +5,11 @@ paths:
 
 # Playwright e2e conventions
 
+> **Authoring a new test is currently broken.** The seed spec the `--debug=cli` loop pauses in was
+> deleted and has not been rebuilt — #190. Running, editing and fixing existing specs all work; only
+> the drive-the-live-app step of `.claude/skills/playwright-new-test` does not. Everything below is
+> current.
+
 The standards for writing and editing Playwright e2e tests in `e2e/`. Follow this file over any
 external Playwright-docs default.
 
@@ -18,55 +23,50 @@ external Playwright-docs default.
   `.extend`s the previous test, not `@playwright/test`), **depend to order** (a fixture runs after
   another by destructuring it).
 - `e2e/api/api-client.ts` — `ApiClient` for backend data setup.
-- `e2e/tests/seed.spec.ts` — the authoring seed (its own `seed` project, excluded from the suite).
 
-## Auth & seed
+## Where the suite runs
+
+The suite owns no processes. `compose.yaml` runs the app, and the test process joins the network
+([ADR-0030](../../docs/decisions/0030-e2e-runs-against-the-compose-dev-stack.md)). Three
+consequences shape how specs are written:
+
+- **One origin, by service name.** `baseURL` is `http://proxy:8080`, and `ApiClient` uses relative
+  `/api/...` paths against it. Never write `localhost` — the test process and the browser are
+  different containers, so it would mean two different machines.
+- **Browsers are remote.** They run in the `browsers` service, reached over `connectOptions`. `page`
+  and `page.request` execute there; `request` and `ApiClient` execute in the test process.
+- **One database, and the app connects as `app_user`.** RLS is live under the suite, the same as
+  production. The schema is already provisioned and migrated by the `api` service before it reports
+  healthy, so nothing in `e2e/` sets a database up.
+
+## Auth & isolation
 
 Every route is login-gated (Google OAuth). The `auth setup` project (`tests/auth.setup.ts`) logs in
-once per run via the env-gated `POST /auth/test-login` bypass (active only when
-`ALLOW_TEST_LOGIN=true`; set for the e2e backend, and also for local dev so
-`scripts/seed_dev.py` can authenticate — see below) and saves the session to
-`e2e/.auth/user.json`; `chromium`/`firefox`/`mobile` load it as `storageState`, so every
-`page`/`request` starts already authenticated. `test-login` takes a `persona`
-(`"e2e"` default, or `"dev"`) that picks a fixed, hardcoded email — never a caller-supplied one —
-so the bypass can never mint a session for an arbitrary address.
+once per run via the env-gated `POST /auth/test-login` bypass (`ALLOW_TEST_LOGIN=true`, set on the
+`api` service) and saves the session to `e2e/.auth/user.json`; `chromium`/`firefox`/`mobile` load it
+as `storageState`, so every `page`/`request` starts already authenticated. One call is enough —
+there is one origin for the cookie to land under. `test-login` takes a `persona` (`"e2e"` default,
+or `"dev"`) that picks a fixed, hardcoded email — never a caller-supplied one — so the bypass can
+never mint a session for an arbitrary address.
 
-- **Schema** is provisioned by the `db setup` project (`tests/db.setup.ts`): it creates the e2e
-  database if missing and runs `alembic upgrade head`. Every other project depends on it.
-- **Data isolation** is per-test truncation. Specs import `test`/`expect` from the `fixtures/`
-  tree — never `@playwright/test` directly — and the base `test` carries an `auto` fixture that
-  truncates every table before each test **except `users`** — truncating it would orphan the
-  session `auth setup` already established. With `workers: 1` that means each test starts from an
+- **Data isolation** is per-test truncation. Specs import `test`/`expect` from the `fixtures/` tree
+  — never `@playwright/test` directly — and the base `test` carries an `auto` fixture that truncates
+  every table before each test **except `users`** — truncating it would orphan the session
+  `auth setup` already established. With `workers: 1` that means each test starts from an
   otherwise-empty DB, so tests use **fixed** identifiers and need **no** per-test cleanup or unique
   suffixes.
 - **Data setup** goes through `ApiClient` (`e2e/api/api-client.ts`), built from the `request`
-  fixture, hitting the e2e backend on :8001 directly.
-
-The **authoring seed** (`tests/seed.spec.ts`, the `seed` project) runs `seed_dev.py`, logs the
-browser in, then navigates to `/` and `page.pause()`s so `playwright cli` can drive one live
-session under `--debug=cli`. It is excluded from the browser projects via `testIgnore`, from CI via
-a `process.env['CI']` check in `playwright.config.ts` (it's an interactive tool, not a regression
-check), and runs with `timeout: 0`. The authoring loop is in the skill. `seed_dev.py`, the dev-data
-seeder it runs, authenticates via `POST /auth/test-login` with `persona: "dev"` before creating any
-books/engagements — the same email `reset()` already hardcodes, so both agree on one user
-regardless of which database (local dev or e2e) it points at. The spec itself then makes that same
-`persona: "dev"` call via `page.request` before navigating, so the paused session is logged in as
-the user the data actually belongs to and lands on the authenticated app with the seeded books
-visible, not the guest landing page.
-
-> Forward note: serial truncation is the **current** model, not the destination. Parallelism is a
-> known future direction (#65) and will retire the global truncate in favour of
-> unique-id data and scoped cleanup. Don't pre-build for it — but when it lands, the fixed-id and
-> no-cleanup rules below flip.
+  fixture.
 
 ## Running
 
-- Run a spec with the dot reporter:
-  `npm test -- tests/<feature>/<name>.spec.ts --reporter=dot`. The repo's default reporter is
-  `html`; always pass `--reporter=dot` for a readable run.
-- Single browser (chromium); `webServer` auto-starts the e2e backend on :8001 and the frontend on
-  :4201.
+Run these from `e2e/`.
+
+- Run a spec with the dot reporter: `npm test -- tests/<feature>/<name>.spec.ts --reporter=dot`. The
+  repo's default reporter is `html`; always pass `--reporter=dot` for a readable run.
+- All three projects run by default. `--project=chromium` for a single browser while iterating.
 - Flakiness check: `--repeat-each=10`. Any failure = flaky = not done.
+- If `playwright` isn't found, `e2e/node_modules` is an empty volume — run `npm ci`.
 
 ## Quality gate
 
@@ -87,8 +87,8 @@ line is setup, action, or assertion. Production-code habits are anti-patterns:
   allowed).
 - **No defensive parsing or graceful recovery** — don't guard against malformed responses, missing
   tokens, or bad state. Fail loudly so the signal is real.
-- **No redundant guards** — don't re-check env that `db setup` already provisioned; don't `waitFor`
-  before a click (Playwright auto-waits).
+- **No redundant guards** — don't re-check a schema the `api` service already migrated; don't
+  `waitFor` before a click (Playwright auto-waits).
 - **No wrapper indirection or `unknown`-type juggling** — no one-off helper abstractions, no
   branching on response shape.
 - If you're adding a safety net, you're solving the wrong problem. Trust the framework (auto-waits,
@@ -128,7 +128,7 @@ line is setup, action, or assertion. Production-code habits are anti-patterns:
   stubs, navigation). Loose actions at the top of the test body don't appear in the report; a reader
   should see the test's phases — setup → exercise → verify — from the step list alone.
 - **Verification is its own step**, titled for what it checks, so the verify phase is visible. The
-  one exception: an assertion that *gates a precondition* (confirming a setup action took effect
+  one exception: an assertion that _gates a precondition_ (confirming a setup action took effect
   before the test proceeds) rides inside that setup/exercise step instead of standing alone.
 - No `page.waitForTimeout()` and no `networkidle` — use `toBeVisible` / `toHaveURL` /
   `waitForResponse` / `domcontentloaded`.
@@ -166,9 +166,9 @@ Tests that need backend data create it through `ApiClient` (`e2e/api/api-client.
 ## Naming
 
 - **Name the spec file for the feature/surface under test, matching its Page Object** —
-  `e2e/tests/navigation/sidebar.spec.ts` ↔ `e2e/page-objects/sidebar.page.ts`. **Not** the
-  scenario: never `sidebar-collapse.spec.ts`. The file is the home for every test of that surface;
-  the specific scenario is the `test()` title, and more scenarios go in the same file.
+  `e2e/tests/navigation/sidebar.spec.ts` ↔ `e2e/page-objects/sidebar.page.ts`. **Not** the scenario:
+  never `sidebar-collapse.spec.ts`. The file is the home for every test of that surface; the
+  specific scenario is the `test()` title, and more scenarios go in the same file.
 - **Test titles: present tense, first letter capitalized** — e.g.
   `'Collapsing the sidebar persists across reload'` (not `'collapses…'`, not `'should…'`).
 - kebab-case filenames; camelCase identifiers.

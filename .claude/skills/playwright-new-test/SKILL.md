@@ -12,6 +12,17 @@ allowed-tools: Bash(npx playwright test:*), Bash(npx playwright cli:*), Bash(npm
 
 # Author a new Playwright e2e test
 
+> **⚠️ This skill has one step that cannot be run. Read this before starting.**
+>
+> Step 3 drives the live app through a seed spec paused under `--debug=cli`. That spec was deleted
+> and has not been rebuilt, and there is no `seed` project in `playwright.config.ts` to run it —
+> **#190**. Without it there is nothing to attach to, and locators cannot be confirmed against a
+> live snapshot, which every later step depends on.
+>
+> **Say so and stop.** Do not substitute `npx playwright cli open` (there are no browsers in this
+> container), do not write the spec from source locators, and do not invent a seed spec — what it
+> should do is the open question on #190. Every other step is current and correct for when it lands.
+
 Turn a GitHub issue, a markdown test plan, or a plain-English description into one working, verified
 Playwright test for the reading tracker app.
 
@@ -19,25 +30,22 @@ Playwright test for the reading tracker app.
 
 - **NEVER touch the backend with raw HTTP. No `curl`, `wget`, `fetch`, `httpie`, or any hand-rolled
   request — in ANY step, for ANY reason.** Spec data setup goes through `ApiClient` only (Step 5),
-  and `ApiClient` exists *only* inside a test's fixture context — it is NOT available while driving.
-  The live driving session (Step 3) runs against books **already seeded in the e2e DB on purpose**,
-  so this skill runs with minimal intervention. You almost never need to create anything; if you
-  think you do, you're wrong — `snapshot` and look at what's there. If something is genuinely
-  missing, STOP and ask the user. Reaching around the harness with `curl` is the single most
-  forbidden move in this skill.
+  and `ApiClient` exists _only_ inside a test's fixture context — it is NOT available while driving.
+  You almost never need to create anything; if you think you do, you're wrong — `snapshot` and look
+  at what's there. If something is genuinely missing, STOP and ask the user. Reaching around the
+  harness with `curl` is the single most forbidden move in this skill.
 - **NEVER manipulate a database out-of-band.** No `alembic stamp` / `alembic downgrade`, no raw
   `psql`/SQL DDL (`ALTER` / `DROP` / `CREATE` / `ADD COLUMN`), no hand-editing of `alembic_version`
-  or the schema — against ANY database, and *especially* the e2e DB. The e2e database is owned
-  entirely by `db.setup` (it resets the schema and rebuilds it from the models on every run);
-  reaching around it is exactly what corrupted this database once before — a `stamp`ed-but-never-
-  applied migration that read as "up to date" while the column was missing, and it cost a full
-  session to diagnose. If the schema looks wrong, the fix is to let `db.setup` rebuild it (or fix
-  `db.setup` itself) — never a manual command. Read-only inspection (`\d`, `SELECT`) is fine;
-  mutation never is.
+  or the schema — against ANY database. The schema is owned entirely by the `api` service, which
+  runs `python -m app.provision && alembic upgrade head` before it reports healthy; reaching around
+  it is exactly what corrupted this database once before — a `stamp`ed-but-never-applied migration
+  that read as "up to date" while the column was missing, and it cost a full session to diagnose. If
+  the schema looks wrong, the fix is a migration and a restart of `api` — never a manual command.
+  Read-only inspection (`\d`, `SELECT`) is fine; mutation never is.
 - **The user's live instructions ALWAYS override this procedure.** If they say stop / hold / wait /
   don't, you halt ALL tool use immediately — no "but this next step is fine," no carve-outs, no
   finishing the action you'd already decided on. This skill's "don't over-ask" guidance below is
-  about not pestering for permission to *write the test*; it is never license to ignore a direct
+  about not pestering for permission to _write the test_; it is never license to ignore a direct
   command. When in doubt, you have already taken too many actions — stop and read.
 - **You run in the main conversation loop.** Do NOT spawn sub-agents — the user needs to see
   progress and step in. Work the steps yourself, in order.
@@ -51,10 +59,10 @@ Playwright test for the reading tracker app.
 - **Always tear down by calling `npx playwright cli --s=<session> resume` when you are done
   driving.** This unblocks `page.pause()`, the test completes, the browser closes, and the process
   exits — all automatically. Never use `close`, `kill`, `pkill`, or `TaskStop`.
-- **Stop and ask — don't spin.** If the _environment_ is broken — the app is a blank screen or
-  won't boot — STOP immediately and tell the user exactly what you saw. Do NOT
-  re-attach, re-snapshot, retry, or keep driving. A broken app is the user's to fix, not yours to
-  work around; spinning on it wastes their time and yours.
+- **Stop and ask — don't spin.** If the _environment_ is broken — the app is a blank screen or won't
+  boot — STOP immediately and tell the user exactly what you saw. Do NOT re-attach, re-snapshot,
+  retry, or keep driving. A broken app is the user's to fix, not yours to work around; spinning on
+  it wastes their time and yours.
 
 ## Step 0 — Triage the test type
 
@@ -104,13 +112,15 @@ exists. Then produce a written triage — do not skip this, do not abbreviate it
 2. For each scenario you are considering as an e2e test, answer: **"What does this test that Vitest
    cannot?"** Valid answers are narrow:
    - Real cross-component navigation (a router transition that spans two mounted components)
-   - Real backend contract (the frontend's request shape actually reaches and is accepted by the live
-     backend, and the response is correctly rendered — not just that Angular called `http.patch()`)
-   - Real browser behaviour JSDOM cannot replicate (file choosers, clipboard, resize observers, etc.)
+   - Real backend contract (the frontend's request shape actually reaches and is accepted by the
+     live backend, and the response is correctly rendered — not just that Angular called
+     `http.patch()`)
+   - Real browser behaviour JSDOM cannot replicate (file choosers, clipboard, resize observers,
+     etc.)
 3. **Always keep one happy-path round-trip per major user action,** even when Vitest covers the same
    scenario. A Vitest test that mocks the HTTP response proves the component wires up correctly; it
-   does not prove the frontend request shape actually reaches and is accepted by the real backend, or
-   that the real response renders correctly. One e2e test per action closes that gap.
+   does not prove the frontend request shape actually reaches and is accepted by the real backend,
+   or that the real response renders correctly. One e2e test per action closes that gap.
 4. **Drop any scenario beyond the happy path where Vitest already covers it.** A Vitest test that
    mocks a 409 and verifies the error message is displayed already covers the error path. An e2e
    test that does the same thing with a real backend adds almost nothing — the backend has its own
@@ -125,14 +135,18 @@ tests almost never meet the bar when a Vitest spec already exists.
 > **HARD GATE — no code, no plan, no confirmation request.** After Step 2 (including the Vitest
 > triage) your next action is launching the seed (Step 3). Do not write POM or spec code. Do not
 > present a plan and ask the user to confirm it. The user invoking this skill is already the
-> confirmation. Candidate locators from source are unconfirmed until a live `playwright cli
-> snapshot` validates them — writing tests from source locators is the mistake this gate exists to
-> prevent. The Vitest triage is the other mistake this gate exists to prevent.
+> confirmation. Candidate locators from source are unconfirmed until a live
+> `playwright cli snapshot` validates them — writing tests from source locators is the mistake this
+> gate exists to prevent. The Vitest triage is the other mistake this gate exists to prevent.
 
 ## Step 3 — Drive the live app (CLI-first)
 
-You don't need to start the app — the config's `webServer` brings it up on `http://localhost:4201`
-if nothing's there (first run can be slow while it boots).
+> **Blocked on #190 — the seed spec and its `seed` project do not exist.** Stop here, tell the user
+> the loop is broken and point at the issue. The rest of this step is what it looks like once the
+> seed is back.
+
+The app is already up: `docker compose up` runs it, and the test process reaches the proxy and the
+`browsers` service by name. Run these from `e2e/`.
 
 Drive through the seed so one command gives a single paused session.
 
@@ -163,12 +177,12 @@ npx playwright cli --raw generate-locator e15   # robust locator for the POM
 
 Confirm every candidate locator against the snapshot. The seed ends in `page.pause()` so the page
 stays open after the first `resume` — without it the test would finish and close the session before
-you can drive it (don't remove it). It runs on plain `@playwright/test` and doesn't truncate, so it
-lands on the books **already seeded in the e2e DB** — these exist for exactly this purpose. Drive
-against them: `snapshot` first to see what's there. Do NOT create or seed data during driving by any
-means — not `curl`/HTTP, and not through the app UI either (adding a book hits the live Google Books
-API). If the scenario needs something the seeded DB doesn't already have, **STOP and ask the user.**
-Full stop — never conjure the data yourself.
+you can drive it (don't remove it). It runs on plain `@playwright/test` and doesn't truncate, so
+whatever the seed established is still there when you attach. Drive against it: `snapshot` first to
+see what's there. Do NOT create or seed data during driving by any means — not `curl`/HTTP, and not
+through the app UI either (adding a book hits the live Google Books API). If the scenario needs
+something that isn't already there, **STOP and ask the user.** Full stop — never conjure the data
+yourself.
 
 **When done driving, call `npx playwright cli --s=<session> resume` one more time.** This unblocks
 `page.pause()`, the test completes naturally, the browser closes, and the background process exits
