@@ -127,8 +127,15 @@ services:
       # Credentials do NOT carry over: macOS keeps them in the Keychain, which a
       # Linux container cannot read. `claude` and `gh` each need one login
       # inside, after which both persist here through the bind mount.
+      #
+      # ~/.claude.json is NOT bind-mounted directly as a file. It holds the
+      # OAuth session, and a single-file bind mount pins to one inode — Claude
+      # Code rewrites the file via write-temp-then-rename, which swaps in a new
+      # inode the mount doesn't follow, corrupting the file. CLAUDE_CONFIG_DIR
+      # below fixes this instead of a file mount: Claude Code resolves
+      # .claude.json under that directory rather than under $HOME, so it lands
+      # inside this already-mounted, already-reliable directory.
       - ${HOME}/.claude:/root/.claude
-      - ${HOME}/.claude.json:/root/.claude.json
       - ${HOME}/.gitconfig:/root/.gitconfig
       # Not covered by .gitconfig above. With core.excludesFile unset, git reads
       # global ignore rules from the XDG path instead, so without this mount
@@ -152,6 +159,9 @@ services:
     environment:
       <<: *dev-env
       SSH_AUTH_SOCK: /tmp/1password-agent.sock
+      # See the comment on the .claude mount above: this redirects
+      # .claude.json into that already-mounted, already-persisted directory.
+      CLAUDE_CONFIG_DIR: /root/.claude
 
 volumes:
   pgdata:
