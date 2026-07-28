@@ -1,5 +1,5 @@
--- Creates the two databases that POSTGRES_DB cannot: the dev database is made
--- by the image at init, these are the test (ADR-0014) and e2e (ADR-0018) ones.
+-- Creates the one database POSTGRES_DB cannot: the dev database is made by the
+-- image at init, this is the test one (ADR-0014).
 --
 -- Scripts in /docker-entrypoint-initdb.d run in sorted filename order, and ONLY
 -- when the data directory is empty — never again on subsequent starts. That is
@@ -9,4 +9,3 @@
 -- provisioned on Railway too, so it lives in the application's start-up path.
 
 CREATE DATABASE reading_tracker_test;
-CREATE DATABASE reading_tracker_e2e;

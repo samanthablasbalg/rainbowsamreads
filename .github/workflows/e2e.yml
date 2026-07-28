@@ -13,61 +13,34 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
-    env:
-      E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/reading_tracker_e2e
-      # Set here rather than inherited from compose.yaml like the backend job
-      # does, because Playwright's webServer starts a bare uvicorn on the runner
-      # rather than a container. A literal, not a secret: Dependabot runs resolve
-      # secrets.* to empty, and this signs sessions in a database the job drops.
-      # Goes away when e2e moves into containers (#181).
-      SESSION_SECRET: ci-only
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # The same container definition used locally. It already creates
-      # reading_tracker_e2e, so db.setup.ts's create-if-missing is a no-op.
-      - name: Start the database
-        run: docker compose up db -d --wait
+      # Same image as Backend and Frontend CI. Nothing is installed on the
+      # runner: the test process runs in `e2e` on this image, and the browsers
+      # come from Microsoft's image via the `browsers` service.
+      - name: Build the dev image
+        run: docker compose build e2e
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.14"
-          cache: pip
-
-      - name: Install backend dependencies
-        run: pip install -r requirements.txt
-        working-directory: backend
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: frontend/package.json
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install frontend dependencies
-        run: npm ci
-        working-directory: frontend
-
+      # e2e/node_modules is a named volume that starts empty, and `run` replaces
+      # a service's command, so nothing installs into it on boot the way the
+      # frontend does. It persists between `run` invocations, so the test step
+      # below sees it.
       - name: Install e2e dependencies
-        run: npm ci
-        working-directory: e2e
+        run: docker compose run --rm e2e npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium firefox
-        working-directory: e2e
-
+      # Starts the whole chain on the way in — db, api, frontend, proxy and
+      # browsers, each waited on via depends_on/healthcheck.
       - name: Run Playwright tests
-        run: npx playwright test
-        working-directory: e2e
+        run: docker compose run --rm e2e npx playwright test
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         with:
           name: playwright-report
-          path: e2e/playwright-report/
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
           retention-days: 30

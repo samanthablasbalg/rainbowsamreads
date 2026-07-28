@@ -6,12 +6,12 @@ from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from app.db_url import configured_app_database_url
+from app.db_url import app_database_url
 
 load_dotenv()
 
-# Derived from DATABASE_URL rather than configured: see app/db_url.py.
-APP_DATABASE_URL: str = configured_app_database_url()
+# Derived from DATABASE_URL, not read directly: see app/db_url.py.
+APP_DATABASE_URL: str = app_database_url()
 
 engine = create_engine(APP_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

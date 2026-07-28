@@ -1,9 +1,5 @@
-import { defineConfig, devices } from '@playwright/test'
-import dotenv from 'dotenv'
-import path from 'path'
-import { AUTH_FILE } from './auth-file'
-
-dotenv.config({ path: path.resolve(__dirname, '.env') })
+import { defineConfig, devices } from '@playwright/test';
+import { AUTH_FILE } from './auth-file';
 
 export default defineConfig({
   testDir: './tests',
@@ -15,35 +11,40 @@ export default defineConfig({
     ? [['github'], ['list'], ['html', { open: 'never' }]]
     : [['html', { open: 'never' }]],
   use: {
-    // The e2e frontend runs on its own port (4201) so it never collides with a
-    // dev server on 4200. See the webServer config below.
-    baseURL: 'http://localhost:4201',
+    // The Caddy proxy, resolved by service name on the compose network —
+    // the same single origin for /api/* and everything else that a human
+    // browsing the published port would see.
+    baseURL: 'http://proxy:8080',
+    // Browsers run in the `browsers` service, not in whatever container this
+    // process is in — so the test process only ever needs Node, and the browser
+    // binaries stay out of the dev image. Resolved by service name, which works
+    // identically from `workspace` (authoring) and from `e2e` (CI), keeping the
+    // two topologies the same.
+    //
+    // Note the split this introduces: `request` / ApiClient are HTTP clients in
+    // *this* process, while `page` and `page.request` run in the remote browser
+    // and resolve baseURL from there. Anything pointed at localhost would see
+    // two different machines; every URL here is a service name, so nothing does.
+    connectOptions: { wsEndpoint: 'ws://browsers:5000/' },
     trace: 'retain-on-failure',
   },
   projects: [
-    {
-      name: 'db setup',
-      testMatch: /db\.setup\.ts/,
-    },
     {
       // Logs in once via the env-gated /auth/test-login bypass and saves the
       // session to AUTH_FILE; the projects below load it as storageState so
       // every page/request starts already authenticated.
       name: 'auth setup',
       testMatch: /auth\.setup\.ts/,
-      dependencies: ['db setup'],
     },
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'], storageState: AUTH_FILE },
-      dependencies: ['db setup', 'auth setup'],
-      testIgnore: /seed\.spec\.ts/,
+      dependencies: ['auth setup'],
     },
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'], storageState: AUTH_FILE },
-      dependencies: ['db setup', 'auth setup'],
-      testIgnore: /seed\.spec\.ts/,
+      dependencies: ['auth setup'],
     },
     {
       // The only project that exercises the small-screen path: at ≤599px the
@@ -52,57 +53,7 @@ export default defineConfig({
       // device emulation, so the mobile project is Chromium-engine.)
       name: 'mobile',
       use: { ...devices['Pixel 7'], storageState: AUTH_FILE },
-      dependencies: ['db setup', 'auth setup'],
-      testIgnore: /seed\.spec\.ts/,
-    },
-    // Authoring seed for the playwright-new-test skill: a single paused
-    // session to drive with playwright-cli under --debug=cli. timeout: 0 so
-    // the pause never expires — never run in CI, only interactively.
-    ...(process.env['CI']
-      ? []
-      : [
-          {
-            name: 'seed',
-            testMatch: /seed\.spec\.ts/,
-            timeout: 0,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['db setup'],
-          },
-        ]),
-  ],
-  webServer: [
-    {
-      // Dedicated e2e backend on :8001 (dev runs on :8000), bound to the e2e
-      // database via E2E_DATABASE_URL. Because the port is isolated, there is no
-      // dev server here to accidentally reuse, so the wrong-database trap can't
-      // happen regardless of reuseExistingServer.
-      command: 'cd ../backend && uvicorn app.main:app --host 127.0.0.1 --port 8001',
-      url: 'http://127.0.0.1:8001/docs',
-      reuseExistingServer: !process.env['CI'],
-      env: {
-        // The app connects via APP_DATABASE_URL (RLS-restricted role in prod).
-        // e2e is single-user, so RLS filtering changes nothing observable here;
-        // we reuse the e2e database URL directly and let the backend test suite
-        // be the place RLS is exercised as the restricted role.
-        DATABASE_URL: process.env['E2E_DATABASE_URL'] ?? '',
-        APP_DATABASE_URL: process.env['E2E_DATABASE_URL'] ?? '',
-        SESSION_SECRET: process.env['SESSION_SECRET'] ?? '',
-        // Enables POST /auth/test-login, the Google-bypass the auth setup
-        // project uses (defaults to the "e2e" persona). Scoped to this
-        // dedicated :8001 process — local dev (:8000) sets this too, to let
-        // scripts/seed_dev.py authenticate as the "dev" persona, but the
-        // pytest suite never does.
-        ALLOW_TEST_LOGIN: 'true',
-      },
-    },
-    {
-      // Dedicated e2e frontend on :4201 (dev runs on :4200), using the e2e proxy
-      // config that points /api at the e2e backend on :8001.
-      command:
-        'cd ../frontend && npm start -- --port 4201 --proxy-config proxy.e2e.conf.json',
-      url: 'http://localhost:4201',
-      reuseExistingServer: !process.env['CI'],
-      timeout: 120_000,
+      dependencies: ['auth setup'],
     },
   ],
-})
+});

@@ -1,10 +1,5 @@
 import { APIRequestContext } from '@playwright/test';
 
-// The e2e backend runs on :8001 (dev is on :8000). This client seeds data by
-// calling the API directly, bypassing the frontend proxy, so it needs the port.
-// Exported so tests/auth.setup.ts can log in against the same origin.
-export const BACKEND_URL = 'http://127.0.0.1:8001';
-
 export class ApiClient {
   /** @param request - Playwright's request context, used to call the backend. */
   constructor(private readonly request: APIRequestContext) {}
@@ -17,12 +12,12 @@ export class ApiClient {
    * @returns The new book's id.
    */
   async createBook(title: string, author: string, pageCount?: number): Promise<string> {
-    const response = await this.request.post(`${BACKEND_URL}/api/books`, {
+    const response = await this.request.post('/api/books', {
       data: { title, author, ...(pageCount != null && { page_count: pageCount }) },
     });
     const { id } = (await response.json()) as { id: string };
     for (const edition_format of ['print', 'digital', 'audio']) {
-      await this.request.post(`${BACKEND_URL}/api/editions`, {
+      await this.request.post('/api/editions', {
         data: { book_id: id, edition_format },
       });
     }
@@ -42,7 +37,7 @@ export class ApiClient {
     editionFormat = 'print',
     audioLengthMinutes?: number
   ): Promise<string> {
-    const response = await this.request.post(`${BACKEND_URL}/api/engagements`, {
+    const response = await this.request.post('/api/engagements', {
       data: {
         book_id: bookId,
         edition_format: editionFormat,
@@ -60,7 +55,7 @@ export class ApiClient {
    * @param currentPage - The page reached.
    */
   async logProgress(engagementId: string, currentPage: number): Promise<void> {
-    await this.request.post(`${BACKEND_URL}/api/engagements/${engagementId}/progress-logs`, {
+    await this.request.post(`/api/engagements/${engagementId}/progress-logs`, {
       data: { current_page: currentPage },
     });
   }
@@ -72,7 +67,7 @@ export class ApiClient {
    * @param currentMinute - The minute position reached.
    */
   async logAudioProgress(engagementId: string, currentMinute: number): Promise<void> {
-    await this.request.post(`${BACKEND_URL}/api/engagements/${engagementId}/progress-logs`, {
+    await this.request.post(`/api/engagements/${engagementId}/progress-logs`, {
       data: { current_minute: currentMinute },
     });
   }
@@ -82,7 +77,7 @@ export class ApiClient {
    * @param engagementId - The engagement to finish.
    */
   async markAsFinished(engagementId: string): Promise<void> {
-    await this.request.patch(`${BACKEND_URL}/api/engagements/${engagementId}`, {
+    await this.request.patch(`/api/engagements/${engagementId}`, {
       data: { status: 'finished' },
     });
   }
@@ -92,7 +87,7 @@ export class ApiClient {
    * @param engagementId - The engagement to DNF.
    */
   async markAsDnf(engagementId: string): Promise<void> {
-    await this.request.patch(`${BACKEND_URL}/api/engagements/${engagementId}`, {
+    await this.request.patch(`/api/engagements/${engagementId}`, {
       data: { status: 'dnf' },
     });
   }
@@ -107,7 +102,7 @@ export class ApiClient {
     engagementId: string,
     dates: { started_on?: string; finished_on?: string }
   ): Promise<void> {
-    await this.request.patch(`${BACKEND_URL}/api/engagements/${engagementId}/dates`, {
+    await this.request.patch(`/api/engagements/${engagementId}/dates`, {
       data: dates,
     });
   }
@@ -123,7 +118,7 @@ export class ApiClient {
     rating: number | null,
     body: string | null
   ): Promise<void> {
-    await this.request.put(`${BACKEND_URL}/api/engagements/${engagementId}/review`, {
+    await this.request.put(`/api/engagements/${engagementId}/review`, {
       data: { rating, body },
     });
   }

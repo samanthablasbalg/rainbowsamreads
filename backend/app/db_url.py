@@ -33,8 +33,8 @@ TEST_DATABASE_URL = "postgresql://postgres:postgres@db:5432/reading_tracker_test
 DEFAULT_APP_DB_PASSWORD = "local-dev-only"
 
 # Hosts whose databases are disposable, so a default password is harmless.
-# "db" is how containers reach it; "localhost" covers the e2e suite, which
-# reaches the same compose database through its published port.
+# "db" is how every container reaches it; the loopback addresses cover anything
+# run against the published port from outside the compose network.
 LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "db"})
 
 
@@ -89,16 +89,3 @@ def app_database_url(owner_url: str | None = None) -> str:
         authority += f":{parts.port}"
 
     return urlunsplit((parts.scheme, authority, parts.path, parts.query, ""))
-
-
-def configured_app_database_url(owner_url: str | None = None) -> str:
-    """``APP_DATABASE_URL`` if explicitly set, otherwise the derived URL.
-
-    The override exists so `e2e/playwright.config.ts` can keep pointing the e2e
-    backend at the owner connection. Without it the e2e suite would switch to
-    connecting as `app_user`, turning RLS on underneath it — which is #181's
-    job, with its own acceptance criteria, not a side effect of this module.
-    Remove the override when #181 lands; it is not a supported way to configure
-    a deployed environment.
-    """
-    return os.getenv("APP_DATABASE_URL") or app_database_url(owner_url)
