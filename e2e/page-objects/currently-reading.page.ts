@@ -60,12 +60,21 @@ export class CurrentlyReadingPage {
   }
 
   /**
-   * Locates the "View history" button for a book's card.
+   * Locates the card's overflow menu trigger, which holds history, finish, DNF
+   * and delete.
    * @param title - The book's title.
-   * @returns The view-history button locator.
+   * @returns The menu trigger locator.
    */
-  getViewHistoryButton(title: string): Locator {
-    return this.page.getByRole('button', { name: `View history for ${title}` });
+  getCardMenuButton(title: string): Locator {
+    return this.page.getByRole('button', { name: `More actions for ${title}` });
+  }
+
+  /**
+   * Opens a card's overflow menu. Its items live in an overlay - see CardMenuPage.
+   * @param title - The book's title.
+   */
+  async openCardMenu(title: string): Promise<void> {
+    await this.getCardMenuButton(title).click();
   }
 
   /**
