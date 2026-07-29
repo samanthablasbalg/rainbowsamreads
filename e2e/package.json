@@ -2,6 +2,7 @@
   "name": "reading-tracker-e2e",
   "version": "0.0.0",
   "private": true,
+  "type": "commonjs",
   "packageManager": "npm@11.13.0",
   "scripts": {
     "test": "playwright test",

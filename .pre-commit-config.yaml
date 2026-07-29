@@ -51,6 +51,13 @@ repos:
         entry: bash -c 'python3 backend/scripts/export_openapi.py && npm --prefix frontend run generate:api && git add backend/openapi.json frontend/src/app/api/generated'
         pass_filenames: false
 
+      - id: e2e-typecheck
+        name: TypeScript (e2e)
+        language: system
+        files: ^e2e/.*\.ts$
+        entry: bash -c 'npm --prefix frontend exec -- tsc -p e2e/tsconfig.json --noEmit'
+        pass_filenames: false
+
       - id: frontend-typecheck
         name: TypeScript (frontend)
         language: system
@@ -58,9 +65,12 @@ repos:
         entry: bash -c 'cd frontend && npm run typecheck'
         pass_filenames: false
 
-      - id: prettier-docs
-        name: Prettier (docs markdown)
+      # Everything outside frontend/ that prettier should still own. The frontend has
+      # its own lint-staged hook; e2e/ has no tooling of its own, so it borrows the
+      # frontend's prettier binary the same way the docs do.
+      - id: prettier-docs-e2e
+        name: Prettier (docs, e2e)
         language: system
-        files: ^docs/.*\.md$
+        files: ^(docs/.*\.md|e2e/.*\.ts)$
         entry: bash -c 'npm --prefix frontend exec -- prettier --write "$@" && git add "$@"' --
         pass_filenames: true

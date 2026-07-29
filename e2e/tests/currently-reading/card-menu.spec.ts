@@ -6,10 +6,7 @@ import { CurrentlyReadingPage } from '../../page-objects/currently-reading.page'
 import { DnfBooksPage } from '../../page-objects/dnf-books.page';
 import { FinishedBooksPage } from '../../page-objects/finished-books.page';
 
-test('Marking a book finished from the card menu moves it to Read', async ({
-  page,
-  apiClient,
-}) => {
+test('Marking a book finished from the card menu moves it to Read', async ({ page, apiClient }) => {
   const currentlyReading = new CurrentlyReadingPage(page);
   const cardMenu = new CardMenuPage(page);
   const confirmSheet = new ConfirmSheetPage(page);
