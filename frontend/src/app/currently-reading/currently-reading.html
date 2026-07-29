@@ -1,9 +1,21 @@
-<div class="book-list" role="list">
-  @for (engagement of engagements(); track engagement.id) {
-    <mat-card appearance="outlined" role="listitem" [attr.aria-label]="engagement.book.title">
-      <mat-card-content>
-        <div class="row">
-          <div class="cover">
+<section class="px-4 py-5 md:px-6">
+  <header class="flex items-baseline justify-between gap-3 mb-4">
+    <h1 class="text-page-title text-text m-0">Currently reading</h1>
+    @if (engagements().length) {
+      <span class="text-label text-muted-strong">{{ bookCountLabel() }}</span>
+    }
+  </header>
+
+  @if (engagements().length) {
+    <ul role="list" class="flex flex-col gap-3.5 list-none m-0 p-0">
+      @for (engagement of engagements(); track engagement.id) {
+        <li
+          [attr.aria-label]="engagement.book.title"
+          class="grid grid-cols-[auto_1fr_auto] gap-x-4 gap-y-2 rounded-[20px] bg-surface p-3.5 shadow-sm md:grid-cols-[auto_1fr_auto_auto_auto] md:items-center md:gap-x-5 md:gap-y-0"
+        >
+          <div
+            class="relative col-start-1 row-start-1 row-span-3 h-[90px] w-[60px] flex-none self-start overflow-hidden rounded-lg bg-surface-2 shadow-sm md:row-span-1"
+          >
             @let url = coverUrl(engagement);
             @if (url) {
               <img
@@ -11,52 +23,55 @@
                 fill
                 [priority]="$first"
                 [alt]="engagement.book.title + ' cover'"
+                class="object-cover"
               />
             }
           </div>
 
-          <div class="text">
-            <span class="title font-serif">{{ engagement.book.title }}</span>
-            <div class="author-row">
-              <span class="author">{{
-                engagement.book.authors.map((a) => a.name).join(', ')
-              }}</span>
-              @if (engagement.formats[0]) {
+          <div class="col-start-2 row-start-1 min-w-0">
+            <h2 class="text-book-title m-0 line-clamp-2 text-text">{{ engagement.book.title }}</h2>
+            <p class="m-0 mt-0.5 truncate text-sm text-muted-strong">
+              {{ engagement.book.authors.map((a) => a.name).join(', ') }}
+            </p>
+            @if (engagement.formats[0]; as format) {
+              <span
+                class="mt-2 inline-flex items-center gap-1.5 text-label uppercase tracking-wide text-muted"
+              >
                 <mat-icon
-                  class="format-icon"
+                  class="!h-4 !w-4 !text-base leading-none"
                   aria-hidden="false"
-                  [aria-label]="'Format: ' + engagement.formats[0]"
-                  >{{ formatIcon(engagement.formats[0]) }}</mat-icon
+                  [aria-label]="'Format: ' + format"
+                  >{{ formatIcon(format) }}</mat-icon
                 >
-              }
-            </div>
+                {{ format }}
+              </span>
+            }
           </div>
-          @if (showBar()) {
-            <div class="progress-col">
-              @if (engagement.completion_pct !== null) {
-                <mat-progress-bar
-                  [value]="engagement.completion_pct"
-                  [attr.aria-label]="
-                    engagement.book.title + ' progress: ' + engagement.completion_pct + '%'
-                  "
-                />
-                <span class="pct">{{ engagement.completion_pct }}%</span>
-              }
-            </div>
-          }
-          <div class="actions" [class.push-right]="!showText()">
-            @if (!showBar() && engagement.completion_pct !== null) {
-              <mat-progress-spinner
-                mode="determinate"
+
+          @if (engagement.completion_pct !== null) {
+            <div
+              class="col-start-2 row-start-2 flex items-center gap-3 md:col-start-3 md:row-start-1 md:w-[180px]"
+            >
+              <mat-progress-bar
+                class="flex-1 overflow-hidden rounded-full"
                 [value]="engagement.completion_pct"
-                [diameter]="36"
                 [attr.aria-label]="
                   engagement.book.title + ' progress: ' + engagement.completion_pct + '%'
                 "
               />
-            }
+              <span class="text-label font-sans text-muted-strong"
+                >{{ engagement.completion_pct }}%</span
+              >
+            </div>
+          }
+
+          <div
+            class="col-start-2 row-start-3 mt-1 flex items-center gap-2 md:col-start-4 md:row-start-1 md:mt-0"
+          >
             <button
-              mat-stroked-button
+              mat-flat-button
+              color="primary"
+              class="flex-1 md:flex-none"
               [attr.aria-label]="'Log progress for ' + engagement.book.title"
               (click)="openLogSheet(engagement)"
             >
@@ -77,10 +92,10 @@
               <mat-icon>delete</mat-icon>
             </button>
           </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
-  } @empty {
-    <p>No books in progress.</p>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="text-prose m-0 text-muted-strong">No books in progress.</p>
   }
-</div>
+</section>

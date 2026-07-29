@@ -51,9 +51,14 @@ html {
     )
   );
 
+  // Currently Reading is the only surface drawing a progress bar, so its shape is set
+  // here rather than in a component styles block reaching into MDC internals.
   @include mat.progress-bar-overrides(
     (
       track-color: var(--color-tint-1),
+      track-height: 8px,
+      active-indicator-height: 8px,
+      track-shape: 99px,
     )
   );
 

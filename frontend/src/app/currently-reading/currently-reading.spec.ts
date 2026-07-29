@@ -91,7 +91,7 @@ describe('CurrentlyReadingComponent', () => {
     flushReadingList();
     fixture.detectChanges();
 
-    const item = fixture.nativeElement.querySelector('mat-card');
+    const item = fixture.nativeElement.querySelector('li');
     expect(item.textContent).toContain('Dune');
     expect(item.textContent).toContain('Frank Herbert');
   });
@@ -114,7 +114,7 @@ describe('CurrentlyReadingComponent', () => {
     ]);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('mat-card').textContent).toContain(
+    expect(fixture.nativeElement.querySelector('li').textContent).toContain(
       'Terry Pratchett, Neil Gaiman',
     );
   });
@@ -145,7 +145,7 @@ describe('CurrentlyReadingComponent', () => {
     flushReadingList([{ ...mockEngagement, completion_pct: 47 }]);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('mat-card').textContent).toContain('47%');
+    expect(fixture.nativeElement.querySelector('li').textContent).toContain('47%');
   });
 
   it('omits completion % when null', () => {
@@ -154,7 +154,7 @@ describe('CurrentlyReadingComponent', () => {
     flushReadingList();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('mat-card').textContent).not.toContain('%');
+    expect(fixture.nativeElement.querySelector('li').textContent).not.toContain('%');
   });
 
   it('renders a Log progress button per engagement', () => {
@@ -164,58 +164,6 @@ describe('CurrentlyReadingComponent', () => {
     fixture.detectChanges();
 
     expect(findButton(fixture.nativeElement, 'Log progress')).toBeTruthy();
-  });
-
-  describe('responsive layout', () => {
-    it('shows text and bar, hides spinner at wide viewport', () => {
-      mockBreakpointObserver.observe.mockReturnValue(of({ matches: true }));
-
-      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
-      flushReadingList([{ ...mockEngagement, completion_pct: 47 }]);
-      fixture.detectChanges();
-
-      expect(mockBreakpointObserver.observe).toHaveBeenCalledWith('(min-width: 781px)');
-      expect(mockBreakpointObserver.observe).toHaveBeenCalledWith('(min-width: 600px)');
-      expect(fixture.nativeElement.querySelector('.text')).toBeTruthy();
-      expect(fixture.nativeElement.querySelector('.progress-col')).toBeTruthy();
-      expect(fixture.nativeElement.querySelector('mat-progress-spinner')).toBeNull();
-    });
-
-    it('shows text and spinner, hides bar at medium viewport', () => {
-      mockBreakpointObserver.observe.mockImplementation((query: string) =>
-        of({ matches: query === '(min-width: 600px)' }),
-      );
-
-      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
-      flushReadingList([{ ...mockEngagement, completion_pct: 47 }]);
-      fixture.detectChanges();
-
-      expect(fixture.nativeElement.querySelector('.text')).toBeTruthy();
-      expect(fixture.nativeElement.querySelector('.progress-col')).toBeNull();
-      expect(fixture.nativeElement.querySelector('mat-progress-spinner')).toBeTruthy();
-    });
-
-    it('shows text and spinner, hides bar at narrow viewport', () => {
-      mockBreakpointObserver.observe.mockReturnValue(of({ matches: false }));
-
-      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
-      flushReadingList([{ ...mockEngagement, completion_pct: 47 }]);
-      fixture.detectChanges();
-
-      expect(fixture.nativeElement.querySelector('.text')).toBeTruthy();
-      expect(fixture.nativeElement.querySelector('.progress-col')).toBeNull();
-      expect(fixture.nativeElement.querySelector('mat-progress-spinner')).toBeTruthy();
-    });
-
-    it('shows no spinner when completion_pct is null', () => {
-      mockBreakpointObserver.observe.mockReturnValue(of({ matches: false }));
-
-      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
-      flushReadingList();
-      fixture.detectChanges();
-
-      expect(fixture.nativeElement.querySelector('mat-progress-spinner')).toBeNull();
-    });
   });
 
   describe('format icon', () => {
