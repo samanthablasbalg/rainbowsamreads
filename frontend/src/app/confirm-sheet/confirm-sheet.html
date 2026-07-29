@@ -1,0 +1,26 @@
+<div class="flex flex-col gap-4 px-5 pb-6" [class.pt-2]="!dialogRef" [class.pt-6]="!!dialogRef">
+  @if (bottomSheetRef) {
+    <div class="w-9 h-1 rounded-full bg-track mx-auto" aria-hidden="true"></div>
+  }
+
+  <div class="flex flex-col gap-2">
+    <h2 class="font-serif text-lg font-semibold leading-tight text-text m-0">{{ data.title }}</h2>
+    @if (data.message) {
+      <p class="text-sm leading-normal text-muted-strong m-0">{{ data.message }}</p>
+    }
+  </div>
+
+  <div class="flex flex-col gap-2">
+    <button
+      mat-flat-button
+      class="w-full"
+      [color]="data.tone === 'danger' ? 'warn' : 'primary'"
+      (click)="confirm()"
+    >
+      {{ data.confirmLabel }}
+    </button>
+    <button mat-button class="w-full" (click)="cancel()">
+      {{ data.cancelLabel ?? 'Cancel' }}
+    </button>
+  </div>
+</div>
