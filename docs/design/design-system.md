@@ -151,7 +151,8 @@ Lora 600 · prose 15–16px Lora 400 · stat number 26–30px sans 800 · labels
 
 - **Home** — [`mockups/home-mockup.html`](./mockups/home-mockup.html). Top search + avatar, the
   streak hero, currently-reading cards (cover, serif title, format, pink progress, inline **Log
-  progress** + history), bottom nav. The daily driver.
+  progress**, with history / finish / DNF / delete behind a per-card overflow menu — one primary CTA
+  per card, per §6), bottom nav. The daily driver.
 - **Insights** — [`mockups/insights-mockup.html`](./mockups/insights-mockup.html). Deliberately
   dense (that's the point): hero stats with deltas, a pages-over-time area line, a genre donut with
   legend, mood bars, format split, a reading-activity heatmap, and a diversity card fed by private
