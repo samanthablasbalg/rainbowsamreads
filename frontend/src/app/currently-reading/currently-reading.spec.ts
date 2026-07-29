@@ -323,6 +323,24 @@ describe('CurrentlyReadingComponent', () => {
   });
 
   describe('card menu', () => {
+    it('opens a panel that is not hidden', () => {
+      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
+      flushReadingList();
+      fixture.detectChanges();
+
+      fixture.nativeElement.querySelector('button[aria-label^="More actions for"]').click();
+      fixture.detectChanges();
+
+      // Material forwards mat-menu's `class` onto the overlay PANEL, so a class that
+      // hides it makes the menu unopenable in a browser while leaving the items in
+      // the DOM - which is all the other tests here look at.
+      const panel = TestBed.inject(OverlayContainer)
+        .getContainerElement()
+        .querySelector('.mat-mdc-menu-panel');
+      expect(panel).toBeTruthy();
+      expect(panel!.className).not.toMatch(/\bhidden\b|\binvisible\b/);
+    });
+
     it('offers history, finish, DNF, and delete', () => {
       const fixture = TestBed.createComponent(CurrentlyReadingComponent);
       flushReadingList();

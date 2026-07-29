@@ -3,7 +3,6 @@ import { NgOptimizedImage } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -25,7 +24,6 @@ import { formatIcon } from '../format-icon';
   imports: [
     NgOptimizedImage,
     MatButtonModule,
-    MatDividerModule,
     MatIconModule,
     MatMenuModule,
     MatProgressBarModule,
