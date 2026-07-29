@@ -111,6 +111,7 @@ test('Marking a book finished moves it from Currently reading to Read', async ({
 
   await test.step('Confirm the finish', async () => {
     await sheet.finishButton.click();
+    await expect(sheet.sheet).toHaveCount(0);
   });
 
   await test.step('Verify it left Currently reading', async () => {
@@ -157,6 +158,7 @@ test('Marking a book finished after entering text causes confirmation flow', asy
 
   await test.step('Confirm finish flow', async () => {
     await sheet.finishButton.click();
+    await expect(sheet.sheet).toHaveCount(0);
   });
 
   await test.step('Verify it left Currently reading', async () => {
@@ -258,6 +260,7 @@ test('Giving up on a book moves it from Currently reading to the DNF section', a
 
   await test.step('Confirm the give-up', async () => {
     await sheet.giveUpButton.click();
+    await expect(sheet.sheet).toHaveCount(0);
   });
 
   await test.step('Verify it left Currently reading', async () => {

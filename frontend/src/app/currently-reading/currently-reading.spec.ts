@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
@@ -6,8 +6,10 @@ import { of } from 'rxjs';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { MatDialog } from '@angular/material/dialog';
 import { BreakpointObserver } from '@angular/cdk/layout';
+import { OverlayContainer } from '@angular/cdk/overlay';
 import { CurrentlyReadingComponent } from './currently-reading';
 import { ProgressLogSheetComponent } from '../progress-log-sheet/progress-log-sheet';
+import { ConfirmService } from '../confirm-sheet/confirm.service';
 
 const mockEngagement = {
   id: 'eng-1',
@@ -42,6 +44,7 @@ describe('CurrentlyReadingComponent', () => {
     isMatched: ReturnType<typeof vi.fn>;
     observe: ReturnType<typeof vi.fn>;
   };
+  let mockConfirmService: { confirm: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     mockBottomSheet = { open: vi.fn() };
@@ -50,6 +53,7 @@ describe('CurrentlyReadingComponent', () => {
       isMatched: vi.fn().mockReturnValue(false),
       observe: vi.fn().mockReturnValue(of({ matches: true })),
     };
+    mockConfirmService = { confirm: vi.fn(() => of(true)) };
 
     await TestBed.configureTestingModule({
       imports: [CurrentlyReadingComponent],
@@ -60,14 +64,34 @@ describe('CurrentlyReadingComponent', () => {
         { provide: MatBottomSheet, useValue: mockBottomSheet },
         { provide: MatDialog, useValue: mockDialog },
         { provide: BreakpointObserver, useValue: mockBreakpointObserver },
+        { provide: ConfirmService, useValue: mockConfirmService },
       ],
     }).compileComponents();
 
     httpTesting = TestBed.inject(HttpTestingController);
   });
 
+  /** Opens a card's `⋯` menu and returns its items, which Material renders into an
+   *  overlay outside the fixture. */
+  function openCardMenu(fixture: ComponentFixture<CurrentlyReadingComponent>): HTMLButtonElement[] {
+    fixture.nativeElement.querySelector('button[aria-label^="More actions for"]').click();
+    fixture.detectChanges();
+    const overlay = TestBed.inject(OverlayContainer).getContainerElement();
+    return Array.from(overlay.querySelectorAll('button[mat-menu-item]'));
+  }
+
+  function menuItem(fixture: ComponentFixture<CurrentlyReadingComponent>, label: string) {
+    return openCardMenu(fixture).find((b) => b.getAttribute('aria-label') === label)!;
+  }
+
   afterEach(() => {
     httpTesting.verify();
+    // The menu renders into a CDK overlay on document.body, which outlives the
+    // fixture - without this it leaks stale mat-menu-items into later tests and
+    // into other spec files sharing the environment. Removed straight from the
+    // DOM rather than via TestBed.inject, which would instantiate the module and
+    // make the next configureTestingModule throw.
+    document.querySelectorAll('.cdk-overlay-container').forEach((el) => el.remove());
   });
 
   function flushReadingList(data = [mockEngagement]) {
@@ -91,7 +115,7 @@ describe('CurrentlyReadingComponent', () => {
     flushReadingList();
     fixture.detectChanges();
 
-    const item = fixture.nativeElement.querySelector('mat-card');
+    const item = fixture.nativeElement.querySelector('li');
     expect(item.textContent).toContain('Dune');
     expect(item.textContent).toContain('Frank Herbert');
   });
@@ -114,7 +138,7 @@ describe('CurrentlyReadingComponent', () => {
     ]);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('mat-card').textContent).toContain(
+    expect(fixture.nativeElement.querySelector('li').textContent).toContain(
       'Terry Pratchett, Neil Gaiman',
     );
   });
@@ -145,7 +169,7 @@ describe('CurrentlyReadingComponent', () => {
     flushReadingList([{ ...mockEngagement, completion_pct: 47 }]);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('mat-card').textContent).toContain('47%');
+    expect(fixture.nativeElement.querySelector('li').textContent).toContain('47%');
   });
 
   it('omits completion % when null', () => {
@@ -154,7 +178,7 @@ describe('CurrentlyReadingComponent', () => {
     flushReadingList();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('mat-card').textContent).not.toContain('%');
+    expect(fixture.nativeElement.querySelector('li').textContent).not.toContain('%');
   });
 
   it('renders a Log progress button per engagement', () => {
@@ -164,58 +188,6 @@ describe('CurrentlyReadingComponent', () => {
     fixture.detectChanges();
 
     expect(findButton(fixture.nativeElement, 'Log progress')).toBeTruthy();
-  });
-
-  describe('responsive layout', () => {
-    it('shows text and bar, hides spinner at wide viewport', () => {
-      mockBreakpointObserver.observe.mockReturnValue(of({ matches: true }));
-
-      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
-      flushReadingList([{ ...mockEngagement, completion_pct: 47 }]);
-      fixture.detectChanges();
-
-      expect(mockBreakpointObserver.observe).toHaveBeenCalledWith('(min-width: 781px)');
-      expect(mockBreakpointObserver.observe).toHaveBeenCalledWith('(min-width: 600px)');
-      expect(fixture.nativeElement.querySelector('.text')).toBeTruthy();
-      expect(fixture.nativeElement.querySelector('.progress-col')).toBeTruthy();
-      expect(fixture.nativeElement.querySelector('mat-progress-spinner')).toBeNull();
-    });
-
-    it('shows text and spinner, hides bar at medium viewport', () => {
-      mockBreakpointObserver.observe.mockImplementation((query: string) =>
-        of({ matches: query === '(min-width: 600px)' }),
-      );
-
-      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
-      flushReadingList([{ ...mockEngagement, completion_pct: 47 }]);
-      fixture.detectChanges();
-
-      expect(fixture.nativeElement.querySelector('.text')).toBeTruthy();
-      expect(fixture.nativeElement.querySelector('.progress-col')).toBeNull();
-      expect(fixture.nativeElement.querySelector('mat-progress-spinner')).toBeTruthy();
-    });
-
-    it('shows text and spinner, hides bar at narrow viewport', () => {
-      mockBreakpointObserver.observe.mockReturnValue(of({ matches: false }));
-
-      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
-      flushReadingList([{ ...mockEngagement, completion_pct: 47 }]);
-      fixture.detectChanges();
-
-      expect(fixture.nativeElement.querySelector('.text')).toBeTruthy();
-      expect(fixture.nativeElement.querySelector('.progress-col')).toBeNull();
-      expect(fixture.nativeElement.querySelector('mat-progress-spinner')).toBeTruthy();
-    });
-
-    it('shows no spinner when completion_pct is null', () => {
-      mockBreakpointObserver.observe.mockReturnValue(of({ matches: false }));
-
-      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
-      flushReadingList();
-      fixture.detectChanges();
-
-      expect(fixture.nativeElement.querySelector('mat-progress-spinner')).toBeNull();
-    });
   });
 
   describe('format icon', () => {
@@ -350,31 +322,162 @@ describe('CurrentlyReadingComponent', () => {
     );
   });
 
-  describe('engagement deletion', () => {
-    it('declining the confirm dialog sends no request', () => {
-      vi.spyOn(window, 'confirm').mockReturnValue(false);
+  describe('card menu', () => {
+    it('opens a panel that is not hidden', () => {
       const fixture = TestBed.createComponent(CurrentlyReadingComponent);
       flushReadingList();
       fixture.detectChanges();
 
-      fixture.nativeElement.querySelector('button[aria-label="Delete Dune"]').click();
+      fixture.nativeElement.querySelector('button[aria-label^="More actions for"]').click();
+      fixture.detectChanges();
+
+      // Material forwards mat-menu's `class` onto the overlay PANEL, so a class that
+      // hides it makes the menu unopenable in a browser while leaving the items in
+      // the DOM - which is all the other tests here look at.
+      const panel = TestBed.inject(OverlayContainer)
+        .getContainerElement()
+        .querySelector('.mat-mdc-menu-panel');
+      expect(panel).toBeTruthy();
+      expect(panel!.className).not.toMatch(/\bhidden\b|\binvisible\b/);
+    });
+
+    it('offers history, finish, DNF, and delete', () => {
+      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
+      flushReadingList();
+      fixture.detectChanges();
+
+      const labels = openCardMenu(fixture).map((b) => b.getAttribute('aria-label'));
+      expect(labels).toEqual([
+        'View history for Dune',
+        'Mark Dune as finished',
+        'Mark Dune as did not finish',
+        'Delete Dune',
+      ]);
+    });
+
+    it('no longer shows history or delete directly on the card', () => {
+      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
+      flushReadingList();
+      fixture.detectChanges();
+
+      const card = fixture.nativeElement.querySelector('li');
+      expect(card.querySelector('button[aria-label="Delete Dune"]')).toBeNull();
+      expect(card.querySelector('button[aria-label="View history for Dune"]')).toBeNull();
+    });
+  });
+
+  describe('engagement deletion', () => {
+    it('declining the confirm sends no request', () => {
+      mockConfirmService.confirm.mockReturnValue(of(false));
+      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
+      flushReadingList();
+      fixture.detectChanges();
+
+      menuItem(fixture, 'Delete Dune').click();
       fixture.detectChanges();
 
       httpTesting.expectNone('/api/engagements/eng-1');
     });
 
     it('confirming calls DELETE then reloads the engagement lists', () => {
-      vi.spyOn(window, 'confirm').mockReturnValue(true);
       const fixture = TestBed.createComponent(CurrentlyReadingComponent);
       flushReadingList();
       fixture.detectChanges();
 
-      fixture.nativeElement.querySelector('button[aria-label="Delete Dune"]').click();
+      menuItem(fixture, 'Delete Dune').click();
       fixture.detectChanges();
 
       const req = httpTesting.expectOne('/api/engagements/eng-1');
       expect(req.request.method).toBe('DELETE');
       req.flush(null, { status: 204, statusText: 'No Content' });
+
+      flushReadingList([]);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain('No books in progress');
+    });
+
+    it('asks with the danger tone', () => {
+      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
+      flushReadingList();
+      fixture.detectChanges();
+
+      menuItem(fixture, 'Delete Dune').click();
+
+      expect(mockConfirmService.confirm).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Delete this read of "Dune"?',
+          confirmLabel: 'Delete',
+          tone: 'danger',
+        }),
+      );
+
+      httpTesting.expectOne('/api/engagements/eng-1').flush(null, {
+        status: 204,
+        statusText: 'No Content',
+      });
+      flushReadingList([]);
+    });
+  });
+
+  describe('marking finished from the menu', () => {
+    it('declining the confirm sends no request', () => {
+      mockConfirmService.confirm.mockReturnValue(of(false));
+      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
+      flushReadingList();
+      fixture.detectChanges();
+
+      menuItem(fixture, 'Mark Dune as finished').click();
+      fixture.detectChanges();
+
+      httpTesting.expectNone('/api/engagements/eng-1');
+    });
+
+    it('confirming patches the status to finished then reloads', () => {
+      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
+      flushReadingList();
+      fixture.detectChanges();
+
+      menuItem(fixture, 'Mark Dune as finished').click();
+      fixture.detectChanges();
+
+      const req = httpTesting.expectOne('/api/engagements/eng-1');
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body.status).toBe('finished');
+      req.flush({});
+
+      flushReadingList([]);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain('No books in progress');
+    });
+  });
+
+  describe('marking DNF from the menu', () => {
+    it('declining the confirm sends no request', () => {
+      mockConfirmService.confirm.mockReturnValue(of(false));
+      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
+      flushReadingList();
+      fixture.detectChanges();
+
+      menuItem(fixture, 'Mark Dune as did not finish').click();
+      fixture.detectChanges();
+
+      httpTesting.expectNone('/api/engagements/eng-1');
+    });
+
+    it('confirming patches the status to dnf then reloads', () => {
+      const fixture = TestBed.createComponent(CurrentlyReadingComponent);
+      flushReadingList();
+      fixture.detectChanges();
+
+      menuItem(fixture, 'Mark Dune as did not finish').click();
+      fixture.detectChanges();
+
+      const req = httpTesting.expectOne('/api/engagements/eng-1');
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body.status).toBe('dnf');
+      req.flush({});
 
       flushReadingList([]);
       fixture.detectChanges();

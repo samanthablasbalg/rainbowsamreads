@@ -29,7 +29,7 @@ export const test = base.extend<{ cleanDb: void }>({
       // leaving `users` out doesn't stop `engagements` etc. from being wiped).
       const { rows } = await client.query<{ tablename: string }>(
         `SELECT tablename FROM pg_tables
-         WHERE schemaname = 'public' AND tablename NOT IN ('alembic_version', 'users')`,
+         WHERE schemaname = 'public' AND tablename NOT IN ('alembic_version', 'users')`
       );
 
       // Quote each name (guards against casing/reserved words) and empty them all in

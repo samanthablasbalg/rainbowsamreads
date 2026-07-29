@@ -1,4 +1,5 @@
 import { expect, test } from '../../fixtures/api-client';
+import { CardMenuPage } from '../../page-objects/card-menu.page';
 import { CurrentlyReadingPage } from '../../page-objects/currently-reading.page';
 import { EngagementHistoryPage } from '../../page-objects/engagement-history.page';
 
@@ -7,6 +8,7 @@ test('History page is reachable from currently reading and lists logs with dates
   apiClient,
 }) => {
   const currentlyReading = new CurrentlyReadingPage(page);
+  const cardMenu = new CardMenuPage(page);
   const history = new EngagementHistoryPage(page);
 
   await test.step('Seed a book in progress with two logged entries', async () => {
@@ -18,7 +20,8 @@ test('History page is reachable from currently reading and lists logs with dates
 
   await test.step('Navigate to the history page via the currently-reading shelf', async () => {
     await currentlyReading.goto();
-    await currentlyReading.getViewHistoryButton('Piranesi').click();
+    await currentlyReading.openCardMenu('Piranesi');
+    await cardMenu.getViewHistoryItem('Piranesi').click();
   });
 
   await test.step('Verify both log rows and the start/finish date fields are shown', async () => {

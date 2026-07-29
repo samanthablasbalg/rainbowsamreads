@@ -1,0 +1,148 @@
+<section class="px-4 py-5 md:px-6">
+  <header class="flex items-baseline justify-between gap-3 mb-4">
+    <h1 class="text-page-title text-text m-0">Currently reading</h1>
+    @if (engagements().length) {
+      <span class="text-label text-muted-strong">{{ bookCountLabel() }}</span>
+    }
+  </header>
+
+  @if (engagements().length) {
+    <!-- @container, not a viewport breakpoint: the sidebar takes 236px, so viewport
+         width says nothing useful about how much room a card actually has. @3xl is
+         roughly where the one-row layout stops being cramped. -->
+    <ul role="list" class="@container flex flex-col gap-3.5 list-none m-0 p-0">
+      @for (engagement of engagements(); track engagement.id) {
+        <li
+          [attr.aria-label]="engagement.book.title"
+          class="flex gap-4 rounded-[20px] bg-surface p-3.5 shadow-sm @3xl:grid @3xl:grid-cols-[auto_minmax(12rem,1fr)_auto_auto_auto] @3xl:items-center @3xl:gap-x-5"
+        >
+          <div
+            class="relative h-[90px] w-[60px] flex-none overflow-hidden rounded-lg bg-surface-2 shadow-sm @3xl:col-start-1 @3xl:row-start-1"
+          >
+            @let url = coverUrl(engagement);
+            @if (url) {
+              <img
+                [ngSrc]="url"
+                fill
+                [priority]="$first"
+                [alt]="engagement.book.title + ' cover'"
+                class="object-cover"
+              />
+            }
+          </div>
+
+          <!-- Stacks its children on a narrow card; dissolves into the card's own grid
+               once there is room for one row, so text/bar/actions become sibling cells. -->
+          <div class="flex min-w-0 flex-1 flex-col gap-2 @3xl:contents">
+            <div class="min-w-0 @3xl:col-start-2 @3xl:row-start-1">
+              <h2 class="text-book-title m-0 line-clamp-2 text-text">
+                {{ engagement.book.title }}
+              </h2>
+              <p class="m-0 mt-0.5 truncate text-sm text-muted-strong">
+                {{ engagement.book.authors.map((a) => a.name).join(', ') }}
+              </p>
+              @if (engagement.formats[0]; as format) {
+                <span
+                  class="mt-2 inline-flex items-center gap-1.5 text-label uppercase tracking-wide text-muted"
+                >
+                  <mat-icon
+                    class="!h-4 !w-4 !text-base leading-none"
+                    aria-hidden="false"
+                    [aria-label]="'Format: ' + format"
+                    >{{ formatIcon(format) }}</mat-icon
+                  >
+                  {{ format }}
+                </span>
+              }
+            </div>
+
+            @if (engagement.completion_pct !== null) {
+              <div class="flex items-center gap-3 @3xl:col-start-3 @3xl:row-start-1 @3xl:w-[180px]">
+                <mat-progress-bar
+                  class="flex-1 overflow-hidden rounded-full"
+                  [value]="engagement.completion_pct"
+                  [attr.aria-label]="
+                    engagement.book.title + ' progress: ' + engagement.completion_pct + '%'
+                  "
+                />
+                <span class="text-label font-sans text-muted-strong"
+                  >{{ engagement.completion_pct }}%</span
+                >
+              </div>
+            }
+
+            <div class="@3xl:col-start-4 @3xl:row-start-1">
+              <button
+                mat-flat-button
+                color="primary"
+                class="w-full whitespace-nowrap @3xl:w-auto"
+                [attr.aria-label]="'Log progress for ' + engagement.book.title"
+                (click)="openLogSheet(engagement)"
+              >
+                Log progress
+              </button>
+            </div>
+          </div>
+
+          <button
+            mat-icon-button
+            class="flex-none self-start @3xl:col-start-5 @3xl:row-start-1 @3xl:self-auto"
+            [matMenuTriggerFor]="cardMenu"
+            [attr.aria-label]="'More actions for ' + engagement.book.title"
+          >
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <!-- No class on this element: mat-menu forwards `class` to the overlay PANEL,
+               not to the host, so styling it here silently styles the open menu. -->
+          <mat-menu #cardMenu="matMenu">
+            <button
+              mat-menu-item
+              [routerLink]="['/engagement', engagement.id]"
+              [attr.aria-label]="'View history for ' + engagement.book.title"
+            >
+              <mat-icon>history</mat-icon>
+              <span>View history</span>
+            </button>
+            <div
+              class="mx-2 my-1 h-px bg-muted/30"
+              role="separator"
+              aria-orientation="horizontal"
+            ></div>
+            <button
+              mat-menu-item
+              [attr.aria-label]="'Mark ' + engagement.book.title + ' as finished'"
+              (click)="markFinished(engagement)"
+            >
+              <mat-icon>check_circle</mat-icon>
+              <span>Mark finished</span>
+            </button>
+            <button
+              mat-menu-item
+              [attr.aria-label]="'Mark ' + engagement.book.title + ' as did not finish'"
+              (click)="markDnf(engagement)"
+            >
+              <mat-icon>do_not_disturb_on</mat-icon>
+              <span>Mark as DNF</span>
+            </button>
+            <div
+              class="mx-2 my-1 h-px bg-muted/30"
+              role="separator"
+              aria-orientation="horizontal"
+            ></div>
+            <button
+              mat-menu-item
+              class="text-error"
+              [attr.aria-label]="'Delete ' + engagement.book.title"
+              (click)="deleteEngagement(engagement)"
+            >
+              <mat-icon class="text-error">delete</mat-icon>
+              <span>Delete</span>
+            </button>
+          </mat-menu>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="text-prose m-0 text-muted-strong">No books in progress.</p>
+  }
+</section>
