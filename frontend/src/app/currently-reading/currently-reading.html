@@ -71,27 +71,59 @@
             <button
               mat-flat-button
               color="primary"
-              class="flex-1 md:flex-none"
+              class="w-full md:w-auto"
               [attr.aria-label]="'Log progress for ' + engagement.book.title"
               (click)="openLogSheet(engagement)"
             >
               Log progress
             </button>
+          </div>
+
+          <button
+            mat-icon-button
+            class="col-start-3 row-start-1 self-start md:col-start-5 md:self-auto"
+            [matMenuTriggerFor]="cardMenu"
+            [attr.aria-label]="'More actions for ' + engagement.book.title"
+          >
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #cardMenu="matMenu">
             <button
-              mat-icon-button
+              mat-menu-item
               [routerLink]="['/engagement', engagement.id]"
               [attr.aria-label]="'View history for ' + engagement.book.title"
             >
               <mat-icon>history</mat-icon>
+              <span>View history</span>
+            </button>
+            <mat-divider />
+            <button
+              mat-menu-item
+              [attr.aria-label]="'Mark ' + engagement.book.title + ' as finished'"
+              (click)="markFinished(engagement)"
+            >
+              <mat-icon>check_circle</mat-icon>
+              <span>Mark finished</span>
             </button>
             <button
-              mat-icon-button
+              mat-menu-item
+              [attr.aria-label]="'Mark ' + engagement.book.title + ' as did not finish'"
+              (click)="markDnf(engagement)"
+            >
+              <mat-icon>do_not_disturb_on</mat-icon>
+              <span>Mark as DNF</span>
+            </button>
+            <mat-divider />
+            <button
+              mat-menu-item
+              class="text-error"
               [attr.aria-label]="'Delete ' + engagement.book.title"
               (click)="deleteEngagement(engagement)"
             >
-              <mat-icon>delete</mat-icon>
+              <mat-icon class="text-error">delete</mat-icon>
+              <span>Delete</span>
             </button>
-          </div>
+          </mat-menu>
         </li>
       }
     </ul>

@@ -1,8 +1,11 @@
 import { Component, computed, inject } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { Observable } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { MatDialog } from '@angular/material/dialog';
@@ -13,11 +16,21 @@ import {
   ProgressLogSheetComponent,
   ProgressLogSheetData,
 } from '../progress-log-sheet/progress-log-sheet';
+import { ConfirmService } from '../confirm-sheet/confirm.service';
+import { ConfirmSheetData } from '../confirm-sheet/confirm-sheet';
 import { formatIcon } from '../format-icon';
 
 @Component({
   selector: 'app-currently-reading',
-  imports: [NgOptimizedImage, MatButtonModule, MatIconModule, MatProgressBarModule, RouterLink],
+  imports: [
+    NgOptimizedImage,
+    MatButtonModule,
+    MatDividerModule,
+    MatIconModule,
+    MatMenuModule,
+    MatProgressBarModule,
+    RouterLink,
+  ],
   templateUrl: './currently-reading.html',
 })
 export class CurrentlyReadingComponent {
@@ -27,6 +40,7 @@ export class CurrentlyReadingComponent {
   private readonly bottomSheet = inject(MatBottomSheet);
   private readonly dialog = inject(MatDialog);
   private readonly breakpointObserver = inject(BreakpointObserver);
+  private readonly confirmService = inject(ConfirmService);
 
   protected readonly engagements = toSignal(this.engagementService.engagements('reading'), {
     initialValue: [],
@@ -65,12 +79,51 @@ export class CurrentlyReadingComponent {
     }
   }
 
+  protected markFinished(engagement: Engagement): void {
+    this.confirmThen(
+      {
+        title: `Mark "${engagement.book.title}" as finished?`,
+        message: "There's no way to undo this in the app yet.",
+        confirmLabel: 'Mark finished',
+      },
+      () => this.engagementService.markFinished(engagement.id),
+    );
+  }
+
+  protected markDnf(engagement: Engagement): void {
+    this.confirmThen(
+      {
+        title: `Mark "${engagement.book.title}" as did not finish?`,
+        message: "There's no way to undo this in the app yet.",
+        confirmLabel: 'Mark as DNF',
+      },
+      () => this.engagementService.markDnf(engagement.id),
+    );
+  }
+
   protected deleteEngagement(engagement: Engagement): void {
-    if (!confirm("Delete this engagement? This can't be undone.")) {
-      return;
-    }
-    this.engagementService.deleteEngagement(engagement.id).subscribe(() => {
-      this.engagementService.reloadEngagements();
+    this.confirmThen(
+      {
+        title: `Delete this read of "${engagement.book.title}"?`,
+        message: "This will also delete this read's progress logs. This cannot be undone.",
+        confirmLabel: 'Delete',
+        tone: 'danger',
+      },
+      () => this.engagementService.deleteEngagement(engagement.id),
+    );
+  }
+
+  /** Runs `action` only if the confirm sheet comes back confirmed, then reloads the
+   *  lists so the row leaves Currently Reading — the same shape the log sheet uses
+   *  for its own finish/DNF. */
+  private confirmThen(data: ConfirmSheetData, action: () => Observable<unknown>): void {
+    this.confirmService.confirm(data).subscribe((confirmed) => {
+      if (!confirmed) {
+        return;
+      }
+      action().subscribe(() => {
+        this.engagementService.reloadEngagements();
+      });
     });
   }
 }
