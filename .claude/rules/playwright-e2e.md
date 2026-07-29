@@ -132,6 +132,13 @@ line is setup, action, or assertion. Production-code habits are anti-patterns:
   before the test proceeds) rides inside that setup/exercise step instead of standing alone.
 - No `page.waitForTimeout()` and no `networkidle` — use `toBeVisible` / `toHaveURL` /
   `waitForResponse` / `domcontentloaded`.
+- **Wait for a modal to be gone before asserting anything about the page behind it.** While a CDK
+  dialog or bottom sheet is open, the rest of the page is `aria-hidden`, so a role-based absence
+  assertion (`toHaveCount(0)`, `not.toBeVisible`) passes **whether or not the action ran** — and the
+  test then races past the request that action fires. Gate on the sheet's root locator inside the
+  step that dismisses it: `await expect(sheet.sheet).toHaveCount(0);`. Every sheet POM exposes that
+  root (`ConfirmSheetPage.sheet`, `ProgressLogSheetPage.sheet`). This is not hypothetical: it once
+  made a finish-from-the-menu test pass while no PATCH was ever sent.
 - Don't hardcode timeouts; rely on Playwright's auto-waiting and 30s default. Only set an explicit
   timeout when it genuinely differs from the default. (No shared `TIMEOUTS` constant yet — add one
   if real values start to accumulate.)

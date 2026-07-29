@@ -4,6 +4,10 @@ import { Locator, Page } from '@playwright/test';
 // viewports) or a bottom sheet (narrow), so one set of content locators drives
 // both. Instantiated against the same page as the currently-reading POM.
 export class ProgressLogSheetPage {
+  // The sheet's root. Wait for this to be gone before asserting anything about the
+  // page behind it: while a CDK modal is open the rest of the page is aria-hidden,
+  // so role-based absence assertions pass whether or not the action ran.
+  readonly sheet: Locator;
   readonly pageInput: Locator;
   readonly minuteInput: Locator;
   readonly cancelButton: Locator;
@@ -16,6 +20,7 @@ export class ProgressLogSheetPage {
 
   /** @param page - The Playwright page the sheet is open on. */
   constructor(public readonly page: Page) {
+    this.sheet = page.locator('app-progress-log-sheet');
     this.pageInput = page.getByRole('spinbutton', { name: 'To · now' });
     this.minuteInput = page.getByRole('textbox', { name: 'To · now' });
     this.cancelButton = page.getByRole('button', { name: 'Cancel' });
