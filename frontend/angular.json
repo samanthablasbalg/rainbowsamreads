@@ -85,6 +85,24 @@
           "options": {
             "lintFilePatterns": ["**/*.ts", "**/*.html"]
           }
+        },
+        "storybook": {
+          "builder": "@storybook/angular-vite:start-storybook",
+          "options": {
+            "configDir": ".storybook",
+            "browserTarget": "reading-tracker-app:build",
+            "port": 6006,
+            "styles": ["src/material-theme.scss", "src/styles.css"]
+          }
+        },
+        "build-storybook": {
+          "builder": "@storybook/angular-vite:build-storybook",
+          "options": {
+            "configDir": ".storybook",
+            "browserTarget": "reading-tracker-app:build",
+            "outputDir": "storybook-static",
+            "styles": ["src/material-theme.scss", "src/styles.css"]
+          }
         }
       }
     }
