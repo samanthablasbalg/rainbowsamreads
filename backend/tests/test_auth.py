@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
 import pytest
@@ -9,6 +10,7 @@ from sqlalchemy.orm import Session
 from starlette.requests import Request
 
 from app.api.auth import DEV_TEST_USER_EMAIL, E2E_TEST_USER_EMAIL
+from app.database import get_current_user_id
 from app.main import app
 from app.models.user import User
 from app.oauth import oauth
@@ -101,6 +103,16 @@ def test_me_requires_a_session(client: TestClient) -> None:
 def test_business_endpoint_rejects_a_request_with_no_session() -> None:
     with TestClient(app) as unauthenticated_client:
         response = unauthenticated_client.get("/api/books")
+    assert response.status_code == 401
+
+
+def test_business_endpoint_rejects_a_session_naming_a_deleted_user(
+    client: TestClient,
+) -> None:
+    app.dependency_overrides[get_current_user_id] = lambda: uuid.uuid4()
+
+    response = client.get("/api/books/search", params={"q": "anything"})
+
     assert response.status_code == 401
 
 
