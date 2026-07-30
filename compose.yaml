@@ -265,6 +265,27 @@ services:
       browsers:
         condition: service_healthy
 
+  # Component workbench. Same image, same repo mount, same node_modules volume
+  # as `frontend` — it is the same Angular app compiled by a different tool, so
+  # nothing here needs its own install.
+  storybook:
+    <<: *dev
+    # Not part of the standing stack: `docker compose up` is the app, and this
+    # is a tool you reach for deliberately. Naming it (`docker compose up
+    # storybook`) enables the profile, so it still starts on demand — same
+    # arrangement as `e2e`.
+    profiles: ['tools']
+    working_dir: ${PWD}/frontend
+    # The same first-boot guard `frontend` carries, for the same reason: the
+    # shared node_modules volume starts empty and the image bakes nothing in.
+    # Kept rather than relying on `frontend` having run first — this service is
+    # startable on its own.
+    command: >
+      sh -c "[ -e node_modules/.package-lock.json ] || npm ci; exec npm run storybook -- --host
+      0.0.0.0"
+    ports:
+      - '${STORYBOOK_PORT:-6006}:6006'
+
   # Runs nothing on purpose. VS Code attaches with overrideCommand set, which
   # replaces the attached service's command with `sleep infinity` — attaching to
   # api would therefore kill uvicorn. This is also where `docker compose exec`
