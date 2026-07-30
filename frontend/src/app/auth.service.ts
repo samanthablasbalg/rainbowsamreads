@@ -20,6 +20,11 @@ export class AuthService {
     );
   }
 
+  /** Drops the cached user without a round trip, for a session the server has already rejected. */
+  clearSession(): void {
+    this.currentUserSignal.set(null);
+  }
+
   login(): void {
     window.location.href = '/api/auth/login';
   }
