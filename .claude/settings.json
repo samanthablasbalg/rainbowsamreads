@@ -22,20 +22,52 @@
   "sandbox": {
     "credentials": {
       "files": [
-        { "path": ".env", "mode": "deny" },
-        { "path": "backend/.env", "mode": "deny" },
-        { "path": "e2e/.env", "mode": "deny" },
-        { "path": "frontend/.env", "mode": "deny" }
+        {
+          "path": ".env",
+          "mode": "deny"
+        },
+        {
+          "path": "backend/.env",
+          "mode": "deny"
+        },
+        {
+          "path": "e2e/.env",
+          "mode": "deny"
+        },
+        {
+          "path": "frontend/.env",
+          "mode": "deny"
+        }
       ]
     }
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // \"\"'); case \"$cmd\" in *docker*) printf \"Blocked: this session runs INSIDE the dev container - there is no docker CLI and never will be. Reach services over the compose network by name (proxy:8080, api:8000, db:5432), or run the tool directly.\\n\" >&2; exit 2;; esac; exit 0"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // \"\"')\n# POSIX `case`, never `[[ ]]`: hook commands run under /bin/sh, which is dash\n# here. dash has no `[[`, so a bash-syntax test errors, the condition reads as\n# false, and the hook silently exits 0 - blocking nothing, forever.\ncase \"$cmd\" in\n  *\"npm test\"*|*\"ng test\"*|*pytest*)\n    case \"$cmd\" in\n      *tee*) ;;\n      *\"|\"*)\n        printf \"Blocked: piping a test run through a filter discards the failure diff and forces a re-run. Run it ONCE and keep the whole log:\\n  npm test 2>&1 | tee /tmp/test.log | tail -100\\nThen Read /tmp/test.log instead of running the suite again.\\n\" >&2\n        exit 2 ;;\n    esac ;;\nesac\nexit 0"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0\ncd \"$root\" || exit 0\nPC=$(command -v pre-commit) || { printf \"pre-commit not found on PATH\\n\" >&2; exit 1; }\nlist=$( { git diff --name-only HEAD; git ls-files --others --exclude-standard; } | sort -u )\n[ -n \"$list\" ] || exit 0\noldIFS=$IFS\nIFS=\"\n\"\nset --\nfor f in $list; do\n  set -- \"$@\" \"$f\"\ndone\nIFS=$oldIFS\n\"$PC\" run --files \"$@\" >/dev/null 2>&1 || { out=$(\"$PC\" run --files \"$@\" 2>&1) || { printf \"%s\\n\" \"$out\" >&2; exit 2; }; }",
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0\ncd \"$root\" || exit 0\nPC=$(command -v pre-commit) || { printf \"pre-commit not found on PATH\\n\" >&2; exit 1; }\nfiles=$( { git diff --name-only HEAD; git ls-files --others --exclude-standard; } | sort -u )\n[ -n \"$files\" ] || exit 0\n# NUL-delimited hand-off: the previous IFS/word-splitting form silently passed the\n# whole list as ONE argument under zsh, so every pre-commit hook reported \"no files\n# to check\" and the gate always passed. This splits correctly in bash and zsh and\n# survives filenames containing spaces.\nrun_pc() { printf \"%s\\n\" \"$files\" | tr \"\\n\" \"\\0\" | xargs -0 -r \"$PC\" run --files; }\nrun_pc >/dev/null 2>&1 || { out=$(run_pc 2>&1) || { printf \"%s\\n\" \"$out\" >&2; exit 2; }; }",
             "statusMessage": "pre-commit"
           }
         ]
