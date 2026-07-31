@@ -13,7 +13,10 @@ const config: StorybookConfig = {
     name: '@storybook/angular-vite',
     options: {
       compodoc: true,
-      compodocArgs: ['-e', 'json', '-d', '.'],
+      // --disableProtected / --disablePrivate keep implementation members out of the
+      // generated docs. Angular host bindings cannot reach `private`, so internals end up
+      // `protected`, which compodoc documents as public API without these.
+      compodocArgs: ['-e', 'json', '-d', '.', '--disableProtected', '--disablePrivate'],
     },
   },
 };

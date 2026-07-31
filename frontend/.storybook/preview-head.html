@@ -1,0 +1,31 @@
+<!--
+  Storybook renders stories in its own iframe and never uses src/index.html, so
+  the app's webfonts have to be requested again here. Keep these in sync with
+  src/index.html — if a family is added there, add it here or every --font-*
+  token silently falls back to a browser default in the preview.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Lora:ital,wght@0,400;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap"
+  rel="stylesheet"
+/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+<!--
+  Material Symbols is the family Google currently ships; Material Icons above is the
+  legacy one the app has loaded since e518dee. Both are here on purpose: the app's own
+  components still name Material Icons glyphs, and app-icon names Symbols ones.
+
+  This is the one place the two files deliberately differ. src/index.html does not load
+  Symbols, because switching the app's icon font would change every icon in it, and that
+  migration is not this branch.
+
+  opsz is why the size scale means something: the variable axis reshapes the glyph for
+  the size it is rendered at, so 20/24/40 are real optical sizes rather than one drawing
+  scaled up and down.
+-->
+<link
+  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+  rel="stylesheet"
+/>
