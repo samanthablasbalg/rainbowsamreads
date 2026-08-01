@@ -48,7 +48,9 @@ repos:
         name: Regenerate OpenAPI schema and client
         language: system
         files: ^backend/app/.*\.py$
-        entry: bash -c 'python3 backend/scripts/export_openapi.py && npm --prefix frontend run generate:api && git add backend/openapi.json frontend/src/app/api/generated'
+        entry:
+          bash -c 'python3 backend/scripts/export_openapi.py && npm --prefix frontend run
+          generate:api && git add backend/openapi.json frontend/src/app/api/generated'
         pass_filenames: false
 
       - id: e2e-typecheck

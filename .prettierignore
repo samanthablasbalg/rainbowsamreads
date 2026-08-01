@@ -1,0 +1,29 @@
+# The one and only prettierignore in this repo.
+#
+# Prettier does NOT walk up the tree looking for this file the way it does for
+# .prettierrc — it reads whichever one sits in the directory it was invoked from
+# and ignores the rest. A second copy inside frontend/ is what previously meant
+# these rules silently did not apply to any hook that ran from the root.
+#
+# Patterns here resolve relative to THIS file, so frontend/'s scripts point at it
+# with `--ignore-path ../.prettierignore` and get results identical to a run
+# started at the root.
+#
+# This file is deliberately short. Everything generated or untracked is already
+# ignored via `--ignore-path ../.gitignore`, which the prettier scripts pass
+# alongside this one. That only works because the repo now has exactly one
+# .gitignore — prettier reads the single file it is handed rather than walking
+# the tree, so a nested one would be silently skipped. Listed below is only what
+# git tracks but prettier must not touch.
+
+# The Angular app. Read-only reference material for the React migration, deleted
+# at the end of it. Never formatted, linted, built or tested — see CLAUDE.md.
+angular-frontend/
+
+# Generated, and committed. Regenerating is the only correct way to change these;
+# reformatting puts the working tree permanently at odds with the generator.
+backend/openapi.json
+frontend/src/**/generated/
+
+# Lockfiles are npm's to format, not ours.
+**/package-lock.json

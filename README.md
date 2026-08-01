@@ -47,9 +47,9 @@ all in the [roadmap](docs/roadmap.md).
 
 Testing is the discipline I bring to building, so it's not an afterthought:
 
-- **Backend:** pytest against a [dedicated test database](docs/decisions/0014-dedicated-test-database.md)
-  that resets the schema, runs migrations, and truncates between tests so every run starts from a
-  known state.
+- **Backend:** pytest against a
+  [dedicated test database](docs/decisions/0014-dedicated-test-database.md) that resets the schema,
+  runs migrations, and truncates between tests so every run starts from a known state.
 - **Frontend:** Vitest via Angular's runner, with Angular Testing Library for component specs.
 - **End-to-end:** Playwright with page objects and fixtures, driving real browsers against
   [the same containerized stack as development](docs/decisions/0030-e2e-runs-against-the-compose-dev-stack.md),
