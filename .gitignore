@@ -222,3 +222,35 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+node_modules
+
+# ---------------------------------------------------------------------------
+# JavaScript / TypeScript
+#
+# Consolidated here from the per-directory .gitignore files the Vite and
+# Playwright scaffolds generate. One file for the whole repo, deliberately:
+# git walks nested .gitignore files all the way down, but the tools that borrow
+# these rules do not. Prettier's --ignore-path, eslint's, and Docker's build
+# context each read only the single file they are handed, so anything living in
+# e2e/.gitignore or frontend/.gitignore is invisible to them and its rules
+# silently fail to apply. That is how `prettier --write` came within one command
+# of rewriting e2e/.auth/, which holds saved Playwright session state.
+#
+# Anything the Python template above already covers at any depth — node_modules,
+# dist/, .env, *.log, the tool caches — is deliberately not repeated here.
+# ---------------------------------------------------------------------------
+
+# Build and dev-server output
+dist-ssr/
+*.local
+logs/
+frontend/coverage/
+frontend/storybook-static/
+
+# Playwright, previously e2e/.gitignore
+e2e/.auth/
+e2e/.playwright-cli/
+e2e/blob-report/
+e2e/playwright/.cache/
+e2e/playwright-report/
+e2e/test-results/
