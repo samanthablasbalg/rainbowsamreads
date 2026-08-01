@@ -12,7 +12,9 @@
     "prettier:format": "prettier --write . ../docs",
     "typecheck": "tsc -b --noEmit",
     "generate:api": "orval --config orval.config.ts",
+    "prestorybook": "rm -f documentation.json",
     "storybook": "ng run reading-tracker-app:storybook",
+    "prebuild-storybook": "rm -f documentation.json",
     "build-storybook": "ng run reading-tracker-app:build-storybook"
   },
   "private": true,

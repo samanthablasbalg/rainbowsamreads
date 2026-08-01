@@ -13603,7 +13603,7 @@
         "deprecated": false,
         "deprecationMessage": "",
         "type": "Story",
-        "defaultValue": "{\n  decorators: [\n    componentWrapperDecorator((story) => `<p class=\"text-3xl\">Reading ${story} right now</p>`),\n  ],\n}",
+        "defaultValue": "{\n  decorators: [\n    componentWrapperDecorator((story) => `<p class=\"text-xs\">Reading ${story} right now</p>`),\n  ],\n}",
         "rawdescription": "Tracks the font size of the text it sits in.",
         "description": "<p>Tracks the font size of the text it sits in.</p>\n"
       },
@@ -15602,7 +15602,7 @@
           "deprecated": false,
           "deprecationMessage": "",
           "type": "Story",
-          "defaultValue": "{\n  decorators: [\n    componentWrapperDecorator((story) => `<p class=\"text-3xl\">Reading ${story} right now</p>`),\n  ],\n}",
+          "defaultValue": "{\n  decorators: [\n    componentWrapperDecorator((story) => `<p class=\"text-xs\">Reading ${story} right now</p>`),\n  ],\n}",
           "rawdescription": "Tracks the font size of the text it sits in.",
           "description": "<p>Tracks the font size of the text it sits in.</p>\n"
         },
