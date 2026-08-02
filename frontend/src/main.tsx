@@ -1,14 +1,14 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { RouterProvider } from 'react-router/dom';
 import { AppProvider } from './app/provider';
-import { Session } from './app/session';
+import { router } from './app/router';
 import './styles.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AppProvider>
-      <h1>Rainbow Sam Reads</h1>
-      <Session />
+      <RouterProvider router={router} />
     </AppProvider>
   </StrictMode>
 );
