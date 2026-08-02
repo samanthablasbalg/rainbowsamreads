@@ -6,13 +6,15 @@
  */
 import { faker } from '@faker-js/faker';
 
-import type { AuthLogout200, AuthMe200, AuthTestLogin200 } from '../readingTracker.schemas';
+import type { AuthLogout200, AuthTestLogin200, CurrentUser } from '../readingTracker.schemas';
 
-export const getAuthMeResponseMock = (): AuthMe200 => ({
-  [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
+export const getAuthMeResponseMock = (
+  overrideResponse: Partial<Extract<CurrentUser, object>> = {}
+): CurrentUser => ({
+  id: faker.string.uuid(),
+  email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  picture: faker.helpers.arrayElement([faker.string.alpha({ length: { min: 10, max: 20 } }), null]),
+  ...overrideResponse,
 });
 
 export const getAuthLogoutResponseMock = (): AuthLogout200 => ({

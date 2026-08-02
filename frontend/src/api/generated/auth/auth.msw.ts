@@ -7,7 +7,7 @@
 import { HttpResponse, http } from 'msw';
 import type { RequestHandlerOptions } from 'msw';
 
-import type { AuthLogout200, AuthMe200, AuthTestLogin200 } from '../readingTracker.schemas';
+import type { AuthLogout200, AuthTestLogin200, CurrentUser } from '../readingTracker.schemas';
 
 import {
   getAuthLogoutResponseMock,
@@ -59,8 +59,8 @@ export const getAuthCallbackMockHandler = (
 
 export const getAuthMeMockHandler = (
   overrideResponse?:
-    | AuthMe200
-    | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<AuthMe200> | AuthMe200),
+    | CurrentUser
+    | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<CurrentUser> | CurrentUser),
   options?: RequestHandlerOptions
 ) => {
   return http.get(

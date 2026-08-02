@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import uuid
 from typing import Literal, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -26,6 +27,18 @@ _TEST_LOGIN_PERSONAS: dict[str, str] = {
 
 class TestLoginRequest(BaseModel):
     persona: Literal["e2e", "dev"] = "e2e"
+
+
+class CurrentUser(BaseModel):
+    """The session's view of the signed-in user.
+
+    Not a read model for the users table: `picture` comes from the OAuth
+    userinfo and is held only in the session, never persisted.
+    """
+
+    id: uuid.UUID
+    email: str
+    picture: str | None
 
 
 def _get_or_create_user(db: Session, email: str) -> User:
@@ -77,15 +90,18 @@ async def callback(
 
 
 @router.get("/me")
-def me(request: Request) -> dict[str, str | None]:
+def me(request: Request) -> CurrentUser:
     user_id = request.session.get("user_id")
-    if not user_id:
+    email = request.session.get("email")
+    # Both are written together at login, so a session carrying one without the
+    # other is stale rather than signed in.
+    if not user_id or not email:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-    return {
-        "id": user_id,
-        "email": request.session.get("email"),
-        "picture": request.session.get("picture"),
-    }
+    return CurrentUser(
+        id=user_id,
+        email=email,
+        picture=request.session.get("picture"),
+    )
 
 
 @router.post("/logout")

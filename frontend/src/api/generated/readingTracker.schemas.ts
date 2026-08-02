@@ -77,6 +77,18 @@ export interface BookSearchResult {
   status: BookSearchResultStatus;
 }
 
+/**
+ * The session's view of the signed-in user.
+ *
+ * Not a read model for the users table: `picture` comes from the OAuth
+ * userinfo and is held only in the session, never persisted.
+ */
+export interface CurrentUser {
+  id: string;
+  email: string;
+  picture: string | null;
+}
+
 export type Format = (typeof Format)[keyof typeof Format];
 
 export const Format = {
@@ -258,8 +270,6 @@ export const TestLoginRequestPersona = {
 export interface TestLoginRequest {
   persona?: TestLoginRequestPersona;
 }
-
-export type AuthMe200 = { [key: string]: string | null };
 
 export type AuthLogout200 = { [key: string]: boolean };
 

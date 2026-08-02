@@ -22,8 +22,8 @@ import type {
 
 import type {
   AuthLogout200,
-  AuthMe200,
   AuthTestLogin200,
+  CurrentUser,
   HTTPValidationError,
   TestLoginRequest,
 } from '../readingTracker.schemas';
@@ -266,7 +266,7 @@ export function useAuthCallback<
  * @summary Me
  */
 export const authMe = (options?: SecondParameter<typeof customInstance>, signal?: AbortSignal) => {
-  return customInstance<AuthMe200>({ url: `/api/auth/me`, method: 'GET', signal }, options);
+  return customInstance<CurrentUser>({ url: `/api/auth/me`, method: 'GET', signal }, options);
 };
 
 export const getAuthMeQueryKey = () => {
