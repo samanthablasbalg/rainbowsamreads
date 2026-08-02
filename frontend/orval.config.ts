@@ -10,10 +10,16 @@ export default defineConfig({
       mode: 'tags-split',
       clean: true,
       formatter: 'prettier',
+      mock: true,
       override: {
         mutator: {
           path: './src/api/mutator/axios-instance.ts',
           name: 'customInstance',
+        },
+        mock: {
+          // Orval's handlers await a 1000ms delay by default. Fine in Storybook,
+          // a real second per request in vitest.
+          delay: false,
         },
       },
     },
