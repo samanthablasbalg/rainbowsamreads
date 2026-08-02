@@ -23,4 +23,20 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // shadcn components are generated into this directory by `npx shadcn add`, and the
+    // registry's convention is to export the component alongside its cva variants
+    // (`buttonVariants`, `badgeVariants`, ...) so other elements can borrow the styling.
+    // That trips react-refresh, which wants a module to export components and nothing else.
+    //
+    // We own the *contents* of these files and edit them freely; we do not own their export
+    // structure, and every future `shadcn add` reintroduces it. The only cost of the rule not
+    // firing is that editing one of these full-reloads the page instead of hot-swapping.
+    //
+    // Deliberately scoped to this directory. Our own code stays under the rule.
+    files: ['src/components/ui/**'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ]);
