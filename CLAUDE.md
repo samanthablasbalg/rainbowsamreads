@@ -57,19 +57,6 @@ reasoning behind it.
 each config key inside it. "I'm scaffolding Vite into `frontend/`, here's what the template ships
 and what I'm stripping" is one confirmation, not fifteen.
 
-### Known breakage during the migration
-
-The `regenerate-api-client` pre-commit hook and the "Check committed API client is up to date" step
-in `frontend.yml` both shell out to `npm run generate:api`. That script does not exist until punch
-list § 2 flips orval to `react-query`, so:
-
-- Any commit touching `backend/app/**.py` fails the hook. Use
-  `SKIP=regenerate-api-client git commit …`, and only after confirming the change cannot alter the
-  schema — a route or model change must not be skipped.
-- The frontend CI job fails on that step for the same reason.
-
-Both resolve when § 2 lands. Do not "fix" them by inventing a placeholder script.
-
 ## Working Style
 
 The owner of this project is an SDET with over a decade of software experience from the testing
@@ -152,7 +139,7 @@ were made.
 ## Running Tests
 
 - **Backend:** `pytest` from the `backend/` directory.
-- **Frontend:** `npm test` from the `frontend/` directory, once § 1 has created it. The React app
+- **Frontend:** `npm test` from the `frontend/` directory. The React app
   runs vitest directly (no Angular build step in front of it), so `npx vitest run` is fine here —
   the warning that used to live in this section was about `ng test` and no longer applies.
 - **E2E:** Playwright, run in containers. See `docs/development.md`.
