@@ -12,13 +12,16 @@
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
     "prettier:check": "prettier --check .. --ignore-path ../.gitignore --ignore-path ../.prettierignore",
-    "prettier:format": "prettier --write .. --ignore-path ../.gitignore --ignore-path ../.prettierignore"
+    "prettier:format": "prettier --write .. --ignore-path ../.gitignore --ignore-path ../.prettierignore",
+    "generate:api": "orval --config orval.config.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,css,json,md,html}": "prettier --write --ignore-path ../.prettierignore",
     "*.{ts,tsx}": "eslint --fix"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.101.4",
+    "axios": "^1.19.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
@@ -34,6 +37,7 @@
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.8.0",
     "lint-staged": "^17.3.0",
+    "orval": "^8.23.0",
     "prettier": "^3.9.6",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
