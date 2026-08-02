@@ -4,10 +4,7 @@
  * Reading Tracker
  * OpenAPI spec version: 0.1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -20,15 +17,8 @@ import type {
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
-  UseQueryResult
+  UseQueryResult,
 } from '@tanstack/react-query';
-
-import * as axios from 'axios';
-import type {
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
 
 import type {
   BookCreate,
@@ -36,12 +26,13 @@ import type {
   BookRead,
   BookSearchResult,
   BooksSearchBooksParams,
-  HTTPValidationError
+  HTTPValidationError,
 } from '../readingTracker.schemas';
 
+import { customInstance } from '../../mutator/axios-instance';
+import type { ErrorType } from '../../mutator/axios-instance';
 
-
-
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
   const result = { queryKey } as T & { queryKey: K };
@@ -62,363 +53,467 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
  * @summary List Books
  */
 export const booksListBooks = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<BookRead[]>> => {
-
-
-    return axios.default.get(
-      `/api/books`,options
-    );
-  }
-
-
-
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<BookRead[]>({ url: `/api/books`, method: 'GET', signal }, options);
+};
 
 export const getBooksListBooksQueryKey = () => {
-    return [
-    `/api/books`
-    ] as const;
-    }
+  return [`/api/books`] as const;
+};
 
+export const getBooksListBooksQueryOptions = <
+  TData = Awaited<ReturnType<typeof booksListBooks>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof booksListBooks>>, TError, TData>>;
+  request?: SecondParameter<typeof customInstance>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-export const getBooksListBooksQueryOptions = <TData = Awaited<ReturnType<typeof booksListBooks>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof booksListBooks>>, TError, TData>>, axios?: AxiosRequestConfig}
-) => {
+  const queryKey = queryOptions?.queryKey ?? getBooksListBooksQueryKey();
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof booksListBooks>>> = ({ signal }) =>
+    booksListBooks(requestOptions, signal);
 
-  const queryKey =  queryOptions?.queryKey ?? getBooksListBooksQueryKey();
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof booksListBooks>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type BooksListBooksQueryResult = NonNullable<Awaited<ReturnType<typeof booksListBooks>>>;
+export type BooksListBooksQueryError = ErrorType<unknown>;
 
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof booksListBooks>>> = ({ signal }) => booksListBooks({ signal, ...axiosOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof booksListBooks>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type BooksListBooksQueryResult = NonNullable<Awaited<ReturnType<typeof booksListBooks>>>
-export type BooksListBooksQueryError = AxiosError<unknown>
-
-
-export function useBooksListBooks<TData = Awaited<ReturnType<typeof booksListBooks>>, TError = AxiosError<unknown>>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof booksListBooks>>, TError, TData>> & Pick<
+export function useBooksListBooks<
+  TData = Awaited<ReturnType<typeof booksListBooks>>,
+  TError = ErrorType<unknown>,
+>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof booksListBooks>>, TError, TData>> &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof booksListBooks>>,
           TError,
           Awaited<ReturnType<typeof booksListBooks>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useBooksListBooks<TData = Awaited<ReturnType<typeof booksListBooks>>, TError = AxiosError<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof booksListBooks>>, TError, TData>> & Pick<
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useBooksListBooks<
+  TData = Awaited<ReturnType<typeof booksListBooks>>,
+  TError = ErrorType<unknown>,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof booksListBooks>>, TError, TData>> &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof booksListBooks>>,
           TError,
           Awaited<ReturnType<typeof booksListBooks>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useBooksListBooks<TData = Awaited<ReturnType<typeof booksListBooks>>, TError = AxiosError<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof booksListBooks>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useBooksListBooks<
+  TData = Awaited<ReturnType<typeof booksListBooks>>,
+  TError = ErrorType<unknown>,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof booksListBooks>>, TError, TData>>;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
  * @summary List Books
  */
 
-export function useBooksListBooks<TData = Awaited<ReturnType<typeof booksListBooks>>, TError = AxiosError<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof booksListBooks>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useBooksListBooks<
+  TData = Awaited<ReturnType<typeof booksListBooks>>,
+  TError = ErrorType<unknown>,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof booksListBooks>>, TError, TData>>;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getBooksListBooksQueryOptions(options);
 
-  const queryOptions = getBooksListBooksQueryOptions(options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
 
 /**
  * @summary Create Book
  */
 export const booksCreateBook = (
-    bookCreate: BookCreate, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<BookRead>> => {
+  bookCreate: BookCreate,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<BookRead>(
+    {
+      url: `/api/books`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: bookCreate,
+      signal,
+    },
+    options
+  );
+};
 
+export const getBooksCreateBookMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof booksCreateBook>>,
+    TError,
+    { data: BookCreate },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof booksCreateBook>>,
+  TError,
+  { data: BookCreate },
+  TContext
+> => {
+  const mutationKey = ['booksCreateBook'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-    return axios.default.post(
-      `/api/books`,
-      bookCreate,options
-    );
-  }
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof booksCreateBook>>,
+    { data: BookCreate }
+  > = (props) => {
+    const { data } = props ?? {};
 
+    return booksCreateBook(data, requestOptions);
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type BooksCreateBookMutationResult = NonNullable<
+  Awaited<ReturnType<typeof booksCreateBook>>
+>;
+export type BooksCreateBookMutationBody = BookCreate;
+export type BooksCreateBookMutationError = ErrorType<HTTPValidationError>;
 
-export const getBooksCreateBookMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof booksCreateBook>>, TError,{data: BookCreate}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof booksCreateBook>>, TError,{data: BookCreate}, TContext> => {
-
-const mutationKey = ['booksCreateBook'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof booksCreateBook>>, {data: BookCreate}> = (props) => {
-          const {data} = props ?? {};
-
-          return  booksCreateBook(data,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type BooksCreateBookMutationResult = NonNullable<Awaited<ReturnType<typeof booksCreateBook>>>
-    export type BooksCreateBookMutationBody = BookCreate
-    export type BooksCreateBookMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Create Book
  */
-export const useBooksCreateBook = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof booksCreateBook>>, TError,{data: BookCreate}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof booksCreateBook>>,
-        TError,
-        {data: BookCreate},
-        TContext
-      > => {
-      return useMutation(getBooksCreateBookMutationOptions(options), queryClient);
-    }
-    /**
+export const useBooksCreateBook = <TError = ErrorType<HTTPValidationError>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof booksCreateBook>>,
+      TError,
+      { data: BookCreate },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof booksCreateBook>>,
+  TError,
+  { data: BookCreate },
+  TContext
+> => {
+  return useMutation(getBooksCreateBookMutationOptions(options), queryClient);
+};
+/**
  * @summary Search Books
  */
 export const booksSearchBooks = (
-    params: BooksSearchBooksParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<BookSearchResult[]>> => {
-
-
-    return axios.default.get(
-      `/api/books/search`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-
-
-
-
-export const getBooksSearchBooksQueryKey = (params?: BooksSearchBooksParams,) => {
-    return [
-    `/api/books/search`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getBooksSearchBooksQueryOptions = <TData = Awaited<ReturnType<typeof booksSearchBooks>>, TError = AxiosError<HTTPValidationError>>(params: BooksSearchBooksParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof booksSearchBooks>>, TError, TData>>, axios?: AxiosRequestConfig}
+  params: BooksSearchBooksParams,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
 ) => {
+  return customInstance<BookSearchResult[]>(
+    { url: `/api/books/search`, method: 'GET', params, signal },
+    options
+  );
+};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+export const getBooksSearchBooksQueryKey = (params?: BooksSearchBooksParams) => {
+  return [`/api/books/search`, ...(params ? [params] : [])] as const;
+};
 
-  const queryKey =  queryOptions?.queryKey ?? getBooksSearchBooksQueryKey(params);
+export const getBooksSearchBooksQueryOptions = <
+  TData = Awaited<ReturnType<typeof booksSearchBooks>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: BooksSearchBooksParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof booksSearchBooks>>, TError, TData>>;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
+  const queryKey = queryOptions?.queryKey ?? getBooksSearchBooksQueryKey(params);
 
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof booksSearchBooks>>> = ({ signal }) =>
+    booksSearchBooks(params, requestOptions, signal);
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof booksSearchBooks>>> = ({ signal }) => booksSearchBooks(params, { signal, ...axiosOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof booksSearchBooks>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type BooksSearchBooksQueryResult = NonNullable<Awaited<ReturnType<typeof booksSearchBooks>>>;
+export type BooksSearchBooksQueryError = ErrorType<HTTPValidationError>;
 
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof booksSearchBooks>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type BooksSearchBooksQueryResult = NonNullable<Awaited<ReturnType<typeof booksSearchBooks>>>
-export type BooksSearchBooksQueryError = AxiosError<HTTPValidationError>
-
-
-export function useBooksSearchBooks<TData = Awaited<ReturnType<typeof booksSearchBooks>>, TError = AxiosError<HTTPValidationError>>(
- params: BooksSearchBooksParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof booksSearchBooks>>, TError, TData>> & Pick<
+export function useBooksSearchBooks<
+  TData = Awaited<ReturnType<typeof booksSearchBooks>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: BooksSearchBooksParams,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof booksSearchBooks>>, TError, TData>> &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof booksSearchBooks>>,
           TError,
           Awaited<ReturnType<typeof booksSearchBooks>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useBooksSearchBooks<TData = Awaited<ReturnType<typeof booksSearchBooks>>, TError = AxiosError<HTTPValidationError>>(
- params: BooksSearchBooksParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof booksSearchBooks>>, TError, TData>> & Pick<
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useBooksSearchBooks<
+  TData = Awaited<ReturnType<typeof booksSearchBooks>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: BooksSearchBooksParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof booksSearchBooks>>, TError, TData>> &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof booksSearchBooks>>,
           TError,
           Awaited<ReturnType<typeof booksSearchBooks>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useBooksSearchBooks<TData = Awaited<ReturnType<typeof booksSearchBooks>>, TError = AxiosError<HTTPValidationError>>(
- params: BooksSearchBooksParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof booksSearchBooks>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useBooksSearchBooks<
+  TData = Awaited<ReturnType<typeof booksSearchBooks>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: BooksSearchBooksParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof booksSearchBooks>>, TError, TData>>;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
  * @summary Search Books
  */
 
-export function useBooksSearchBooks<TData = Awaited<ReturnType<typeof booksSearchBooks>>, TError = AxiosError<HTTPValidationError>>(
- params: BooksSearchBooksParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof booksSearchBooks>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useBooksSearchBooks<
+  TData = Awaited<ReturnType<typeof booksSearchBooks>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: BooksSearchBooksParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof booksSearchBooks>>, TError, TData>>;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getBooksSearchBooksQueryOptions(params, options);
 
-  const queryOptions = getBooksSearchBooksQueryOptions(params,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
 
 /**
  * @summary Import Book
  */
 export const booksImportBook = (
-    bookImportRequest: BookImportRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<BookRead>> => {
+  bookImportRequest: BookImportRequest,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<BookRead>(
+    {
+      url: `/api/books/import`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: bookImportRequest,
+      signal,
+    },
+    options
+  );
+};
 
+export const getBooksImportBookMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof booksImportBook>>,
+    TError,
+    { data: BookImportRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof booksImportBook>>,
+  TError,
+  { data: BookImportRequest },
+  TContext
+> => {
+  const mutationKey = ['booksImportBook'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-    return axios.default.post(
-      `/api/books/import`,
-      bookImportRequest,options
-    );
-  }
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof booksImportBook>>,
+    { data: BookImportRequest }
+  > = (props) => {
+    const { data } = props ?? {};
 
+    return booksImportBook(data, requestOptions);
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type BooksImportBookMutationResult = NonNullable<
+  Awaited<ReturnType<typeof booksImportBook>>
+>;
+export type BooksImportBookMutationBody = BookImportRequest;
+export type BooksImportBookMutationError = ErrorType<HTTPValidationError>;
 
-export const getBooksImportBookMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof booksImportBook>>, TError,{data: BookImportRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof booksImportBook>>, TError,{data: BookImportRequest}, TContext> => {
-
-const mutationKey = ['booksImportBook'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof booksImportBook>>, {data: BookImportRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  booksImportBook(data,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type BooksImportBookMutationResult = NonNullable<Awaited<ReturnType<typeof booksImportBook>>>
-    export type BooksImportBookMutationBody = BookImportRequest
-    export type BooksImportBookMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Import Book
  */
-export const useBooksImportBook = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof booksImportBook>>, TError,{data: BookImportRequest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof booksImportBook>>,
-        TError,
-        {data: BookImportRequest},
-        TContext
-      > => {
-      return useMutation(getBooksImportBookMutationOptions(options), queryClient);
-    }
-    /**
+export const useBooksImportBook = <TError = ErrorType<HTTPValidationError>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof booksImportBook>>,
+      TError,
+      { data: BookImportRequest },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof booksImportBook>>,
+  TError,
+  { data: BookImportRequest },
+  TContext
+> => {
+  return useMutation(getBooksImportBookMutationOptions(options), queryClient);
+};
+/**
  * @summary Delete Book
  */
 export const booksDeleteBook = (
-    bookId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
+  bookId: string,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<void>({ url: `/api/books/${bookId}`, method: 'DELETE', signal }, options);
+};
 
+export const getBooksDeleteBookMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof booksDeleteBook>>,
+    TError,
+    { bookId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof booksDeleteBook>>,
+  TError,
+  { bookId: string },
+  TContext
+> => {
+  const mutationKey = ['booksDeleteBook'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-    return axios.default.delete(
-      `/api/books/${bookId}`,options
-    );
-  }
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof booksDeleteBook>>,
+    { bookId: string }
+  > = (props) => {
+    const { bookId } = props ?? {};
 
+    return booksDeleteBook(bookId, requestOptions);
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type BooksDeleteBookMutationResult = NonNullable<
+  Awaited<ReturnType<typeof booksDeleteBook>>
+>;
 
-export const getBooksDeleteBookMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof booksDeleteBook>>, TError,{bookId: string}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof booksDeleteBook>>, TError,{bookId: string}, TContext> => {
+export type BooksDeleteBookMutationError = ErrorType<HTTPValidationError>;
 
-const mutationKey = ['booksDeleteBook'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof booksDeleteBook>>, {bookId: string}> = (props) => {
-          const {bookId} = props ?? {};
-
-          return  booksDeleteBook(bookId,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type BooksDeleteBookMutationResult = NonNullable<Awaited<ReturnType<typeof booksDeleteBook>>>
-
-    export type BooksDeleteBookMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Delete Book
  */
-export const useBooksDeleteBook = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof booksDeleteBook>>, TError,{bookId: string}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof booksDeleteBook>>,
-        TError,
-        {bookId: string},
-        TContext
-      > => {
-      return useMutation(getBooksDeleteBookMutationOptions(options), queryClient);
-    }
+export const useBooksDeleteBook = <TError = ErrorType<HTTPValidationError>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof booksDeleteBook>>,
+      TError,
+      { bookId: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof booksDeleteBook>>,
+  TError,
+  { bookId: string },
+  TContext
+> => {
+  return useMutation(getBooksDeleteBookMutationOptions(options), queryClient);
+};

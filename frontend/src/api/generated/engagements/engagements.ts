@@ -4,10 +4,7 @@
  * Reading Tracker
  * OpenAPI spec version: 0.1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -20,15 +17,8 @@ import type {
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
-  UseQueryResult
+  UseQueryResult,
 } from '@tanstack/react-query';
-
-import * as axios from 'axios';
-import type {
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
 
 import type {
   EngagementCreate,
@@ -43,12 +33,13 @@ import type {
   PageProgressLogRead,
   ProgressLogCreate,
   ProgressLogUpdate,
-  ReviewUpsert
+  ReviewUpsert,
 } from '../readingTracker.schemas';
 
+import { customInstance } from '../../mutator/axios-instance';
+import type { ErrorType } from '../../mutator/axios-instance';
 
-
-
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
   const result = { queryKey } as T & { queryKey: K };
@@ -69,977 +60,1395 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
  * @summary Create Engagement
  */
 export const engagementsCreateEngagement = (
-    engagementCreate: EngagementCreate, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<EngagementRead>> => {
+  engagementCreate: EngagementCreate,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<EngagementRead>(
+    {
+      url: `/api/engagements`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: engagementCreate,
+      signal,
+    },
+    options
+  );
+};
 
+export const getEngagementsCreateEngagementMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof engagementsCreateEngagement>>,
+    TError,
+    { data: EngagementCreate },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof engagementsCreateEngagement>>,
+  TError,
+  { data: EngagementCreate },
+  TContext
+> => {
+  const mutationKey = ['engagementsCreateEngagement'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-    return axios.default.post(
-      `/api/engagements`,
-      engagementCreate,options
-    );
-  }
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof engagementsCreateEngagement>>,
+    { data: EngagementCreate }
+  > = (props) => {
+    const { data } = props ?? {};
 
+    return engagementsCreateEngagement(data, requestOptions);
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type EngagementsCreateEngagementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsCreateEngagement>>
+>;
+export type EngagementsCreateEngagementMutationBody = EngagementCreate;
+export type EngagementsCreateEngagementMutationError = ErrorType<HTTPValidationError>;
 
-export const getEngagementsCreateEngagementMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsCreateEngagement>>, TError,{data: EngagementCreate}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof engagementsCreateEngagement>>, TError,{data: EngagementCreate}, TContext> => {
-
-const mutationKey = ['engagementsCreateEngagement'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof engagementsCreateEngagement>>, {data: EngagementCreate}> = (props) => {
-          const {data} = props ?? {};
-
-          return  engagementsCreateEngagement(data,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type EngagementsCreateEngagementMutationResult = NonNullable<Awaited<ReturnType<typeof engagementsCreateEngagement>>>
-    export type EngagementsCreateEngagementMutationBody = EngagementCreate
-    export type EngagementsCreateEngagementMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Create Engagement
  */
-export const useEngagementsCreateEngagement = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsCreateEngagement>>, TError,{data: EngagementCreate}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof engagementsCreateEngagement>>,
-        TError,
-        {data: EngagementCreate},
-        TContext
-      > => {
-      return useMutation(getEngagementsCreateEngagementMutationOptions(options), queryClient);
-    }
-    /**
+export const useEngagementsCreateEngagement = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof engagementsCreateEngagement>>,
+      TError,
+      { data: EngagementCreate },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof engagementsCreateEngagement>>,
+  TError,
+  { data: EngagementCreate },
+  TContext
+> => {
+  return useMutation(getEngagementsCreateEngagementMutationOptions(options), queryClient);
+};
+/**
  * @summary List Engagements
  */
 export const engagementsListEngagements = (
-    params: EngagementsListEngagementsParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<EngagementRead[]>> => {
-
-
-    return axios.default.get(
-      `/api/engagements`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-
-
-
-
-export const getEngagementsListEngagementsQueryKey = (params?: EngagementsListEngagementsParams,) => {
-    return [
-    `/api/engagements`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getEngagementsListEngagementsQueryOptions = <TData = Awaited<ReturnType<typeof engagementsListEngagements>>, TError = AxiosError<HTTPValidationError>>(params: EngagementsListEngagementsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsListEngagements>>, TError, TData>>, axios?: AxiosRequestConfig}
+  params: EngagementsListEngagementsParams,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
 ) => {
+  return customInstance<EngagementRead[]>(
+    { url: `/api/engagements`, method: 'GET', params, signal },
+    options
+  );
+};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+export const getEngagementsListEngagementsQueryKey = (
+  params?: EngagementsListEngagementsParams
+) => {
+  return [`/api/engagements`, ...(params ? [params] : [])] as const;
+};
 
-  const queryKey =  queryOptions?.queryKey ?? getEngagementsListEngagementsQueryKey(params);
+export const getEngagementsListEngagementsQueryOptions = <
+  TData = Awaited<ReturnType<typeof engagementsListEngagements>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: EngagementsListEngagementsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsListEngagements>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
+  const queryKey = queryOptions?.queryKey ?? getEngagementsListEngagementsQueryKey(params);
 
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof engagementsListEngagements>>> = ({
+    signal,
+  }) => engagementsListEngagements(params, requestOptions, signal);
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof engagementsListEngagements>>> = ({ signal }) => engagementsListEngagements(params, { signal, ...axiosOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof engagementsListEngagements>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
+export type EngagementsListEngagementsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsListEngagements>>
+>;
+export type EngagementsListEngagementsQueryError = ErrorType<HTTPValidationError>;
 
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof engagementsListEngagements>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type EngagementsListEngagementsQueryResult = NonNullable<Awaited<ReturnType<typeof engagementsListEngagements>>>
-export type EngagementsListEngagementsQueryError = AxiosError<HTTPValidationError>
-
-
-export function useEngagementsListEngagements<TData = Awaited<ReturnType<typeof engagementsListEngagements>>, TError = AxiosError<HTTPValidationError>>(
- params: EngagementsListEngagementsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsListEngagements>>, TError, TData>> & Pick<
+export function useEngagementsListEngagements<
+  TData = Awaited<ReturnType<typeof engagementsListEngagements>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: EngagementsListEngagementsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsListEngagements>>, TError, TData>
+    > &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof engagementsListEngagements>>,
           TError,
           Awaited<ReturnType<typeof engagementsListEngagements>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useEngagementsListEngagements<TData = Awaited<ReturnType<typeof engagementsListEngagements>>, TError = AxiosError<HTTPValidationError>>(
- params: EngagementsListEngagementsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsListEngagements>>, TError, TData>> & Pick<
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEngagementsListEngagements<
+  TData = Awaited<ReturnType<typeof engagementsListEngagements>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: EngagementsListEngagementsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsListEngagements>>, TError, TData>
+    > &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof engagementsListEngagements>>,
           TError,
           Awaited<ReturnType<typeof engagementsListEngagements>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useEngagementsListEngagements<TData = Awaited<ReturnType<typeof engagementsListEngagements>>, TError = AxiosError<HTTPValidationError>>(
- params: EngagementsListEngagementsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsListEngagements>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEngagementsListEngagements<
+  TData = Awaited<ReturnType<typeof engagementsListEngagements>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: EngagementsListEngagementsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsListEngagements>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
  * @summary List Engagements
  */
 
-export function useEngagementsListEngagements<TData = Awaited<ReturnType<typeof engagementsListEngagements>>, TError = AxiosError<HTTPValidationError>>(
- params: EngagementsListEngagementsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsListEngagements>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useEngagementsListEngagements<
+  TData = Awaited<ReturnType<typeof engagementsListEngagements>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: EngagementsListEngagementsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsListEngagements>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getEngagementsListEngagementsQueryOptions(params, options);
 
-  const queryOptions = getEngagementsListEngagementsQueryOptions(params,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
 
 /**
  * @summary Update Engagement Status
  */
 export const engagementsUpdateEngagementStatus = (
-    engagementId: string,
-    engagementStatusUpdate: EngagementStatusUpdate, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<EngagementRead>> => {
+  engagementId: string,
+  engagementStatusUpdate: EngagementStatusUpdate,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<EngagementRead>(
+    {
+      url: `/api/engagements/${engagementId}`,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      data: engagementStatusUpdate,
+      signal,
+    },
+    options
+  );
+};
 
+export const getEngagementsUpdateEngagementStatusMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof engagementsUpdateEngagementStatus>>,
+    TError,
+    { engagementId: string; data: EngagementStatusUpdate },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof engagementsUpdateEngagementStatus>>,
+  TError,
+  { engagementId: string; data: EngagementStatusUpdate },
+  TContext
+> => {
+  const mutationKey = ['engagementsUpdateEngagementStatus'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-    return axios.default.patch(
-      `/api/engagements/${engagementId}`,
-      engagementStatusUpdate,options
-    );
-  }
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof engagementsUpdateEngagementStatus>>,
+    { engagementId: string; data: EngagementStatusUpdate }
+  > = (props) => {
+    const { engagementId, data } = props ?? {};
 
+    return engagementsUpdateEngagementStatus(engagementId, data, requestOptions);
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type EngagementsUpdateEngagementStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsUpdateEngagementStatus>>
+>;
+export type EngagementsUpdateEngagementStatusMutationBody = EngagementStatusUpdate;
+export type EngagementsUpdateEngagementStatusMutationError = ErrorType<HTTPValidationError>;
 
-export const getEngagementsUpdateEngagementStatusMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsUpdateEngagementStatus>>, TError,{engagementId: string;data: EngagementStatusUpdate}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof engagementsUpdateEngagementStatus>>, TError,{engagementId: string;data: EngagementStatusUpdate}, TContext> => {
-
-const mutationKey = ['engagementsUpdateEngagementStatus'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof engagementsUpdateEngagementStatus>>, {engagementId: string;data: EngagementStatusUpdate}> = (props) => {
-          const {engagementId,data} = props ?? {};
-
-          return  engagementsUpdateEngagementStatus(engagementId,data,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type EngagementsUpdateEngagementStatusMutationResult = NonNullable<Awaited<ReturnType<typeof engagementsUpdateEngagementStatus>>>
-    export type EngagementsUpdateEngagementStatusMutationBody = EngagementStatusUpdate
-    export type EngagementsUpdateEngagementStatusMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Update Engagement Status
  */
-export const useEngagementsUpdateEngagementStatus = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsUpdateEngagementStatus>>, TError,{engagementId: string;data: EngagementStatusUpdate}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof engagementsUpdateEngagementStatus>>,
-        TError,
-        {engagementId: string;data: EngagementStatusUpdate},
-        TContext
-      > => {
-      return useMutation(getEngagementsUpdateEngagementStatusMutationOptions(options), queryClient);
-    }
-    /**
+export const useEngagementsUpdateEngagementStatus = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof engagementsUpdateEngagementStatus>>,
+      TError,
+      { engagementId: string; data: EngagementStatusUpdate },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof engagementsUpdateEngagementStatus>>,
+  TError,
+  { engagementId: string; data: EngagementStatusUpdate },
+  TContext
+> => {
+  return useMutation(getEngagementsUpdateEngagementStatusMutationOptions(options), queryClient);
+};
+/**
  * @summary Get Engagement
  */
 export const engagementsGetEngagement = (
-    engagementId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<EngagementRead>> => {
-
-
-    return axios.default.get(
-      `/api/engagements/${engagementId}`,options
-    );
-  }
-
-
-
-
-export const getEngagementsGetEngagementQueryKey = (engagementId: string,) => {
-    return [
-    `/api/engagements/${engagementId}`
-    ] as const;
-    }
-
-
-export const getEngagementsGetEngagementQueryOptions = <TData = Awaited<ReturnType<typeof engagementsGetEngagement>>, TError = AxiosError<HTTPValidationError>>(engagementId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData>>, axios?: AxiosRequestConfig}
+  engagementId: string,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
 ) => {
+  return customInstance<EngagementRead>(
+    { url: `/api/engagements/${engagementId}`, method: 'GET', signal },
+    options
+  );
+};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+export const getEngagementsGetEngagementQueryKey = (engagementId: string) => {
+  return [`/api/engagements/${engagementId}`] as const;
+};
 
-  const queryKey =  queryOptions?.queryKey ?? getEngagementsGetEngagementQueryKey(engagementId);
+export const getEngagementsGetEngagementQueryOptions = <
+  TData = Awaited<ReturnType<typeof engagementsGetEngagement>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
+  const queryKey = queryOptions?.queryKey ?? getEngagementsGetEngagementQueryKey(engagementId);
 
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof engagementsGetEngagement>>> = ({
+    signal,
+  }) => engagementsGetEngagement(engagementId, requestOptions, signal);
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof engagementsGetEngagement>>> = ({ signal }) => engagementsGetEngagement(engagementId, { signal, ...axiosOptions });
+  return {
+    queryKey,
+    queryFn,
+    enabled: engagementId !== null && engagementId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
 
+export type EngagementsGetEngagementQueryResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsGetEngagement>>
+>;
+export type EngagementsGetEngagementQueryError = ErrorType<HTTPValidationError>;
 
-
-
-
-   return  { queryKey, queryFn, enabled: engagementId !== null && engagementId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type EngagementsGetEngagementQueryResult = NonNullable<Awaited<ReturnType<typeof engagementsGetEngagement>>>
-export type EngagementsGetEngagementQueryError = AxiosError<HTTPValidationError>
-
-
-export function useEngagementsGetEngagement<TData = Awaited<ReturnType<typeof engagementsGetEngagement>>, TError = AxiosError<HTTPValidationError>>(
- engagementId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData>> & Pick<
+export function useEngagementsGetEngagement<
+  TData = Awaited<ReturnType<typeof engagementsGetEngagement>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData>
+    > &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof engagementsGetEngagement>>,
           TError,
           Awaited<ReturnType<typeof engagementsGetEngagement>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useEngagementsGetEngagement<TData = Awaited<ReturnType<typeof engagementsGetEngagement>>, TError = AxiosError<HTTPValidationError>>(
- engagementId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData>> & Pick<
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEngagementsGetEngagement<
+  TData = Awaited<ReturnType<typeof engagementsGetEngagement>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData>
+    > &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof engagementsGetEngagement>>,
           TError,
           Awaited<ReturnType<typeof engagementsGetEngagement>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useEngagementsGetEngagement<TData = Awaited<ReturnType<typeof engagementsGetEngagement>>, TError = AxiosError<HTTPValidationError>>(
- engagementId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEngagementsGetEngagement<
+  TData = Awaited<ReturnType<typeof engagementsGetEngagement>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
  * @summary Get Engagement
  */
 
-export function useEngagementsGetEngagement<TData = Awaited<ReturnType<typeof engagementsGetEngagement>>, TError = AxiosError<HTTPValidationError>>(
- engagementId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useEngagementsGetEngagement<
+  TData = Awaited<ReturnType<typeof engagementsGetEngagement>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getEngagementsGetEngagementQueryOptions(engagementId, options);
 
-  const queryOptions = getEngagementsGetEngagementQueryOptions(engagementId,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
 
 /**
  * @summary Delete Engagement
  */
 export const engagementsDeleteEngagement = (
-    engagementId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
+  engagementId: string,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<void>(
+    { url: `/api/engagements/${engagementId}`, method: 'DELETE', signal },
+    options
+  );
+};
 
+export const getEngagementsDeleteEngagementMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof engagementsDeleteEngagement>>,
+    TError,
+    { engagementId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof engagementsDeleteEngagement>>,
+  TError,
+  { engagementId: string },
+  TContext
+> => {
+  const mutationKey = ['engagementsDeleteEngagement'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-    return axios.default.delete(
-      `/api/engagements/${engagementId}`,options
-    );
-  }
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof engagementsDeleteEngagement>>,
+    { engagementId: string }
+  > = (props) => {
+    const { engagementId } = props ?? {};
 
+    return engagementsDeleteEngagement(engagementId, requestOptions);
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type EngagementsDeleteEngagementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsDeleteEngagement>>
+>;
 
-export const getEngagementsDeleteEngagementMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsDeleteEngagement>>, TError,{engagementId: string}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof engagementsDeleteEngagement>>, TError,{engagementId: string}, TContext> => {
+export type EngagementsDeleteEngagementMutationError = ErrorType<HTTPValidationError>;
 
-const mutationKey = ['engagementsDeleteEngagement'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof engagementsDeleteEngagement>>, {engagementId: string}> = (props) => {
-          const {engagementId} = props ?? {};
-
-          return  engagementsDeleteEngagement(engagementId,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type EngagementsDeleteEngagementMutationResult = NonNullable<Awaited<ReturnType<typeof engagementsDeleteEngagement>>>
-
-    export type EngagementsDeleteEngagementMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Delete Engagement
  */
-export const useEngagementsDeleteEngagement = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsDeleteEngagement>>, TError,{engagementId: string}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof engagementsDeleteEngagement>>,
-        TError,
-        {engagementId: string},
-        TContext
-      > => {
-      return useMutation(getEngagementsDeleteEngagementMutationOptions(options), queryClient);
-    }
-    /**
+export const useEngagementsDeleteEngagement = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof engagementsDeleteEngagement>>,
+      TError,
+      { engagementId: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof engagementsDeleteEngagement>>,
+  TError,
+  { engagementId: string },
+  TContext
+> => {
+  return useMutation(getEngagementsDeleteEngagementMutationOptions(options), queryClient);
+};
+/**
  * @summary Update Engagement Dates
  */
 export const engagementsUpdateEngagementDates = (
-    engagementId: string,
-    engagementDatesUpdate: EngagementDatesUpdate, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<EngagementRead>> => {
+  engagementId: string,
+  engagementDatesUpdate: EngagementDatesUpdate,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<EngagementRead>(
+    {
+      url: `/api/engagements/${engagementId}/dates`,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      data: engagementDatesUpdate,
+      signal,
+    },
+    options
+  );
+};
 
+export const getEngagementsUpdateEngagementDatesMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>,
+    TError,
+    { engagementId: string; data: EngagementDatesUpdate },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>,
+  TError,
+  { engagementId: string; data: EngagementDatesUpdate },
+  TContext
+> => {
+  const mutationKey = ['engagementsUpdateEngagementDates'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-    return axios.default.patch(
-      `/api/engagements/${engagementId}/dates`,
-      engagementDatesUpdate,options
-    );
-  }
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>,
+    { engagementId: string; data: EngagementDatesUpdate }
+  > = (props) => {
+    const { engagementId, data } = props ?? {};
 
+    return engagementsUpdateEngagementDates(engagementId, data, requestOptions);
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type EngagementsUpdateEngagementDatesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>
+>;
+export type EngagementsUpdateEngagementDatesMutationBody = EngagementDatesUpdate;
+export type EngagementsUpdateEngagementDatesMutationError = ErrorType<HTTPValidationError>;
 
-export const getEngagementsUpdateEngagementDatesMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>, TError,{engagementId: string;data: EngagementDatesUpdate}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>, TError,{engagementId: string;data: EngagementDatesUpdate}, TContext> => {
-
-const mutationKey = ['engagementsUpdateEngagementDates'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>, {engagementId: string;data: EngagementDatesUpdate}> = (props) => {
-          const {engagementId,data} = props ?? {};
-
-          return  engagementsUpdateEngagementDates(engagementId,data,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type EngagementsUpdateEngagementDatesMutationResult = NonNullable<Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>>
-    export type EngagementsUpdateEngagementDatesMutationBody = EngagementDatesUpdate
-    export type EngagementsUpdateEngagementDatesMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Update Engagement Dates
  */
-export const useEngagementsUpdateEngagementDates = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>, TError,{engagementId: string;data: EngagementDatesUpdate}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>,
-        TError,
-        {engagementId: string;data: EngagementDatesUpdate},
-        TContext
-      > => {
-      return useMutation(getEngagementsUpdateEngagementDatesMutationOptions(options), queryClient);
-    }
-    /**
+export const useEngagementsUpdateEngagementDates = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>,
+      TError,
+      { engagementId: string; data: EngagementDatesUpdate },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>,
+  TError,
+  { engagementId: string; data: EngagementDatesUpdate },
+  TContext
+> => {
+  return useMutation(getEngagementsUpdateEngagementDatesMutationOptions(options), queryClient);
+};
+/**
  * @summary Log Progress
  */
 export const engagementsLogProgress = (
-    engagementId: string,
-    progressLogCreate: ProgressLogCreate, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<PageProgressLogRead | MinuteProgressLogRead>> => {
+  engagementId: string,
+  progressLogCreate: ProgressLogCreate,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<PageProgressLogRead | MinuteProgressLogRead>(
+    {
+      url: `/api/engagements/${engagementId}/progress-logs`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: progressLogCreate,
+      signal,
+    },
+    options
+  );
+};
 
+export const getEngagementsLogProgressMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof engagementsLogProgress>>,
+    TError,
+    { engagementId: string; data: ProgressLogCreate },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof engagementsLogProgress>>,
+  TError,
+  { engagementId: string; data: ProgressLogCreate },
+  TContext
+> => {
+  const mutationKey = ['engagementsLogProgress'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-    return axios.default.post(
-      `/api/engagements/${engagementId}/progress-logs`,
-      progressLogCreate,options
-    );
-  }
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof engagementsLogProgress>>,
+    { engagementId: string; data: ProgressLogCreate }
+  > = (props) => {
+    const { engagementId, data } = props ?? {};
 
+    return engagementsLogProgress(engagementId, data, requestOptions);
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type EngagementsLogProgressMutationResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsLogProgress>>
+>;
+export type EngagementsLogProgressMutationBody = ProgressLogCreate;
+export type EngagementsLogProgressMutationError = ErrorType<HTTPValidationError>;
 
-export const getEngagementsLogProgressMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsLogProgress>>, TError,{engagementId: string;data: ProgressLogCreate}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof engagementsLogProgress>>, TError,{engagementId: string;data: ProgressLogCreate}, TContext> => {
-
-const mutationKey = ['engagementsLogProgress'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof engagementsLogProgress>>, {engagementId: string;data: ProgressLogCreate}> = (props) => {
-          const {engagementId,data} = props ?? {};
-
-          return  engagementsLogProgress(engagementId,data,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type EngagementsLogProgressMutationResult = NonNullable<Awaited<ReturnType<typeof engagementsLogProgress>>>
-    export type EngagementsLogProgressMutationBody = ProgressLogCreate
-    export type EngagementsLogProgressMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Log Progress
  */
-export const useEngagementsLogProgress = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsLogProgress>>, TError,{engagementId: string;data: ProgressLogCreate}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof engagementsLogProgress>>,
-        TError,
-        {engagementId: string;data: ProgressLogCreate},
-        TContext
-      > => {
-      return useMutation(getEngagementsLogProgressMutationOptions(options), queryClient);
-    }
-    /**
+export const useEngagementsLogProgress = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof engagementsLogProgress>>,
+      TError,
+      { engagementId: string; data: ProgressLogCreate },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof engagementsLogProgress>>,
+  TError,
+  { engagementId: string; data: ProgressLogCreate },
+  TContext
+> => {
+  return useMutation(getEngagementsLogProgressMutationOptions(options), queryClient);
+};
+/**
  * @summary List Progress Logs
  */
 export const engagementsListProgressLogs = (
-    engagementId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<(PageProgressLogRead | MinuteProgressLogRead)[]>> => {
-
-
-    return axios.default.get(
-      `/api/engagements/${engagementId}/progress-logs`,options
-    );
-  }
-
-
-
-
-export const getEngagementsListProgressLogsQueryKey = (engagementId: string,) => {
-    return [
-    `/api/engagements/${engagementId}/progress-logs`
-    ] as const;
-    }
-
-
-export const getEngagementsListProgressLogsQueryOptions = <TData = Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError = AxiosError<HTTPValidationError>>(engagementId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError, TData>>, axios?: AxiosRequestConfig}
+  engagementId: string,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
 ) => {
+  return customInstance<(PageProgressLogRead | MinuteProgressLogRead)[]>(
+    { url: `/api/engagements/${engagementId}/progress-logs`, method: 'GET', signal },
+    options
+  );
+};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+export const getEngagementsListProgressLogsQueryKey = (engagementId: string) => {
+  return [`/api/engagements/${engagementId}/progress-logs`] as const;
+};
 
-  const queryKey =  queryOptions?.queryKey ?? getEngagementsListProgressLogsQueryKey(engagementId);
+export const getEngagementsListProgressLogsQueryOptions = <
+  TData = Awaited<ReturnType<typeof engagementsListProgressLogs>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
+  const queryKey = queryOptions?.queryKey ?? getEngagementsListProgressLogsQueryKey(engagementId);
 
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof engagementsListProgressLogs>>> = ({
+    signal,
+  }) => engagementsListProgressLogs(engagementId, requestOptions, signal);
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof engagementsListProgressLogs>>> = ({ signal }) => engagementsListProgressLogs(engagementId, { signal, ...axiosOptions });
+  return {
+    queryKey,
+    queryFn,
+    enabled: engagementId !== null && engagementId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
 
+export type EngagementsListProgressLogsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsListProgressLogs>>
+>;
+export type EngagementsListProgressLogsQueryError = ErrorType<HTTPValidationError>;
 
-
-
-
-   return  { queryKey, queryFn, enabled: engagementId !== null && engagementId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type EngagementsListProgressLogsQueryResult = NonNullable<Awaited<ReturnType<typeof engagementsListProgressLogs>>>
-export type EngagementsListProgressLogsQueryError = AxiosError<HTTPValidationError>
-
-
-export function useEngagementsListProgressLogs<TData = Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError = AxiosError<HTTPValidationError>>(
- engagementId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError, TData>> & Pick<
+export function useEngagementsListProgressLogs<
+  TData = Awaited<ReturnType<typeof engagementsListProgressLogs>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError, TData>
+    > &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof engagementsListProgressLogs>>,
           TError,
           Awaited<ReturnType<typeof engagementsListProgressLogs>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useEngagementsListProgressLogs<TData = Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError = AxiosError<HTTPValidationError>>(
- engagementId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError, TData>> & Pick<
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEngagementsListProgressLogs<
+  TData = Awaited<ReturnType<typeof engagementsListProgressLogs>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError, TData>
+    > &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof engagementsListProgressLogs>>,
           TError,
           Awaited<ReturnType<typeof engagementsListProgressLogs>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useEngagementsListProgressLogs<TData = Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError = AxiosError<HTTPValidationError>>(
- engagementId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEngagementsListProgressLogs<
+  TData = Awaited<ReturnType<typeof engagementsListProgressLogs>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
  * @summary List Progress Logs
  */
 
-export function useEngagementsListProgressLogs<TData = Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError = AxiosError<HTTPValidationError>>(
- engagementId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useEngagementsListProgressLogs<
+  TData = Awaited<ReturnType<typeof engagementsListProgressLogs>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsListProgressLogs>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getEngagementsListProgressLogsQueryOptions(engagementId, options);
 
-  const queryOptions = getEngagementsListProgressLogsQueryOptions(engagementId,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
 
 /**
  * @summary Update Progress Log
  */
 export const engagementsUpdateProgressLog = (
-    engagementId: string,
-    logId: string,
-    progressLogUpdate: ProgressLogUpdate, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<PageProgressLogRead | MinuteProgressLogRead>> => {
+  engagementId: string,
+  logId: string,
+  progressLogUpdate: ProgressLogUpdate,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<PageProgressLogRead | MinuteProgressLogRead>(
+    {
+      url: `/api/engagements/${engagementId}/progress-logs/${logId}`,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      data: progressLogUpdate,
+      signal,
+    },
+    options
+  );
+};
 
+export const getEngagementsUpdateProgressLogMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof engagementsUpdateProgressLog>>,
+    TError,
+    { engagementId: string; logId: string; data: ProgressLogUpdate },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof engagementsUpdateProgressLog>>,
+  TError,
+  { engagementId: string; logId: string; data: ProgressLogUpdate },
+  TContext
+> => {
+  const mutationKey = ['engagementsUpdateProgressLog'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-    return axios.default.patch(
-      `/api/engagements/${engagementId}/progress-logs/${logId}`,
-      progressLogUpdate,options
-    );
-  }
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof engagementsUpdateProgressLog>>,
+    { engagementId: string; logId: string; data: ProgressLogUpdate }
+  > = (props) => {
+    const { engagementId, logId, data } = props ?? {};
 
+    return engagementsUpdateProgressLog(engagementId, logId, data, requestOptions);
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type EngagementsUpdateProgressLogMutationResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsUpdateProgressLog>>
+>;
+export type EngagementsUpdateProgressLogMutationBody = ProgressLogUpdate;
+export type EngagementsUpdateProgressLogMutationError = ErrorType<HTTPValidationError>;
 
-export const getEngagementsUpdateProgressLogMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsUpdateProgressLog>>, TError,{engagementId: string;logId: string;data: ProgressLogUpdate}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof engagementsUpdateProgressLog>>, TError,{engagementId: string;logId: string;data: ProgressLogUpdate}, TContext> => {
-
-const mutationKey = ['engagementsUpdateProgressLog'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof engagementsUpdateProgressLog>>, {engagementId: string;logId: string;data: ProgressLogUpdate}> = (props) => {
-          const {engagementId,logId,data} = props ?? {};
-
-          return  engagementsUpdateProgressLog(engagementId,logId,data,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type EngagementsUpdateProgressLogMutationResult = NonNullable<Awaited<ReturnType<typeof engagementsUpdateProgressLog>>>
-    export type EngagementsUpdateProgressLogMutationBody = ProgressLogUpdate
-    export type EngagementsUpdateProgressLogMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Update Progress Log
  */
-export const useEngagementsUpdateProgressLog = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsUpdateProgressLog>>, TError,{engagementId: string;logId: string;data: ProgressLogUpdate}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof engagementsUpdateProgressLog>>,
-        TError,
-        {engagementId: string;logId: string;data: ProgressLogUpdate},
-        TContext
-      > => {
-      return useMutation(getEngagementsUpdateProgressLogMutationOptions(options), queryClient);
-    }
-    /**
+export const useEngagementsUpdateProgressLog = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof engagementsUpdateProgressLog>>,
+      TError,
+      { engagementId: string; logId: string; data: ProgressLogUpdate },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof engagementsUpdateProgressLog>>,
+  TError,
+  { engagementId: string; logId: string; data: ProgressLogUpdate },
+  TContext
+> => {
+  return useMutation(getEngagementsUpdateProgressLogMutationOptions(options), queryClient);
+};
+/**
  * @summary Delete Progress Log
  */
 export const engagementsDeleteProgressLog = (
-    engagementId: string,
-    logId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
+  engagementId: string,
+  logId: string,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<void>(
+    { url: `/api/engagements/${engagementId}/progress-logs/${logId}`, method: 'DELETE', signal },
+    options
+  );
+};
 
+export const getEngagementsDeleteProgressLogMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof engagementsDeleteProgressLog>>,
+    TError,
+    { engagementId: string; logId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof engagementsDeleteProgressLog>>,
+  TError,
+  { engagementId: string; logId: string },
+  TContext
+> => {
+  const mutationKey = ['engagementsDeleteProgressLog'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-    return axios.default.delete(
-      `/api/engagements/${engagementId}/progress-logs/${logId}`,options
-    );
-  }
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof engagementsDeleteProgressLog>>,
+    { engagementId: string; logId: string }
+  > = (props) => {
+    const { engagementId, logId } = props ?? {};
 
+    return engagementsDeleteProgressLog(engagementId, logId, requestOptions);
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type EngagementsDeleteProgressLogMutationResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsDeleteProgressLog>>
+>;
 
-export const getEngagementsDeleteProgressLogMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsDeleteProgressLog>>, TError,{engagementId: string;logId: string}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof engagementsDeleteProgressLog>>, TError,{engagementId: string;logId: string}, TContext> => {
+export type EngagementsDeleteProgressLogMutationError = ErrorType<HTTPValidationError>;
 
-const mutationKey = ['engagementsDeleteProgressLog'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof engagementsDeleteProgressLog>>, {engagementId: string;logId: string}> = (props) => {
-          const {engagementId,logId} = props ?? {};
-
-          return  engagementsDeleteProgressLog(engagementId,logId,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type EngagementsDeleteProgressLogMutationResult = NonNullable<Awaited<ReturnType<typeof engagementsDeleteProgressLog>>>
-
-    export type EngagementsDeleteProgressLogMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Delete Progress Log
  */
-export const useEngagementsDeleteProgressLog = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsDeleteProgressLog>>, TError,{engagementId: string;logId: string}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof engagementsDeleteProgressLog>>,
-        TError,
-        {engagementId: string;logId: string},
-        TContext
-      > => {
-      return useMutation(getEngagementsDeleteProgressLogMutationOptions(options), queryClient);
-    }
-    /**
+export const useEngagementsDeleteProgressLog = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof engagementsDeleteProgressLog>>,
+      TError,
+      { engagementId: string; logId: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof engagementsDeleteProgressLog>>,
+  TError,
+  { engagementId: string; logId: string },
+  TContext
+> => {
+  return useMutation(getEngagementsDeleteProgressLogMutationOptions(options), queryClient);
+};
+/**
  * @summary Create Binding
  */
 export const engagementsCreateBinding = (
-    engagementId: string,
-    engagementEditionCreate: EngagementEditionCreate, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<EngagementEditionRead>> => {
+  engagementId: string,
+  engagementEditionCreate: EngagementEditionCreate,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<EngagementEditionRead>(
+    {
+      url: `/api/engagements/${engagementId}/editions`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: engagementEditionCreate,
+      signal,
+    },
+    options
+  );
+};
 
+export const getEngagementsCreateBindingMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof engagementsCreateBinding>>,
+    TError,
+    { engagementId: string; data: EngagementEditionCreate },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof engagementsCreateBinding>>,
+  TError,
+  { engagementId: string; data: EngagementEditionCreate },
+  TContext
+> => {
+  const mutationKey = ['engagementsCreateBinding'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-    return axios.default.post(
-      `/api/engagements/${engagementId}/editions`,
-      engagementEditionCreate,options
-    );
-  }
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof engagementsCreateBinding>>,
+    { engagementId: string; data: EngagementEditionCreate }
+  > = (props) => {
+    const { engagementId, data } = props ?? {};
 
+    return engagementsCreateBinding(engagementId, data, requestOptions);
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type EngagementsCreateBindingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsCreateBinding>>
+>;
+export type EngagementsCreateBindingMutationBody = EngagementEditionCreate;
+export type EngagementsCreateBindingMutationError = ErrorType<HTTPValidationError>;
 
-export const getEngagementsCreateBindingMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsCreateBinding>>, TError,{engagementId: string;data: EngagementEditionCreate}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof engagementsCreateBinding>>, TError,{engagementId: string;data: EngagementEditionCreate}, TContext> => {
-
-const mutationKey = ['engagementsCreateBinding'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof engagementsCreateBinding>>, {engagementId: string;data: EngagementEditionCreate}> = (props) => {
-          const {engagementId,data} = props ?? {};
-
-          return  engagementsCreateBinding(engagementId,data,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type EngagementsCreateBindingMutationResult = NonNullable<Awaited<ReturnType<typeof engagementsCreateBinding>>>
-    export type EngagementsCreateBindingMutationBody = EngagementEditionCreate
-    export type EngagementsCreateBindingMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Create Binding
  */
-export const useEngagementsCreateBinding = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsCreateBinding>>, TError,{engagementId: string;data: EngagementEditionCreate}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof engagementsCreateBinding>>,
-        TError,
-        {engagementId: string;data: EngagementEditionCreate},
-        TContext
-      > => {
-      return useMutation(getEngagementsCreateBindingMutationOptions(options), queryClient);
-    }
-    /**
+export const useEngagementsCreateBinding = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof engagementsCreateBinding>>,
+      TError,
+      { engagementId: string; data: EngagementEditionCreate },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof engagementsCreateBinding>>,
+  TError,
+  { engagementId: string; data: EngagementEditionCreate },
+  TContext
+> => {
+  return useMutation(getEngagementsCreateBindingMutationOptions(options), queryClient);
+};
+/**
  * @summary List Bindings
  */
 export const engagementsListBindings = (
-    engagementId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<EngagementEditionRead[]>> => {
-
-
-    return axios.default.get(
-      `/api/engagements/${engagementId}/editions`,options
-    );
-  }
-
-
-
-
-export const getEngagementsListBindingsQueryKey = (engagementId: string,) => {
-    return [
-    `/api/engagements/${engagementId}/editions`
-    ] as const;
-    }
-
-
-export const getEngagementsListBindingsQueryOptions = <TData = Awaited<ReturnType<typeof engagementsListBindings>>, TError = AxiosError<HTTPValidationError>>(engagementId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData>>, axios?: AxiosRequestConfig}
+  engagementId: string,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
 ) => {
+  return customInstance<EngagementEditionRead[]>(
+    { url: `/api/engagements/${engagementId}/editions`, method: 'GET', signal },
+    options
+  );
+};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+export const getEngagementsListBindingsQueryKey = (engagementId: string) => {
+  return [`/api/engagements/${engagementId}/editions`] as const;
+};
 
-  const queryKey =  queryOptions?.queryKey ?? getEngagementsListBindingsQueryKey(engagementId);
+export const getEngagementsListBindingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof engagementsListBindings>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
+  const queryKey = queryOptions?.queryKey ?? getEngagementsListBindingsQueryKey(engagementId);
 
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof engagementsListBindings>>> = ({
+    signal,
+  }) => engagementsListBindings(engagementId, requestOptions, signal);
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof engagementsListBindings>>> = ({ signal }) => engagementsListBindings(engagementId, { signal, ...axiosOptions });
+  return {
+    queryKey,
+    queryFn,
+    enabled: engagementId !== null && engagementId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
 
+export type EngagementsListBindingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsListBindings>>
+>;
+export type EngagementsListBindingsQueryError = ErrorType<HTTPValidationError>;
 
-
-
-
-   return  { queryKey, queryFn, enabled: engagementId !== null && engagementId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type EngagementsListBindingsQueryResult = NonNullable<Awaited<ReturnType<typeof engagementsListBindings>>>
-export type EngagementsListBindingsQueryError = AxiosError<HTTPValidationError>
-
-
-export function useEngagementsListBindings<TData = Awaited<ReturnType<typeof engagementsListBindings>>, TError = AxiosError<HTTPValidationError>>(
- engagementId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData>> & Pick<
+export function useEngagementsListBindings<
+  TData = Awaited<ReturnType<typeof engagementsListBindings>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData>
+    > &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof engagementsListBindings>>,
           TError,
           Awaited<ReturnType<typeof engagementsListBindings>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useEngagementsListBindings<TData = Awaited<ReturnType<typeof engagementsListBindings>>, TError = AxiosError<HTTPValidationError>>(
- engagementId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData>> & Pick<
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEngagementsListBindings<
+  TData = Awaited<ReturnType<typeof engagementsListBindings>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData>
+    > &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof engagementsListBindings>>,
           TError,
           Awaited<ReturnType<typeof engagementsListBindings>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useEngagementsListBindings<TData = Awaited<ReturnType<typeof engagementsListBindings>>, TError = AxiosError<HTTPValidationError>>(
- engagementId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEngagementsListBindings<
+  TData = Awaited<ReturnType<typeof engagementsListBindings>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
  * @summary List Bindings
  */
 
-export function useEngagementsListBindings<TData = Awaited<ReturnType<typeof engagementsListBindings>>, TError = AxiosError<HTTPValidationError>>(
- engagementId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useEngagementsListBindings<
+  TData = Awaited<ReturnType<typeof engagementsListBindings>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getEngagementsListBindingsQueryOptions(engagementId, options);
 
-  const queryOptions = getEngagementsListBindingsQueryOptions(engagementId,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
 
 /**
  * @summary Delete Binding
  */
 export const engagementsDeleteBinding = (
-    engagementId: string,
-    editionId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
+  engagementId: string,
+  editionId: string,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<void>(
+    { url: `/api/engagements/${engagementId}/editions/${editionId}`, method: 'DELETE', signal },
+    options
+  );
+};
 
+export const getEngagementsDeleteBindingMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof engagementsDeleteBinding>>,
+    TError,
+    { engagementId: string; editionId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof engagementsDeleteBinding>>,
+  TError,
+  { engagementId: string; editionId: string },
+  TContext
+> => {
+  const mutationKey = ['engagementsDeleteBinding'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-    return axios.default.delete(
-      `/api/engagements/${engagementId}/editions/${editionId}`,options
-    );
-  }
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof engagementsDeleteBinding>>,
+    { engagementId: string; editionId: string }
+  > = (props) => {
+    const { engagementId, editionId } = props ?? {};
 
+    return engagementsDeleteBinding(engagementId, editionId, requestOptions);
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type EngagementsDeleteBindingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsDeleteBinding>>
+>;
 
-export const getEngagementsDeleteBindingMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsDeleteBinding>>, TError,{engagementId: string;editionId: string}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof engagementsDeleteBinding>>, TError,{engagementId: string;editionId: string}, TContext> => {
+export type EngagementsDeleteBindingMutationError = ErrorType<HTTPValidationError>;
 
-const mutationKey = ['engagementsDeleteBinding'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof engagementsDeleteBinding>>, {engagementId: string;editionId: string}> = (props) => {
-          const {engagementId,editionId} = props ?? {};
-
-          return  engagementsDeleteBinding(engagementId,editionId,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type EngagementsDeleteBindingMutationResult = NonNullable<Awaited<ReturnType<typeof engagementsDeleteBinding>>>
-
-    export type EngagementsDeleteBindingMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Delete Binding
  */
-export const useEngagementsDeleteBinding = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsDeleteBinding>>, TError,{engagementId: string;editionId: string}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof engagementsDeleteBinding>>,
-        TError,
-        {engagementId: string;editionId: string},
-        TContext
-      > => {
-      return useMutation(getEngagementsDeleteBindingMutationOptions(options), queryClient);
-    }
-    /**
+export const useEngagementsDeleteBinding = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof engagementsDeleteBinding>>,
+      TError,
+      { engagementId: string; editionId: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof engagementsDeleteBinding>>,
+  TError,
+  { engagementId: string; editionId: string },
+  TContext
+> => {
+  return useMutation(getEngagementsDeleteBindingMutationOptions(options), queryClient);
+};
+/**
  * @summary Upsert Review
  */
 export const engagementsUpsertReview = (
-    engagementId: string,
-    reviewUpsert: ReviewUpsert, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<EngagementRead>> => {
+  engagementId: string,
+  reviewUpsert: ReviewUpsert,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<EngagementRead>(
+    {
+      url: `/api/engagements/${engagementId}/review`,
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      data: reviewUpsert,
+      signal,
+    },
+    options
+  );
+};
 
+export const getEngagementsUpsertReviewMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof engagementsUpsertReview>>,
+    TError,
+    { engagementId: string; data: ReviewUpsert },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof engagementsUpsertReview>>,
+  TError,
+  { engagementId: string; data: ReviewUpsert },
+  TContext
+> => {
+  const mutationKey = ['engagementsUpsertReview'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-    return axios.default.put(
-      `/api/engagements/${engagementId}/review`,
-      reviewUpsert,options
-    );
-  }
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof engagementsUpsertReview>>,
+    { engagementId: string; data: ReviewUpsert }
+  > = (props) => {
+    const { engagementId, data } = props ?? {};
 
+    return engagementsUpsertReview(engagementId, data, requestOptions);
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type EngagementsUpsertReviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsUpsertReview>>
+>;
+export type EngagementsUpsertReviewMutationBody = ReviewUpsert;
+export type EngagementsUpsertReviewMutationError = ErrorType<HTTPValidationError>;
 
-export const getEngagementsUpsertReviewMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsUpsertReview>>, TError,{engagementId: string;data: ReviewUpsert}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof engagementsUpsertReview>>, TError,{engagementId: string;data: ReviewUpsert}, TContext> => {
-
-const mutationKey = ['engagementsUpsertReview'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof engagementsUpsertReview>>, {engagementId: string;data: ReviewUpsert}> = (props) => {
-          const {engagementId,data} = props ?? {};
-
-          return  engagementsUpsertReview(engagementId,data,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type EngagementsUpsertReviewMutationResult = NonNullable<Awaited<ReturnType<typeof engagementsUpsertReview>>>
-    export type EngagementsUpsertReviewMutationBody = ReviewUpsert
-    export type EngagementsUpsertReviewMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Upsert Review
  */
-export const useEngagementsUpsertReview = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof engagementsUpsertReview>>, TError,{engagementId: string;data: ReviewUpsert}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof engagementsUpsertReview>>,
-        TError,
-        {engagementId: string;data: ReviewUpsert},
-        TContext
-      > => {
-      return useMutation(getEngagementsUpsertReviewMutationOptions(options), queryClient);
-    }
+export const useEngagementsUpsertReview = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof engagementsUpsertReview>>,
+      TError,
+      { engagementId: string; data: ReviewUpsert },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof engagementsUpsertReview>>,
+  TError,
+  { engagementId: string; data: ReviewUpsert },
+  TContext
+> => {
+  return useMutation(getEngagementsUpsertReviewMutationOptions(options), queryClient);
+};

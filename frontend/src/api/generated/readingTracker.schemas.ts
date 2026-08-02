@@ -21,8 +21,7 @@ export interface BookImportRequest {
   google_books_id: string;
 }
 
-export type DatePrecision = typeof DatePrecision[keyof typeof DatePrecision];
-
+export type DatePrecision = (typeof DatePrecision)[keyof typeof DatePrecision];
 
 export const DatePrecision = {
   day: 'day',
@@ -46,8 +45,8 @@ export interface BookRead {
   updated_at: string;
 }
 
-export type BookSearchResultState = typeof BookSearchResultState[keyof typeof BookSearchResultState];
-
+export type BookSearchResultState =
+  (typeof BookSearchResultState)[keyof typeof BookSearchResultState];
 
 export const BookSearchResultState = {
   in_library: 'in_library',
@@ -55,8 +54,8 @@ export const BookSearchResultState = {
   not_in_app: 'not_in_app',
 } as const;
 
-export type BookSearchResultStatus = typeof BookSearchResultStatus[keyof typeof BookSearchResultStatus] | null;
-
+export type BookSearchResultStatus =
+  (typeof BookSearchResultStatus)[keyof typeof BookSearchResultStatus] | null;
 
 export const BookSearchResultStatus = {
   reading: 'reading',
@@ -78,8 +77,7 @@ export interface BookSearchResult {
   status: BookSearchResultStatus;
 }
 
-export type Format = typeof Format[keyof typeof Format];
-
+export type Format = (typeof Format)[keyof typeof Format];
 
 export const Format = {
   print: 'print',
@@ -115,8 +113,8 @@ export interface EditionUpdate {
   cover_url?: string | null;
 }
 
-export type EngagementCreateStatus = typeof EngagementCreateStatus[keyof typeof EngagementCreateStatus];
-
+export type EngagementCreateStatus =
+  (typeof EngagementCreateStatus)[keyof typeof EngagementCreateStatus];
 
 export const EngagementCreateStatus = {
   reading: 'reading',
@@ -150,8 +148,7 @@ export interface EngagementEditionRead {
   length_override: number | null;
 }
 
-export type ReadingStatus = typeof ReadingStatus[keyof typeof ReadingStatus];
-
+export type ReadingStatus = (typeof ReadingStatus)[keyof typeof ReadingStatus];
 
 export const ReadingStatus = {
   interested: 'interested',
@@ -184,8 +181,8 @@ export interface EngagementRead {
   updated_at: string;
 }
 
-export type EngagementStatusUpdateStatus = typeof EngagementStatusUpdateStatus[keyof typeof EngagementStatusUpdateStatus];
-
+export type EngagementStatusUpdateStatus =
+  (typeof EngagementStatusUpdateStatus)[keyof typeof EngagementStatusUpdateStatus];
 
 export const EngagementStatusUpdateStatus = {
   reading: 'reading',
@@ -250,8 +247,8 @@ export interface ReviewUpsert {
   body?: string | null;
 }
 
-export type TestLoginRequestPersona = typeof TestLoginRequestPersona[keyof typeof TestLoginRequestPersona];
-
+export type TestLoginRequestPersona =
+  (typeof TestLoginRequestPersona)[keyof typeof TestLoginRequestPersona];
 
 export const TestLoginRequestPersona = {
   e2e: 'e2e',
@@ -262,20 +259,19 @@ export interface TestLoginRequest {
   persona?: TestLoginRequestPersona;
 }
 
-export type AuthMe200 = {[key: string]: string | null};
+export type AuthMe200 = { [key: string]: string | null };
 
-export type AuthLogout200 = {[key: string]: boolean};
+export type AuthLogout200 = { [key: string]: boolean };
 
-export type AuthTestLogin200 = {[key: string]: boolean};
+export type AuthTestLogin200 = { [key: string]: boolean };
 
 export type BooksSearchBooksParams = {
-/**
- * @minLength 1
- */
-q: string;
+  /**
+   * @minLength 1
+   */
+  q: string;
 };
 
 export type EngagementsListEngagementsParams = {
-status: ReadingStatus;
+  status: ReadingStatus;
 };
-

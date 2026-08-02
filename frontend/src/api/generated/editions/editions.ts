@@ -4,10 +4,7 @@
  * Reading Tracker
  * OpenAPI spec version: 0.1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -20,26 +17,20 @@ import type {
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
-  UseQueryResult
+  UseQueryResult,
 } from '@tanstack/react-query';
-
-import * as axios from 'axios';
-import type {
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
 
 import type {
   EditionCreate,
   EditionRead,
   EditionUpdate,
-  HTTPValidationError
+  HTTPValidationError,
 } from '../readingTracker.schemas';
 
+import { customInstance } from '../../mutator/axios-instance';
+import type { ErrorType } from '../../mutator/axios-instance';
 
-
-
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
   const result = { queryKey } as T & { queryKey: K };
@@ -60,212 +51,299 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
  * @summary Create Edition
  */
 export const editionsCreateEdition = (
-    editionCreate: EditionCreate, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<EditionRead>> => {
+  editionCreate: EditionCreate,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<EditionRead>(
+    {
+      url: `/api/editions`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: editionCreate,
+      signal,
+    },
+    options
+  );
+};
 
+export const getEditionsCreateEditionMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editionsCreateEdition>>,
+    TError,
+    { data: EditionCreate },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editionsCreateEdition>>,
+  TError,
+  { data: EditionCreate },
+  TContext
+> => {
+  const mutationKey = ['editionsCreateEdition'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-    return axios.default.post(
-      `/api/editions`,
-      editionCreate,options
-    );
-  }
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editionsCreateEdition>>,
+    { data: EditionCreate }
+  > = (props) => {
+    const { data } = props ?? {};
 
+    return editionsCreateEdition(data, requestOptions);
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type EditionsCreateEditionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editionsCreateEdition>>
+>;
+export type EditionsCreateEditionMutationBody = EditionCreate;
+export type EditionsCreateEditionMutationError = ErrorType<HTTPValidationError>;
 
-export const getEditionsCreateEditionMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editionsCreateEdition>>, TError,{data: EditionCreate}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof editionsCreateEdition>>, TError,{data: EditionCreate}, TContext> => {
-
-const mutationKey = ['editionsCreateEdition'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof editionsCreateEdition>>, {data: EditionCreate}> = (props) => {
-          const {data} = props ?? {};
-
-          return  editionsCreateEdition(data,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type EditionsCreateEditionMutationResult = NonNullable<Awaited<ReturnType<typeof editionsCreateEdition>>>
-    export type EditionsCreateEditionMutationBody = EditionCreate
-    export type EditionsCreateEditionMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Create Edition
  */
-export const useEditionsCreateEdition = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editionsCreateEdition>>, TError,{data: EditionCreate}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof editionsCreateEdition>>,
-        TError,
-        {data: EditionCreate},
-        TContext
-      > => {
-      return useMutation(getEditionsCreateEditionMutationOptions(options), queryClient);
-    }
-    /**
+export const useEditionsCreateEdition = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof editionsCreateEdition>>,
+      TError,
+      { data: EditionCreate },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof editionsCreateEdition>>,
+  TError,
+  { data: EditionCreate },
+  TContext
+> => {
+  return useMutation(getEditionsCreateEditionMutationOptions(options), queryClient);
+};
+/**
  * @summary Get Edition
  */
 export const editionsGetEdition = (
-    editionId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<EditionRead>> => {
-
-
-    return axios.default.get(
-      `/api/editions/${editionId}`,options
-    );
-  }
-
-
-
-
-export const getEditionsGetEditionQueryKey = (editionId: string,) => {
-    return [
-    `/api/editions/${editionId}`
-    ] as const;
-    }
-
-
-export const getEditionsGetEditionQueryOptions = <TData = Awaited<ReturnType<typeof editionsGetEdition>>, TError = AxiosError<HTTPValidationError>>(editionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData>>, axios?: AxiosRequestConfig}
+  editionId: string,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
 ) => {
+  return customInstance<EditionRead>(
+    { url: `/api/editions/${editionId}`, method: 'GET', signal },
+    options
+  );
+};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+export const getEditionsGetEditionQueryKey = (editionId: string) => {
+  return [`/api/editions/${editionId}`] as const;
+};
 
-  const queryKey =  queryOptions?.queryKey ?? getEditionsGetEditionQueryKey(editionId);
+export const getEditionsGetEditionQueryOptions = <
+  TData = Awaited<ReturnType<typeof editionsGetEdition>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  editionId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData>>;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
+  const queryKey = queryOptions?.queryKey ?? getEditionsGetEditionQueryKey(editionId);
 
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof editionsGetEdition>>> = ({ signal }) =>
+    editionsGetEdition(editionId, requestOptions, signal);
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof editionsGetEdition>>> = ({ signal }) => editionsGetEdition(editionId, { signal, ...axiosOptions });
+  return {
+    queryKey,
+    queryFn,
+    enabled: editionId !== null && editionId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
 
+export type EditionsGetEditionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof editionsGetEdition>>
+>;
+export type EditionsGetEditionQueryError = ErrorType<HTTPValidationError>;
 
-
-
-
-   return  { queryKey, queryFn, enabled: editionId !== null && editionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type EditionsGetEditionQueryResult = NonNullable<Awaited<ReturnType<typeof editionsGetEdition>>>
-export type EditionsGetEditionQueryError = AxiosError<HTTPValidationError>
-
-
-export function useEditionsGetEdition<TData = Awaited<ReturnType<typeof editionsGetEdition>>, TError = AxiosError<HTTPValidationError>>(
- editionId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData>> & Pick<
+export function useEditionsGetEdition<
+  TData = Awaited<ReturnType<typeof editionsGetEdition>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  editionId: string,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData>> &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof editionsGetEdition>>,
           TError,
           Awaited<ReturnType<typeof editionsGetEdition>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useEditionsGetEdition<TData = Awaited<ReturnType<typeof editionsGetEdition>>, TError = AxiosError<HTTPValidationError>>(
- editionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData>> & Pick<
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEditionsGetEdition<
+  TData = Awaited<ReturnType<typeof editionsGetEdition>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  editionId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData>
+    > &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof editionsGetEdition>>,
           TError,
           Awaited<ReturnType<typeof editionsGetEdition>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useEditionsGetEdition<TData = Awaited<ReturnType<typeof editionsGetEdition>>, TError = AxiosError<HTTPValidationError>>(
- editionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEditionsGetEdition<
+  TData = Awaited<ReturnType<typeof editionsGetEdition>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  editionId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData>>;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 /**
  * @summary Get Edition
  */
 
-export function useEditionsGetEdition<TData = Awaited<ReturnType<typeof editionsGetEdition>>, TError = AxiosError<HTTPValidationError>>(
- editionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useEditionsGetEdition<
+  TData = Awaited<ReturnType<typeof editionsGetEdition>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  editionId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData>>;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getEditionsGetEditionQueryOptions(editionId, options);
 
-  const queryOptions = getEditionsGetEditionQueryOptions(editionId,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
 
 /**
  * @summary Update Edition
  */
 export const editionsUpdateEdition = (
-    editionId: string,
-    editionUpdate: EditionUpdate, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<EditionRead>> => {
+  editionId: string,
+  editionUpdate: EditionUpdate,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<EditionRead>(
+    {
+      url: `/api/editions/${editionId}`,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      data: editionUpdate,
+      signal,
+    },
+    options
+  );
+};
 
+export const getEditionsUpdateEditionMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editionsUpdateEdition>>,
+    TError,
+    { editionId: string; data: EditionUpdate },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editionsUpdateEdition>>,
+  TError,
+  { editionId: string; data: EditionUpdate },
+  TContext
+> => {
+  const mutationKey = ['editionsUpdateEdition'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-    return axios.default.patch(
-      `/api/editions/${editionId}`,
-      editionUpdate,options
-    );
-  }
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editionsUpdateEdition>>,
+    { editionId: string; data: EditionUpdate }
+  > = (props) => {
+    const { editionId, data } = props ?? {};
 
+    return editionsUpdateEdition(editionId, data, requestOptions);
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type EditionsUpdateEditionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editionsUpdateEdition>>
+>;
+export type EditionsUpdateEditionMutationBody = EditionUpdate;
+export type EditionsUpdateEditionMutationError = ErrorType<HTTPValidationError>;
 
-export const getEditionsUpdateEditionMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editionsUpdateEdition>>, TError,{editionId: string;data: EditionUpdate}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof editionsUpdateEdition>>, TError,{editionId: string;data: EditionUpdate}, TContext> => {
-
-const mutationKey = ['editionsUpdateEdition'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof editionsUpdateEdition>>, {editionId: string;data: EditionUpdate}> = (props) => {
-          const {editionId,data} = props ?? {};
-
-          return  editionsUpdateEdition(editionId,data,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type EditionsUpdateEditionMutationResult = NonNullable<Awaited<ReturnType<typeof editionsUpdateEdition>>>
-    export type EditionsUpdateEditionMutationBody = EditionUpdate
-    export type EditionsUpdateEditionMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Update Edition
  */
-export const useEditionsUpdateEdition = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editionsUpdateEdition>>, TError,{editionId: string;data: EditionUpdate}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof editionsUpdateEdition>>,
-        TError,
-        {editionId: string;data: EditionUpdate},
-        TContext
-      > => {
-      return useMutation(getEditionsUpdateEditionMutationOptions(options), queryClient);
-    }
+export const useEditionsUpdateEdition = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof editionsUpdateEdition>>,
+      TError,
+      { editionId: string; data: EditionUpdate },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof editionsUpdateEdition>>,
+  TError,
+  { editionId: string; data: EditionUpdate },
+  TContext
+> => {
+  return useMutation(getEditionsUpdateEditionMutationOptions(options), queryClient);
+};

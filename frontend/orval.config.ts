@@ -8,6 +8,14 @@ export default defineConfig({
       client: 'react-query',
       httpClient: 'axios',
       mode: 'tags-split',
+      clean: true,
+      formatter: 'prettier',
+      override: {
+        mutator: {
+          path: './src/api/mutator/axios-instance.ts',
+          name: 'customInstance',
+        },
+      },
     },
   },
 });
