@@ -6,6 +6,28 @@
     <link rel="alternate icon" type="image/x-icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rainbow Sam Reads</title>
+    <!--
+      Applies the theme class before the first paint, so a dark-mode load never flashes
+      light while the bundle downloads. React's ThemeProvider takes over once it mounts
+      and agrees with whatever this decided. The storage key is shared with
+      src/app/theme-provider.tsx -- change both together.
+    -->
+    <script>
+      (function () {
+        var stored = null;
+        try {
+          stored = localStorage.getItem('reading-tracker-theme');
+        } catch (e) {
+          /* Storage blocked in private browsing. Leaving `stored` null falls through
+             to the system preference below -- matching readStoredTheme(). */
+        }
+        var followSystem = stored !== 'light' && stored !== 'dark';
+        var dark = followSystem
+          ? window.matchMedia('(prefers-color-scheme: dark)').matches
+          : stored === 'dark';
+        if (dark) document.documentElement.classList.add('dark');
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
