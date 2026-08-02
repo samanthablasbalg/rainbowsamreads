@@ -1,8 +1,11 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { AppProvider } from './app/provider';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <h1>Rainbow Sam Reads</h1>
+    <AppProvider>
+      <h1>Rainbow Sam Reads</h1>
+    </AppProvider>
   </StrictMode>
 );
