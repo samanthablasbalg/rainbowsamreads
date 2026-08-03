@@ -25,7 +25,18 @@ describe('useAuth', () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.isUnauthorized).toBe(true);
     expect(result.current.user).toBeNull();
+  });
+
+  it('does not report unauthorized when the session request merely fails', async () => {
+    server.use(http.get('*/api/auth/me', () => new HttpResponse(null, { status: 500 })));
+
+    const { result } = renderHook(() => useAuth());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.isUnauthorized).toBe(false);
   });
 
   it('throws away everything cached when logging out', async () => {

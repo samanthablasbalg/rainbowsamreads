@@ -23,6 +23,7 @@ export function useAuth() {
   return {
     user: session.isSuccess ? session.data : null,
     isAuthenticated: session.isSuccess,
+    isUnauthorized: session.error?.response?.status === 401,
     isLoading: session.isPending,
     login,
     logout,
