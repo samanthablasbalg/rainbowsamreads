@@ -39,4 +39,12 @@ export default defineConfig([
       'react-refresh/only-export-components': 'off',
     },
   },
+  {
+    // render.tsx re-exports Testing Library with `export *`, which the rule cannot see
+    // through. Test helpers are never part of a hot-reloaded module graph anyway.
+    files: ['src/test/**'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ]);
