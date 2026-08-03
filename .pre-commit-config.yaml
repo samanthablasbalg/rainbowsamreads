@@ -37,10 +37,11 @@ repos:
         files: ^backend/
         require_serial: true
 
+      # eslint only. Prettier for these files comes from the repo-wide hook below.
       - id: frontend-lint-staged
         name: Lint staged (frontend)
         language: system
-        files: ^frontend/.*\.(ts|tsx|css|json|md|html)$
+        files: ^frontend/.*\.tsx?$
         entry: bash -c 'cd frontend && npx lint-staged'
         pass_filenames: false
 
@@ -67,12 +68,16 @@ repos:
         entry: bash -c 'cd frontend && npm run typecheck'
         pass_filenames: false
 
-      # Everything outside frontend/ that prettier should still own. The frontend has
-      # its own lint-staged hook; e2e/ has no tooling of its own, so it borrows the
-      # frontend's prettier binary the same way the docs do.
-      - id: prettier-docs-e2e
-        name: Prettier (docs, e2e)
+      # The whole repo, from one place. CI runs `prettier --check ..` over everything,
+      # so anything narrower lets unformatted files land and fail only there. What to
+      # skip is .prettierignore's job, which prettier reads from the repo root itself.
+      - id: prettier
+        name: Prettier
         language: system
-        files: ^(docs/.*\.md|e2e/.*\.ts)$
+        files: \.(md|ts|tsx|js|jsx|mjs|cjs|json|ya?ml|css|scss|html)$
         entry: bash -c 'npm --prefix frontend exec -- prettier --write "$@" && git add "$@"' --
         pass_filenames: true
+        # pre-commit splits filenames across parallel processes, and each one's `git add`
+        # then races the others for .git/index.lock. Invisible while this hook only saw
+        # a file or two; a commit touching a dozen fails outright.
+        require_serial: true

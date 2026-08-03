@@ -16,7 +16,6 @@
     "generate:api": "orval --config orval.config.ts"
   },
   "lint-staged": {
-    "*.{ts,tsx,css,json,md,html}": "prettier --write --ignore-path ../.prettierignore",
     "*.{ts,tsx}": "eslint --fix"
   },
   "dependencies": {
