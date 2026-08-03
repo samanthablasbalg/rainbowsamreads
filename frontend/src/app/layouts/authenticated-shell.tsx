@@ -1,46 +1,68 @@
-import { NavLink, Outlet } from 'react-router';
-import { Session } from '@/app/session';
+import { Outlet, useLocation } from 'react-router';
+import { destinations } from '@/components/nav/destinations';
+import { MobileNav } from '@/components/nav/mobile-nav';
+import { RailNav } from '@/components/nav/rail-nav';
+import { Wordmark } from '@/components/nav/wordmark';
+import { StreakIndicator } from '@/components/nav/streak-indicator';
+import { SearchButton } from '@/components/nav/search-button';
+import { AccountMenuSheet } from '@/components/nav/account-menu';
 
-// The four top-level destinations from the nav shell handoff. Each must stay reachable
-// in one tap from anywhere in the app, so this list is the whole of the nav -- nothing
-// gets folded into a menu. The three real nav layouts in § 6 all read from here.
-const destinations = [
-  { to: '/home', label: 'Home' },
-  { to: '/library', label: 'Library' },
-  { to: '/insights', label: 'Insights' },
-  { to: '/challenges', label: 'Challenges' },
-];
+// Placeholder. Nothing serves a streak yet, so the number is invented here, in the
+// open, rather than inside StreakIndicator where it would be easy to ship by accident.
+const PLACEHOLDER_STREAK_DAYS = 7;
 
-// Deliberately unstyled. This is the frame proving the route tree works; the real
-// header, rail, pill bar and tab strip replace the markup below in § 5 and § 6.
+// The responsive switch is CSS, not JS: all three navs are in the markup and Tailwind
+// shows exactly one. `hidden` is `display: none`, which takes the other two out of the
+// accessibility tree entirely -- so a screen reader and the tab order see one nav, not
+// three. The alternative, a useMediaQuery hook, would need a resize listener and would
+// render no nav at all on the first paint.
+//
+// Breakpoints, on Tailwind's defaults: the pill nav up to lg, the rail at lg and up.
+// A tablet in portrait gets the phone's bottom nav; in landscape it gets the rail.
 export function AuthenticatedShell() {
+  const { pathname } = useLocation();
+
+  // The rail layouts put the page title in their own top bar. Deriving it from the
+  // destination list keeps the title in the same single place as the nav labels,
+  // rather than introducing route handles just to carry a string.
+  const title = destinations.find((destination) => destination.to === pathname)?.label;
+
   return (
-    <div>
-      <header>
-        <p>Rainbow Sam Reads</p>
-        <Session />
-      </header>
+    <div className="flex min-h-svh bg-background">
+      <div className="hidden lg:flex">
+        <RailNav streakDays={PLACEHOLDER_STREAK_DAYS} />
+      </div>
 
-      <nav>
-        <ul>
-          {destinations.map(({ to, label }) => (
-            <li key={to}>
-              {/* NavLink is Link that also knows whether it points at the current
-                  route. The className callback is how that reaches the styling --
-                  in § 6 `isActive` drives the bg-muted pill instead of an underline. */}
-              <NavLink to={to} className={({ isActive }) => (isActive ? 'underline' : undefined)}>
-                {label}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      {/* min-w-0 stops a wide child -- a long table, a code block -- from forcing this
+          column past the viewport instead of scrolling inside it. */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Below lg the wordmark, streak and account menu live in the header. At lg
+            and up the rail carries them, and this header is replaced by the top bar
+            underneath. */}
+        <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3 lg:hidden">
+          <Wordmark />
+          <div className="flex items-center gap-1">
+            <StreakIndicator days={PLACEHOLDER_STREAK_DAYS} />
+            <SearchButton />
+            <AccountMenuSheet />
+          </div>
+        </header>
 
-      {/* Whichever child route matched renders here, while everything above stays
-          mounted across navigations. */}
-      <main>
-        <Outlet />
-      </main>
+        <header className="hidden items-center justify-between gap-2 border-b border-border px-6 py-3 lg:flex">
+          <h1 className="font-heading text-lg font-semibold">{title}</h1>
+          <SearchButton variant="outline" />
+        </header>
+
+        {/* The pill nav is fixed, so it sits over the bottom of the content. The extra
+            padding below md is what keeps the last of the page reachable. */}
+        <main className="flex-1 px-4 pt-4 pb-28 lg:px-6 lg:pb-8">
+          <Outlet />
+        </main>
+      </div>
+
+      <div className="lg:hidden">
+        <MobileNav />
+      </div>
     </div>
   );
 }
