@@ -11,6 +11,7 @@
 @theme inline {
   --font-sans: 'Plus Jakarta Sans Variable', sans-serif;
   --font-serif: 'Lora Variable', serif;
+  --font-heading: 'Lora Variable', serif; /* headings, wordmark, card titles */
   --font-reading: 'Newsreader Variable', serif; /* long-form: reviews, blog */
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
