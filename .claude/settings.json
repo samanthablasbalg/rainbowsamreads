@@ -30,6 +30,26 @@
     }
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // \"\"' | tr '\\n' ';'); printf '%s' \"$cmd\" | grep -Eq '(^|[;&|(])[[:space:]]*(sudo[[:space:]]+)?docker([[:space:]]|$)' && { printf \"Blocked: this session runs INSIDE the dev container - there is no docker CLI and never will be. Reach services over the compose network by name (proxy:8080, api:8000, db:5432), or run the tool directly.\\n\" >&2; exit 2; }; exit 0"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // \"\"')\n# POSIX `case`, never `[[ ]]`: hook commands run under /bin/sh, which is dash\n# here. dash has no `[[`, so a bash-syntax test errors, the condition reads as\n# false, and the hook silently exits 0 - blocking nothing, forever.\ncase \"$cmd\" in\n  *\"npm test\"*|*\"ng test\"*|*pytest*)\n    case \"$cmd\" in\n      *\"|\"*)\n        printf \"Blocked: piping a test run truncates the output at the terminal, which is what leads to running the suite a second time to find what was cut off. Capture all of it, then read it:\\n  npm test > /tmp/test.log 2>&1\\nThen Read /tmp/test.log.\\n\" >&2\n        exit 2 ;;\n    esac ;;\nesac\nexit 0"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
