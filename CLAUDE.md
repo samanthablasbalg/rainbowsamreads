@@ -16,8 +16,8 @@ The Angular app has been moved to `angular-frontend/`. The React app is being bu
 `frontend/`. Treat this repo as if `frontend/` were a **fresh project in a repo that has a backend
 already**.
 
-**`angular-frontend/` is a read-only reference.** It exists so the port has something to read:
-templates, styles, specs, and the behaviour being reproduced.
+**`angular-frontend/` is closed by default.** It is not background reading, not context to gather,
+and not a source of code to bring forward. The owner opens it one file at a time, deliberately.
 
 - Never edit it, refactor it, fix it, or add to it.
 - Never lint, test, typecheck, format or build it.
@@ -25,6 +25,18 @@ templates, styles, specs, and the behaviour being reproduced.
 - Never import from it. Values move by being copied into `frontend/` deliberately.
 - It gets deleted wholesale at the end (punch list § 8). Nothing in it needs saving beyond what a
   port step explicitly copies.
+
+**Do not read old code unless the owner names the file in this conversation.** This covers
+`angular-frontend/`, and equally `git show`, `git log -p`, `git diff` and any other branch, tag or
+commit — abandoned branches are not a reference, they are abandoned. "The plan mentions porting X"
+is not permission to go find X. Ask, then read the one file named, then stop.
+
+**Why this is a hard rule and not a preference.** Every line of Angular pulled into the conversation
+is a line pulling the port back towards what the app already was — the accumulated shape this
+migration exists to escape. Old code read "just for context" becomes old code reproduced. Volume is
+the harm: the owner cannot un-see a file that got dumped into the session, and the clean-room
+premise dies quietly. When in doubt, build it fresh from the requirement and let the owner correct
+it. Guessing wrong costs one round of feedback; importing the old shape costs the migration.
 
 **`frontend/` is new code.** Its config comes from the `vite@latest --template react-ts` scaffold
 and is then adapted per the punch list. It does **not** inherit Angular's config by default — not
@@ -81,6 +93,24 @@ at a time.
 
 The goal is for the owner to be able to read every file in this project and understand it fully.
 Optimise for understanding, not for speed.
+
+**That sentence is about explanations, not design.** It is not a licence to write non-standard code,
+and it is the sentence agents most often misuse to justify exactly that.
+
+**Take the smaller option.** When two approaches differ only in how explicit, verbose or ceremonious
+they are — more imports, more boilerplate, more repetition, a bespoke variant of a documented
+pattern, a longer commit message — take the smaller one. Every time. There is no comprehension
+argument for the larger one: the owner has a decade of experience and reads code faster than you
+write it, and what is new here is React's _patterns_, so the standard one is precisely what they
+need to see.
+
+**Audit your own justification before you give it.** If the reason is about the reader — "readable",
+"traceable", "greppable", "explicit", "so it's obvious", "so you can understand it" — the reason is
+invalid. Discard it and decide again on technical grounds alone. If no technical ground survives,
+use the default: the library's documented pattern, or the convention already present in this repo.
+
+Deviating from a documented pattern is not a decision you make. Raise it as a question first, naming
+the specific breakage, and write the standard version unless told otherwise.
 
 When presenting options, list them neutrally and let the owner reason. Only offer a recommendation
 if explicitly asked.
@@ -139,9 +169,9 @@ were made.
 ## Running Tests
 
 - **Backend:** `pytest` from the `backend/` directory.
-- **Frontend:** `npm test` from the `frontend/` directory. The React app
-  runs vitest directly (no Angular build step in front of it), so `npx vitest run` is fine here —
-  the warning that used to live in this section was about `ng test` and no longer applies.
+- **Frontend:** `npm test` from the `frontend/` directory. The React app runs vitest directly (no
+  Angular build step in front of it), so `npx vitest run` is fine here — the warning that used to
+  live in this section was about `ng test` and no longer applies.
 - **E2E:** Playwright, run in containers. See `docs/development.md`.
 - **Never run tests, linters or builds in `angular-frontend/`.**
 
