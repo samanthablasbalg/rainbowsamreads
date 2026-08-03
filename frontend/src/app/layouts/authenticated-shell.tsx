@@ -1,5 +1,4 @@
-import { Outlet, useLocation } from 'react-router';
-import { destinations } from '@/components/nav/destinations';
+import { Outlet } from 'react-router';
 import { MobileNav } from '@/components/nav/mobile-nav';
 import { RailNav } from '@/components/nav/rail-nav';
 import { Wordmark } from '@/components/nav/wordmark';
@@ -20,13 +19,6 @@ const PLACEHOLDER_STREAK_DAYS = 7;
 // Breakpoints, on Tailwind's defaults: the pill nav up to lg, the rail at lg and up.
 // A tablet in portrait gets the phone's bottom nav; in landscape it gets the rail.
 export function AuthenticatedShell() {
-  const { pathname } = useLocation();
-
-  // The rail layouts put the page title in their own top bar. Deriving it from the
-  // destination list keeps the title in the same single place as the nav labels,
-  // rather than introducing route handles just to carry a string.
-  const title = destinations.find((destination) => destination.to === pathname)?.label;
-
   return (
     <div className="flex min-h-svh bg-background">
       <div className="hidden lg:flex">
@@ -48,8 +40,7 @@ export function AuthenticatedShell() {
           </div>
         </header>
 
-        <header className="hidden items-center justify-between gap-2 border-b border-border px-6 py-3 lg:flex">
-          <h1 className="font-heading text-lg font-semibold">{title}</h1>
+        <header className="hidden items-center justify-end gap-2 border-b border-border px-6 py-3 lg:flex">
           <SearchButton variant="outline" />
         </header>
 
