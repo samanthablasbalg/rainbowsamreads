@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { isAxiosError } from 'axios';
-import { ThemeProvider } from './theme-provider';
+import { ThemeProvider } from '@/lib/theme-provider';
 
 // One cache for the whole app, reached through the provider below.
 const queryClient = new QueryClient({

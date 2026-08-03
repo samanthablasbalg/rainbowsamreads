@@ -2,12 +2,11 @@ import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
+import importX from 'eslint-plugin-import-x';
+import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
 import tseslint from 'typescript-eslint';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
-// The import plugin itself is NOT wired up yet. It has nothing to enforce until
-// `features/` exists, and the plugin-vs-plugin-x choice should be made against a
-// real folder tree rather than an empty one.
 export default defineConfig([
   globalIgnores(['dist']),
   {
@@ -21,6 +20,30 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2022,
       globals: globals.browser,
+    },
+    plugins: {
+      'import-x': importX,
+    },
+    settings: {
+      // Lets no-restricted-paths resolve `@/*` imports to real file paths, not just
+      // relative ones, since the whole tree imports through the alias.
+      'import-x/resolver-next': [createTypeScriptImportResolver()],
+    },
+    rules: {
+      'import-x/no-restricted-paths': [
+        'error',
+        {
+          zones: [
+            { target: './src/features', from: './src/app' },
+            {
+              target: ['./src/components', './src/lib'],
+              from: ['./src/features', './src/app'],
+            },
+            // One zone per feature goes here to block cross-feature imports, added as
+            // each feature is created. No features exist yet.
+          ],
+        },
+      ],
     },
   },
   {

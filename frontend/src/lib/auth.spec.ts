@@ -2,7 +2,7 @@ import { HttpResponse, http } from 'msw';
 import { getAuthLogoutMockHandler, getAuthMeMockHandler } from '@/api/generated/auth/auth.msw';
 import { server } from '@/test/msw-server';
 import { renderHook, waitFor } from '@/test/render';
-import { useAuth } from './use-auth';
+import { useAuth } from './auth';
 
 // The session query IS the auth state -- nothing is copied out of it -- so these are
 // really assertions about how a 200 and a 401 from /auth/me each surface.

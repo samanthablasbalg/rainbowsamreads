@@ -1,10 +1,10 @@
 import { Outlet } from 'react-router';
-import { MobileNav } from '@/components/nav/mobile-nav';
-import { RailNav } from '@/components/nav/rail-nav';
-import { Wordmark } from '@/components/nav/wordmark';
-import { StreakIndicator } from '@/components/nav/streak-indicator';
-import { SearchButton } from '@/components/nav/search-button';
-import { AccountMenuSheet } from '@/components/nav/account-menu';
+import { MobileNav } from './mobile-nav';
+import { RailNav } from './rail-nav';
+import { Wordmark } from './wordmark';
+import { StreakIndicator } from './streak-indicator';
+import { SearchButton } from './search-button';
+import { AccountMenuSheet } from './account-menu';
 
 // Placeholder. Nothing serves a streak yet, so the number is invented here, in the
 // open, rather than inside StreakIndicator where it would be easy to ship by accident.

@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from '@/lib/utils';
-import { destinations } from './destinations';
+import { destinations } from '@/config/destinations';
 import { Wordmark } from './wordmark';
 import { StreakIndicator } from './streak-indicator';
 import { AccountMenuDropdown } from './account-menu';

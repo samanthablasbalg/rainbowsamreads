@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from '@/lib/utils';
-import { destinations } from './destinations';
+import { destinations } from '@/config/destinations';
 
 // The floating pill: fixed to the bottom, inset from the screen edges rather than
 // spanning it, so it reads as an object sitting above the content instead of a bar

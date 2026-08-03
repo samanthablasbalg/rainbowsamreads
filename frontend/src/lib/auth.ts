@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useAuthLogout, useAuthMe } from '../../../api/generated/auth/auth';
+import { useAuthLogout, useAuthMe } from '@/api/generated/auth/auth';
 
 // A full-page redirect: the OAuth flow leaves the app and returns through the
 // backend's callback, so there is no response to wait for here.

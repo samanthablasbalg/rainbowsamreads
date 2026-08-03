@@ -7,7 +7,7 @@ import {
 } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
-import { ThemeProvider } from '@/app/theme-provider';
+import { ThemeProvider } from '@/lib/theme-provider';
 
 type ProviderOptions = {
   // The router's history. A single entry is the starting URL, which is what NavLink

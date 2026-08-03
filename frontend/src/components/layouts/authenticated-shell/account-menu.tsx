@@ -1,7 +1,7 @@
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Logout01Icon, Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
-import { useTheme } from '@/app/theme-context';
-import { useAuth } from '@/features/auth/api/use-auth';
+import { useTheme } from '@/lib/theme-context';
+import { useAuth } from '@/lib/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {

@@ -1,5 +1,5 @@
 import { createBrowserRouter } from 'react-router';
-import { AuthenticatedShell } from './layouts/authenticated-shell';
+import { AuthenticatedShell } from '@/components/layouts/authenticated-shell/authenticated-shell';
 import { Challenges } from './routes/challenges';
 import { Home } from './routes/home';
 import { Insights } from './routes/insights';
