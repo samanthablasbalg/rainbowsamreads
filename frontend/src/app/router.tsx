@@ -6,6 +6,7 @@ import { Insights } from './routes/insights';
 import { Landing } from './routes/landing';
 import { Library } from './routes/library';
 import { NotFound } from './routes/not-found';
+import { RouteError } from './routes/route-error';
 
 // Data mode: the tree is a plain array rather than JSX, which is what lets § 3 swap
 // `Component` for `lazy` per route and what the auth wrappers in § 2 hang off.
@@ -16,6 +17,7 @@ export const router = createBrowserRouter([
     // children in shared chrome, so each child below carries its own full path. It
     // renders once and stays mounted while you move between destinations.
     Component: AuthenticatedShell,
+    ErrorBoundary: RouteError,
     children: [
       { path: '/home', Component: Home },
       { path: '/library', Component: Library },
