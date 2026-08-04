@@ -13,6 +13,12 @@ x-dev-env: &dev-env
   # secrets.SESSION_SECRET got an empty string and every job that imports the
   # app died on the start-up check.
   SESSION_SECRET: local-dev-only
+  # frontend/package.json now carries the `playwright` npm package (not just
+  # @playwright/test), whose postinstall downloads a browser binary unless told
+  # not to. The one place browser binaries belong is the `browsers` service
+  # below; every service here shares frontend's node_modules volume, so
+  # whichever one runs `npm ci` first needs this, not just `storybook`.
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
 # Shared by every dev service: one image, one view of the repo. They differ only
 # in what they run.
@@ -116,6 +122,32 @@ services:
       timeout: 5s
       retries: 30
       start_period: 60s
+
+  # Storybook and its Vitest browser-mode project. Shares frontend's own
+  # node_modules volume rather than a volume of its own: there's no separate
+  # package.json here, it's the same frontend package running a different
+  # command.
+  #
+  # Profiled like e2e, not standing like frontend: nothing else in the stack
+  # depends on it, so `docker compose up` shouldn't pay for a container that
+  # sits idle on every plain boot. `docker compose up storybook` starts it
+  # deliberately; profiles don't gate `run`, so the Vitest browser-mode project
+  # reaches it the same way e2e reaches Playwright, via `docker compose run`.
+  storybook:
+    <<: *dev
+    profiles: ['tools']
+    working_dir: ${PWD}/frontend
+    ports:
+      - '6006:6006'
+    # Same first-boot install guard as frontend, since it shares that volume.
+    command: >
+      sh -c "[ -e node_modules/.package-lock.json ] || npm ci; exec npm run storybook -- --host
+      0.0.0.0"
+    # Vitest's browser-mode project connects out to this over ws://, the same
+    # way e2e connects to it for Playwright.
+    depends_on:
+      browsers:
+        condition: service_healthy
 
   # Puts the dev stack on one origin: /api/* goes to api, everything else to
   # frontend. Not just for e2e — a human hitting the published port gets the
