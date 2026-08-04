@@ -12,7 +12,7 @@ describe('useAuth', () => {
 
     const { result } = renderHook(() => useAuth());
 
-    expect(result.current.isLoading).toBe(true);
+    expect(result.current.isPending).toBe(true);
 
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
     expect(result.current.user?.email).toBe('reader@example.com');
@@ -23,7 +23,7 @@ describe('useAuth', () => {
 
     const { result } = renderHook(() => useAuth());
 
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isPending).toBe(false));
     expect(result.current.isAuthenticated).toBe(false);
     expect(result.current.isUnauthorized).toBe(true);
     expect(result.current.user).toBeNull();
@@ -34,7 +34,7 @@ describe('useAuth', () => {
 
     const { result } = renderHook(() => useAuth());
 
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isPending).toBe(false));
     expect(result.current.isAuthenticated).toBe(false);
     expect(result.current.isUnauthorized).toBe(false);
   });
