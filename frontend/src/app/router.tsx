@@ -10,7 +10,10 @@ import { RouteError } from './routes/route-error';
 
 // Data mode: the tree is a plain array rather than JSX, which is what lets § 3 swap
 // `Component` for `lazy` per route and what the auth wrappers in § 2 hang off.
-export const router = createBrowserRouter([
+//
+// Exported separately from the router instance below so router.spec.tsx can feed it
+// to `createMemoryRouter`, which takes an initial URL -- `createBrowserRouter` doesn't.
+export const routes = [
   { path: '/', Component: Landing },
   {
     // A pathless layout route -- it contributes no URL segment, it only wraps its
@@ -26,4 +29,6 @@ export const router = createBrowserRouter([
     ],
   },
   { path: '*', Component: NotFound },
-]);
+];
+
+export const router = createBrowserRouter(routes);
