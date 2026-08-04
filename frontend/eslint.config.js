@@ -73,5 +73,24 @@ export default defineConfig([
       'react-refresh/only-export-components': 'off',
     },
   },
+  {
+    // CSF (Component Story Format) requires a default export (the meta object) plus a
+    // named export per story -- neither is a component, which is exactly what this rule
+    // disallows. Story files are never part of the app's own hot-reloaded module graph.
+    files: ['**/*.stories.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
+    // preview.tsx's decorators are PascalCase, JSX-returning bindings (required for
+    // react-hooks/rules-of-hooks to accept the hook calls inside them), but the file's
+    // actual export is the `preview` config object, not a component. Same reasoning as
+    // src/test/** above: never part of the app's own hot-reloaded module graph.
+    files: ['.storybook/preview.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
   ...storybook.configs['flat/recommended'],
 ]);

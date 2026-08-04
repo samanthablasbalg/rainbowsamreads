@@ -111,7 +111,7 @@ services:
     # the install on every boot after. Nothing else populates it: the image
     # deliberately does not bake node_modules in (see Dockerfile.dev).
     command: >
-      sh -c "[ -e node_modules/.package-lock.json ] || npm ci; exec npm start -- --host 0.0.0.0"
+      sh -c "[ -e node_modules/.package-lock.json ] || npm ci; exec npm run dev -- --host 0.0.0.0"
 
     # Same idea as api's healthcheck above. start_period is generous because a
     # cold volume means npm ci first, then vite's own dep pre-bundle — both
