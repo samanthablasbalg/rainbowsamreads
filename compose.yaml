@@ -139,6 +139,12 @@ services:
     working_dir: ${PWD}/frontend
     ports:
       - '6006:6006'
+    # See the matching VITEST_BROWSER_HOST on `workspace`: the Vitest
+    # browser-mode project binds its orchestration server to this value, so it
+    # has to be this container's own compose alias.
+    environment:
+      <<: *dev-env
+      VITEST_BROWSER_HOST: storybook
     # Same first-boot install guard as frontend, since it shares that volume.
     command: >
       sh -c "[ -e node_modules/.package-lock.json ] || npm ci; exec npm run storybook -- --host
@@ -373,6 +379,10 @@ services:
     environment:
       <<: *dev-env
       SSH_AUTH_SOCK: /tmp/1password-agent.sock
+      # See the matching var on `storybook`: lets the Vitest browser-mode
+      # project's orchestration server bind correctly when run from here too,
+      # the way `npx playwright test` already does for e2e.
+      VITEST_BROWSER_HOST: workspace
 
       # See the comment on the .claude mount above: this redirects
       # .claude.json into that already-mounted, already-persisted directory.

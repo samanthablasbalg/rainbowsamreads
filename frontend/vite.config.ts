@@ -81,11 +81,16 @@ export default defineConfig({
             enabled: true,
             headless: true,
             // Vitest's own orchestration server, which the remote browser
-            // connects back to. Set to the storybook service's own compose
-            // name -- 'localhost' here would mean the browsers container,
-            // since that's where the browser actually runs.
+            // connects back to. Must be the compose service's own network
+            // alias -- 'localhost' here would mean the browsers container,
+            // since that's where the browser actually runs. Unlike
+            // playwright.config.ts's wsEndpoint (a pure outbound connection,
+            // so any container reaches it identically), this is an inbound
+            // bind: the right value depends on which container the process
+            // is actually running in, so it comes from an env var compose.yaml
+            // sets per-service (VITEST_BROWSER_HOST) rather than a literal.
             api: {
-              host: 'storybook',
+              host: process.env.VITEST_BROWSER_HOST,
             },
             // Connects to the browsers service's Playwright server instead of
             // launching a local Chromium, the same way e2e's
