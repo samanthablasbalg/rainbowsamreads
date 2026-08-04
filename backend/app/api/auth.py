@@ -90,16 +90,23 @@ async def callback(
 
 
 @router.get("/me")
-def me(request: Request) -> CurrentUser:
+def me(request: Request, db: Session = Depends(get_unscoped_db)) -> CurrentUser:
     user_id = request.session.get("user_id")
-    email = request.session.get("email")
-    # Both are written together at login, so a session carrying one without the
-    # other is stale rather than signed in.
-    if not user_id or not email:
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+    # The cookie is signed, so it cannot be forged -- but it can outlive the row it
+    # names. The e2e suite truncates and reseeds while a browser still holds one.
+    # Without this lookup the session reads as live, the frontend keeps the reader in
+    # the app, and every business endpoint 401s underneath them.
+    #
+    # Unscoped, like /callback above: this runs to decide who the reader is, which is
+    # the question RLS needs answered before it can scope anything.
+    user = db.get(User, uuid.UUID(user_id))
+    if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     return CurrentUser(
-        id=user_id,
-        email=email,
+        id=user.id,
+        email=user.email,
         picture=request.session.get("picture"),
     )
 
