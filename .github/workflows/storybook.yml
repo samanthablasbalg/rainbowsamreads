@@ -14,13 +14,14 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Runs as the `storybook` service, not `frontend`: the Vitest browser
-      # project binds its orchestration server to host `storybook`
-      # (vite.config.ts), which only resolves from inside that container.
-      # `storybook` depends_on `browsers` (service_healthy), so `run` below
-      # brings it up automatically, the same way e2e.yml reaches it for
+      # project binds its orchestration server to VITEST_BROWSER_HOST
+      # (compose.yaml sets it to 'storybook' for this service), which the
+      # remote browser -- running in `browsers` -- has to be able to dial back
+      # into. `storybook` depends_on `browsers` (service_healthy), so `run`
+      # below brings it up automatically, the same way e2e.yml reaches it for
       # Playwright.
       - name: Build the dev image
         run: docker compose build storybook
@@ -31,5 +32,10 @@ jobs:
       - name: Install dependencies
         run: docker compose run --rm storybook npm ci
 
+      # --use-aliases: `docker compose run` does not register the ephemeral
+      # container under its own service's network alias by default (`up`
+      # always does) -- without this flag, the container can't resolve
+      # 'storybook', including to look up itself, and Vitest's browser-mode
+      # server fails at startup with EAI_AGAIN.
       - name: Run storybook Vitest project
-        run: docker compose run --rm storybook npm run test:storybook
+        run: docker compose run --rm --use-aliases storybook npm run test:storybook

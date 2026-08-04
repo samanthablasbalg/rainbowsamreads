@@ -24,6 +24,7 @@ angular-frontend/
 # reformatting puts the working tree permanently at odds with the generator.
 backend/openapi.json
 frontend/src/**/generated/
+frontend/public/mockServiceWorker.js
 
 # Lockfiles are npm's to format, not ours.
 **/package-lock.json

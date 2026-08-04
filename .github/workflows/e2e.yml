@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Same image as Backend and Frontend CI. Nothing is installed on the
       # runner: the test process runs in `e2e` on this image, and the browsers
