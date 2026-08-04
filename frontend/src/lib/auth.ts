@@ -25,6 +25,7 @@ export function useAuth() {
     isAuthenticated: session.isSuccess,
     isUnauthorized: session.error?.response?.status === 401,
     isPending: session.isPending,
+    error: session.error,
     login,
     logout,
   };

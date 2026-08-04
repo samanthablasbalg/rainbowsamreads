@@ -6,7 +6,8 @@ import {
   type RenderHookOptions,
 } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router';
+import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router';
+import { routes } from '@/app/router';
 import { ThemeProvider } from '@/lib/theme-provider';
 
 type ProviderOptions = {
@@ -60,5 +61,27 @@ function customRenderHook<Result, Props>(
   return { queryClient, ...renderHook(hook, { wrapper: Wrapper, ...options }) };
 }
 
+// Walks the real route tree from app/router.tsx instead of wrapping one component the
+// way `render` does. Anything whose subject IS the routing -- the guards, redirects,
+// the catch-all -- needs the actual tree, and createMemoryRouter is the constructor
+// that takes a starting URL.
+function renderRoute(path: string) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const router = createMemoryRouter(routes, { initialEntries: [path] });
+
+  return {
+    queryClient,
+    ...render(
+      <ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      </ThemeProvider>
+    ),
+  };
+}
+
 export * from '@testing-library/react';
-export { customRender as render, customRenderHook as renderHook };
+export { customRender as render, customRenderHook as renderHook, renderRoute };
