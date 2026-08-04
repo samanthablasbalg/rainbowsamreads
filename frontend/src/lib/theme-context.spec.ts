@@ -11,12 +11,10 @@ describe('useTheme', () => {
     //
     // React logs every render error to the console on its way out. Silenced so a
     // passing run stays readable.
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
 
     expect(() => renderHook(() => useTheme())).toThrow(
       'useTheme must be called inside a ThemeProvider'
     );
-
-    consoleError.mockRestore();
   });
 });

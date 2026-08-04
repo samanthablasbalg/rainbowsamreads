@@ -20,17 +20,20 @@ function ThemeProbe() {
 // setup.ts stubs matchMedia to always report light. Tests that care about the OS
 // preference replace it before rendering.
 function setSystemPrefersDark(prefersDark: boolean) {
-  window.matchMedia = (query: string) =>
-    ({
-      media: query,
-      matches: prefersDark,
-      onchange: null,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      dispatchEvent: () => false,
-      addListener: () => {},
-      removeListener: () => {},
-    }) as MediaQueryList;
+  vi.stubGlobal(
+    'matchMedia',
+    (query: string) =>
+      ({
+        media: query,
+        matches: prefersDark,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+        addListener: () => {},
+        removeListener: () => {},
+      }) as MediaQueryList
+  );
 }
 
 describe('ThemeProvider', () => {
@@ -82,7 +85,7 @@ describe('ThemeProvider', () => {
   it('applies the choice for the session even when storage refuses to write', async () => {
     setSystemPrefersDark(false);
     // Private browsing throws on setItem. The choice should still take effect.
-    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('QuotaExceededError');
     });
     render(<ThemeProbe />);
@@ -90,6 +93,5 @@ describe('ThemeProvider', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Go dark' }));
 
     expect(screen.getByText('resolved: dark')).toBeInTheDocument();
-    setItem.mockRestore();
   });
 });

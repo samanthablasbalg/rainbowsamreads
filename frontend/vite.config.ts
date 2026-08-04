@@ -28,6 +28,11 @@ export default defineConfig({
     // Library register its own cleanup. Paired with "vitest/globals" in
     // tsconfig.app.json, which is what makes TypeScript agree they exist.
     globals: true,
+    // Both default to false. Without them, a spy or a vi.stubGlobal from one test
+    // silently carries into the next -- the order it happens to run in, not
+    // anything the test itself does, decides whether that shows up.
+    restoreMocks: true,
+    unstubGlobals: true,
     setupFiles: ['./src/test/setup.ts'],
     // Anchored at src/ rather than left on the default, which would also sweep up
     // anything at the project root. Playwright uses the same .spec extension and is
