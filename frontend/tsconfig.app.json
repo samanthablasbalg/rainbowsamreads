@@ -7,7 +7,12 @@
     // "vitest/globals" is what makes describe/it/expect/vi exist for TypeScript. It is
     // the type-level half of `globals: true` in vite.config.ts; without it the runtime
     // works and the typecheck fails.
-    "types": ["vite/client", "vitest/globals", "@vitest/browser-playwright"],
+    "types": [
+      "vite/client",
+      "vitest/globals",
+      "@vitest/browser-playwright",
+      "msw-storybook-addon/types"
+    ],
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
 

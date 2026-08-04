@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import type { Decorator, Preview } from '@storybook/react-vite';
+import { definePreview } from '@storybook/react-vite';
+import type { Decorator } from '@storybook/react-vite';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
+import addonMsw from 'msw-storybook-addon';
 import { ThemeProvider } from '@/lib/theme-provider';
 import '../src/styles.css';
 
@@ -39,7 +41,8 @@ const WithTheme: Decorator = (Story, context) => {
   return <Story />;
 };
 
-const preview: Preview = {
+const preview = definePreview({
+  addons: [addonMsw()],
   parameters: {
     controls: {
       matchers: {
@@ -105,6 +108,6 @@ const preview: Preview = {
     theme: 'light',
   },
   decorators: [WithTheme, WithProviders],
-};
+});
 
 export default preview;
