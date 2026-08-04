@@ -17,7 +17,14 @@ export function useAuth() {
 
   const { mutate: logout } = useAuthLogout({
     // Everything cached was fetched as the user who just left.
-    mutation: { onSuccess: () => queryClient.clear() },
+    //
+    // resetQueries rather than clear: clear removes the queries but tells no one, so
+    // an observer keeps reporting its last result until its component happens to
+    // re-render for some other reason. The account menu does -- the mutation lives
+    // there -- but the route guard does not, which left the reader sitting in the
+    // shell with a dead session. reset notifies observers and refetches the active
+    // ones, so the session query asks again, gets its 401, and the guard reacts.
+    mutation: { onSuccess: () => queryClient.resetQueries() },
   });
 
   return {
