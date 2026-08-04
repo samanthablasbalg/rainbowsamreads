@@ -13,7 +13,7 @@ describe('the account menu', () => {
 
     render(<AccountMenuDropdown />);
 
-    expect(await screen.findByText('reader@example.com')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /reader@example\.com/ })).toBeInTheDocument();
   });
 
   it('falls back to the initial of the email, because a session carries no name', async () => {

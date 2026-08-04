@@ -74,9 +74,10 @@ describe('ThemeProvider', () => {
 
   it('persists a new choice and puts the class on the document', async () => {
     setSystemPrefersDark(false);
+    const user = userEvent.setup();
     render(<ThemeProbe />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Go dark' }));
+    await user.click(screen.getByRole('button', { name: 'Go dark' }));
 
     expect(localStorage.getItem(STORAGE_KEY)).toBe('dark');
     expect(document.documentElement).toHaveClass('dark');
@@ -88,9 +89,10 @@ describe('ThemeProvider', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('QuotaExceededError');
     });
+    const user = userEvent.setup();
     render(<ThemeProbe />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Go dark' }));
+    await user.click(screen.getByRole('button', { name: 'Go dark' }));
 
     expect(screen.getByText('resolved: dark')).toBeInTheDocument();
   });

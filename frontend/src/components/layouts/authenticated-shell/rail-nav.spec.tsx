@@ -34,7 +34,7 @@ describe('RailNav', () => {
 
     // findBy, not getBy: the account row renders nothing until useAuthMe resolves, so
     // this is what proves the request went through MSW rather than never being made.
-    expect(await screen.findByText('reader@example.com')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /reader@example\.com/ })).toBeInTheDocument();
   });
 
   it('renders the streak it is given', () => {

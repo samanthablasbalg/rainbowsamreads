@@ -35,33 +35,24 @@ function axiosErrorWithStatus(status: number) {
 }
 
 describe('the app query client', () => {
-  it('gives up immediately on a refused request', () => {
-    const shouldRetry = getRetryPredicate();
+  let shouldRetry: RetryPredicate;
 
+  beforeAll(() => {
+    shouldRetry = getRetryPredicate();
+  });
+
+  it.each([
     // 401 and 404 mean the request itself was answered and rejected. Asking again
     // cannot change the answer.
-    expect(shouldRetry(0, axiosErrorWithStatus(401))).toBe(false);
-    expect(shouldRetry(0, axiosErrorWithStatus(404))).toBe(false);
-  });
-
-  it('retries a server error', () => {
-    const shouldRetry = getRetryPredicate();
-
-    expect(shouldRetry(0, axiosErrorWithStatus(500))).toBe(true);
-  });
-
-  it('retries an error that carries no response at all', () => {
-    const shouldRetry = getRetryPredicate();
-
+    ['a request refused with 401', 0, axiosErrorWithStatus(401), false],
+    ['a request refused with 404', 0, axiosErrorWithStatus(404), false],
+    ['a server error', 0, axiosErrorWithStatus(500), true],
     // A network failure -- DNS, connection refused, offline. There is no status to
     // read, and trying again is exactly what might work.
-    expect(shouldRetry(0, new AxiosError('Network Error'))).toBe(true);
-  });
-
-  it('stops retrying after two attempts', () => {
-    const shouldRetry = getRetryPredicate();
-
-    expect(shouldRetry(1, new AxiosError('Network Error'))).toBe(true);
-    expect(shouldRetry(2, new AxiosError('Network Error'))).toBe(false);
+    ['an error that carries no response at all', 0, new AxiosError('Network Error'), true],
+    ['a second attempt', 1, new AxiosError('Network Error'), true],
+    ['a third attempt', 2, new AxiosError('Network Error'), false],
+  ] as const)('%s (failureCount=%i) → retry: %s', (_label, failureCount, error, expected) => {
+    expect(shouldRetry(failureCount, error)).toBe(expected);
   });
 });
