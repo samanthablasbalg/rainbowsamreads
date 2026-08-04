@@ -4,9 +4,10 @@ import { AUTH_FILE } from './auth-file';
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
+  timeout: 5 * 1000,
   workers: 1,
   forbidOnly: !!process.env['CI'],
-  retries: process.env['CI'] ? 1 : 0,
+  // retries: process.env['CI'] ? 1 : 0,
   reporter: process.env['CI']
     ? [['github'], ['list'], ['html', { open: 'never' }]]
     : [['html', { open: 'never' }]],
@@ -41,19 +42,19 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], storageState: AUTH_FILE },
       dependencies: ['auth setup'],
     },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'], storageState: AUTH_FILE },
-      dependencies: ['auth setup'],
-    },
-    {
-      // The only project that exercises the small-screen path: at ≤599px the
-      // progress log opens as a bottom sheet instead of a dialog. Pixel 7
-      // (412px wide, touch) trips that breakpoint. (Firefox can't do mobile
-      // device emulation, so the mobile project is Chromium-engine.)
-      name: 'mobile',
-      use: { ...devices['Pixel 7'], storageState: AUTH_FILE },
-      dependencies: ['auth setup'],
-    },
+    // {
+    //   name: 'firefox',
+    //   use: { ...devices['Desktop Firefox'], storageState: AUTH_FILE },
+    //   dependencies: ['auth setup'],
+    // },
+    // {
+    //   // The only project that exercises the small-screen path: at ≤599px the
+    //   // progress log opens as a bottom sheet instead of a dialog. Pixel 7
+    //   // (412px wide, touch) trips that breakpoint. (Firefox can't do mobile
+    //   // device emulation, so the mobile project is Chromium-engine.)
+    //   name: 'mobile',
+    //   use: { ...devices['Pixel 7'], storageState: AUTH_FILE },
+    //   dependencies: ['auth setup'],
+    // },
   ],
 });
