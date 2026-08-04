@@ -5,7 +5,15 @@ repository.
 
 ## Project Overview
 
-Personal reading tracker — React frontend + FastAPI backend + PostgreSQL 18.
+Reading tracker — React frontend + FastAPI backend + PostgreSQL 18.
+
+**Deployed, multi-user, holding real people's personal data.** Access is Google OAuth gated by an
+email allowlist; per-user isolation is enforced in Postgres via row-level security
+([ADR-0023](docs/decisions/0023-per-user-data-isolation-via-rls.md)).
+
+"Solo project" in this file means **one developer**. It says nothing about the running app. Never
+infer a threat model, a user count, or the stakes of an auth failure — they are documented in
+`docs/decisions/`. If an argument's justification rests on stakes, cite the doc or don't make it.
 
 The frontend is mid-migration from Angular to React. Read the next section before touching anything
 under `frontend/` or `angular-frontend/`.
@@ -155,9 +163,9 @@ scoping. Build that instinct; don't substitute for it.
 
 ## Branching and Commits
 
-This is a personal project but uses branches and PRs deliberately, as a learning and documentation
-tool. PR descriptions serve as breadcrumbs the owner can return to later to understand why decisions
-were made.
+This is a solo-developer project but uses branches and PRs deliberately, as a learning and
+documentation tool. PR descriptions serve as breadcrumbs the owner can return to later to understand
+why decisions were made.
 
 - Features should be chunked into reasonably scoped branches.
 - Within a branch, work should be committed in small, logical units — one coherent change per
@@ -169,9 +177,7 @@ were made.
 ## Running Tests
 
 - **Backend:** `pytest` from the `backend/` directory.
-- **Frontend:** `npm test` from the `frontend/` directory. The React app runs vitest directly (no
-  Angular build step in front of it), so `npx vitest run` is fine here — the warning that used to
-  live in this section was about `ng test` and no longer applies.
+- **Frontend:** `npm test` from the `frontend/` directory.
 - **E2E:** Playwright, run in containers. See `docs/development.md`.
 - **Never run tests, linters or builds in `angular-frontend/`.**
 
