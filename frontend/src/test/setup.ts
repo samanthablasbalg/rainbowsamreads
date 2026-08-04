@@ -19,12 +19,16 @@ import { server } from './msw-server';
 // a test that cares about dark mode should call setTheme('dark') and assert on the
 // result, not pretend the operating system changed underneath it.
 //
-// THE RULE FOR THIS SECTION: it stays short. Base UI (dropdown-menu, sheet) also wants
-// ResizeObserver and pointer capture, and they are not here because nothing needs them
-// yet. When a test does, that is the signal to ask whether it is really a Vitest test
-// -- "the menu opens when I tap it" is a Playwright test, and jsdom has no layout
-// engine to answer it honestly anyway. Reach for Playwright before reaching for a
-// polyfill.
+// THE RULE FOR THIS SECTION: it stays short. If a test needs a polyfill to pass --
+// ResizeObserver, pointer capture -- that is the signal to ask whether it is really a
+// Vitest test. It is not a given that opening a Base UI menu or sheet needs either:
+// account-menu.spec.tsx clicks a dropdown trigger open and clicks through to the
+// theme toggle and log out with neither polyfilled, because Base UI's open state
+// here is plain JS state, not something driven by layout. What jsdom genuinely can't
+// answer honestly is real positioning, viewport overflow, animation timing, and
+// hover/drag interactions -- that is what's actually Playwright's. Reach for
+// Playwright because a test needs layout, not because it needs a click to go
+// somewhere.
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: (query: string): MediaQueryList => ({

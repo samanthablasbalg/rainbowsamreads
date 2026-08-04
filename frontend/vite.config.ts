@@ -1,7 +1,7 @@
 import path from 'node:path';
 // From 'vitest/config', not 'vite'. It is Vite's own defineConfig re-exported with the
 // `test` key below added to the type -- without it, `test` is an unknown property.
-import { defineConfig } from 'vitest/config';
+import { coverageConfigDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -39,5 +39,17 @@ export default defineConfig({
     // moving into this package later; it scopes itself with its own testDir, so the
     // two stay apart by directory.
     include: ['src/**/*.spec.{ts,tsx}'],
+    coverage: {
+      provider: 'v8',
+      // No threshold: this is a diagnostic for spotting untouched branches, run by
+      // hand with --coverage, not a gate `check` enforces. A threshold turns that
+      // into a completeness ratchet instead.
+      // src/api/generated is orval output and src/components/ui is shadcn output --
+      // neither is logic this app authored, so neither is logic these tests are
+      // written against. Revisit components/ui if a primitive ever gains real
+      // behaviour rather than a styling change; presentational edits (a new cva
+      // variant, a class tweak) still don't belong here.
+      exclude: [...coverageConfigDefaults.exclude, 'src/api/generated/**', 'src/components/ui/**'],
+    },
   },
 });
