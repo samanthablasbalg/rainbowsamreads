@@ -9,8 +9,9 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -b --noEmit",
+    "check": "npm run lint && npm run typecheck && npm test",
     "prettier:check": "prettier --check .. --ignore-path ../.gitignore --ignore-path ../.prettierignore",
     "prettier:format": "prettier --write .. --ignore-path ../.gitignore --ignore-path ../.prettierignore",
     "generate:api": "orval --config orval.config.ts"
