@@ -36,7 +36,7 @@ export default defineConfig([
           zones: [
             { target: './src/features', from: './src/app' },
             {
-              target: ['./src/components', './src/lib'],
+              target: ['./src/api', './src/components', './src/config', './src/lib'],
               from: ['./src/features', './src/app'],
             },
             // One zone per feature goes here to block cross-feature imports, added as
