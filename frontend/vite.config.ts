@@ -40,6 +40,10 @@ export default defineConfig({
       {
         extends: true,
         test: {
+          // Named so `vitest run --project unit` can select this one alone --
+          // `npm test` needs to mean this, not also the browser-connected
+          // 'storybook' project below, which requires the `browsers` service.
+          name: 'unit',
           // jsdom is a JavaScript reimplementation of the DOM -- it gives the tests a
           // `document` and a `window`, which Node does not have on its own. It is not a
           // browser: nothing is laid out or painted, so anything asking about real geometry

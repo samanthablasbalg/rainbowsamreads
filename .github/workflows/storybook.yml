@@ -1,0 +1,35 @@
+name: Storybook Tests
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  storybook:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Runs as the `storybook` service, not `frontend`: the Vitest browser
+      # project binds its orchestration server to host `storybook`
+      # (vite.config.ts), which only resolves from inside that container.
+      # `storybook` depends_on `browsers` (service_healthy), so `run` below
+      # brings it up automatically, the same way e2e.yml reaches it for
+      # Playwright.
+      - name: Build the dev image
+        run: docker compose build storybook
+
+      # node_modules is a named volume, empty on a fresh runner regardless of
+      # which service last populated it -- this job needs its own install,
+      # same as e2e's.
+      - name: Install dependencies
+        run: docker compose run --rm storybook npm ci
+
+      - name: Run storybook Vitest project
+        run: docker compose run --rm storybook npm run test:storybook
