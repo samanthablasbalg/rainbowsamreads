@@ -190,6 +190,10 @@ services:
   # tests needs it already up.
   browsers:
     image: mcr.microsoft.com/playwright:v1.62.0-noble
+    # Playwright's documented Docker configuration for Chromium: a container gets
+    # 64MB of /dev/shm by default, and Chromium allocates there, so upstream
+    # recommends sharing the host's IPC namespace instead.
+    ipc: host
     working_dir: ${PWD}/e2e
     # Half of the authoring bridge; `workspace` holds the other half. Needed here
     # rather than on the test-process side because browser.bind() — what a

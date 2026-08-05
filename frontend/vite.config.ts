@@ -102,6 +102,28 @@ export default defineConfig({
         ],
         test: {
           name: 'storybook',
+          // How many browser pages run at once. Left alone, Vitest opens one per CPU
+          // minus one -- nine here -- and the run dies before a single test executes:
+          // "Browser connection was closed. Was the page closed unexpectedly?", naming
+          // a different file each time.
+          //
+          // The cause is memory, not anything about the stories. A tester page carries
+          // the Storybook runtime, axe, msw and the component graph, and measures at
+          // roughly 500MB: sampling /proc/meminfo through a four-page run took the VM
+          // from 2.1GB available down to 82MB. Nine pages want ~4.5GB that does not
+          // exist, so the kernel kills renderers -- reproducible outside Vitest
+          // entirely, as `Target crashed` from nine Playwright contexts in one browser.
+          //
+          // Three keeps ~500MB of headroom at today's numbers. Raise it only against a
+          // measurement, not a hunch: the budget is (memory available to the browsers
+          // container) / (~500MB per page), and the VM currently has 7.75GB total with
+          // ~5.5GB already spent on the rest of the stack. More RAM for the Docker VM
+          // buys a higher number here.
+          //
+          // It has to live on the project, not the CLI: Vitest reads
+          // project.config.maxWorkers for the browser pool, so `--maxWorkers` on the
+          // command line is silently ignored and you still get nine.
+          maxWorkers: 3,
           browser: {
             enabled: true,
             headless: true,
