@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       # Same image as Backend and Frontend CI. Nothing is installed on the
       # runner: the test process runs in `e2e` on this image, and the browsers
@@ -36,7 +36,7 @@ jobs:
         run: docker compose run --rm e2e npx playwright test
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: ${{ failure() }}
         with:
           name: playwright-report

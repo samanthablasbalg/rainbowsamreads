@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       # Same image as development, same as Backend CI. Nothing is installed on
       # the runner, so a green run here means the toolchain you develop with
