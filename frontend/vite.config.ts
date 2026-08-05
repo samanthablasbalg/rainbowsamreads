@@ -24,6 +24,10 @@ export default defineConfig({
     allowedHosts: ['frontend'],
   },
   optimizeDeps: {
+    // Vite's default crawl follows index.html's route tree, so a primitive imported
+    // only by its own story is invisible to it -- the first story to use one then
+    // discovers it mid-run, reloads, and leaves two React copies loaded ("Invalid
+    // hook call"). Crawling story files too catches everything up front.
     entries: ['index.html', 'src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   },
   test: {
