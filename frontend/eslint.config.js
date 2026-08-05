@@ -42,8 +42,13 @@ export default defineConfig([
               target: ['./src/api', './src/components', './src/config', './src/lib'],
               from: ['./src/features', './src/app'],
             },
-            // One zone per feature goes here to block cross-feature imports, added as
-            // each feature is created. No features exist yet.
+            // One zone per feature, blocking imports from every other feature. Only one
+            // feature exists so far, so this is currently a no-op -- it starts enforcing
+            // the moment a second one is added.
+            {
+              target: './src/features/currently-reading',
+              from: './src/features/!(currently-reading)/**',
+            },
           ],
         },
       ],

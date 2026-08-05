@@ -1,5 +1,5 @@
-import { ComingSoon } from '@/components/common/coming-soon';
+import { CurrentlyReading } from '@/features/currently-reading/components/currently-reading';
 
 export function Home() {
-  return <ComingSoon title="Currently Reading" />;
+  return <CurrentlyReading />;
 }

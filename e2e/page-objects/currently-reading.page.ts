@@ -6,7 +6,7 @@ export class CurrentlyReadingPage {
 
   /** Navigates to the currently-reading page. */
   async goto(): Promise<void> {
-    await this.page.goto('/currently-reading');
+    await this.page.goto('/home');
   }
 
   /**
