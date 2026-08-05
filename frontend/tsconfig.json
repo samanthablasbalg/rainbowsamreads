@@ -1,4 +1,15 @@
 {
   "files": [],
-  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }]
+  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }],
+  // Duplicates tsconfig.app.json's "@/*" path. tsc itself doesn't need it here -- it
+  // resolves through the reference to tsconfig.app.json fine without it. The shadcn CLI
+  // does need it here: it reads paths from this root file directly, not through
+  // references, so without this block "shadcn add" can't resolve the "@/" alias and
+  // writes output under a literal "@/" folder instead of "src/". Confirmed by removing
+  // it and watching `npx shadcn add progress` do exactly that.
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
 }
