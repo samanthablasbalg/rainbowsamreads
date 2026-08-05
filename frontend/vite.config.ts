@@ -35,7 +35,18 @@ export default defineConfig({
   // dom-accessibility-api and @babel/runtime are excluded because both
   // already declare a proper import/require exports map.
   optimizeDeps: {
-    include: ['aria-query', 'lz-string', 'picocolors', 'pretty-format', '@babel/code-frame'],
+    include: [
+      'aria-query',
+      'lz-string',
+      'picocolors',
+      'pretty-format',
+      '@babel/code-frame',
+      // Pulled in by badge.tsx's useRender -- undiscovered until a story exercises
+      // it, which triggers the same cold-start reload these other deps are listed
+      // to avoid (see comment above).
+      '@base-ui/react/merge-props',
+      '@base-ui/react/use-render',
+    ],
   },
   test: {
     coverage: {

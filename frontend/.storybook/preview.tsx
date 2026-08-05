@@ -4,6 +4,7 @@ import type { Decorator } from '@storybook/react-vite';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import addonMsw from 'msw-storybook-addon';
+import addonDocs from '@storybook/addon-docs';
 import { ThemeProvider } from '@/lib/theme-provider';
 import '../src/styles.css';
 
@@ -42,7 +43,7 @@ const WithTheme: Decorator = (Story, context) => {
 };
 
 const preview = definePreview({
-  addons: [addonMsw()],
+  addons: [addonMsw(), addonDocs()],
   parameters: {
     controls: {
       matchers: {
