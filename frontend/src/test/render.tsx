@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router';
 import { routes } from '@/app/router';
 import { ThemeProvider } from '@/lib/theme-provider';
+import { ConfirmProvider } from '@/lib/confirm-provider';
 
 type ProviderOptions = {
   // The router's history. A single entry is the starting URL, which is what NavLink
@@ -16,7 +17,7 @@ type ProviderOptions = {
   initialEntries?: string[];
 };
 
-// The same three providers as main.tsx and provider.tsx, in the same order.
+// The same four providers as main.tsx and provider.tsx, in the same order.
 //
 // MemoryRouter rather than the createBrowserRouter tree in app/router.tsx: it takes the
 // component under test directly instead of requiring it to be reachable through a
@@ -33,7 +34,9 @@ function createWrapper(initialEntries: string[]) {
     return (
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+          <ConfirmProvider>
+            <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+          </ConfirmProvider>
         </QueryClientProvider>
       </ThemeProvider>
     );
@@ -76,7 +79,9 @@ function renderRoute(path: string) {
     ...render(
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <ConfirmProvider>
+            <RouterProvider router={router} />
+          </ConfirmProvider>
         </QueryClientProvider>
       </ThemeProvider>
     ),
