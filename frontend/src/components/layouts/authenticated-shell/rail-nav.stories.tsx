@@ -10,7 +10,6 @@ const reader = { id: 'a-user', email: 'reader@example.com', picture: null };
 // rail-nav.spec.tsx's tests do.
 const meta = {
   component: RailNav,
-  tags: ['autodocs'],
   args: {
     streakDays: 7,
   },

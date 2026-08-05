@@ -3,7 +3,6 @@ import { StreakIndicator } from './streak-indicator';
 
 const meta = {
   component: StreakIndicator,
-  tags: ['autodocs'],
 } satisfies Meta<typeof StreakIndicator>;
 
 export default meta;

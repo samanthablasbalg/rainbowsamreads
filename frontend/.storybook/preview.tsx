@@ -48,6 +48,10 @@ const WithTheme: Decorator = (Story, context) => {
 
 const preview = definePreview({
   addons: [addonMsw(), addonDocs()],
+  // Every component gets a docs page. A story file opts out with tags: ['!autodocs']
+  // -- worth doing where the docs page would show something the canvas doesn't, since
+  // docs renders every story of a file inline in one iframe.
+  tags: ['autodocs'],
   parameters: {
     controls: {
       matchers: {

@@ -13,7 +13,6 @@ import {
 // children is supplied by `render`, not `args` -- see avatar.stories.tsx for why.
 const meta = {
   component: Card,
-  tags: ['autodocs'],
   args: {
     size: 'default',
   },
@@ -47,5 +46,5 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = { args: { size: 'default' } };
+export const Default: Story = {};
 export const Sm: Story = { args: { size: 'sm' } };

@@ -6,7 +6,6 @@ import { MobileNav } from './mobile-nav';
 // MemoryRouter reads, rather than args driving a state.
 const meta = {
   component: MobileNav,
-  tags: ['autodocs'],
 } satisfies Meta<typeof MobileNav>;
 
 export default meta;

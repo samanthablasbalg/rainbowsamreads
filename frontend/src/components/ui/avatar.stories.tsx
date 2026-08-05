@@ -10,7 +10,6 @@ import { Avatar, AvatarFallback } from './avatar';
 // value for the controls/docs machinery to source-print it, and a JSX element isn't.
 const meta = {
   component: Avatar,
-  tags: ['autodocs'],
   args: {
     size: 'default',
   },
@@ -30,6 +29,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = { args: { size: 'default' } };
+export const Default: Story = {};
 export const Sm: Story = { args: { size: 'sm' } };
 export const Lg: Story = { args: { size: 'lg' } };

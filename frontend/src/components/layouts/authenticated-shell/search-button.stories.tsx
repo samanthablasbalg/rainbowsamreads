@@ -3,7 +3,6 @@ import { SearchButton } from './search-button';
 
 const meta = {
   component: SearchButton,
-  tags: ['autodocs'],
   argTypes: {
     variant: {
       control: 'select',
