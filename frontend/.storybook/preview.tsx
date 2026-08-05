@@ -13,17 +13,21 @@ import '../src/styles.css';
 // PascalCase, not the conventional `withX` decorator name: it calls useState below, and
 // react-hooks/rules-of-hooks only recognizes a hook call as valid inside something that
 // looks like a component or a `use*` hook by name.
-const WithProviders: Decorator = (Story) => {
+const WithProviders: Decorator = (Story, context) => {
   // useState rather than a plain `new QueryClient()`: decorators re-render on every
   // control/toolbar change, and a plain call would hand every story a fresh client --
   // and fresh cache -- on each one.
   const [queryClient] = useState(
     () => new QueryClient({ defaultOptions: { queries: { retry: false } } })
   );
+  // Mirrors src/test/render.tsx's `initialEntries` option: a story sets which URL it
+  // wants via `parameters.initialEntries` instead of wrapping itself in a second
+  // MemoryRouter, which React Router refuses to render inside this one.
+  const initialEntries: string[] = context.parameters.initialEntries ?? ['/'];
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter>
+        <MemoryRouter initialEntries={initialEntries}>
           <Story />
         </MemoryRouter>
       </QueryClientProvider>
@@ -56,7 +60,7 @@ const preview = definePreview({
       // 'todo' - show a11y violations in the test UI only
       // 'error' - fail CI on a11y violations
       // 'off' - skip a11y checks entirely
-      test: 'todo',
+      test: 'error',
     },
 
     // Replaces the stock MINIMAL_VIEWPORTS rather than merging with it -- those four

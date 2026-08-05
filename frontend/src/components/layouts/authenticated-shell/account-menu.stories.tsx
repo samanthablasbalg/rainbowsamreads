@@ -1,22 +1,41 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { userEvent, within } from 'storybook/test';
 import { getAuthMeMockHandler } from '@/api/generated/auth/auth.msw';
-import { AccountMenuDropdown } from './account-menu';
+import { AccountMenuDropdown, AccountMenuSheet } from './account-menu';
 
-// This story exists to prove MSW's browser worker is wired up (§4.2), not to
-// enumerate AccountMenu's states -- that's §4.6's job, once the story-entry
-// test is being applied surface-wide.
-//
-// context.msw is the running SetupWorker instance, exposed by addonMsw()'s own
-// beforeEach in .storybook/preview.tsx -- registering a handler here is the
-// browser-worker equivalent of server.use(...) in account-menu.spec.tsx.
+const reader = { id: 'a-user', email: 'reader@example.com', picture: null };
+
+// Neither component takes a prop to force itself open -- the real app only ever
+// mounts them closed -- so `play` clicks the trigger the way a reader would, instead
+// of adding a defaultOpen prop with no caller outside Storybook.
+async function openDropdown({ canvasElement }: { canvasElement: HTMLElement }) {
+  const canvas = within(canvasElement);
+  await userEvent.click(await canvas.findByRole('button', { name: /reader@example\.com/ }));
+}
+
+async function openSheet({ canvasElement }: { canvasElement: HTMLElement }) {
+  const canvas = within(canvasElement);
+  await userEvent.click(await canvas.findByRole('button', { name: 'Account' }));
+}
+
+// No `component`: the two exports are different presentations of one set of actions
+// (see account-menu.tsx's comment), not variants of a single component.
 const meta = {
-  component: AccountMenuDropdown,
+  tags: ['autodocs'],
   async beforeEach({ msw }) {
-    msw.use(getAuthMeMockHandler({ id: 'a-user', email: 'reader@example.com', picture: null }));
+    msw.use(getAuthMeMockHandler(reader));
   },
-} satisfies Meta<typeof AccountMenuDropdown>;
+} satisfies Meta;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const Dropdown: Story = {
+  render: () => <AccountMenuDropdown />,
+  play: openDropdown,
+};
+
+export const Sheet: Story = {
+  render: () => <AccountMenuSheet />,
+  play: openSheet,
+};
