@@ -39,3 +39,6 @@ jobs:
       # server fails at startup with EAI_AGAIN.
       - name: Run storybook Vitest project
         run: docker compose run --rm --use-aliases storybook npm run test:storybook
+
+      - name: Build Storybook
+        run: docker compose run --rm storybook npm run build-storybook
