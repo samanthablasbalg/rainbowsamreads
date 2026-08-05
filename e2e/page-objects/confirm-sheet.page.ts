@@ -11,7 +11,7 @@ export class ConfirmSheetPage {
 
   /** @param page - The Playwright page to drive the confirm sheet through. */
   constructor(public readonly page: Page) {
-    this.sheet = page.locator('app-confirm-sheet');
+    this.sheet = page.getByRole('alertdialog');
     this.cancelButton = this.sheet.getByRole('button', { name: 'Cancel' });
   }
 

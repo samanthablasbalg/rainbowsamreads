@@ -9,7 +9,16 @@ import {
   Tablet01Icon,
   Tick02Icon,
 } from '@hugeicons/core-free-icons';
-import type { EngagementRead, Format } from '@/api/generated/readingTracker.schemas';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  useEngagementsDeleteEngagement,
+  useEngagementsUpdateEngagementStatus,
+} from '@/api/generated/engagements/engagements';
+import {
+  EngagementStatusUpdateStatus,
+  type EngagementRead,
+  type Format,
+} from '@/api/generated/readingTracker.schemas';
 import { CoverImage } from '@/components/common/cover-image';
 import { ReadingProgress } from '@/components/common/reading-progress';
 import { Card } from '@/components/ui/card';
@@ -21,6 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useConfirm } from '@/lib/confirm-context';
 
 // One icon per format a read is bound to. `formats` is an array, not a single value --
 // the data model allows a read to be bound to more than one edition (print and audio
@@ -32,12 +42,63 @@ const FORMAT_ICONS: Record<Format, IconSvgElement> = {
   audio: HeadphonesIcon,
 };
 
-// Cover-led row per ADR-0020: cover, title, author, format icon(s), progress. The
-// overflow menu opens and lists its four actions, but the actions themselves --
-// like the Log progress button beside it -- have no handler yet; confirm(),
-// mutations and invalidateQueries are punch list §7 work.
+// Cover-led row per ADR-0020: cover, title, author, format icon(s), progress. Finish,
+// DNF and delete each confirm() first -- [[0031]] -- then PATCH/DELETE and invalidate
+// the engagements list so the card leaves this screen once its status no longer
+// matches. View history and Log progress still have no handler: history is its own,
+// much later, punch list item, and logging needs progress-log-sheet.
 export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
   const { book, formats, cover_url, completion_pct } = engagement;
+  const confirm = useConfirm();
+  const queryClient = useQueryClient();
+
+  function invalidateEngagements() {
+    queryClient.invalidateQueries({ queryKey: ['/api/engagements'] });
+  }
+
+  const updateStatus = useEngagementsUpdateEngagementStatus({
+    mutation: { onSuccess: invalidateEngagements },
+  });
+  const deleteEngagement = useEngagementsDeleteEngagement({
+    mutation: { onSuccess: invalidateEngagements },
+  });
+
+  async function handleMarkFinished() {
+    const confirmed = await confirm({
+      title: `Mark "${book.title}" as finished?`,
+      description: 'This moves it out of Currently Reading.',
+      confirmLabel: 'Mark finished',
+    });
+    if (!confirmed) return;
+    updateStatus.mutate({
+      engagementId: engagement.id,
+      data: { status: EngagementStatusUpdateStatus.finished },
+    });
+  }
+
+  async function handleMarkDnf() {
+    const confirmed = await confirm({
+      title: `Mark "${book.title}" as did not finish?`,
+      description: 'This moves it out of Currently Reading.',
+      confirmLabel: 'Mark as DNF',
+    });
+    if (!confirmed) return;
+    updateStatus.mutate({
+      engagementId: engagement.id,
+      data: { status: EngagementStatusUpdateStatus.dnf },
+    });
+  }
+
+  async function handleDelete() {
+    const confirmed = await confirm({
+      title: `Delete this read of "${book.title}"?`,
+      description: "This removes the read and its progress logs. This can't be undone.",
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
+    if (!confirmed) return;
+    deleteEngagement.mutate({ engagementId: engagement.id });
+  }
 
   return (
     <li aria-label={book.title}>
@@ -87,16 +148,23 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
                   View history
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem aria-label={`Mark ${book.title} as finished`}>
+                <DropdownMenuItem
+                  aria-label={`Mark ${book.title} as finished`}
+                  onClick={handleMarkFinished}
+                >
                   <HugeiconsIcon icon={Tick02Icon} />
                   Mark as finished
                 </DropdownMenuItem>
-                <DropdownMenuItem aria-label={`Mark ${book.title} as DNF`}>
+                <DropdownMenuItem aria-label={`Mark ${book.title} as DNF`} onClick={handleMarkDnf}>
                   <HugeiconsIcon icon={Cancel02Icon} />
                   Mark as DNF
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" aria-label={`Delete ${book.title}`}>
+                <DropdownMenuItem
+                  variant="destructive"
+                  aria-label={`Delete ${book.title}`}
+                  onClick={handleDelete}
+                >
                   <HugeiconsIcon icon={Delete02Icon} />
                   Delete
                 </DropdownMenuItem>

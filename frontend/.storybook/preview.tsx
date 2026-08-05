@@ -6,9 +6,10 @@ import { MemoryRouter } from 'react-router';
 import addonMsw from 'msw-storybook-addon';
 import addonDocs from '@storybook/addon-docs';
 import { ThemeProvider } from '@/lib/theme-provider';
+import { ConfirmProvider } from '@/lib/confirm-provider';
 import '../src/styles.css';
 
-// Same three providers, same order, as src/test/render.tsx and app/provider.tsx.
+// Same four providers, same order, as src/test/render.tsx and app/provider.tsx.
 //
 // PascalCase, not the conventional `withX` decorator name: it calls useState below, and
 // react-hooks/rules-of-hooks only recognizes a hook call as valid inside something that
@@ -27,9 +28,11 @@ const WithProviders: Decorator = (Story, context) => {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={initialEntries}>
-          <Story />
-        </MemoryRouter>
+        <ConfirmProvider>
+          <MemoryRouter initialEntries={initialEntries}>
+            <Story />
+          </MemoryRouter>
+        </ConfirmProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

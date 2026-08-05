@@ -23,30 +23,8 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: ['frontend'],
   },
-  // @testing-library/dom is a transitive dep pulled in by
-  // @storybook/addon-vitest's setup file, and CI's cold dependency scan
-  // doesn't discover its own deps in time -- each one hits the browser as a
-  // plain CJS file (`exports.foo = ...`) served without interop, which
-  // fails as an unresolvable named ESM export (aria-query's `elementRoles`,
-  // then lz-string's `default`, one at a time as each got fixed).
-  // Listed explicitly instead of chasing them one CI run at a time: every
-  // package in @testing-library/dom's own dependency list that has no
-  // "module"/dual "exports" entry (checked each package.json by hand) --
-  // dom-accessibility-api and @babel/runtime are excluded because both
-  // already declare a proper import/require exports map.
   optimizeDeps: {
-    include: [
-      'aria-query',
-      'lz-string',
-      'picocolors',
-      'pretty-format',
-      '@babel/code-frame',
-      // Pulled in by badge.tsx's useRender -- undiscovered until a story exercises
-      // it, which triggers the same cold-start reload these other deps are listed
-      // to avoid (see comment above).
-      '@base-ui/react/merge-props',
-      '@base-ui/react/use-render',
-    ],
+    entries: ['index.html', 'src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   },
   test: {
     coverage: {

@@ -1,11 +1,16 @@
-import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {
+  getEngagementsDeleteEngagementMockHandler,
+  getEngagementsUpdateEngagementStatusMockHandler,
+} from '@/api/generated/engagements/engagements.msw';
 import {
   DatePrecision,
   Format,
   ReadingStatus,
   type EngagementRead,
 } from '@/api/generated/readingTracker.schemas';
+import { server } from '@/test/msw-server';
+import { render, screen, waitFor } from '@/test/render';
 import { ReadingCard } from './reading-card';
 
 function buildEngagement(overrides: Partial<EngagementRead> = {}): EngagementRead {
@@ -48,6 +53,11 @@ function renderInList(engagement: EngagementRead) {
       <ReadingCard engagement={engagement} />
     </ul>
   );
+}
+
+async function openOverflowMenuAndChoose(user: ReturnType<typeof userEvent.setup>, item: string) {
+  await user.click(screen.getByRole('button', { name: 'More actions for Piranesi' }));
+  await user.click(await screen.findByRole('menuitem', { name: item }));
 }
 
 describe('ReadingCard', () => {
@@ -137,5 +147,64 @@ describe('ReadingCard', () => {
       'src',
       'https://example.com/default.jpg'
     );
+  });
+
+  it('marks the engagement finished, after confirming, when Mark as finished is chosen', async () => {
+    const user = userEvent.setup();
+    server.use(getEngagementsUpdateEngagementStatusMockHandler());
+    renderInList(buildEngagement());
+
+    await openOverflowMenuAndChoose(user, 'Mark Piranesi as finished');
+    expect(
+      await screen.findByRole('alertdialog', { name: 'Mark "Piranesi" as finished?' })
+    ).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Mark finished' }));
+
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+  });
+
+  it('marks the engagement DNF, after confirming, when Mark as DNF is chosen', async () => {
+    const user = userEvent.setup();
+    server.use(getEngagementsUpdateEngagementStatusMockHandler());
+    renderInList(buildEngagement());
+
+    await openOverflowMenuAndChoose(user, 'Mark Piranesi as DNF');
+    expect(
+      await screen.findByRole('alertdialog', { name: 'Mark "Piranesi" as did not finish?' })
+    ).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Mark as DNF' }));
+
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+  });
+
+  it('deletes the engagement, after confirming, when Delete is chosen', async () => {
+    const user = userEvent.setup();
+    server.use(getEngagementsDeleteEngagementMockHandler());
+    renderInList(buildEngagement());
+
+    await openOverflowMenuAndChoose(user, 'Delete Piranesi');
+    expect(
+      await screen.findByRole('alertdialog', { name: 'Delete this read of "Piranesi"?' })
+    ).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+  });
+
+  // No MSW handler registered for this one -- the suite's onUnhandledRequest: 'error'
+  // means a mutation firing anyway would fail the test, not just an assertion missing.
+  it('leaves the engagement unchanged when the confirmation is cancelled', async () => {
+    const user = userEvent.setup();
+    renderInList(buildEngagement());
+
+    await openOverflowMenuAndChoose(user, 'Delete Piranesi');
+    await screen.findByRole('alertdialog');
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   });
 });
