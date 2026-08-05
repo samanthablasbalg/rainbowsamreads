@@ -1,16 +1,13 @@
 import { createBrowserRouter } from 'react-router';
+import { Pending } from '@/components/common/pending';
 import { AuthenticatedShell } from '@/components/layouts/authenticated-shell/authenticated-shell';
-import { Challenges } from './routes/challenges';
-import { Home } from './routes/home';
-import { Insights } from './routes/insights';
 import { Landing } from './routes/landing';
-import { Library } from './routes/library';
 import { NotFound } from './routes/not-found';
 import { RouteError } from './routes/route-error';
 import { RequireAuth, RequireGuest } from './require-auth';
 
-// Data mode: the tree is a plain array rather than JSX, which is what lets § 3 swap
-// `Component` for `lazy` per route and what the auth wrappers in § 2 hang off.
+// Data mode: the tree is a plain array rather than JSX, which is what the `lazy`
+// entries below and the auth wrappers hang off.
 //
 // Exported separately from the router instance below so router.spec.tsx can feed it
 // to `createMemoryRouter`, which takes an initial URL -- `createBrowserRouter` doesn't.
@@ -33,11 +30,37 @@ export const routes = [
         // survives; the outer one would take the shell down with it.
         Component: AuthenticatedShell,
         ErrorBoundary: RouteError,
+        // Each screen is its own chunk. `HydrateFallback` sits on the lazy route
+        // itself rather than on a parent, and that placement is load-bearing: the
+        // router renders the fallback *in place of* the component that declares it
+        // and drops everything below. Hoisting these up to the shell or the guard
+        // would replace the shell too, so a cold load would paint bare text instead
+        // of chrome with a pending content area. It is also not optional -- without
+        // one, an initial match on a lazy route renders null and warns.
+        //
+        // Landing, NotFound and RouteError stay eager on purpose. The error boundary
+        // especially: a chunk that cannot be fetched is exactly when it has to render.
         children: [
-          { path: '/home', Component: Home },
-          { path: '/library', Component: Library },
-          { path: '/insights', Component: Insights },
-          { path: '/challenges', Component: Challenges },
+          {
+            path: '/home',
+            lazy: async () => ({ Component: (await import('./routes/home')).Home }),
+            HydrateFallback: Pending,
+          },
+          {
+            path: '/library',
+            lazy: async () => ({ Component: (await import('./routes/library')).Library }),
+            HydrateFallback: Pending,
+          },
+          {
+            path: '/insights',
+            lazy: async () => ({ Component: (await import('./routes/insights')).Insights }),
+            HydrateFallback: Pending,
+          },
+          {
+            path: '/challenges',
+            lazy: async () => ({ Component: (await import('./routes/challenges')).Challenges }),
+            HydrateFallback: Pending,
+          },
         ],
       },
     ],

@@ -1,4 +1,5 @@
 import { Navigate, Outlet } from 'react-router';
+import { Pending } from '@/components/common/pending';
 import { useAuth } from '@/lib/auth';
 
 // Pathless route components: each renders `<Outlet />` for the branch it guards, or a
@@ -15,9 +16,11 @@ import { useAuth } from '@/lib/auth';
 export function RequireAuth() {
   const { isPending, isUnauthorized, error } = useAuth();
 
-  // Nothing while the session is in flight. Folding "no answer yet" into "signed out"
-  // would redirect every hard refresh of an authenticated URL before the request lands.
-  if (isPending) return null;
+  // Waiting, not signed out, while the session is in flight -- folding "no answer yet"
+  // into "signed out" would redirect every hard refresh of an authenticated URL before
+  // the request lands. The same Pending the lazy routes below use, so a cold load is
+  // one continuous wait rather than a blank that turns into a different wait.
+  if (isPending) return <Pending />;
   if (isUnauthorized) return <Navigate to="/" replace />;
   // A 500 or a dead network is not a signed-out reader. Sending those to the landing
   // page would show a sign-in button for a problem signing in cannot fix, so they go to
@@ -32,7 +35,7 @@ export function RequireGuest() {
 
   // No `error` branch, unlike above: the landing page is public, so a session that
   // failed to load for any reason lands somewhere it is allowed to be.
-  if (isPending) return null;
+  if (isPending) return <Pending />;
   if (isAuthenticated) return <Navigate to="/home" replace />;
 
   return <Outlet />;
