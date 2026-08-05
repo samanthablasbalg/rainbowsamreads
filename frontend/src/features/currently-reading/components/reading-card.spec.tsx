@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {
   DatePrecision,
   Format,
@@ -93,6 +94,21 @@ describe('ReadingCard', () => {
 
     expect(screen.getByRole('button', { name: 'Log progress for Piranesi' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'More actions for Piranesi' })).toBeVisible();
+  });
+
+  it('offers history, finish, DNF and delete from the overflow menu, in that order', async () => {
+    const user = userEvent.setup();
+    renderInList(buildEngagement());
+
+    await user.click(screen.getByRole('button', { name: 'More actions for Piranesi' }));
+    await screen.findByRole('menu');
+
+    expect(screen.getAllByRole('menuitem').map((item) => item.getAttribute('aria-label'))).toEqual([
+      'View history for Piranesi',
+      'Mark Piranesi as finished',
+      'Mark Piranesi as DNF',
+      'Delete Piranesi',
+    ]);
   });
 
   it("prefers the read's own cover over the book's default", () => {

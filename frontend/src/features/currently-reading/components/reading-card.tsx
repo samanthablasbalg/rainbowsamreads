@@ -1,15 +1,26 @@
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react';
 import {
   BookOpen01Icon,
+  Cancel02Icon,
+  Delete02Icon,
   HeadphonesIcon,
+  HistoryIcon,
   MoreVerticalIcon,
   Tablet01Icon,
+  Tick02Icon,
 } from '@hugeicons/core-free-icons';
 import type { EngagementRead, Format } from '@/api/generated/readingTracker.schemas';
 import { CoverImage } from '@/components/common/cover-image';
 import { ReadingProgress } from '@/components/common/reading-progress';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 // One icon per format a read is bound to. `formats` is an array, not a single value --
 // the data model allows a read to be bound to more than one edition (print and audio
@@ -22,8 +33,9 @@ const FORMAT_ICONS: Record<Format, IconSvgElement> = {
 };
 
 // Cover-led row per ADR-0020: cover, title, author, format icon(s), progress. The
-// row's own action buttons render with their final aria-labels but no handler yet --
-// the progress-log sheet and the overflow menu are punch list §7 work.
+// overflow menu opens and lists its four actions, but the actions themselves --
+// like the Log progress button beside it -- have no handler yet; confirm(),
+// mutations and invalidateQueries are punch list §7 work.
 export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
   const { book, formats, cover_url, completion_pct } = engagement;
 
@@ -57,9 +69,39 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
             <Button size="sm" aria-label={`Log progress for ${book.title}`}>
               Log progress
             </Button>
-            <Button variant="ghost" size="icon-sm" aria-label={`More actions for ${book.title}`}>
-              <HugeiconsIcon icon={MoreVerticalIcon} />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`More actions for ${book.title}`}
+                  >
+                    <HugeiconsIcon icon={MoreVerticalIcon} />
+                  </Button>
+                }
+              />
+              <DropdownMenuContent>
+                <DropdownMenuItem aria-label={`View history for ${book.title}`}>
+                  <HugeiconsIcon icon={HistoryIcon} />
+                  View history
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem aria-label={`Mark ${book.title} as finished`}>
+                  <HugeiconsIcon icon={Tick02Icon} />
+                  Mark as finished
+                </DropdownMenuItem>
+                <DropdownMenuItem aria-label={`Mark ${book.title} as DNF`}>
+                  <HugeiconsIcon icon={Cancel02Icon} />
+                  Mark as DNF
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" aria-label={`Delete ${book.title}`}>
+                  <HugeiconsIcon icon={Delete02Icon} />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </Card>
