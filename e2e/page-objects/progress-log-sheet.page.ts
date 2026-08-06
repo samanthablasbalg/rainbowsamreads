@@ -21,8 +21,8 @@ export class ProgressLogSheetPage {
   /** @param page - The Playwright page the sheet is open on. */
   constructor(public readonly page: Page) {
     this.sheet = page.locator('app-progress-log-sheet');
-    this.pageInput = page.getByRole('spinbutton', { name: 'To · now' });
-    this.minuteInput = page.getByRole('textbox', { name: 'To · now' });
+    this.pageInput = page.getByPlaceholder('---', { exact: true });
+    this.minuteInput = page.getByPlaceholder('--:--', { exact: true });
     this.cancelButton = page.getByRole('button', { name: 'Cancel' });
     this.confirmationMessage = page.getByText('Finish and discard the page you entered');
     this.finishButton = page.getByRole('button', { name: /finish/i });
