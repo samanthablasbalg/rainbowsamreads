@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import type { ErrorType } from '@/api/mutator/axios-instance';
 import {
   engagementsGetEngagement,
   getEngagementsListEngagementsQueryKey,
@@ -67,6 +68,8 @@ export function ProgressLogDialogHost({ engagement, open, onOpenChange }: Progre
 
         <ProgressLogFields form={form} />
 
+        {form.error && <p role="alert">{form.error}</p>}
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
@@ -96,6 +99,8 @@ export function ProgressLogSheetHost({ engagement, open, onOpenChange }: Progres
         </SheetHeader>
 
         <ProgressLogFields form={form} />
+
+        {form.error && <p role="alert">{form.error}</p>}
 
         <SheetFooter>
           <Button
@@ -220,18 +225,29 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
   const fromValue = isAudio ? engagement.resume_from_minute : engagement.resume_from_page;
   const fromDisplay = isAudio ? formatMinutesAsHhmm(fromValue) : String(fromValue);
 
-  const [position, setPosition] = useState('');
+  const [position, setPositionRaw] = useState('');
   const [positionFocused, setPositionFocused] = useState(false);
   const [armed, setArmed] = useState<'finish' | 'dnf' | null>(null);
   const [dateEditorOpen, setDateEditorOpen] = useState(false);
-  const [date, setDate] = useState(todayIsoDate);
+  const [date, setDateRaw] = useState(todayIsoDate);
+  const [error, setError] = useState<string | null>(null);
+
+  function setPosition(value: string) {
+    setPositionRaw(value);
+    setError(null);
+  }
+
+  function setDate(value: string) {
+    setDateRaw(value);
+    setError(null);
+  }
 
   const queryClient = useQueryClient();
   function invalidateEngagements() {
     queryClient.invalidateQueries({ queryKey: ['/api/engagements'] });
   }
 
-  const logProgress = useEngagementsLogProgress({
+  const logProgress = useEngagementsLogProgress<ErrorType<{ detail?: string }>>({
     mutation: {
       // Patch just this engagement into the cached reading list instead of invalidating
       // it -- the list is ordered by most-recent activity, so a refetch here would jump
@@ -246,9 +262,12 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
         );
         onClose();
       },
+      onError: (err) => {
+        setError(err.response?.data?.detail ?? 'Failed to save. Please try again.');
+      },
     },
   });
-  const updateStatus = useEngagementsUpdateEngagementStatus({
+  const updateStatus = useEngagementsUpdateEngagementStatus<ErrorType<{ detail?: string }>>({
     mutation: {
       onSuccess: () => {
         invalidateEngagements();
@@ -256,7 +275,14 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
       },
       // Drop back to the plain button row on failure, so the error is readable next to
       // the action instead of stuck behind a still-armed confirm prompt.
-      onError: () => setArmed(null),
+      onError: (err) => {
+        const fallback =
+          armed === 'dnf'
+            ? 'Failed to DNF. Please try again.'
+            : 'Failed to finish. Please try again.';
+        setArmed(null);
+        setError(err.response?.data?.detail ?? fallback);
+      },
     },
   });
 
@@ -295,6 +321,7 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
 
   function handleSave() {
     if (parsedPosition === null) return;
+    setError(null);
     logProgress.mutate({
       engagementId: engagement.id,
       data: {
@@ -306,6 +333,7 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
 
   function handleFinishClick() {
     if (armed === 'finish') {
+      setError(null);
       updateStatus.mutate({
         engagementId: engagement.id,
         data: { status: EngagementStatusUpdateStatus.finished },
@@ -317,6 +345,7 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
 
   function handleGiveUpClick() {
     if (armed === 'dnf') {
+      setError(null);
       updateStatus.mutate({
         engagementId: engagement.id,
         data: { status: EngagementStatusUpdateStatus.dnf },
@@ -351,5 +380,6 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     handleFinishClick,
     handleGiveUpClick,
     confirmationMessage,
+    error,
   };
 }

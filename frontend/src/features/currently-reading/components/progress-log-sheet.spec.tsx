@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { HttpResponse, http } from 'msw';
 import userEvent from '@testing-library/user-event';
 import { getEngagementsListEngagementsQueryKey } from '@/api/generated/engagements/engagements';
 import {
@@ -210,6 +211,95 @@ describe('ProgressLogSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Give up (DNF)' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('shows the backend detail message and keeps the sheet open on save failure', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post('*/api/engagements/:engagementId/progress-logs', () =>
+        HttpResponse.json({ detail: 'A log already exists on a later day.' }, { status: 409 })
+      )
+    );
+    renderSheet(buildEngagement());
+
+    const positionInput = await screen.findByPlaceholderText('---');
+    await user.type(positionInput, '200');
+    await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'A log already exists on a later day.'
+    );
+    expect(screen.getByRole('dialog')).toBeVisible();
+  });
+
+  it('falls back to a generic message when a save error has no detail', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post(
+        '*/api/engagements/:engagementId/progress-logs',
+        () => new HttpResponse(null, { status: 500 })
+      )
+    );
+    renderSheet(buildEngagement());
+
+    const positionInput = await screen.findByPlaceholderText('---');
+    await user.type(positionInput, '200');
+    await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Failed to save. Please try again.');
+  });
+
+  it('clears a stale save error once the position is edited again', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post(
+        '*/api/engagements/:engagementId/progress-logs',
+        () => new HttpResponse(null, { status: 500 })
+      )
+    );
+    renderSheet(buildEngagement());
+
+    const positionInput = await screen.findByPlaceholderText('---');
+    await user.type(positionInput, '200');
+    await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
+    expect(await screen.findByRole('alert')).toBeVisible();
+
+    await user.type(positionInput, '5');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('shows the backend detail message and drops back to idle on finish failure', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.patch('*/api/engagements/:engagementId', () =>
+        HttpResponse.json(
+          { detail: 'Already reading another engagement for this book.' },
+          { status: 409 }
+        )
+      )
+    );
+    renderSheet(buildEngagement());
+
+    await user.click(await screen.findByRole('button', { name: 'I finished the book' }));
+    await user.click(screen.getByRole('button', { name: 'I finished the book' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Already reading another engagement for this book.'
+    );
+    expect(screen.getByRole('button', { name: 'I finished the book' })).toBeVisible();
+  });
+
+  it('falls back to a generic message when a DNF error has no detail', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.patch('*/api/engagements/:engagementId', () => new HttpResponse(null, { status: 500 }))
+    );
+    renderSheet(buildEngagement());
+
+    await user.click(await screen.findByRole('button', { name: 'Give up (DNF)' }));
+    await user.click(screen.getByRole('button', { name: 'Give up (DNF)' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Failed to DNF. Please try again.');
   });
 
   // No MSW handler registered for this one -- the suite's onUnhandledRequest: 'error'
