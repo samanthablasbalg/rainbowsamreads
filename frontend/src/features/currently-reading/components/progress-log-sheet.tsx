@@ -7,14 +7,8 @@ import {
   engagementsGetEngagement,
   getEngagementsListEngagementsQueryKey,
   useEngagementsLogProgress,
-  useEngagementsUpdateEngagementStatus,
 } from '@/api/generated/engagements/engagements';
-import {
-  EngagementStatusUpdateStatus,
-  Format,
-  ReadingStatus,
-  type EngagementRead,
-} from '@/api/generated/readingTracker.schemas';
+import { Format, ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { CoverImage } from '@/components/common/cover-image';
 import { Button } from '@/components/ui/button';
 import {
@@ -73,12 +67,12 @@ export function ProgressLogDialogHost({ engagement, open, onOpenChange }: Progre
         {form.error && <p role="alert">{form.error}</p>}
 
         <DialogFooter>
-          <Button variant="outline" disabled={form.isPending} onClick={() => onOpenChange(false)}>
+          <Button variant="outline" disabled={form.savePending} onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button
             onClick={form.handleSave}
-            disabled={!form.canSave || form.isPending}
+            disabled={!form.canSave || form.savePending}
             aria-label={`Save progress for ${title}`}
           >
             <ButtonLabel pending={form.savePending} pendingLabel="Saving…">
@@ -109,14 +103,14 @@ export function ProgressLogSheetHost({ engagement, open, onOpenChange }: Progres
         <SheetFooter>
           <Button
             onClick={form.handleSave}
-            disabled={!form.canSave || form.isPending}
+            disabled={!form.canSave || form.savePending}
             aria-label={`Save progress for ${title}`}
           >
             <ButtonLabel pending={form.savePending} pendingLabel="Saving…">
               Save
             </ButtonLabel>
           </Button>
-          <Button variant="outline" disabled={form.isPending} onClick={() => onOpenChange(false)}>
+          <Button variant="outline" disabled={form.savePending} onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
         </SheetFooter>
@@ -229,31 +223,12 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
           variant="ghost"
           size="sm"
           className="self-start"
-          disabled={form.isPending}
+          disabled={form.savePending}
           onClick={() => form.setDateEditorOpen(true)}
         >
           Log for a different day
         </Button>
       )}
-
-      <div className="flex flex-col gap-2 border-t pt-4">
-        <Button variant="outline" disabled={form.isPending} onClick={form.handleFinishClick}>
-          <ButtonLabel pending={form.finishPending} pendingLabel="Finishing…">
-            I finished the book
-          </ButtonLabel>
-        </Button>
-        <Button
-          variant="outline"
-          aria-label="Give up (DNF)"
-          disabled={form.isPending}
-          onClick={form.handleGiveUpClick}
-        >
-          <ButtonLabel pending={form.dnfPending} pendingLabel="Giving up…">
-            Give up
-          </ButtonLabel>
-        </Button>
-        {form.confirmationMessage && <p role="alert">{form.confirmationMessage}</p>}
-      </div>
     </div>
   );
 }
@@ -265,7 +240,6 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
 
   const [position, setPositionRaw] = useState('');
   const [positionFocused, setPositionFocused] = useState(false);
-  const [armed, setArmed] = useState<'finish' | 'dnf' | null>(null);
   const [dateEditorOpen, setDateEditorOpen] = useState(false);
   const [date, setDateRaw] = useState(todayIsoDate);
   const [error, setError] = useState<string | null>(null);
@@ -281,9 +255,6 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
   }
 
   const queryClient = useQueryClient();
-  function invalidateEngagements() {
-    queryClient.invalidateQueries({ queryKey: ['/api/engagements'] });
-  }
 
   const logProgress = useEngagementsLogProgress<ErrorType<{ detail?: string }>>({
     mutation: {
@@ -305,24 +276,6 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
       },
     },
   });
-  const updateStatus = useEngagementsUpdateEngagementStatus<ErrorType<{ detail?: string }>>({
-    mutation: {
-      onSuccess: () => {
-        invalidateEngagements();
-        onClose();
-      },
-      // Drop back to the plain button row on failure, so the error is readable next to
-      // the action instead of stuck behind a still-armed confirm prompt.
-      onError: (err) => {
-        const fallback =
-          armed === 'dnf'
-            ? 'Failed to DNF. Please try again.'
-            : 'Failed to finish. Please try again.';
-        setArmed(null);
-        setError(err.response?.data?.detail ?? fallback);
-      },
-    },
-  });
 
   const parsedPosition = isAudio
     ? parseHhmmToMinutes(position)
@@ -337,7 +290,6 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     parsedPosition !== null &&
     parsedPosition >= fromValue &&
     (maxPosition == null || parsedPosition <= maxPosition);
-  const positionChanged = parsedPosition !== null && parsedPosition !== fromValue;
 
   // Hidden while the field has focus, so an in-progress value (e.g. typing "1" toward
   // "100") doesn't flash an error before the user is done, and while it's empty --
@@ -369,46 +321,7 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     });
   }
 
-  function handleFinishClick() {
-    if (armed === 'finish') {
-      setError(null);
-      updateStatus.mutate({
-        engagementId: engagement.id,
-        data: { status: EngagementStatusUpdateStatus.finished },
-      });
-      return;
-    }
-    setArmed('finish');
-  }
-
-  function handleGiveUpClick() {
-    if (armed === 'dnf') {
-      setError(null);
-      updateStatus.mutate({
-        engagementId: engagement.id,
-        data: { status: EngagementStatusUpdateStatus.dnf },
-      });
-      return;
-    }
-    setArmed('dnf');
-  }
-
-  const confirmationMessage =
-    armed === 'finish'
-      ? positionChanged
-        ? 'Finish and discard the page you entered?'
-        : `Mark "${engagement.book.title}" as finished?`
-      : armed === 'dnf'
-        ? `Give up on "${engagement.book.title}"?`
-        : null;
-
-  // One combined flag gates every button in the sheet -- a click on any of them while
-  // another mutation is still in flight would race it. The three split flags below
-  // are only for which single button shows its own spinner + verb-ing label.
-  const isPending = logProgress.isPending || updateStatus.isPending;
   const savePending = logProgress.isPending;
-  const finishPending = updateStatus.isPending && armed === 'finish';
-  const dnfPending = updateStatus.isPending && armed === 'dnf';
 
   return {
     isAudio,
@@ -423,13 +336,7 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     setDate,
     canSave,
     handleSave,
-    handleFinishClick,
-    handleGiveUpClick,
-    confirmationMessage,
     error,
-    isPending,
     savePending,
-    finishPending,
-    dnfPending,
   };
 }

@@ -11,10 +11,6 @@ export class ProgressLogSheetPage {
   readonly pageInput: Locator;
   readonly minuteInput: Locator;
   readonly cancelButton: Locator;
-  readonly confirmationMessage: Locator;
-  readonly finishButton: Locator;
-  readonly giveUpButton: Locator;
-  readonly giveUpConfirmationMessage: Locator;
   readonly dateToggleButton: Locator;
   readonly dateInput: Locator;
 
@@ -24,10 +20,6 @@ export class ProgressLogSheetPage {
     this.pageInput = page.getByPlaceholder('---', { exact: true });
     this.minuteInput = page.getByPlaceholder('--:--', { exact: true });
     this.cancelButton = page.getByRole('button', { name: 'Cancel' });
-    this.confirmationMessage = page.getByText('Finish and discard the page you entered');
-    this.finishButton = page.getByRole('button', { name: /finish/i });
-    this.giveUpButton = page.getByRole('button', { name: /dnf/i });
-    this.giveUpConfirmationMessage = page.getByText('Give up on');
     this.dateToggleButton = page.getByRole('button', { name: 'Log for a different day' });
     this.dateInput = page.getByRole('textbox', { name: 'Log date' });
   }

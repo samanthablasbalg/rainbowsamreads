@@ -78,9 +78,9 @@ async function openHost({ canvasElement }: { canvasElement: HTMLElement }) {
 
 // No `component`: this file covers two hosts (see progress-log-sheet.tsx's own comment
 // on why Storybook can't reach ProgressLogSheetHost through the top-level switch),
-// not variants of one component. Behavior (Save/Finish/DNF) is covered by
-// progress-log-sheet.spec.tsx -- these stories are for format/host variants and the
-// a11y gate, not a second copy of the same interaction assertions.
+// not variants of one component. Save behavior is covered by progress-log-sheet.spec.tsx
+// -- these stories are for format/host variants and the a11y gate, not a second copy of
+// the same interaction assertions.
 const meta = {
   play: openHost,
 } satisfies Meta;

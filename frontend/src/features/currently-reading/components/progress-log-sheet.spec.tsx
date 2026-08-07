@@ -6,8 +6,6 @@ import {
   getEngagementsGetEngagementMockHandler,
   getEngagementsLogProgressMockHandler,
   getEngagementsLogProgressResponseMock,
-  getEngagementsUpdateEngagementStatusMockHandler,
-  getEngagementsUpdateEngagementStatusResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
 import {
   DatePrecision,
@@ -187,43 +185,6 @@ describe('ProgressLogSheet', () => {
     expect(queryClient.getQueryData(listQueryKey)).toEqual([updatedEngagement, otherEngagement]);
   });
 
-  it('shows a plain confirmation on finish, and confirms on the second click', async () => {
-    const user = userEvent.setup();
-    server.use(getEngagementsUpdateEngagementStatusMockHandler());
-    renderSheet(buildEngagement());
-
-    await user.click(await screen.findByRole('button', { name: 'I finished the book' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('Mark "Piranesi" as finished?');
-
-    await user.click(screen.getByRole('button', { name: 'I finished the book' }));
-
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-  });
-
-  it('warns the entered page will be discarded when finishing after an edit', async () => {
-    const user = userEvent.setup();
-    renderSheet(buildEngagement());
-
-    const positionInput = await screen.findByPlaceholderText('---');
-    await user.type(positionInput, '200');
-    await user.click(screen.getByRole('button', { name: 'I finished the book' }));
-
-    expect(screen.getByRole('alert')).toHaveTextContent('Finish and discard the page you entered');
-  });
-
-  it('asks to confirm giving up, and confirms on the second click', async () => {
-    const user = userEvent.setup();
-    server.use(getEngagementsUpdateEngagementStatusMockHandler());
-    renderSheet(buildEngagement());
-
-    await user.click(await screen.findByRole('button', { name: 'Give up (DNF)' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('Give up on "Piranesi"?');
-
-    await user.click(screen.getByRole('button', { name: 'Give up (DNF)' }));
-
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-  });
-
   it('disables every button and shows the Save spinner while a save is in flight', async () => {
     const user = userEvent.setup();
     const { promise, resolve } = deferred<void>();
@@ -244,59 +205,7 @@ describe('ProgressLogSheet', () => {
     expect(saveButton).toBeDisabled();
     expect(saveButton).toHaveTextContent('Saving…');
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'I finished the book' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Give up (DNF)' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Log for a different day' })).toBeDisabled();
-
-    resolve();
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-  });
-
-  it('disables every button and shows the Finish spinner while finishing is in flight', async () => {
-    const user = userEvent.setup();
-    const { promise, resolve } = deferred<void>();
-    server.use(
-      getEngagementsUpdateEngagementStatusMockHandler(async () => {
-        await promise;
-        return getEngagementsUpdateEngagementStatusResponseMock();
-      })
-    );
-    renderSheet(buildEngagement());
-
-    const finishButton = await screen.findByRole('button', { name: 'I finished the book' });
-    await user.click(finishButton);
-    await user.click(finishButton);
-
-    expect(finishButton).toBeDisabled();
-    expect(finishButton).toHaveTextContent('Finishing…');
-    expect(screen.getByRole('button', { name: 'Give up (DNF)' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Save progress for Piranesi' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
-
-    resolve();
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-  });
-
-  it('disables every button and shows the Give up spinner while giving up is in flight', async () => {
-    const user = userEvent.setup();
-    const { promise, resolve } = deferred<void>();
-    server.use(
-      getEngagementsUpdateEngagementStatusMockHandler(async () => {
-        await promise;
-        return getEngagementsUpdateEngagementStatusResponseMock();
-      })
-    );
-    renderSheet(buildEngagement());
-
-    const giveUpButton = await screen.findByRole('button', { name: 'Give up (DNF)' });
-    await user.click(giveUpButton);
-    await user.click(giveUpButton);
-
-    expect(giveUpButton).toBeDisabled();
-    expect(giveUpButton).toHaveTextContent('Giving up…');
-    expect(screen.getByRole('button', { name: 'I finished the book' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Save progress for Piranesi' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
 
     resolve();
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
@@ -355,40 +264,6 @@ describe('ProgressLogSheet', () => {
 
     await user.type(positionInput, '5');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-  });
-
-  it('shows the backend detail message and drops back to idle on finish failure', async () => {
-    const user = userEvent.setup();
-    server.use(
-      http.patch('*/api/engagements/:engagementId', () =>
-        HttpResponse.json(
-          { detail: 'Already reading another engagement for this book.' },
-          { status: 409 }
-        )
-      )
-    );
-    renderSheet(buildEngagement());
-
-    await user.click(await screen.findByRole('button', { name: 'I finished the book' }));
-    await user.click(screen.getByRole('button', { name: 'I finished the book' }));
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Already reading another engagement for this book.'
-    );
-    expect(screen.getByRole('button', { name: 'I finished the book' })).toBeVisible();
-  });
-
-  it('falls back to a generic message when a DNF error has no detail', async () => {
-    const user = userEvent.setup();
-    server.use(
-      http.patch('*/api/engagements/:engagementId', () => new HttpResponse(null, { status: 500 }))
-    );
-    renderSheet(buildEngagement());
-
-    await user.click(await screen.findByRole('button', { name: 'Give up (DNF)' }));
-    await user.click(screen.getByRole('button', { name: 'Give up (DNF)' }));
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('Failed to DNF. Please try again.');
   });
 
   // No MSW handler registered for this one -- the suite's onUnhandledRequest: 'error'
