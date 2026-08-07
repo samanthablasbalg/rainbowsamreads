@@ -18,4 +18,28 @@ describe('the route tree', () => {
     // renders NotFound's heading in its place.
     expect(heading).not.toHaveTextContent('Page not found');
   });
+
+  // /library is a layout with four children rather than a screen, so the loop above
+  // only ever exercises whichever one the index redirect lands on.
+  it.each([
+    ['/library/tbr', 'To Read'],
+    ['/library/finished', 'Finished'],
+    ['/library/dnf', 'DNF'],
+    ['/library/catalog', 'Catalog'],
+  ])('%s renders its own shelf under the library nav', async (path, title) => {
+    server.use(getAuthMeMockHandler());
+
+    renderRoute(path);
+
+    expect(await screen.findByRole('heading', { level: 1, name: title })).toBeVisible();
+    expect(screen.getByRole('navigation', { name: 'Library' })).toBeVisible();
+  });
+
+  it('sends /library to the catalog, since it has no screen of its own', async () => {
+    server.use(getAuthMeMockHandler());
+
+    renderRoute('/library');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Catalog' })).toBeVisible();
+  });
 });

@@ -1,7 +1,8 @@
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter, redirect } from 'react-router';
 import { Pending } from '@/components/common/pending';
 import { AuthenticatedShell } from '@/components/layouts/authenticated-shell/authenticated-shell';
 import { Landing } from './routes/landing';
+import { Library } from './routes/library';
 import { NotFound } from './routes/not-found';
 import { RouteError } from './routes/route-error';
 import { RequireAuth, RequireGuest } from './require-auth';
@@ -47,9 +48,41 @@ export const routes = [
             HydrateFallback: Pending,
           },
           {
+            // The one destination that is a section rather than a screen. `Library` is
+            // a layout: it renders the shelf nav and an Outlet, so the nav stays put
+            // while the four shelves swap beneath it. Eager, unlike its children, for
+            // the same reason AuthenticatedShell is -- a HydrateFallback below it can
+            // only render inside chrome that is already there.
+            //
+            // Nesting is what keeps the rail and mobile navs untouched: NavLink's match
+            // is prefix-based, so `to="/library"` stays active across all four.
             path: '/library',
-            lazy: async () => ({ Component: (await import('./routes/library')).Library }),
-            HydrateFallback: Pending,
+            Component: Library,
+            children: [
+              // /library itself has no screen. Catalog rather than the first shelf: To
+              // Read is a stub, so a bookmark to /library would otherwise dead-end.
+              { index: true, loader: () => redirect('/library/catalog') },
+              {
+                path: 'tbr',
+                lazy: async () => ({ Component: (await import('./routes/tbr')).ToRead }),
+                HydrateFallback: Pending,
+              },
+              {
+                path: 'finished',
+                lazy: async () => ({ Component: (await import('./routes/finished')).Finished }),
+                HydrateFallback: Pending,
+              },
+              {
+                path: 'dnf',
+                lazy: async () => ({ Component: (await import('./routes/dnf')).Dnf }),
+                HydrateFallback: Pending,
+              },
+              {
+                path: 'catalog',
+                lazy: async () => ({ Component: (await import('./routes/catalog')).Catalog }),
+                HydrateFallback: Pending,
+              },
+            ],
           },
           {
             path: '/insights',

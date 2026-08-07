@@ -42,12 +42,16 @@ export default defineConfig([
               target: ['./src/api', './src/components', './src/config', './src/lib'],
               from: ['./src/features', './src/app'],
             },
-            // One zone per feature, blocking imports from every other feature. Only one
-            // feature exists so far, so this is currently a no-op -- it starts enforcing
-            // the moment a second one is added.
+            // One zone per feature, blocking imports from every other feature. Anything
+            // two features both need gets promoted to components/ rather than reached
+            // for across this line.
             {
               target: './src/features/currently-reading',
               from: './src/features/!(currently-reading)/**',
+            },
+            {
+              target: './src/features/library',
+              from: './src/features/!(library)/**',
             },
           ],
         },
