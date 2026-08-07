@@ -106,6 +106,15 @@ describe('ReadingCard', () => {
     expect(screen.getByRole('button', { name: 'More actions for Piranesi' })).toBeVisible();
   });
 
+  it('opens the progress-log sheet from the log-progress button', async () => {
+    const user = userEvent.setup();
+    renderInList(buildEngagement());
+
+    await user.click(screen.getByRole('button', { name: 'Log progress for Piranesi' }));
+
+    expect(await screen.findByRole('dialog', { name: 'Piranesi' })).toBeVisible();
+  });
+
   it('offers history, finish, DNF and delete from the overflow menu, in that order', async () => {
     const user = userEvent.setup();
     renderInList(buildEngagement());

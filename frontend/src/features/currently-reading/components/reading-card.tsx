@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react';
 import {
   BookOpen01Icon,
@@ -31,6 +32,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useConfirm } from '@/lib/confirm-context';
+import { ProgressLogSheet } from './progress-log-sheet';
 
 // One icon per format a read is bound to. `formats` is an array, not a single value --
 // the data model allows a read to be bound to more than one edition (print and audio
@@ -45,12 +47,13 @@ const FORMAT_ICONS: Record<Format, IconSvgElement> = {
 // Cover-led row per ADR-0020: cover, title, author, format icon(s), progress. Finish,
 // DNF and delete each confirm() first -- [[0031]] -- then PATCH/DELETE and invalidate
 // the engagements list so the card leaves this screen once its status no longer
-// matches. View history and Log progress still have no handler: history is its own,
-// much later, punch list item, and logging needs progress-log-sheet.
+// matches. View history still has no handler -- it is its own, much later, punch list
+// item.
 export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
   const { book, formats, cover_url, completion_pct } = engagement;
   const confirm = useConfirm();
   const queryClient = useQueryClient();
+  const [logOpen, setLogOpen] = useState(false);
 
   function invalidateEngagements() {
     queryClient.invalidateQueries({ queryKey: ['/api/engagements'] });
@@ -127,7 +130,11 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
           <ReadingProgress title={book.title} pct={completion_pct} />
 
           <div className="mt-auto flex items-center gap-2 pt-1">
-            <Button size="sm" aria-label={`Log progress for ${book.title}`}>
+            <Button
+              size="sm"
+              aria-label={`Log progress for ${book.title}`}
+              onClick={() => setLogOpen(true)}
+            >
               Log progress
             </Button>
             <DropdownMenu>
@@ -173,6 +180,8 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
           </div>
         </div>
       </Card>
+
+      <ProgressLogSheet engagement={engagement} open={logOpen} onOpenChange={setLogOpen} />
     </li>
   );
 }

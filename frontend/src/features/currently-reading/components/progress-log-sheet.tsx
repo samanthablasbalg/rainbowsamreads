@@ -11,17 +11,15 @@ import {
 import { Format, ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { CoverImage } from '@/components/common/cover-image';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { useIsCoarsePointer } from '@/hooks/use-is-coarse-pointer';
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from '@/components/ui/responsive-dialog';
 import { formatMinutesAsHhmm, parseHhmmToMinutes } from '../utils/format-minutes';
 import { localIsoDate } from '../utils/local-date';
 
@@ -31,104 +29,65 @@ type ProgressLogSheetProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-// Host-switch shape shared with confirm-provider.tsx: a real Dialog/Sheet (not the
-// Alert variants -- this is a form, not a destructive confirmation, so backdrop-dismiss
-// is fine) rendered unconditionally so ReadingCard's `open` state drives Base UI's own
-// open/close animation instead of our own conditional mount. Base UI's Portal defaults
-// to `keepMounted: false`, so it already unmounts everything inside once a close
-// finishes -- the next open builds this component's state fresh from `engagement`,
-// with nothing left over to reset by hand.
+// The split between this component and ProgressLogForm is the whole point rather than
+// tidiness: everything below ResponsiveDialogContent lives inside Base UI's portal,
+// which defaults to keepMounted={false} and tears its subtree down once a close
+// animation finishes. Putting the form's state in a component rendered *there* is what
+// makes a reopened sheet start empty. Held here instead, it would belong to a component
+// ReadingCard never unmounts, and would survive every close -- which is exactly the bug
+// this replaced.
 export function ProgressLogSheet({ engagement, open, onOpenChange }: ProgressLogSheetProps) {
-  const isCoarsePointer = useIsCoarsePointer();
-
-  return isCoarsePointer ? (
-    <ProgressLogSheetHost engagement={engagement} open={open} onOpenChange={onOpenChange} />
-  ) : (
-    <ProgressLogDialogHost engagement={engagement} open={open} onOpenChange={onOpenChange} />
-  );
-}
-
-// Exported alongside ProgressLogSheet so its stories can render each host directly --
-// Storybook always runs under a fine (mouse) pointer, so useIsCoarsePointer() above
-// never picks ProgressLogSheetHost on its own.
-export function ProgressLogDialogHost({ engagement, open, onOpenChange }: ProgressLogSheetProps) {
-  const title = engagement.book.title;
-  const form = useProgressLogForm(engagement, () => onOpenChange(false));
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <ProgressLogIdentity engagement={engagement} TitleTag={DialogTitle} />
-        </DialogHeader>
-
-        <ProgressLogFields form={form} />
-
-        {form.error && <p role="alert">{form.error}</p>}
-
-        <DialogFooter>
-          <Button variant="outline" disabled={form.savePending} onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={form.handleSave}
-            disabled={!form.canSave || form.savePending}
-            aria-label={`Save progress for ${title}`}
-          >
-            <ButtonLabel pending={form.savePending} pendingLabel="Saving…">
-              Save
-            </ButtonLabel>
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent>
+        <ProgressLogForm engagement={engagement} onDone={() => onOpenChange(false)} />
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }
 
-export function ProgressLogSheetHost({ engagement, open, onOpenChange }: ProgressLogSheetProps) {
-  const title = engagement.book.title;
-  const form = useProgressLogForm(engagement, () => onOpenChange(false));
-
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom">
-        <SheetHeader>
-          <ProgressLogIdentity engagement={engagement} TitleTag={SheetTitle} />
-        </SheetHeader>
-
-        <ProgressLogFields form={form} />
-
-        {form.error && <p role="alert">{form.error}</p>}
-
-        <SheetFooter>
-          <Button
-            onClick={form.handleSave}
-            disabled={!form.canSave || form.savePending}
-            aria-label={`Save progress for ${title}`}
-          >
-            <ButtonLabel pending={form.savePending} pendingLabel="Saving…">
-              Save
-            </ButtonLabel>
-          </Button>
-          <Button variant="outline" disabled={form.savePending} onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-// Cover + title, so the book being logged is unambiguous -- ADR-0019. `TitleTag` is
-// whichever primitive's own Title component the host renders with, so the dialog/sheet
-// keeps a real `aria-labelledby` association instead of a plain heading.
-function ProgressLogIdentity({
+function ProgressLogForm({
   engagement,
-  TitleTag,
+  onDone,
 }: {
   engagement: EngagementRead;
-  TitleTag: typeof DialogTitle | typeof SheetTitle;
+  onDone: () => void;
 }) {
+  const title = engagement.book.title;
+  const form = useProgressLogForm(engagement, onDone);
+
+  return (
+    <>
+      <ResponsiveDialogHeader>
+        <ProgressLogIdentity engagement={engagement} />
+      </ResponsiveDialogHeader>
+
+      <ProgressLogFields form={form} />
+
+      {form.error && <p role="alert">{form.error}</p>}
+
+      <ResponsiveDialogFooter>
+        <Button variant="outline" disabled={form.savePending} onClick={onDone}>
+          Cancel
+        </Button>
+        <Button
+          onClick={form.handleSave}
+          disabled={!form.canSave || form.savePending}
+          aria-label={`Save progress for ${title}`}
+        >
+          <ButtonLabel pending={form.savePending} pendingLabel="Saving…">
+            Save
+          </ButtonLabel>
+        </Button>
+      </ResponsiveDialogFooter>
+    </>
+  );
+}
+
+// Cover + title, so the book being logged is unambiguous -- ADR-0019. The title is the
+// overlay's own Title part, so it keeps a real `aria-labelledby` association instead of
+// being a plain heading that happens to sit at the top.
+function ProgressLogIdentity({ engagement }: { engagement: EngagementRead }) {
   return (
     <div className="flex items-center gap-3">
       <CoverImage
@@ -136,7 +95,7 @@ function ProgressLogIdentity({
         title={engagement.book.title}
         className="h-16 w-11"
       />
-      <TitleTag>{engagement.book.title}</TitleTag>
+      <ResponsiveDialogTitle>{engagement.book.title}</ResponsiveDialogTitle>
     </div>
   );
 }
