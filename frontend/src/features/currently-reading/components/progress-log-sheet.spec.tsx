@@ -151,6 +151,41 @@ describe('ProgressLogSheet', () => {
     expect(capturedBody).toEqual({ current_page: 200, logged_on: localIsoDate(-1) });
   });
 
+  it('selects the Yesterday chip when the Yesterday chip is picked', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement());
+
+    await user.click(await screen.findByRole('button', { name: 'Yesterday' }));
+
+    expect(screen.getByRole('button', { name: 'Yesterday' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    expect(screen.getByRole('button', { name: 'Today' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Pick a date' })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
+  });
+
+  // The chips key off which control set the date, not off its value -- picking
+  // yesterday in the calendar used to light the Yesterday chip and the calendar chip
+  // at the same time.
+  it('leaves the Yesterday chip unselected when yesterday is chosen in the calendar', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement());
+
+    await user.click(await screen.findByRole('button', { name: 'Pick a date' }));
+    fireEvent.change(screen.getByLabelText('Log date'), { target: { value: localIsoDate(-1) } });
+
+    expect(screen.getByRole('button', { name: 'Yesterday' })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
+    expect(screen.getByRole('button', { name: 'Today' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByRole('button', { name: 'Pick a date' })).not.toBeInTheDocument();
+  });
+
   it('labels the calendar chip with a date that is neither today nor yesterday', async () => {
     const user = userEvent.setup();
     renderSheet(buildEngagement());

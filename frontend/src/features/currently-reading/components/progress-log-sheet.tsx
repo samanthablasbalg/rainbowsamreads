@@ -129,9 +129,14 @@ type ProgressLogForm = ReturnType<typeof useProgressLogForm>;
 function ProgressLogFields({ form }: { form: ProgressLogForm }) {
   const today = localIsoDate();
   const yesterday = localIsoDate(-1);
-  const isCustomDate = form.date !== today && form.date !== yesterday;
+  // Keyed on which control set the date rather than on the value, so a day chosen in
+  // the calendar reads as the calendar's even when it happens to be today or yesterday.
+  const fromPicker = form.dateSource === 'picker';
+  const todaySelected = !fromPicker && form.date === today;
+  const yesterdaySelected = !fromPicker && form.date === yesterday;
+  const pickerSelected = form.dateEditorOpen || fromPicker;
   const [year, month, day] = form.date.split('-').map(Number);
-  const pickedDateLabel = isCustomDate
+  const pickedDateLabel = fromPicker
     ? new Date(year, month - 1, day).toLocaleDateString(undefined, {
         month: 'short',
         day: 'numeric',
@@ -179,8 +184,11 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
 
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
+          {/* aria-pressed, not styling alone: these are toggles, and which one is
+              active needs to reach a screen reader as state rather than as a colour. */}
           <Button
-            variant={form.date === today ? 'default' : 'outline'}
+            variant={todaySelected ? 'default' : 'outline'}
+            aria-pressed={todaySelected}
             size="sm"
             disabled={form.savePending}
             onClick={() => form.pickDate(today)}
@@ -188,7 +196,8 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
             Today
           </Button>
           <Button
-            variant={form.date === yesterday ? 'default' : 'outline'}
+            variant={yesterdaySelected ? 'default' : 'outline'}
+            aria-pressed={yesterdaySelected}
             size="sm"
             disabled={form.savePending}
             onClick={() => form.pickDate(yesterday)}
@@ -196,7 +205,8 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
             Yesterday
           </Button>
           <Button
-            variant={form.dateEditorOpen || isCustomDate ? 'default' : 'outline'}
+            variant={pickerSelected ? 'default' : 'outline'}
+            aria-pressed={pickerSelected}
             size="sm"
             disabled={form.savePending}
             onClick={() => form.setDateEditorOpen(!form.dateEditorOpen)}
@@ -232,6 +242,10 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
   const [positionFocused, setPositionFocused] = useState(false);
   const [dateEditorOpen, setDateEditorOpen] = useState(false);
   const [date, setDateRaw] = useState(localIsoDate);
+  // Which control set `date`, not just what it is. Picking yesterday in the calendar
+  // would otherwise light the Yesterday chip as well as the calendar one, since the
+  // chips can't tell that value apart from their own.
+  const [dateSource, setDateSource] = useState<'chip' | 'picker'>('chip');
   const [error, setError] = useState<string | null>(null);
 
   function setPosition(value: string) {
@@ -241,13 +255,16 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
 
   function setDate(value: string) {
     setDateRaw(value);
+    setDateSource('picker');
     setError(null);
   }
 
   // The Today/Yesterday chips close the date editor, so exactly one chip ever reads
   // as selected.
   function pickDate(value: string) {
-    setDate(value);
+    setDateRaw(value);
+    setDateSource('chip');
+    setError(null);
     setDateEditorOpen(false);
   }
 
@@ -330,6 +347,7 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     dateEditorOpen,
     setDateEditorOpen,
     date,
+    dateSource,
     setDate,
     pickDate,
     canSave,
