@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Loading03Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ErrorType } from '@/api/mutator/axios-instance';
 import {
@@ -71,15 +73,17 @@ export function ProgressLogDialogHost({ engagement, open, onOpenChange }: Progre
         {form.error && <p role="alert">{form.error}</p>}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" disabled={form.isPending} onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button
             onClick={form.handleSave}
-            disabled={!form.canSave}
+            disabled={!form.canSave || form.isPending}
             aria-label={`Save progress for ${title}`}
           >
-            Save
+            <ButtonLabel pending={form.savePending} pendingLabel="Saving…">
+              Save
+            </ButtonLabel>
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -105,12 +109,14 @@ export function ProgressLogSheetHost({ engagement, open, onOpenChange }: Progres
         <SheetFooter>
           <Button
             onClick={form.handleSave}
-            disabled={!form.canSave}
+            disabled={!form.canSave || form.isPending}
             aria-label={`Save progress for ${title}`}
           >
-            Save
+            <ButtonLabel pending={form.savePending} pendingLabel="Saving…">
+              Save
+            </ButtonLabel>
           </Button>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" disabled={form.isPending} onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
         </SheetFooter>
@@ -138,6 +144,28 @@ function ProgressLogIdentity({
       />
       <TitleTag>{engagement.book.title}</TitleTag>
     </div>
+  );
+}
+
+// Swaps a button's label for a spinner + verb-ing text while its own mutation is in
+// flight, so a disabled button reads as "working" rather than just inert. `data-icon`
+// is the same slot the Button component's own icon buttons key their padding off of
+// (see streak-indicator.tsx, account-menu.tsx).
+function ButtonLabel({
+  pending,
+  pendingLabel,
+  children,
+}: {
+  pending: boolean;
+  pendingLabel: string;
+  children: ReactNode;
+}) {
+  if (!pending) return <>{children}</>;
+  return (
+    <>
+      <HugeiconsIcon icon={Loading03Icon} className="animate-spin" data-icon="inline-start" />
+      {pendingLabel}
+    </>
   );
 }
 
@@ -201,6 +229,7 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
           variant="ghost"
           size="sm"
           className="self-start"
+          disabled={form.isPending}
           onClick={() => form.setDateEditorOpen(true)}
         >
           Log for a different day
@@ -208,11 +237,20 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
       )}
 
       <div className="flex flex-col gap-2 border-t pt-4">
-        <Button variant="outline" onClick={form.handleFinishClick}>
-          I finished the book
+        <Button variant="outline" disabled={form.isPending} onClick={form.handleFinishClick}>
+          <ButtonLabel pending={form.finishPending} pendingLabel="Finishing…">
+            I finished the book
+          </ButtonLabel>
         </Button>
-        <Button variant="outline" aria-label="Give up (DNF)" onClick={form.handleGiveUpClick}>
-          Give up
+        <Button
+          variant="outline"
+          aria-label="Give up (DNF)"
+          disabled={form.isPending}
+          onClick={form.handleGiveUpClick}
+        >
+          <ButtonLabel pending={form.dnfPending} pendingLabel="Giving up…">
+            Give up
+          </ButtonLabel>
         </Button>
         {form.confirmationMessage && <p role="alert">{form.confirmationMessage}</p>}
       </div>
@@ -364,6 +402,14 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
         ? `Give up on "${engagement.book.title}"?`
         : null;
 
+  // One combined flag gates every button in the sheet -- a click on any of them while
+  // another mutation is still in flight would race it. The three split flags below
+  // are only for which single button shows its own spinner + verb-ing label.
+  const isPending = logProgress.isPending || updateStatus.isPending;
+  const savePending = logProgress.isPending;
+  const finishPending = updateStatus.isPending && armed === 'finish';
+  const dnfPending = updateStatus.isPending && armed === 'dnf';
+
   return {
     isAudio,
     fromDisplay,
@@ -381,5 +427,9 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     handleGiveUpClick,
     confirmationMessage,
     error,
+    isPending,
+    savePending,
+    finishPending,
+    dnfPending,
   };
 }

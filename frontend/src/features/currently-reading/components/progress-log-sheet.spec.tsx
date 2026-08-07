@@ -7,6 +7,7 @@ import {
   getEngagementsLogProgressMockHandler,
   getEngagementsLogProgressResponseMock,
   getEngagementsUpdateEngagementStatusMockHandler,
+  getEngagementsUpdateEngagementStatusResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
 import {
   DatePrecision,
@@ -62,6 +63,16 @@ function ControlledProgressLogSheet({ engagement }: { engagement: EngagementRead
 
 function renderSheet(engagement: EngagementRead) {
   return render(<ControlledProgressLogSheet engagement={engagement} />);
+}
+
+// Lets a test hold a mock response open so it can assert on the pending state before
+// letting it resolve, the same way MSW's own docs recommend for in-flight assertions.
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
 }
 
 describe('ProgressLogSheet', () => {
@@ -210,6 +221,84 @@ describe('ProgressLogSheet', () => {
 
     await user.click(screen.getByRole('button', { name: 'Give up (DNF)' }));
 
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('disables every button and shows the Save spinner while a save is in flight', async () => {
+    const user = userEvent.setup();
+    const { promise, resolve } = deferred<void>();
+    server.use(
+      getEngagementsLogProgressMockHandler(async () => {
+        await promise;
+        return getEngagementsLogProgressResponseMock();
+      }),
+      getEngagementsGetEngagementMockHandler()
+    );
+    renderSheet(buildEngagement());
+
+    const positionInput = await screen.findByPlaceholderText('---');
+    await user.type(positionInput, '200');
+    const saveButton = screen.getByRole('button', { name: 'Save progress for Piranesi' });
+    await user.click(saveButton);
+
+    expect(saveButton).toBeDisabled();
+    expect(saveButton).toHaveTextContent('Saving…');
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'I finished the book' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Give up (DNF)' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Log for a different day' })).toBeDisabled();
+
+    resolve();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('disables every button and shows the Finish spinner while finishing is in flight', async () => {
+    const user = userEvent.setup();
+    const { promise, resolve } = deferred<void>();
+    server.use(
+      getEngagementsUpdateEngagementStatusMockHandler(async () => {
+        await promise;
+        return getEngagementsUpdateEngagementStatusResponseMock();
+      })
+    );
+    renderSheet(buildEngagement());
+
+    const finishButton = await screen.findByRole('button', { name: 'I finished the book' });
+    await user.click(finishButton);
+    await user.click(finishButton);
+
+    expect(finishButton).toBeDisabled();
+    expect(finishButton).toHaveTextContent('Finishing…');
+    expect(screen.getByRole('button', { name: 'Give up (DNF)' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Save progress for Piranesi' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+
+    resolve();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('disables every button and shows the Give up spinner while giving up is in flight', async () => {
+    const user = userEvent.setup();
+    const { promise, resolve } = deferred<void>();
+    server.use(
+      getEngagementsUpdateEngagementStatusMockHandler(async () => {
+        await promise;
+        return getEngagementsUpdateEngagementStatusResponseMock();
+      })
+    );
+    renderSheet(buildEngagement());
+
+    const giveUpButton = await screen.findByRole('button', { name: 'Give up (DNF)' });
+    await user.click(giveUpButton);
+    await user.click(giveUpButton);
+
+    expect(giveUpButton).toBeDisabled();
+    expect(giveUpButton).toHaveTextContent('Giving up…');
+    expect(screen.getByRole('button', { name: 'I finished the book' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Save progress for Piranesi' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+
+    resolve();
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
