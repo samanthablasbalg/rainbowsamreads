@@ -15,7 +15,7 @@ import {
 } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { fireEvent, render, screen, waitFor } from '@/test/render';
-import { todayIsoDate } from '../utils/local-date';
+import { localIsoDate } from '../utils/local-date';
 import { ProgressLogSheet } from './progress-log-sheet';
 
 function buildEngagement(overrides: Partial<EngagementRead> = {}): EngagementRead {
@@ -107,7 +107,7 @@ describe('ProgressLogSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ current_page: 200, logged_on: todayIsoDate() });
+    expect(capturedBody).toEqual({ current_page: 200, logged_on: localIsoDate() });
   });
 
   it('allows saving the same page as the current position', async () => {
@@ -127,7 +127,39 @@ describe('ProgressLogSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ current_page: 100, logged_on: todayIsoDate() });
+    expect(capturedBody).toEqual({ current_page: 100, logged_on: localIsoDate() });
+  });
+
+  it("sends yesterday's date when the Yesterday chip is picked", async () => {
+    const user = userEvent.setup();
+    let capturedBody: unknown;
+    server.use(
+      getEngagementsLogProgressMockHandler(async (info) => {
+        capturedBody = await info.request.json();
+        return getEngagementsLogProgressResponseMock();
+      }),
+      getEngagementsGetEngagementMockHandler()
+    );
+    renderSheet(buildEngagement());
+
+    await user.click(await screen.findByRole('button', { name: 'Yesterday' }));
+    const positionInput = screen.getByPlaceholderText('---');
+    await user.type(positionInput, '200');
+    await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(capturedBody).toEqual({ current_page: 200, logged_on: localIsoDate(-1) });
+  });
+
+  it('labels the calendar chip with a date that is neither today nor yesterday', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement());
+
+    await user.click(await screen.findByRole('button', { name: 'Pick a date' }));
+    fireEvent.change(screen.getByLabelText('Log date'), { target: { value: '2025-06-15' } });
+
+    expect(screen.getByRole('button', { name: 'Jun 15' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Pick a date' })).not.toBeInTheDocument();
   });
 
   it('sends the chosen date when logging for a different day', async () => {
@@ -142,7 +174,7 @@ describe('ProgressLogSheet', () => {
     );
     renderSheet(buildEngagement());
 
-    await user.click(screen.getByRole('button', { name: 'Log for a different day' }));
+    await user.click(screen.getByRole('button', { name: 'Pick a date' }));
     // fireEvent.change, not userEvent.type: jsdom's native <input type="date"> doesn't
     // support typed keystrokes the way a real browser's segmented date picker does.
     fireEvent.change(screen.getByLabelText('Log date'), { target: { value: '2025-06-15' } });
@@ -205,7 +237,7 @@ describe('ProgressLogSheet', () => {
     expect(saveButton).toBeDisabled();
     expect(saveButton).toHaveTextContent('Saving…');
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Log for a different day' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Pick a date' })).toBeDisabled();
 
     resolve();
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());

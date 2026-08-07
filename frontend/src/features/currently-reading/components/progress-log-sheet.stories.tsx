@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { expect, screen, userEvent, within } from 'storybook/test';
+import { expect, fireEvent, screen, userEvent, within } from 'storybook/test';
 import {
   DatePrecision,
   Format,
@@ -108,4 +108,20 @@ export const Audiobook: Story = {
 
 export const MobileSheet: Story = {
   render: () => <ControlledSheetHost engagement={baseEngagement} />,
+};
+
+// The stories above all open on today, so they only ever show the chip row in its
+// default state. This is the other half of it: the calendar chip selected and carrying
+// a date label, and the date input it reveals. A story's own `play` replaces meta's
+// rather than composing with it, hence the explicit openHost call.
+export const CustomDate: Story = {
+  render: () => <ControlledDialogHost engagement={baseEngagement} />,
+  play: async (context) => {
+    await openHost(context);
+    await userEvent.click(await screen.findByRole('button', { name: 'Pick a date' }));
+    // fireEvent.change, not userEvent.type: a native date input takes segmented
+    // keystrokes, so typing the ISO string into it doesn't land.
+    fireEvent.change(screen.getByLabelText('Log date'), { target: { value: '2025-06-15' } });
+    expect(await screen.findByRole('button', { name: 'Jun 15' })).toBeInTheDocument();
+  },
 };

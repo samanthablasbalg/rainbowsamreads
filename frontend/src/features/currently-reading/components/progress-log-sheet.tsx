@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Loading03Icon } from '@hugeicons/core-free-icons';
+import { Calendar03Icon, Loading03Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ErrorType } from '@/api/mutator/axios-instance';
 import {
@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useIsCoarsePointer } from '@/hooks/use-is-coarse-pointer';
 import { formatMinutesAsHhmm, parseHhmmToMinutes } from '../utils/format-minutes';
-import { todayIsoDate } from '../utils/local-date';
+import { localIsoDate } from '../utils/local-date';
 
 type ProgressLogSheetProps = {
   engagement: EngagementRead;
@@ -168,6 +168,17 @@ type ProgressLogForm = ReturnType<typeof useProgressLogForm>;
 // Shared between both hosts, per the e2e page object's own comment: the sheet renders
 // identically as a dialog or a bottom sheet, so one set of content drives both.
 function ProgressLogFields({ form }: { form: ProgressLogForm }) {
+  const today = localIsoDate();
+  const yesterday = localIsoDate(-1);
+  const isCustomDate = form.date !== today && form.date !== yesterday;
+  const [year, month, day] = form.date.split('-').map(Number);
+  const pickedDateLabel = isCustomDate
+    ? new Date(year, month - 1, day).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+      })
+    : 'Pick a date';
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-end gap-4">
@@ -207,28 +218,48 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
         </Field>
       </div>
 
-      {form.dateEditorOpen ? (
-        <Field>
-          <FieldLabel htmlFor="progress-log-date">Log date</FieldLabel>
-          <Input
-            id="progress-log-date"
-            type="date"
-            max={todayIsoDate()}
-            value={form.date}
-            onChange={(event) => form.setDate(event.target.value)}
-          />
-        </Field>
-      ) : (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="self-start"
-          disabled={form.savePending}
-          onClick={() => form.setDateEditorOpen(true)}
-        >
-          Log for a different day
-        </Button>
-      )}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant={form.date === today ? 'default' : 'outline'}
+            size="sm"
+            disabled={form.savePending}
+            onClick={() => form.pickDate(today)}
+          >
+            Today
+          </Button>
+          <Button
+            variant={form.date === yesterday ? 'default' : 'outline'}
+            size="sm"
+            disabled={form.savePending}
+            onClick={() => form.pickDate(yesterday)}
+          >
+            Yesterday
+          </Button>
+          <Button
+            variant={form.dateEditorOpen || isCustomDate ? 'default' : 'outline'}
+            size="sm"
+            disabled={form.savePending}
+            onClick={() => form.setDateEditorOpen(!form.dateEditorOpen)}
+          >
+            <HugeiconsIcon icon={Calendar03Icon} data-icon="inline-start" />
+            {pickedDateLabel}
+          </Button>
+        </div>
+
+        {form.dateEditorOpen && (
+          <Field>
+            <FieldLabel htmlFor="progress-log-date">Log date</FieldLabel>
+            <Input
+              id="progress-log-date"
+              type="date"
+              max={today}
+              value={form.date}
+              onChange={(event) => form.setDate(event.target.value)}
+            />
+          </Field>
+        )}
+      </div>
     </div>
   );
 }
@@ -241,7 +272,7 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
   const [position, setPositionRaw] = useState('');
   const [positionFocused, setPositionFocused] = useState(false);
   const [dateEditorOpen, setDateEditorOpen] = useState(false);
-  const [date, setDateRaw] = useState(todayIsoDate);
+  const [date, setDateRaw] = useState(localIsoDate);
   const [error, setError] = useState<string | null>(null);
 
   function setPosition(value: string) {
@@ -252,6 +283,13 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
   function setDate(value: string) {
     setDateRaw(value);
     setError(null);
+  }
+
+  // The Today/Yesterday chips close the date editor, so exactly one chip ever reads
+  // as selected.
+  function pickDate(value: string) {
+    setDate(value);
+    setDateEditorOpen(false);
   }
 
   const queryClient = useQueryClient();
@@ -334,6 +372,7 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     setDateEditorOpen,
     date,
     setDate,
+    pickDate,
     canSave,
     handleSave,
     error,
