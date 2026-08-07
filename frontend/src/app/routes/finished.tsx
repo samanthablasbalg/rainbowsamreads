@@ -1,4 +1,13 @@
-// Placeholder until step 4 puts the real screen behind it.
+import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
+import { EngagementShelf } from '@/features/library/components/engagement-shelf';
+
 export function Finished() {
-  return <h1>Finished</h1>;
+  return (
+    <EngagementShelf
+      status={ReadingStatus.finished}
+      heading="Finished"
+      emptyTitle="Nothing finished yet"
+      emptyDescription="Books you finish reading show up here."
+    />
+  );
 }

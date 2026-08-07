@@ -1,4 +1,13 @@
-// Placeholder until step 4 puts the real screen behind it.
+import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
+import { EngagementShelf } from '@/features/library/components/engagement-shelf';
+
 export function Dnf() {
-  return <h1>DNF</h1>;
+  return (
+    <EngagementShelf
+      status={ReadingStatus.dnf}
+      heading="DNF"
+      emptyTitle="Nothing abandoned"
+      emptyDescription="Books you stop reading part-way show up here."
+    />
+  );
 }
