@@ -73,7 +73,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=$(jq -r '.tool_input.file_path // \"\"'); case \"$f\" in *.sh|*.bash|*.zsh) printf \"Blocked: do not create shell scripts. Run the command directly with the Bash tool.\\n\" >&2; exit 2;; esac; exit 0"
+            "command": "f=$(jq -r '.tool_input.file_path // \"\"'); case \"$f\" in */.claude/hooks/*.sh) exit 0;; *.sh|*.bash|*.zsh) printf \"Blocked: do not create shell scripts. Run the command directly with the Bash tool.\\n\" >&2; exit 2;; esac; exit 0"
           }
         ]
       }

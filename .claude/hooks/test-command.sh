@@ -56,6 +56,10 @@ case "$last" in
   # so all three stages land in the log rather than only the test output.
   npm\ run\ check|npm\ run\ check\ *) ;;
   npx\ vitest|npx\ vitest\ *|vitest|vitest\ *) ;;
+  # Direct entrypoints to the same runners. Without these, `node
+  # node_modules/vitest/vitest.mjs run` walks straight past the case list and
+  # streams to the terminal -- the exact bypass this hook exists to prevent.
+  *node_modules/*vitest*|*node_modules/.bin/*|node\ *vitest*|node\ *jest*) ;;
   pytest|pytest\ *) ;;
   python\ -m\ pytest|python\ -m\ pytest\ *) ;;
   python3\ -m\ pytest|python3\ -m\ pytest\ *) ;;
@@ -64,7 +68,7 @@ case "$last" in
   *) exit 0 ;;
 esac
 
-new="$core > $LOG 2>&1; echo exit=\$?"
+new="$core > $LOG 2>&1; c=\$?; echo exit=\$c; [ \$c -eq 0 ] || echo \"FAILED. The full output is in $LOG. Read that file. Do NOT re-run the suite.\""
 
 jq -cn --arg c "$new" '{
   hookSpecificOutput: {
