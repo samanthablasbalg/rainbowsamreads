@@ -1,6 +1,6 @@
 import { createBrowserRouter, redirect } from 'react-router';
 import { Pending } from '@/components/common/pending';
-import { AuthenticatedShell } from '@/components/layouts/authenticated-shell/authenticated-shell';
+import { AppRoot } from './routes/app-root';
 import { Landing } from './routes/landing';
 import { Library } from './routes/library';
 import { NotFound } from './routes/not-found';
@@ -29,7 +29,7 @@ export const routes = [
         //
         // Its own boundary, so a screen that throws is replaced in place and the nav
         // survives; the outer one would take the shell down with it.
-        Component: AuthenticatedShell,
+        Component: AppRoot,
         ErrorBoundary: RouteError,
         // Each screen is its own chunk. `HydrateFallback` sits on the lazy route
         // itself rather than on a parent, and that placement is load-bearing: the
