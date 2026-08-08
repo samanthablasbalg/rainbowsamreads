@@ -21,7 +21,7 @@ import {
   ResponsiveDialogTitle,
 } from '@/components/ui/responsive-dialog';
 import { formatMinutesAsHhmm, parseHhmmToMinutes } from '@/utils/format-minutes';
-import { localIsoDate } from '../utils/local-date';
+import { localIsoDate } from '@/utils/local-date';
 
 type ProgressLogSheetProps = {
   engagement: EngagementRead;

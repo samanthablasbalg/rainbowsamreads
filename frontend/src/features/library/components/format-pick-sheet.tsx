@@ -26,6 +26,7 @@ import {
   ResponsiveDialogTitle,
 } from '@/components/ui/responsive-dialog';
 import { parseHhmmToMinutes } from '@/utils/format-minutes';
+import { localIsoDate } from '@/utils/local-date';
 
 const FORMATS: { format: Format; label: string; icon: IconSvgElement }[] = [
   { format: Format.print, label: 'Print', icon: BookOpen01Icon },
@@ -180,12 +181,16 @@ function useFormatPickForm(book: BookRead, onClose: () => void) {
 
   const parsedLength = parseHhmmToMinutes(length);
 
+  // `started_on` is sent rather than left to the backend's fallback: per ADR-0024 § 3
+  // every `_on` business date comes from the client's local day, and the server's own
+  // date is a calendar day ahead for an evening read anywhere behind UTC.
   function start(format: Format, audioLengthMinutes?: number) {
     setError(null);
     createEngagement.mutate({
       data: {
         book_id: book.id,
         edition_format: format,
+        started_on: localIsoDate(),
         ...(audioLengthMinutes != null && { audio_length_minutes: audioLengthMinutes }),
       },
     });

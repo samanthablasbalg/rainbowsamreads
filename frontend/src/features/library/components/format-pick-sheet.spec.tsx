@@ -9,6 +9,7 @@ import {
 import { DatePrecision, type BookRead } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
+import { localIsoDate } from '@/utils/local-date';
 import { FormatPickSheet } from './format-pick-sheet';
 
 function buildBook(overrides: Partial<BookRead> = {}): BookRead {
@@ -79,7 +80,11 @@ describe('FormatPickSheet', () => {
     );
 
     await waitFor(() => expect(screen.getByText('path: /home')).toBeInTheDocument());
-    expect(captured.body).toEqual({ book_id: 'book-1', edition_format: 'print' });
+    expect(captured.body).toEqual({
+      book_id: 'book-1',
+      edition_format: 'print',
+      started_on: localIsoDate(),
+    });
   });
 
   it('starts a digital read without asking for a length', async () => {
@@ -92,7 +97,11 @@ describe('FormatPickSheet', () => {
     );
 
     await waitFor(() => expect(screen.getByText('path: /home')).toBeInTheDocument());
-    expect(captured.body).toEqual({ book_id: 'book-1', edition_format: 'digital' });
+    expect(captured.body).toEqual({
+      book_id: 'book-1',
+      edition_format: 'digital',
+      started_on: localIsoDate(),
+    });
   });
 
   it('starts an audio read immediately when the book already has a length', async () => {
@@ -105,7 +114,11 @@ describe('FormatPickSheet', () => {
     );
 
     await waitFor(() => expect(screen.getByText('path: /home')).toBeInTheDocument());
-    expect(captured.body).toEqual({ book_id: 'book-1', edition_format: 'audio' });
+    expect(captured.body).toEqual({
+      book_id: 'book-1',
+      edition_format: 'audio',
+      started_on: localIsoDate(),
+    });
   });
 
   it('asks for a length when the book has no audio length, and sends it as minutes', async () => {
@@ -123,6 +136,7 @@ describe('FormatPickSheet', () => {
     expect(captured.body).toEqual({
       book_id: 'book-1',
       edition_format: 'audio',
+      started_on: localIsoDate(),
       audio_length_minutes: 630,
     });
   });

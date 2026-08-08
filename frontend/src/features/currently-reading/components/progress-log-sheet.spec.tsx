@@ -15,7 +15,7 @@ import {
 } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { fireEvent, render, screen, waitFor } from '@/test/render';
-import { localIsoDate } from '../utils/local-date';
+import { localIsoDate } from '@/utils/local-date';
 import { ProgressLogSheet } from './progress-log-sheet';
 
 function buildEngagement(overrides: Partial<EngagementRead> = {}): EngagementRead {
