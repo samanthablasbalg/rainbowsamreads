@@ -3,7 +3,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { isAxiosError } from 'axios';
 import { ThemeProvider } from '@/lib/theme-provider';
-import { ConfirmProvider } from '@/lib/confirm-provider';
 
 // One cache for the whole app, reached through the provider below.
 const queryClient = new QueryClient({
@@ -35,10 +34,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <ConfirmProvider>
-          {children}
-          <ReactQueryDevtools initialIsOpen={false} />
-        </ConfirmProvider>
+        {children}
+        <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </ThemeProvider>
   );

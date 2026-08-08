@@ -1,4 +1,5 @@
 import { Locator, Page } from '@playwright/test';
+import { ConfirmSheetPage } from './confirm-sheet.page';
 import { FormatPickSheetPage, PickableFormat } from './format-pick-sheet.page';
 
 export class CatalogPage {
@@ -7,7 +8,16 @@ export class CatalogPage {
 
   /** Navigates to the catalog page. */
   async goto(): Promise<void> {
-    await this.page.goto('/catalog');
+    await this.page.goto('/library/catalog');
+  }
+
+  /**
+   * Locates a book's row by title. Each row is a listitem labelled for its book.
+   * @param title - The library book's title.
+   * @returns The row locator.
+   */
+  getRow(title: string): Locator {
+    return this.page.getByRole('listitem', { name: title });
   }
 
   /**
@@ -36,20 +46,40 @@ export class CatalogPage {
   }
 
   /**
-   * Locates the "Delete" button for a book in the library list.
+   * Locates a row's overflow menu trigger.
    * @param title - The library book's title.
-   * @returns The delete button locator for that book.
+   * @returns The menu trigger locator.
    */
-  getDeleteButton(title: string): Locator {
-    return this.page.getByRole('button', { name: `Delete ${title}`, exact: true });
+  getRowMenuButton(title: string): Locator {
+    return this.page.getByRole('button', { name: `More actions for ${title}` });
   }
 
   /**
-   * Deletes a library book, accepting the native confirm dialog.
+   * Locates the "Delete" item inside an opened row menu. The menu renders into an
+   * overlay rather than inside the row, so this is located from the page.
+   * @param title - The library book's title.
+   * @returns The delete menu item locator.
+   */
+  getDeleteItem(title: string): Locator {
+    return this.page.getByRole('menuitem', { name: `Delete ${title}`, exact: true });
+  }
+
+  /**
+   * Locates the error a refused delete leaves on the row. The catalog is shared, so
+   * the backend returns 409 while any user still has a read of the book.
+   * @returns The row-level alert locator.
+   */
+  getDeleteError(): Locator {
+    return this.page.getByRole('alert');
+  }
+
+  /**
+   * Deletes a library book: opens the row menu, chooses Delete, and confirms.
    * @param title - The library book's title.
    */
   async deleteBook(title: string): Promise<void> {
-    this.page.once('dialog', (dialog) => dialog.accept());
-    await this.getDeleteButton(title).click();
+    await this.getRowMenuButton(title).click();
+    await this.getDeleteItem(title).click();
+    await new ConfirmSheetPage(this.page).getConfirmButton('Delete').click();
   }
 }

@@ -19,7 +19,7 @@ const realMatchMedia = window.matchMedia;
 
 // Storybook runs under whatever pointer the machine running it has -- in CI and on a
 // laptop, always fine -- so the coarse branch is unreachable without forcing the query.
-// Same approach confirm-provider.spec.tsx uses, minus vi, which browser stories lack.
+// A vitest spec would reach for `vi.stubGlobal`, which browser stories lack.
 function withPointer(coarse: boolean) {
   return function PointerDecorator(Story: () => ReactNode) {
     window.matchMedia = ((query: string) =>

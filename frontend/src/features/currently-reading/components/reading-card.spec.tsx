@@ -165,12 +165,12 @@ describe('ReadingCard', () => {
 
     await openOverflowMenuAndChoose(user, 'Mark Piranesi as finished');
     expect(
-      await screen.findByRole('alertdialog', { name: 'Mark "Piranesi" as finished?' })
+      await screen.findByRole('dialog', { name: 'Mark "Piranesi" as finished?' })
     ).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: 'Mark finished' }));
 
-    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
   it('marks the engagement DNF, after confirming, when Mark as DNF is chosen', async () => {
@@ -180,12 +180,12 @@ describe('ReadingCard', () => {
 
     await openOverflowMenuAndChoose(user, 'Mark Piranesi as DNF');
     expect(
-      await screen.findByRole('alertdialog', { name: 'Mark "Piranesi" as did not finish?' })
+      await screen.findByRole('dialog', { name: 'Mark "Piranesi" as did not finish?' })
     ).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: 'Mark as DNF' }));
 
-    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
   it('deletes the engagement, after confirming, when Delete is chosen', async () => {
@@ -195,12 +195,12 @@ describe('ReadingCard', () => {
 
     await openOverflowMenuAndChoose(user, 'Delete Piranesi');
     expect(
-      await screen.findByRole('alertdialog', { name: 'Delete this read of "Piranesi"?' })
+      await screen.findByRole('dialog', { name: 'Delete this read of "Piranesi"?' })
     ).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: 'Delete' }));
 
-    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
   // No MSW handler registered for this one -- the suite's onUnhandledRequest: 'error'
@@ -210,10 +210,10 @@ describe('ReadingCard', () => {
     renderInList(buildEngagement());
 
     await openOverflowMenuAndChoose(user, 'Delete Piranesi');
-    await screen.findByRole('alertdialog');
+    await screen.findByRole('dialog');
 
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

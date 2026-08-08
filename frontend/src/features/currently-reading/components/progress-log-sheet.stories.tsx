@@ -47,7 +47,7 @@ const realMatchMedia = window.matchMedia;
 // ProgressLogSheet now picks dialog-vs-drawer internally, and Storybook runs under
 // whatever pointer the host machine has -- always fine on a laptop and in CI -- so the
 // drawer branch is unreachable without forcing the query. Same shape
-// confirm-provider.spec.tsx uses for vitest, minus `vi`, which browser stories lack.
+// responsive-dialog.stories.tsx uses.
 function withPointer(coarse: boolean) {
   return function PointerDecorator(Story: () => ReactNode) {
     window.matchMedia = ((query: string) =>

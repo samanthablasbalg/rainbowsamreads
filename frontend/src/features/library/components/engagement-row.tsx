@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react';
 import {
   BookOpen01Icon,
@@ -7,11 +8,14 @@ import {
   StarIcon,
   Tablet01Icon,
 } from '@hugeicons/core-free-icons';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEngagementsDeleteEngagement } from '@/api/generated/engagements/engagements';
 import {
   ReadingStatus,
   type EngagementRead,
   type Format,
 } from '@/api/generated/readingTracker.schemas';
+import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { CoverImage } from '@/components/common/cover-image';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,13 +54,26 @@ function formatDate(iso: string): string {
 // `completion_pct` is text rather than the ReadingProgress bar deliberately -- a bar
 // reads as a read still in motion, which is the one thing a DNF is not.
 //
-// Every action renders without a handler: deletion and the review editor are their own
-// punch list items.
+// The review editor still renders without a handler -- it is its own punch list item.
+// Delete removes this read, not the book: the title stays in the catalog afterwards.
 export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
   const { book, formats, cover_url, status, finished_on, abandoned_on, completion_pct, review } =
     engagement;
   const isDnf = status === ReadingStatus.dnf;
   const endedOn = isDnf ? abandoned_on : finished_on;
+  const queryClient = useQueryClient();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const deleteEngagement = useEngagementsDeleteEngagement({
+    mutation: {
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/engagements'] }),
+    },
+  });
+
+  function handleDelete() {
+    setConfirmOpen(false);
+    deleteEngagement.mutate({ engagementId: engagement.id });
+  }
 
   return (
     <li aria-label={book.title}>
@@ -121,15 +138,29 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
                   {review?.rating ? 'Edit rating & review' : 'Add rating & review'}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" aria-label={`Delete ${book.title}`}>
+                <DropdownMenuItem
+                  variant="destructive"
+                  aria-label={`Delete ${book.title}`}
+                  onClick={() => setConfirmOpen(true)}
+                >
                   <HugeiconsIcon icon={Delete02Icon} />
-                  Delete read
+                  Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
       </Card>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={`Delete this read of "${book.title}"?`}
+        description="This removes the read, its progress logs and its review. The book stays in the catalog. This can't be undone."
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={handleDelete}
+      />
     </li>
   );
 }
