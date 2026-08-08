@@ -58,6 +58,24 @@
             "command": "sh \"${CLAUDE_PROJECT_DIR:-/Users/samanthablasbalg/repos/reading-tracker}/.claude/hooks/test-command.sh\""
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // \"\"' | tr '\\n' ' '); printf '%s' \"$cmd\" | grep -Eq '\\.sh([[:space:]]|\"|$)|(^|[;&|(])[[:space:]]*(sh|bash|zsh|dash|ksh)[[:space:]]+[^-]' && { printf \"Blocked: never write a shell script and execute it. Run the documented command directly with the Bash tool.\\n\" >&2; exit 2; }; exit 0"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path // \"\"'); case \"$f\" in *.sh|*.bash|*.zsh) printf \"Blocked: do not create shell scripts. Run the command directly with the Bash tool.\\n\" >&2; exit 2;; esac; exit 0"
+          }
+        ]
       }
     ],
     "Stop": [
