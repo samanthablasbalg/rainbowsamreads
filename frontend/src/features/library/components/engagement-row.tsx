@@ -26,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ReviewSheet } from './review-sheet';
 import { StarRating } from './star-rating';
 
 const FORMAT_ICONS: Record<Format, IconSvgElement> = {
@@ -54,7 +55,8 @@ function formatDate(iso: string): string {
 // `completion_pct` is text rather than the ReadingProgress bar deliberately -- a bar
 // reads as a read still in motion, which is the one thing a DNF is not.
 //
-// The review editor still renders without a handler -- it is its own punch list item.
+// The rating shows on the card but the review body does not: the body is long-form and
+// belongs to the sheet that wrote it, and a shelf of them would stop being a shelf.
 // Delete removes this read, not the book: the title stays in the catalog afterwards.
 export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
   const { book, formats, cover_url, status, finished_on, abandoned_on, completion_pct, review } =
@@ -63,6 +65,7 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
   const endedOn = isDnf ? abandoned_on : finished_on;
   const queryClient = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   const deleteEngagement = useEngagementsDeleteEngagement({
     mutation: {
@@ -113,7 +116,12 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
             {review?.rating ? (
               <StarRating rating={review.rating} />
             ) : (
-              <Button variant="outline" size="sm" aria-label={`Add a rating for ${book.title}`}>
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label={`Add a rating for ${book.title}`}
+                onClick={() => setReviewOpen(true)}
+              >
                 <HugeiconsIcon icon={StarIcon} />
                 Add rating
               </Button>
@@ -133,7 +141,10 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
                 }
               />
               <DropdownMenuContent>
-                <DropdownMenuItem aria-label={`Rate and review ${book.title}`}>
+                <DropdownMenuItem
+                  aria-label={`Rate and review ${book.title}`}
+                  onClick={() => setReviewOpen(true)}
+                >
                   <HugeiconsIcon icon={StarIcon} />
                   {review?.rating ? 'Edit rating & review' : 'Add rating & review'}
                 </DropdownMenuItem>
@@ -151,6 +162,8 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
           </div>
         </div>
       </Card>
+
+      <ReviewSheet engagement={engagement} open={reviewOpen} onOpenChange={setReviewOpen} />
 
       <ConfirmDialog
         open={confirmOpen}

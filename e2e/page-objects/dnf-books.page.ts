@@ -20,16 +20,25 @@ export class DnfBooksPage {
     return this.page.getByRole('listitem', { name: title });
   }
 
-  getAddReviewButton(title: string): Locator {
-    return this.page.getByRole('button', { name: `Add review for ${title}` });
+  /**
+   * Locates the button that opens the review sheet for an unrated read. It is replaced
+   * by the star rating once a rating exists.
+   * @param title - The book's title.
+   * @returns The add-rating button locator.
+   */
+  getAddRatingButton(title: string): Locator {
+    return this.page.getByRole('button', { name: `Add a rating for ${title}` });
   }
 
-  getEditReviewButton(title: string): Locator {
-    return this.page.getByRole('button', { name: `Edit review for ${title}` });
-  }
-
-  getReviewSummary(title: string): Locator {
-    return this.page.getByLabel(`Review summary for ${title}`);
+  /**
+   * Locates a row's star rating. The stars are one image carrying the score as its
+   * accessible name; the row's other images are the cover and the format icons, so this
+   * is scoped to the entry and matched on the name's opening word.
+   * @param title - The book's title.
+   * @returns The star rating locator.
+   */
+  getRating(title: string): Locator {
+    return this.getEntry(title).getByRole('img', { name: /^Rated/ });
   }
 
   /**
@@ -49,6 +58,26 @@ export class DnfBooksPage {
    */
   getDeleteItem(title: string): Locator {
     return this.page.getByRole('menuitem', { name: `Delete ${title}`, exact: true });
+  }
+
+  /**
+   * Locates the review item inside an opened row menu. Its label is the same whether the
+   * read has a review or not; only the visible wording changes.
+   * @param title - The book's title.
+   * @returns The review menu item locator.
+   */
+  getReviewItem(title: string): Locator {
+    return this.page.getByRole('menuitem', { name: `Rate and review ${title}` });
+  }
+
+  /**
+   * Opens the review sheet from the row menu, which is the only route to it once a
+   * rating exists and the Add rating button is gone.
+   * @param title - The book's title.
+   */
+  async openReviewFromMenu(title: string): Promise<void> {
+    await this.getRowMenuButton(title).click();
+    await this.getReviewItem(title).click();
   }
 
   /**

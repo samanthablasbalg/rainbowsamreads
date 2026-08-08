@@ -1,22 +1,7 @@
 import { HugeiconsIcon } from '@hugeicons/react';
 import { StarIcon } from '@hugeicons/core-free-icons';
 
-const STARS = [0, 1, 2, 3, 4];
-
-// How much of a star's box to reveal for a quarter, a half and three quarters of that
-// star -- indexed by quarter, so [0] is an untouched star.
-//
-// Not 0/0.25/0.5/0.75. Clipping by width does not fill by area: a star's mass sits in
-// the middle and both sides taper to points, so a linear cut shows far less than a
-// quarter at 25% and far more than three quarters at 75%. These are the x offsets where
-// the glyph's *area* actually reaches each fraction, measured off the StarIcon path
-// (which spans x=2 to x=22 of its 24-unit viewBox) by flattening its curves and
-// integrating. Two properties fall out that confirm the numbers: a half lands on 12/24,
-// the star's own axis of symmetry, and the quarter and three-quarter offsets sum to 1.
-//
-// Ratings are validated server-side to 0.25 increments, so these three are the only
-// partial states that exist -- there is nothing to interpolate.
-const QUARTER_FILL = [0, 0.3556, 0.5, 0.6444];
+import { STARS, starFillPercent } from '../utils/star-fill';
 
 // Ratings are Decimal(3,2), 1.00-5.00. No glyph exists for a quarter star, so this is
 // two identical rows of five stacked, the filled one clipped to the score.
@@ -28,11 +13,7 @@ const QUARTER_FILL = [0, 0.3556, 0.5, 0.6444];
 // without that a screen reader reads ten stars and no number.
 export function StarRating({ rating }: { rating: string }) {
   const value = Number(rating);
-
-  // Counting in quarters rather than subtracting a remainder keeps the index in range
-  // whatever arrives, and every quarter is exactly representable in binary.
-  const quarters = Math.round(value * 4);
-  const width = ((Math.floor(quarters / 4) + QUARTER_FILL[quarters % 4]) / STARS.length) * 100;
+  const width = starFillPercent(value);
 
   return (
     <span

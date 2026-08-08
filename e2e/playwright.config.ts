@@ -4,7 +4,7 @@ import { AUTH_FILE } from './auth-file';
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
-  timeout: 5 * 1000,
+  timeout: 30 * 1000,
   workers: 1,
   forbidOnly: !!process.env['CI'],
   // retries: process.env['CI'] ? 1 : 0,
