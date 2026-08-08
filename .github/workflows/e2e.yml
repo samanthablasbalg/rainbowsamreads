@@ -17,9 +17,6 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout code
@@ -53,13 +50,43 @@ jobs:
             e2e/test-results/
           retention-days: 30
 
-      - name: Upload Playwright Report Artifact
+      # Uploaded every run, pass or fail, so the publish-report job below has
+      # something to deploy regardless of test outcome. Kept separate from the
+      # failure-only artifact above: that one is a full debug bundle (traces
+      # included) for a human to download; this one is just the HTML report.
+      - name: Upload Playwright HTML report
         if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-html-report
+          path: e2e/playwright-report/
+          retention-days: 30
+
+  # Deploying to Pages requires this job to declare `environment: github-pages`,
+  # which makes GitHub Actions track a deployment whose status mirrors this
+  # job's own conclusion. Keeping it separate from `e2e` means that status
+  # reflects whether the report actually published, not whether the tests
+  # passed — the `e2e` job above stays the real pass/fail signal.
+  publish-report:
+    needs: e2e
+    if: always()
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Download Playwright HTML report
+        uses: actions/download-artifact@v7
+        with:
+          name: playwright-html-report
+          path: playwright-report/
+
+      - name: Upload Playwright Report Artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: e2e/playwright-report/
+          path: playwright-report/
 
       - name: Deploy to GitHub Pages
-        if: always()
         id: deployment
         uses: actions/deploy-pages@v5

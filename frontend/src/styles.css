@@ -4,6 +4,7 @@
 @import 'shadcn/tailwind.css';
 @import '@fontsource-variable/plus-jakarta-sans';
 @import '@fontsource-variable/lora';
+@import '@fontsource-variable/lora/wght-italic.css';
 @import '@fontsource-variable/newsreader';
 
 @custom-variant dark (&:is(.dark *));
@@ -28,6 +29,20 @@
   --color-chart-1: var(--chart-1);
   --color-brand-orange: var(--brand-orange);
   --color-brand-pink: var(--brand-pink);
+  --color-category-8: var(--category-8);
+  --color-category-7: var(--category-7);
+  --color-category-6: var(--category-6);
+  --color-category-5: var(--category-5);
+  --color-category-4: var(--category-4);
+  --color-category-3: var(--category-3);
+  --color-category-2: var(--category-2);
+  --color-category-1: var(--category-1);
+  --color-tint-6: var(--tint-6);
+  --color-tint-5: var(--tint-5);
+  --color-tint-4: var(--tint-4);
+  --color-tint-3: var(--tint-3);
+  --color-tint-2: var(--tint-2);
+  --color-tint-1: var(--tint-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -56,9 +71,30 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+@theme {
+  /* The landing screenshots drift. Two of them share this at different durations so
+     they never sync up into one block moving together. */
+  --animate-floaty: floaty 6s ease-in-out infinite;
+
+  @keyframes floaty {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-14px);
+    }
+  }
+}
+
 /* Tags name the tone each value came from. Only the neutral ramp differs between the schemes. */
 
-:root {
+/* `.light` alongside `:root` so a subtree can be pinned light the same way `.dark` pins
+   one dark -- the landing page uses it. Same declarations, so no second copy to keep in
+   step; an element carrying either class declares the tokens on itself and wins over
+   whatever it inherits. */
+:root,
+.light {
   color-scheme: light;
   --background: #fef9f1; /* neutral 98 */
   --foreground: #1d1c17; /* neutral 10 */
@@ -97,6 +133,25 @@
   /* Brand — authored, outside the role set. Decorative only: no small text sits on these. */
   --brand-pink: #e11584;
   --brand-orange: #ff7a2f;
+
+  /* Also authored: the categorical palette (genres, moods, series) and the pastel card
+     tints, both from docs/design/design-system.md § 4. Kept clear of shadcn's --chart-*,
+     which the scaffold owns and means something narrower. */
+  --category-1: #ec4899;
+  --category-2: #f97316;
+  --category-3: #8b5cf6;
+  --category-4: #14b8a6;
+  --category-5: #3b82f6;
+  --category-6: #84cc16;
+  --category-7: #f59e0b;
+  --category-8: #f43f5e;
+
+  --tint-1: #ffd8ea;
+  --tint-2: #ece3ff;
+  --tint-3: #d5f3e1;
+  --tint-4: #ffe0cc;
+  --tint-5: #d6ebff;
+  --tint-6: #ffefb8;
 }
 
 /* Anything absent here is deliberately scheme-invariant and inherits from :root — the filled
@@ -127,6 +182,24 @@
   --sidebar-ring: #ff469e; /* primary 60 */
 
   --brand-pink: #ff5fab;
+
+  /* Lightened for dark grounds, per the same table. */
+  --category-1: #f472b6;
+  --category-2: #fb923c;
+  --category-3: #a78bfa;
+  --category-4: #2dd4bf;
+  --category-5: #60a5fa;
+  --category-6: #a3e635;
+  --category-7: #fbbf24;
+  --category-8: #fb7185;
+
+  /* Deepened, not washed out. */
+  --tint-1: #4e2a44;
+  --tint-2: #3a2e56;
+  --tint-3: #24503e;
+  --tint-4: #5a3a2a;
+  --tint-5: #2a3e5a;
+  --tint-6: #5a4a22;
 }
 
 @layer base {

@@ -16,9 +16,12 @@ describe('the route guards', () => {
   it('renders an authenticated route once the session resolves', async () => {
     server.use(getAuthMeMockHandler());
 
-    renderRoute('/home');
+    const { router } = renderRoute('/home');
 
-    expect(await screen.findByRole('heading', { name: 'Currently Reading' })).toBeVisible();
+    // Two, because the shell renders the rail and the mobile nav together and lets CSS
+    // decide which is on screen -- same count authenticated-shell.spec.tsx asserts.
+    expect(await screen.findAllByRole('navigation', { name: 'Main' })).toHaveLength(2);
+    expect(router.state.location.pathname).toBe('/home');
   });
 
   // The guards used to render null here, which made a cold load a blank document until
@@ -32,12 +35,16 @@ describe('the route guards', () => {
     expect(await screen.findByRole('status')).toBeVisible();
   });
 
+  // The landing nav is the discriminator rather than any of the page's copy: the shell's
+  // two navs are both named "Main", so the name alone says which side of the guard we
+  // ended up on, and marketing text can change without dragging these red.
   it('sends an authenticated route to the landing page when signed out', async () => {
     server.use(signedOut);
 
-    renderRoute('/home');
+    const { router } = renderRoute('/home');
 
-    expect(await screen.findByRole('heading', { name: 'Rainbow Sam Reads' })).toBeVisible();
+    expect(await screen.findByRole('navigation', { name: 'Landing' })).toBeVisible();
+    expect(router.state.location.pathname).toBe('/');
   });
 
   it('sends the landing page to the app when already signed in', async () => {
@@ -51,9 +58,10 @@ describe('the route guards', () => {
   it('leaves the landing page alone when signed out', async () => {
     server.use(signedOut);
 
-    renderRoute('/');
+    const { router } = renderRoute('/');
 
-    expect(await screen.findByRole('heading', { name: 'Rainbow Sam Reads' })).toBeVisible();
+    expect(await screen.findByRole('navigation', { name: 'Landing' })).toBeVisible();
+    expect(router.state.location.pathname).toBe('/');
   });
 
   // The distinction the whole error branch exists for: a session that could not be

@@ -72,6 +72,9 @@ function renderRoute(path: string) {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
 
   return {
+    // Returned so routing tests can assert where the guards landed rather than
+    // inferring it from whatever the destination happens to render.
+    router,
     queryClient,
     ...render(
       <ThemeProvider>
