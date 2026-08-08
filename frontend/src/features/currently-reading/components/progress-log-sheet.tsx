@@ -20,7 +20,7 @@ import {
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from '@/components/ui/responsive-dialog';
-import { formatMinutesAsHhmm, parseHhmmToMinutes } from '../utils/format-minutes';
+import { formatMinutesAsHhmm, parseHhmmToMinutes } from '@/utils/format-minutes';
 import { localIsoDate } from '../utils/local-date';
 
 type ProgressLogSheetProps = {

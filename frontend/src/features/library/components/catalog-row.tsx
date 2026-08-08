@@ -14,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { FormatPickSheet } from './format-pick-sheet';
 
 // "8h 32m", dropping either half when it is zero -- 90 reads as "1h 30m", 45 as "45m",
 // 120 as "2h". Deliberately not `formatMinutesAsHhmm`, which renders "01:30": that is a
@@ -41,8 +42,8 @@ function formatLengths({ default_page_count, default_audio_minutes }: BookRead):
 // there is no progress, no format and no status here, because none of those exist until
 // a book is picked up.
 //
-// "Mark as reading" renders without a handler on purpose: starting a read means choosing
-// an edition and format, which is its own punch list item.
+// "Mark as reading" opens the format picker rather than starting a read directly: an
+// engagement binds to an edition, and the format is what picks which one.
 //
 // Deleting a book is not deleting a read, and `books` carries no user_id -- it is one
 // shared table, so this removes the title for every user, not from a personal shelf.
@@ -53,6 +54,7 @@ export function CatalogRow({ book }: { book: BookRead }) {
   const lengths = formatLengths(book);
   const queryClient = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pickOpen, setPickOpen] = useState(false);
 
   const deleteBook = useBooksDeleteBook({
     mutation: {
@@ -86,7 +88,11 @@ export function CatalogRow({ book }: { book: BookRead }) {
           )}
 
           <div className="mt-auto flex items-center gap-2 pt-1">
-            <Button size="sm" aria-label={`Mark ${book.title} as reading`}>
+            <Button
+              size="sm"
+              aria-label={`Mark ${book.title} as reading`}
+              onClick={() => setPickOpen(true)}
+            >
               <HugeiconsIcon icon={BookOpen01Icon} />
               Mark as reading
             </Button>
@@ -116,6 +122,8 @@ export function CatalogRow({ book }: { book: BookRead }) {
           </div>
         </div>
       </Card>
+
+      <FormatPickSheet book={book} open={pickOpen} onOpenChange={setPickOpen} />
 
       <ConfirmDialog
         open={confirmOpen}

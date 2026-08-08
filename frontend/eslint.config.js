@@ -45,6 +45,7 @@ export default defineConfig([
                 './src/config',
                 './src/lib',
                 './src/testing',
+                './src/utils',
               ],
               from: ['./src/features', './src/app'],
             },
