@@ -33,7 +33,7 @@ export class CardMenuPage {
    * @returns The menu item locator.
    */
   getMarkDnfItem(title: string): Locator {
-    return this.page.getByRole('menuitem', { name: `Mark ${title} as did not finish` });
+    return this.page.getByRole('menuitem', { name: `Mark ${title} as DNF` });
   }
 
   /**

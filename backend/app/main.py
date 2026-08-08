@@ -29,13 +29,7 @@ app.add_middleware(
 app.include_router(router, prefix="/api")
 register_exception_handlers(app)
 
-FRONTEND_DIST = (
-    Path(__file__).resolve().parent.parent.parent
-    / "frontend"
-    / "dist"
-    / "reading-tracker-app"
-    / "browser"
-)
+FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
 if FRONTEND_DIST.is_dir():
 

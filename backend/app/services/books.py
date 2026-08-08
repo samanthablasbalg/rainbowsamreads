@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.crud import author_crud, book_author_crud, book_crud, edition_crud
@@ -116,9 +117,20 @@ def import_book_from_google(db: Session, *, google_books_id: str) -> tuple[Book,
 
 
 def remove_book(db: Session, book: Book) -> None:
+    # `books` is shared but `engagements` and `standalone_entries` are RLS-scoped
+    # (ADR-0023), so these two relationships only ever contain the caller's rows.
+    # Another user's read of the same book is invisible here, and this check passes.
     if book.engagements or book.standalone_entries:
         raise ConflictError("Remove its engagements first.")
-    book_crud.delete(db, book)
+    # Which leaves the foreign keys as the only thing that sees every referencing row.
+    # They hold -- nothing is destroyed -- but the violation would otherwise surface as
+    # an unhandled 500. The caller cannot act on rows RLS hides from them, so the
+    # message stays generic rather than reporting whose reads are in the way.
+    try:
+        book_crud.delete(db, book)
+    except IntegrityError as exc:
+        db.rollback()
+        raise ConflictError("This book still has reads attached to it.") from exc
 
 
 def capture_audio_length(book: Book, edition: Edition, length: int) -> None:

@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Same image as development, same as Backend CI. Nothing is installed on
       # the runner, so a green run here means the toolchain you develop with
@@ -42,4 +42,4 @@ jobs:
       - name: Check committed API client is up to date
         run: |
           docker compose run --rm frontend npm run generate:api
-          git diff --exit-code frontend/src/app/api/generated
+          git diff --exit-code frontend/src/api/generated

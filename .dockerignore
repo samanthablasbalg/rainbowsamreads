@@ -7,3 +7,8 @@ backend/.pytest_cache
 backend/.mypy_cache
 frontend/node_modules
 frontend/dist
+
+# The Angular app, kept only as a read-only reference during the React
+# migration. Nothing in the image builds from it, and shipping it into the build
+# context would send its node_modules and dist across for no reason.
+angular-frontend

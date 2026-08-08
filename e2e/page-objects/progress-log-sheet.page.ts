@@ -1,35 +1,31 @@
 import { Locator, Page } from '@playwright/test';
 
-// The progress-log sheet renders identically whether opened as a dialog (wide
-// viewports) or a bottom sheet (narrow), so one set of content locators drives
-// both. Instantiated against the same page as the currently-reading POM.
+// The progress-log sheet renders identically whether opened as a dialog (fine
+// pointer) or a bottom drawer (coarse), so one set of content locators drives both.
+// The switch is on pointer type, not viewport width. Instantiated against the same
+// page as the currently-reading POM.
 export class ProgressLogSheetPage {
   // The sheet's root. Wait for this to be gone before asserting anything about the
-  // page behind it: while a CDK modal is open the rest of the page is aria-hidden,
-  // so role-based absence assertions pass whether or not the action ran.
+  // page behind it: while a modal is open the rest of the page is aria-hidden, so
+  // role-based absence assertions pass whether or not the action ran. Both branches
+  // render role="dialog", so this matches either way.
   readonly sheet: Locator;
   readonly pageInput: Locator;
   readonly minuteInput: Locator;
   readonly cancelButton: Locator;
-  readonly confirmationMessage: Locator;
-  readonly finishButton: Locator;
-  readonly giveUpButton: Locator;
-  readonly giveUpConfirmationMessage: Locator;
   readonly dateToggleButton: Locator;
   readonly dateInput: Locator;
 
   /** @param page - The Playwright page the sheet is open on. */
   constructor(public readonly page: Page) {
-    this.sheet = page.locator('app-progress-log-sheet');
-    this.pageInput = page.getByRole('spinbutton', { name: 'To · now' });
-    this.minuteInput = page.getByRole('textbox', { name: 'To · now' });
+    this.sheet = page.getByRole('dialog');
+    this.pageInput = page.getByPlaceholder('---', { exact: true });
+    this.minuteInput = page.getByPlaceholder('--:--', { exact: true });
     this.cancelButton = page.getByRole('button', { name: 'Cancel' });
-    this.confirmationMessage = page.getByText('Finish and discard the page you entered');
-    this.finishButton = page.getByRole('button', { name: /finish/i });
-    this.giveUpButton = page.getByRole('button', { name: /dnf/i });
-    this.giveUpConfirmationMessage = page.getByText('Give up on');
-    this.dateToggleButton = page.getByRole('button', { name: 'Log for a different day' });
-    this.dateInput = page.getByRole('textbox', { name: 'Log date' });
+    this.dateToggleButton = page.getByRole('button', { name: 'Pick a date' });
+    // A native date input exposes no implicit `textbox` role, so this goes through
+    // the label rather than getByRole.
+    this.dateInput = page.getByLabel('Log date');
   }
 
   /**

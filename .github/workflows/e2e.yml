@@ -8,14 +8,22 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Same image as Backend and Frontend CI. Nothing is installed on the
       # runner: the test process runs in `e2e` on this image, and the browsers
@@ -36,7 +44,7 @@ jobs:
         run: docker compose run --rm e2e npx playwright test
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: ${{ failure() }}
         with:
           name: playwright-report
@@ -44,3 +52,14 @@ jobs:
             e2e/playwright-report/
             e2e/test-results/
           retention-days: 30
+
+      - name: Upload Playwright Report Artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: e2e/playwright-report/
+
+      - name: Deploy to GitHub Pages
+        if: always()
+        id: deployment
+        uses: actions/deploy-pages@v5

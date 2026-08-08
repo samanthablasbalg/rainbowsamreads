@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import uuid
 from typing import Literal, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -26,6 +27,18 @@ _TEST_LOGIN_PERSONAS: dict[str, str] = {
 
 class TestLoginRequest(BaseModel):
     persona: Literal["e2e", "dev"] = "e2e"
+
+
+class CurrentUser(BaseModel):
+    """The session's view of the signed-in user.
+
+    Not a read model for the users table: `picture` comes from the OAuth
+    userinfo and is held only in the session, never persisted.
+    """
+
+    id: uuid.UUID
+    email: str
+    picture: str | None
 
 
 def _get_or_create_user(db: Session, email: str) -> User:
@@ -77,15 +90,25 @@ async def callback(
 
 
 @router.get("/me")
-def me(request: Request) -> dict[str, str | None]:
+def me(request: Request, db: Session = Depends(get_unscoped_db)) -> CurrentUser:
     user_id = request.session.get("user_id")
     if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-    return {
-        "id": user_id,
-        "email": request.session.get("email"),
-        "picture": request.session.get("picture"),
-    }
+    # The cookie is signed, so it cannot be forged -- but it can outlive the row it
+    # names. The e2e suite truncates and reseeds while a browser still holds one.
+    # Without this lookup the session reads as live, the frontend keeps the reader in
+    # the app, and every business endpoint 401s underneath them.
+    #
+    # Unscoped, like /callback above: this runs to decide who the reader is, which is
+    # the question RLS needs answered before it can scope anything.
+    user = db.get(User, uuid.UUID(user_id))
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+    return CurrentUser(
+        id=user.id,
+        email=user.email,
+        picture=request.session.get("picture"),
+    )
 
 
 @router.post("/logout")

@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
@@ -96,6 +96,34 @@ def test_callback_rejects_unverified_email(
 
 def test_me_requires_a_session(client: TestClient) -> None:
     assert client.get("/api/auth/me").status_code == 401
+
+
+# The pair below are the two halves of one failure: the e2e suite truncates and
+# reseeds, and the browser is left holding a correctly-signed cookie for a user_id
+# with no row. /me has to stop reporting that session as live, and the endpoints
+# underneath it have to call it a dead session rather than a server fault.
+def test_me_rejects_a_session_whose_user_has_been_deleted(
+    client: TestClient, owner_db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _mock_google_login(monkeypatch, ALLOWED_EMAIL)
+    client.get("/api/auth/callback", follow_redirects=False)
+    assert client.get("/api/auth/me").status_code == 200
+
+    owner_db.execute(delete(User).where(User.email == ALLOWED_EMAIL))
+    owner_db.commit()
+
+    assert client.get("/api/auth/me").status_code == 401
+
+
+def test_business_endpoint_rejects_a_session_whose_user_has_been_deleted(
+    client: TestClient, owner_db: Session, seed_user: User
+) -> None:
+    owner_db.execute(delete(User).where(User.id == seed_user.id))
+    owner_db.commit()
+
+    response = client.get("/api/books/search", params={"q": "anything"})
+
+    assert response.status_code == 401
 
 
 def test_business_endpoint_rejects_a_request_with_no_session() -> None:
