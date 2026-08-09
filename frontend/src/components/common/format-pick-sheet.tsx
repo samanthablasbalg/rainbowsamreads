@@ -54,7 +54,7 @@ function pickLabel(status: EngagementCreateStatus, title: string, format: string
     : `Add ${title} as ${STATUS_LABEL[status]} in ${format}`;
 }
 
-type FormatPickSheetProps = {
+export type FormatPickSheetProps = {
   bookId: string;
   title: string;
   // Null means "not known", not "no audiobook" -- it only decides whether picking Audio

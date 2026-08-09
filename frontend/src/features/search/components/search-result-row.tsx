@@ -20,7 +20,19 @@ const STATUS_LABEL = {
 //
 // Not CatalogRow: that one is off `BookRead`, carries a delete menu, and always means
 // "mark as reading". The only thing the two share is a cover-led layout.
-export function SearchResultRow({ result }: { result: BookSearchResult }) {
+//
+// Both buttons stop the click reaching the row: the row is a combobox option, and
+// selecting one asks the popup to close, which for this bar means collapsing the whole
+// search. Add does collapse -- but on its own terms, after the sheet is open -- and
+// Import must not, because the request is still in flight with nothing to show yet.
+type SearchResultRowProps = {
+  result: BookSearchResult;
+  importing: boolean;
+  onAdd: () => void;
+  onImport: () => void;
+};
+
+export function SearchResultRow({ result, importing, onAdd, onImport }: SearchResultRowProps) {
   const badge = result.state === 'in_library' ? result.status && STATUS_LABEL[result.status] : null;
 
   return (
@@ -39,13 +51,29 @@ export function SearchResultRow({ result }: { result: BookSearchResult }) {
       </div>
 
       {result.state === 'not_in_app' && (
-        <Button variant="outline" size="sm" aria-label={`Import ${result.title}`}>
-          Import
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={importing}
+          aria-label={`Import ${result.title}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onImport();
+          }}
+        >
+          {importing ? 'Importing…' : 'Import'}
         </Button>
       )}
 
       {result.state === 'in_catalog' && (
-        <Button size="sm" aria-label={`Add ${result.title} to your library`}>
+        <Button
+          size="sm"
+          aria-label={`Add ${result.title} to your library`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onAdd();
+          }}
+        >
           Add
         </Button>
       )}
