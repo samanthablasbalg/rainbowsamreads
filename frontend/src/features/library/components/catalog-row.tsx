@@ -7,6 +7,7 @@ import type { BookRead } from '@/api/generated/readingTracker.schemas';
 import type { ErrorType } from '@/api/mutator/axios-instance';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { CoverImage } from '@/components/common/cover-image';
+import { FormatPickSheet } from '@/components/common/format-pick-sheet';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,7 +16,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { FormatPickSheet } from './format-pick-sheet';
 
 // "8h 32m", dropping either half when it is zero -- 90 reads as "1h 30m", 45 as "45m",
 // 120 as "2h". Deliberately not `formatMinutesAsHhmm`, which renders "01:30": that is a

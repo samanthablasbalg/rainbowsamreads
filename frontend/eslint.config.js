@@ -60,6 +60,10 @@ export default defineConfig([
               target: './src/features/library',
               from: './src/features/!(library)/**',
             },
+            {
+              target: './src/features/search',
+              from: './src/features/!(search)/**',
+            },
           ],
         },
       ],
