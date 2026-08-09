@@ -125,7 +125,13 @@ export function CatalogRow({ book }: { book: BookRead }) {
         </div>
       </Card>
 
-      <FormatPickSheet book={book} open={pickOpen} onOpenChange={setPickOpen} />
+      <FormatPickSheet
+        bookId={book.id}
+        title={book.title}
+        audioMinutes={book.default_audio_minutes}
+        open={pickOpen}
+        onOpenChange={setPickOpen}
+      />
 
       <ConfirmDialog
         open={confirmOpen}

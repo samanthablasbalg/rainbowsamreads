@@ -13,7 +13,7 @@ import {
   getEngagementsListEngagementsQueryKey,
   useEngagementsCreateEngagement,
 } from '@/api/generated/engagements/engagements';
-import { Format, ReadingStatus, type BookRead } from '@/api/generated/readingTracker.schemas';
+import { EngagementCreateStatus, Format } from '@/api/generated/readingTracker.schemas';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -34,8 +34,37 @@ const FORMATS: { format: Format; label: string; icon: IconSvgElement }[] = [
   { format: Format.audio, label: 'Audio', icon: HeadphonesIcon },
 ];
 
+const STATUS_LABEL: Record<EngagementCreateStatus, string> = {
+  reading: 'Reading',
+  finished: 'Finished',
+  dnf: 'DNF',
+};
+
+// Where a finished sheet lands you. The status decides it, so the caller does not pass a
+// destination -- the catalog only ever creates `reading` and so still ends up on /home.
+const DESTINATION: Record<EngagementCreateStatus, string> = {
+  reading: '/home',
+  finished: '/library/finished',
+  dnf: '/library/dnf',
+};
+
+function pickLabel(status: EngagementCreateStatus, title: string, format: string): string {
+  return status === EngagementCreateStatus.reading
+    ? `Start reading ${title} as ${format}`
+    : `Add ${title} as ${STATUS_LABEL[status]} in ${format}`;
+}
+
 type FormatPickSheetProps = {
-  book: BookRead;
+  bookId: string;
+  title: string;
+  // Null means "not known", not "no audiobook" -- it only decides whether picking Audio
+  // has to stop and ask for a length. A search result never carries one, so that path
+  // always asks.
+  audioMinutes: number | null;
+  // More than one and the sheet opens on a status step; fewer skips straight to format
+  // and uses the single status, defaulting to `reading`.
+  statuses?: EngagementCreateStatus[];
+  cancelLabel?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
@@ -43,40 +72,66 @@ type FormatPickSheetProps = {
 // Starting a read needs a format, because that is what picks the edition the engagement
 // binds to. Every book carries all three ([[0022-seed-three-editions-per-book]]), so all
 // three are always offered -- there is no list-editions-for-a-book endpoint, and nothing
-// on BookRead says which exist, so a book missing one surfaces as the backend's 404
-// rather than a greyed-out button.
+// says which exist, so a book missing one surfaces as the backend's 404 rather than a
+// greyed-out button.
+//
+// Takes the fields it needs rather than a `BookRead`: search opens this off a
+// `BookSearchResult`, which is a different shape and has no way to become one.
 //
 // Same split as ProgressLogSheet, for the same reason: the step and the typed length
 // live in a component rendered below ResponsiveDialogContent, inside a portal that
-// unmounts on close. Held above that line they would belong to CatalogRow, which never
+// unmounts on close. Held above that line they would belong to the caller, which never
 // unmounts, and a reopened picker would still be sitting on the audio step.
-export function FormatPickSheet({ book, open, onOpenChange }: FormatPickSheetProps) {
+export function FormatPickSheet({ open, onOpenChange, ...props }: FormatPickSheetProps) {
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent>
-        <FormatPickForm book={book} onDone={() => onOpenChange(false)} />
+        <FormatPickForm {...props} onDone={() => onOpenChange(false)} />
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
 }
 
-function FormatPickForm({ book, onDone }: { book: BookRead; onDone: () => void }) {
-  const form = useFormatPickForm(book, onDone);
+type FormatPickFormProps = Omit<FormatPickSheetProps, 'open' | 'onOpenChange'> & {
+  onDone: () => void;
+};
+
+function FormatPickForm({ cancelLabel = 'Cancel', onDone, ...props }: FormatPickFormProps) {
+  const { title, statuses } = props;
+  const form = useFormatPickForm(props, onDone);
 
   return (
     <>
       <ResponsiveDialogHeader>
-        <ResponsiveDialogTitle>{book.title}</ResponsiveDialogTitle>
+        <ResponsiveDialogTitle>{title}</ResponsiveDialogTitle>
         <ResponsiveDialogDescription>
-          {form.needsAudioLength
+          {form.step === 'length'
             ? 'Audiobook lengths vary by narration.'
-            : 'How are you reading it?'}
+            : form.step === 'status'
+              ? 'Where does it go?'
+              : form.status === EngagementCreateStatus.reading
+                ? 'How are you reading it?'
+                : 'How did you read it?'}
         </ResponsiveDialogDescription>
       </ResponsiveDialogHeader>
 
-      {form.needsAudioLength ? (
-        <AudioLengthField form={form} />
-      ) : (
+      {form.step === 'status' && (
+        <div className="flex flex-col gap-2">
+          {statuses?.map((status) => (
+            <Button
+              key={status}
+              variant="outline"
+              className="justify-start"
+              aria-label={`Add ${title} as ${STATUS_LABEL[status]}`}
+              onClick={() => form.pickStatus(status)}
+            >
+              {STATUS_LABEL[status]}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {form.step === 'format' && (
         <div className="flex flex-col gap-2">
           {FORMATS.map(({ format, label, icon }) => (
             <Button
@@ -84,7 +139,7 @@ function FormatPickForm({ book, onDone }: { book: BookRead; onDone: () => void }
               variant="outline"
               className="justify-start"
               disabled={form.startPending}
-              aria-label={`Start reading ${book.title} as ${label}`}
+              aria-label={pickLabel(form.status, title, label)}
               onClick={() => form.pickFormat(format)}
             >
               <HugeiconsIcon icon={icon} data-icon="inline-start" />
@@ -94,12 +149,14 @@ function FormatPickForm({ book, onDone }: { book: BookRead; onDone: () => void }
         </div>
       )}
 
+      {form.step === 'length' && <AudioLengthField form={form} />}
+
       {form.error && <p role="alert">{form.error}</p>}
 
       {/* Back rather than a third button: it returns to the format list, which is where
           Cancel lives, so the length step never has to carry both. */}
       <ResponsiveDialogFooter>
-        {form.needsAudioLength ? (
+        {form.step === 'length' ? (
           <>
             <Button variant="outline" disabled={form.startPending} onClick={form.goBack}>
               <HugeiconsIcon icon={ArrowLeft01Icon} data-icon="inline-start" />
@@ -107,15 +164,15 @@ function FormatPickForm({ book, onDone }: { book: BookRead; onDone: () => void }
             </Button>
             <Button
               disabled={!form.canStart || form.startPending}
-              aria-label={`Start reading ${book.title} as Audio`}
+              aria-label={pickLabel(form.status, title, 'Audio')}
               onClick={form.handleStart}
             >
-              Start reading
+              {form.status === EngagementCreateStatus.reading ? 'Start reading' : 'Add'}
             </Button>
           </>
         ) : (
           <Button variant="outline" disabled={form.startPending} onClick={onDone}>
-            Cancel
+            {cancelLabel}
           </Button>
         )}
       </ResponsiveDialogFooter>
@@ -145,11 +202,19 @@ function AudioLengthField({ form }: { form: ReturnType<typeof useFormatPickForm>
   );
 }
 
-function useFormatPickForm(book: BookRead, onClose: () => void) {
-  // Set only when Audio is picked without a stored length -- the one case that gets a
-  // second step. Print and digital are measured in pages, and EngagementCreate has no
-  // page field to send one in, so they always start immediately.
-  const [pendingAudio, setPendingAudio] = useState(false);
+function useFormatPickForm(
+  { bookId, audioMinutes, statuses }: Omit<FormatPickFormProps, 'onDone'>,
+  onClose: () => void
+) {
+  // A status step only when there is a choice to make. Below that the status is fixed
+  // from the moment the sheet opens, which is why it is state seeded once rather than
+  // something the format step recomputes.
+  const [status, setStatus] = useState<EngagementCreateStatus>(
+    statuses?.[0] ?? EngagementCreateStatus.reading
+  );
+  const [step, setStep] = useState<'status' | 'format' | 'length'>(
+    (statuses?.length ?? 0) > 1 ? 'status' : 'format'
+  );
   const [length, setLengthRaw] = useState('');
   const [lengthFocused, setLengthFocused] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -160,13 +225,14 @@ function useFormatPickForm(book: BookRead, onClose: () => void) {
   const createEngagement = useEngagementsCreateEngagement<ErrorType<{ detail?: string }>>({
     mutation: {
       // The catalog itself does not change -- a book stays in it once read -- so only
-      // the reading list is invalidated, and it is the list being navigated to.
+      // the engagement lists are invalidated. No params: that is the prefix of every
+      // per-status list key, and the status picked here decides which one is stale.
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: getEngagementsListEngagementsQueryKey({ status: ReadingStatus.reading }),
+          queryKey: getEngagementsListEngagementsQueryKey(),
         });
         onClose();
-        navigate('/home');
+        navigate(DESTINATION[status]);
       },
       onError: (err) => {
         setError(err.response?.data?.detail ?? 'Failed to start this read. Please try again.');
@@ -188,17 +254,26 @@ function useFormatPickForm(book: BookRead, onClose: () => void) {
     setError(null);
     createEngagement.mutate({
       data: {
-        book_id: book.id,
+        book_id: bookId,
         edition_format: format,
+        status,
         started_on: localIsoDate(),
         ...(audioLengthMinutes != null && { audio_length_minutes: audioLengthMinutes }),
       },
     });
   }
 
+  function pickStatus(picked: EngagementCreateStatus) {
+    setStatus(picked);
+    setStep('format');
+  }
+
   function pickFormat(format: Format) {
-    if (format === Format.audio && book.default_audio_minutes == null) {
-      setPendingAudio(true);
+    // Set only when Audio is picked without a stored length -- the one case that gets a
+    // third step. Print and digital are measured in pages, and EngagementCreate has no
+    // page field to send one in, so they always start immediately.
+    if (format === Format.audio && audioMinutes == null) {
+      setStep('length');
       return;
     }
     start(format);
@@ -212,7 +287,7 @@ function useFormatPickForm(book: BookRead, onClose: () => void) {
   // Drops the typed length as well as the step, so coming back to Audio starts from an
   // empty field rather than whatever the last attempt left there.
   function goBack() {
-    setPendingAudio(false);
+    setStep('format');
     setLengthRaw('');
     setLengthFocused(false);
     setError(null);
@@ -227,12 +302,14 @@ function useFormatPickForm(book: BookRead, onClose: () => void) {
       : null;
 
   return {
-    needsAudioLength: pendingAudio,
+    step,
+    status,
     length,
     setLength,
     setLengthFocused,
     lengthError,
     canStart: parsedLength !== null,
+    pickStatus,
     pickFormat,
     handleStart,
     goBack,

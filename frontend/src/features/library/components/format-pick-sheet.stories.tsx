@@ -1,24 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useEffect, useState, type ReactNode } from 'react';
 import { expect, screen, userEvent, within } from 'storybook/test';
-import { DatePrecision, type BookRead } from '@/api/generated/readingTracker.schemas';
+import { EngagementCreateStatus } from '@/api/generated/readingTracker.schemas';
 import { Button } from '@/components/ui/button';
 import { FormatPickSheet } from './format-pick-sheet';
 
-const baseBook: BookRead = {
-  id: 'book-1',
+type SheetProps = Omit<React.ComponentProps<typeof FormatPickSheet>, 'open' | 'onOpenChange'>;
+
+const baseBook: SheetProps = {
+  bookId: 'book-1',
   title: 'Piranesi',
-  authors: [{ id: 'author-1', name: 'Susanna Clarke' }],
-  google_books_id: null,
-  default_cover_url: null,
-  default_page_count: 272,
-  default_audio_minutes: null,
-  original_language: null,
-  genres: [],
-  publication_date: null,
-  publication_date_precision: DatePrecision.year,
-  created_at: '2025-01-01T00:00:00Z',
-  updated_at: '2025-01-01T00:00:00Z',
+  audioMinutes: null,
 };
 
 // Captured at import time so cleanup restores the browser's real implementation.
@@ -48,14 +40,14 @@ function withPointer(coarse: boolean) {
 
 // Controlled with no defaultOpen, the way CatalogRow drives it, so each story opens it
 // through `play`.
-function ControlledSheet({ book }: { book: BookRead }) {
+function ControlledSheet(props: SheetProps) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <Button variant="outline" onClick={() => setOpen(true)}>
         Open
       </Button>
-      <FormatPickSheet book={book} open={open} onOpenChange={setOpen} />
+      <FormatPickSheet {...props} open={open} onOpenChange={setOpen} />
     </>
   );
 }
@@ -79,18 +71,34 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const FormatChoice: Story = {
-  render: () => <ControlledSheet book={baseBook} />,
+  render: () => <ControlledSheet {...baseBook} />,
 };
 
 export const MobileSheet: Story = {
   decorators: [withPointer(true)],
-  render: () => <ControlledSheet book={baseBook} />,
+  render: () => <ControlledSheet {...baseBook} />,
+};
+
+// Search opens the sheet with all three statuses, which puts a step in front of the
+// format list. The catalog passes none and never sees this.
+export const StatusChoice: Story = {
+  render: () => (
+    <ControlledSheet
+      {...baseBook}
+      statuses={[
+        EngagementCreateStatus.reading,
+        EngagementCreateStatus.finished,
+        EngagementCreateStatus.dnf,
+      ]}
+      cancelLabel="No thanks — just import"
+    />
+  ),
 };
 
 // The second step, which only exists for an audio book with no stored length. A story's
 // own `play` replaces meta's rather than composing with it, hence the explicit call.
 export const AudioLength: Story = {
-  render: () => <ControlledSheet book={baseBook} />,
+  render: () => <ControlledSheet {...baseBook} />,
   play: async (context) => {
     await openSheet(context);
     await userEvent.click(
@@ -103,5 +111,5 @@ export const AudioLength: Story = {
 // An audio book whose length is already known skips the second step entirely -- the
 // picker is the same three buttons, and Audio starts the read directly.
 export const AudioLengthAlreadyKnown: Story = {
-  render: () => <ControlledSheet book={{ ...baseBook, default_audio_minutes: 600 }} />,
+  render: () => <ControlledSheet {...baseBook} audioMinutes={600} />,
 };

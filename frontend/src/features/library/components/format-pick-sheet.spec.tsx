@@ -6,47 +6,38 @@ import {
   getEngagementsCreateEngagementMockHandler,
   getEngagementsCreateEngagementResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
-import { DatePrecision, type BookRead } from '@/api/generated/readingTracker.schemas';
+import { EngagementCreateStatus } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
 import { localIsoDate } from '@/utils/local-date';
 import { FormatPickSheet } from './format-pick-sheet';
 
-function buildBook(overrides: Partial<BookRead> = {}): BookRead {
-  return {
-    id: 'book-1',
-    title: 'Piranesi',
-    authors: [{ id: 'author-1', name: 'Susanna Clarke' }],
-    google_books_id: null,
-    default_cover_url: null,
-    default_page_count: 272,
-    default_audio_minutes: null,
-    original_language: null,
-    genres: [],
-    publication_date: null,
-    publication_date_precision: DatePrecision.year,
-    created_at: '2025-01-01T00:00:00Z',
-    updated_at: '2025-01-01T00:00:00Z',
-    ...overrides,
-  };
-}
+type SheetProps = Omit<React.ComponentProps<typeof FormatPickSheet>, 'open' | 'onOpenChange'>;
+
+const baseBook: SheetProps = { bookId: 'book-1', title: 'Piranesi', audioMinutes: null };
 
 // The sheet is controlled the way CatalogRow drives it, and renders the router's
 // current path beside it -- the success path navigates, and MemoryRouter has nothing
 // else mounted to show where it landed.
-function ControlledFormatPickSheet({ book }: { book: BookRead }) {
+function ControlledFormatPickSheet(props: SheetProps) {
   const [open, setOpen] = useState(true);
   return (
     <>
       <p>path: {useLocation().pathname}</p>
-      <FormatPickSheet book={book} open={open} onOpenChange={setOpen} />
+      <FormatPickSheet {...props} open={open} onOpenChange={setOpen} />
     </>
   );
 }
 
-function renderSheet(book: BookRead) {
-  return render(<ControlledFormatPickSheet book={book} />);
+function renderSheet(props: Partial<SheetProps> = {}) {
+  return render(<ControlledFormatPickSheet {...baseBook} {...props} />);
 }
+
+const ALL_STATUSES = [
+  EngagementCreateStatus.reading,
+  EngagementCreateStatus.finished,
+  EngagementCreateStatus.dnf,
+];
 
 function captureCreateBody() {
   const captured: { body?: unknown } = {};
@@ -61,7 +52,7 @@ function captureCreateBody() {
 
 describe('FormatPickSheet', () => {
   it('offers all three formats', async () => {
-    renderSheet(buildBook());
+    renderSheet();
 
     expect(
       await screen.findByRole('button', { name: 'Start reading Piranesi as Print' })
@@ -73,7 +64,7 @@ describe('FormatPickSheet', () => {
   it('starts a print read immediately and navigates to Currently reading', async () => {
     const user = userEvent.setup();
     const captured = captureCreateBody();
-    renderSheet(buildBook());
+    renderSheet();
 
     await user.click(
       await screen.findByRole('button', { name: 'Start reading Piranesi as Print' })
@@ -82,6 +73,7 @@ describe('FormatPickSheet', () => {
     await waitFor(() => expect(screen.getByText('path: /home')).toBeInTheDocument());
     expect(captured.body).toEqual({
       book_id: 'book-1',
+      status: 'reading',
       edition_format: 'print',
       started_on: localIsoDate(),
     });
@@ -90,7 +82,7 @@ describe('FormatPickSheet', () => {
   it('starts a digital read without asking for a length', async () => {
     const user = userEvent.setup();
     const captured = captureCreateBody();
-    renderSheet(buildBook({ default_page_count: null }));
+    renderSheet();
 
     await user.click(
       await screen.findByRole('button', { name: 'Start reading Piranesi as Digital' })
@@ -99,6 +91,7 @@ describe('FormatPickSheet', () => {
     await waitFor(() => expect(screen.getByText('path: /home')).toBeInTheDocument());
     expect(captured.body).toEqual({
       book_id: 'book-1',
+      status: 'reading',
       edition_format: 'digital',
       started_on: localIsoDate(),
     });
@@ -107,7 +100,7 @@ describe('FormatPickSheet', () => {
   it('starts an audio read immediately when the book already has a length', async () => {
     const user = userEvent.setup();
     const captured = captureCreateBody();
-    renderSheet(buildBook({ default_audio_minutes: 600 }));
+    renderSheet({ audioMinutes: 600 });
 
     await user.click(
       await screen.findByRole('button', { name: 'Start reading Piranesi as Audio' })
@@ -116,6 +109,7 @@ describe('FormatPickSheet', () => {
     await waitFor(() => expect(screen.getByText('path: /home')).toBeInTheDocument());
     expect(captured.body).toEqual({
       book_id: 'book-1',
+      status: 'reading',
       edition_format: 'audio',
       started_on: localIsoDate(),
     });
@@ -124,7 +118,7 @@ describe('FormatPickSheet', () => {
   it('asks for a length when the book has no audio length, and sends it as minutes', async () => {
     const user = userEvent.setup();
     const captured = captureCreateBody();
-    renderSheet(buildBook());
+    renderSheet();
 
     await user.click(
       await screen.findByRole('button', { name: 'Start reading Piranesi as Audio' })
@@ -135,6 +129,7 @@ describe('FormatPickSheet', () => {
     await waitFor(() => expect(screen.getByText('path: /home')).toBeInTheDocument());
     expect(captured.body).toEqual({
       book_id: 'book-1',
+      status: 'reading',
       edition_format: 'audio',
       started_on: localIsoDate(),
       audio_length_minutes: 630,
@@ -143,7 +138,7 @@ describe('FormatPickSheet', () => {
 
   it('keeps the start button disabled until the length parses as HH:MM', async () => {
     const user = userEvent.setup();
-    renderSheet(buildBook());
+    renderSheet();
 
     await user.click(
       await screen.findByRole('button', { name: 'Start reading Piranesi as Audio' })
@@ -160,7 +155,7 @@ describe('FormatPickSheet', () => {
 
   it('returns to the format list from the length step, with the typed length dropped', async () => {
     const user = userEvent.setup();
-    renderSheet(buildBook());
+    renderSheet();
 
     await user.click(
       await screen.findByRole('button', { name: 'Start reading Piranesi as Audio' })
@@ -187,7 +182,7 @@ describe('FormatPickSheet', () => {
         )
       )
     );
-    renderSheet(buildBook());
+    renderSheet();
 
     await user.click(
       await screen.findByRole('button', { name: 'Start reading Piranesi as Print' })
@@ -197,5 +192,52 @@ describe('FormatPickSheet', () => {
       'Already have a print engagement in progress for this book.'
     );
     expect(screen.getByText('path: /')).toBeInTheDocument();
+  });
+
+  // Search opens the sheet with a choice of status; the catalog passes none and goes
+  // straight to the format list, which every test above relies on.
+  describe('with a choice of status', () => {
+    it('asks for a status before the format', async () => {
+      renderSheet({ statuses: ALL_STATUSES });
+
+      expect(await screen.findByRole('button', { name: 'Add Piranesi as Reading' })).toBeVisible();
+      expect(screen.getByRole('button', { name: 'Add Piranesi as Finished' })).toBeVisible();
+      expect(screen.getByRole('button', { name: 'Add Piranesi as DNF' })).toBeVisible();
+      expect(screen.queryByRole('button', { name: /as Print$/ })).not.toBeInTheDocument();
+    });
+
+    it('sends the chosen status and lands on that shelf', async () => {
+      const user = userEvent.setup();
+      const captured = captureCreateBody();
+      renderSheet({ statuses: ALL_STATUSES });
+
+      await user.click(await screen.findByRole('button', { name: 'Add Piranesi as Finished' }));
+      await user.click(screen.getByRole('button', { name: 'Add Piranesi as Finished in Print' }));
+
+      await waitFor(() => expect(screen.getByText('path: /library/finished')).toBeInTheDocument());
+      expect(captured.body).toEqual({
+        book_id: 'book-1',
+        status: 'finished',
+        edition_format: 'print',
+        started_on: localIsoDate(),
+      });
+    });
+
+    it('lands on the DNF shelf for a DNF', async () => {
+      const user = userEvent.setup();
+      captureCreateBody();
+      renderSheet({ statuses: ALL_STATUSES });
+
+      await user.click(await screen.findByRole('button', { name: 'Add Piranesi as DNF' }));
+      await user.click(screen.getByRole('button', { name: 'Add Piranesi as DNF in Digital' }));
+
+      await waitFor(() => expect(screen.getByText('path: /library/dnf')).toBeInTheDocument());
+    });
+
+    it('uses the caller-supplied cancel label', async () => {
+      renderSheet({ statuses: ALL_STATUSES, cancelLabel: 'No thanks — just import' });
+
+      expect(await screen.findByRole('button', { name: 'No thanks — just import' })).toBeVisible();
+    });
   });
 });
