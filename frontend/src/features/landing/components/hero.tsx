@@ -25,10 +25,13 @@ export function Hero() {
 
       <div className="relative flex justify-center pb-12 md:items-start md:pt-2 md:pb-14">
         {/* Orange, and a real radial falloff rather than a blurred disc -- a flat circle
-            at this size reads as a smudge instead of a glow. */}
+            at this size reads as a smudge instead of a glow.
+
+            Centred on the screenshots while the hero is stacked, since they centre too;
+            the offset toward the top-right only applies once the two columns split. */}
         <div
           aria-hidden
-          className="absolute -top-5 right-2 size-70 bg-[radial-gradient(circle,color-mix(in_srgb,var(--brand-orange)_22%,transparent),transparent_70%)] blur-sm md:-top-10 md:-right-5 md:size-105"
+          className="absolute -top-5 left-1/2 size-70 -translate-x-1/2 bg-[radial-gradient(circle,color-mix(in_srgb,var(--brand-orange)_22%,transparent),transparent_70%)] blur-sm md:-top-10 md:-right-5 md:left-auto md:size-105 md:translate-x-0"
         />
         {/* The screenshots are opaque PNGs with the device frame drawn inside a light
             margin. The radius has to hug that frame, which is why these two are the one

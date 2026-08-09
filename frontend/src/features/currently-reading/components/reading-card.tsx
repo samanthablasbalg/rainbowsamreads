@@ -32,6 +32,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { localIsoDate } from '@/utils/local-date';
 import { ProgressLogSheet } from './progress-log-sheet';
 
 // One icon per format a read is bound to. `formats` is an array, not a single value --
@@ -95,9 +96,16 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
     if (pendingAction === 'delete') {
       deleteEngagement.mutate({ engagementId: engagement.id });
     } else if (pendingAction !== null) {
+      // `effective_on` per ADR-0024 § 3, same as `started_on` on the way in. It lands on
+      // `finished_on`/`abandoned_on` and on the completion log the backend writes when a
+      // print read is finished short of its last page, so the server's date would date
+      // all three to tomorrow for an evening finish behind UTC.
       updateStatus.mutate({
         engagementId: engagement.id,
-        data: { status: EngagementStatusUpdateStatus[pendingAction] },
+        data: {
+          status: EngagementStatusUpdateStatus[pendingAction],
+          effective_on: localIsoDate(),
+        },
       });
     }
     setPendingAction(null);

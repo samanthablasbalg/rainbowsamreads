@@ -2,6 +2,7 @@ import userEvent from '@testing-library/user-event';
 import {
   getEngagementsDeleteEngagementMockHandler,
   getEngagementsUpdateEngagementStatusMockHandler,
+  getEngagementsUpdateEngagementStatusResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
 import {
   DatePrecision,
@@ -11,6 +12,7 @@ import {
 } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
+import { localIsoDate } from '@/utils/local-date';
 import { ReadingCard } from './reading-card';
 
 function buildEngagement(overrides: Partial<EngagementRead> = {}): EngagementRead {
@@ -158,9 +160,18 @@ describe('ReadingCard', () => {
     );
   });
 
+  // The date is asserted, not just the status: ADR-0024 § 3 puts every `_on` business
+  // date on the client, and the backend silently falls back to its own clock when one
+  // is missing -- which lands an evening finish on tomorrow anywhere behind UTC.
   it('marks the engagement finished, after confirming, when Mark as finished is chosen', async () => {
     const user = userEvent.setup();
-    server.use(getEngagementsUpdateEngagementStatusMockHandler());
+    let capturedBody: unknown;
+    server.use(
+      getEngagementsUpdateEngagementStatusMockHandler(async (info) => {
+        capturedBody = await info.request.json();
+        return getEngagementsUpdateEngagementStatusResponseMock();
+      })
+    );
     renderInList(buildEngagement());
 
     await openOverflowMenuAndChoose(user, 'Mark Piranesi as finished');
@@ -171,11 +182,18 @@ describe('ReadingCard', () => {
     await user.click(screen.getByRole('button', { name: 'Mark finished' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(capturedBody).toEqual({ status: 'finished', effective_on: localIsoDate() });
   });
 
   it('marks the engagement DNF, after confirming, when Mark as DNF is chosen', async () => {
     const user = userEvent.setup();
-    server.use(getEngagementsUpdateEngagementStatusMockHandler());
+    let capturedBody: unknown;
+    server.use(
+      getEngagementsUpdateEngagementStatusMockHandler(async (info) => {
+        capturedBody = await info.request.json();
+        return getEngagementsUpdateEngagementStatusResponseMock();
+      })
+    );
     renderInList(buildEngagement());
 
     await openOverflowMenuAndChoose(user, 'Mark Piranesi as DNF');
@@ -186,6 +204,7 @@ describe('ReadingCard', () => {
     await user.click(screen.getByRole('button', { name: 'Mark as DNF' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(capturedBody).toEqual({ status: 'dnf', effective_on: localIsoDate() });
   });
 
   it('deletes the engagement, after confirming, when Delete is chosen', async () => {

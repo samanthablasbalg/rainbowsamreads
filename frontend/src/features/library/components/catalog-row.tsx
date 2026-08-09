@@ -4,6 +4,7 @@ import { BookOpen01Icon, Delete02Icon, MoreVerticalIcon } from '@hugeicons/core-
 import { useQueryClient } from '@tanstack/react-query';
 import { useBooksDeleteBook } from '@/api/generated/books/books';
 import type { BookRead } from '@/api/generated/readingTracker.schemas';
+import type { ErrorType } from '@/api/mutator/axios-instance';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { CoverImage } from '@/components/common/cover-image';
 import { Card } from '@/components/ui/card';
@@ -56,7 +57,7 @@ export function CatalogRow({ book }: { book: BookRead }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pickOpen, setPickOpen] = useState(false);
 
-  const deleteBook = useBooksDeleteBook({
+  const deleteBook = useBooksDeleteBook<ErrorType<{ detail?: string }>>({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/books'] }),
     },
@@ -83,7 +84,8 @@ export function CatalogRow({ book }: { book: BookRead }) {
 
           {deleteBook.isError && (
             <p role="alert" className="text-sm text-destructive">
-              Couldn&apos;t delete this book — it still has reads attached to it.
+              {deleteBook.error.response?.data?.detail ??
+                "Couldn't delete this book. Please try again."}
             </p>
           )}
 
