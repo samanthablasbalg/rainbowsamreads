@@ -1,6 +1,7 @@
 // For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
 import storybook from 'eslint-plugin-storybook';
 
+import { readdirSync } from 'node:fs';
 import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
@@ -9,6 +10,25 @@ import importX from 'eslint-plugin-import-x';
 import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
 import tseslint from 'typescript-eslint';
 import { defineConfig, globalIgnores } from 'eslint/config';
+
+// One zone per feature, blocking imports from every other feature. Anything two features
+// both need gets promoted to components/ rather than reached for across this line.
+//
+// Read off the directory rather than listed by hand, because a feature added without its
+// zone fails silently -- nothing errors, the rule just quietly stops covering it. That is
+// not hypothetical: `landing` had no zone from the day it landed until this was written.
+//
+// The URL rather than a plain './src/features' string: readdirSync resolves a relative
+// path against the process's cwd, which would break the day eslint runs from the repo
+// root instead of frontend/. This resolves against the config file's own location.
+const featureZones = readdirSync(new URL('./src/features', import.meta.url), {
+  withFileTypes: true,
+})
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => ({
+    target: `./src/features/${entry.name}`,
+    from: `./src/features/!(${entry.name})/**`,
+  }));
 
 export default defineConfig([
   globalIgnores(['dist', 'storybook-static', 'src/api/generated', 'public/mockServiceWorker.js']),
@@ -49,21 +69,7 @@ export default defineConfig([
               ],
               from: ['./src/features', './src/app'],
             },
-            // One zone per feature, blocking imports from every other feature. Anything
-            // two features both need gets promoted to components/ rather than reached
-            // for across this line.
-            {
-              target: './src/features/currently-reading',
-              from: './src/features/!(currently-reading)/**',
-            },
-            {
-              target: './src/features/library',
-              from: './src/features/!(library)/**',
-            },
-            {
-              target: './src/features/search',
-              from: './src/features/!(search)/**',
-            },
+            ...featureZones,
           ],
         },
       ],
