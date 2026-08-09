@@ -42,7 +42,7 @@ export class CatalogPage {
     audioLengthHhmm?: string
   ): Promise<void> {
     await this.getMarkAsReadingButton(title).click();
-    await new FormatPickSheetPage(this.page).pick(title, format, audioLengthHhmm);
+    await new FormatPickSheetPage(this.page).pick(title, format, { audioLengthHhmm });
   }
 
   /**

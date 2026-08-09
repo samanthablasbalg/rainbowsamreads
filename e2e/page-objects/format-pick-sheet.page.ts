@@ -9,12 +9,23 @@ export class FormatPickSheetPage {
   /**
    * Locates the format-choice button for a given book and format. Also serves
    * as the submit button in the audio-length collection step (same aria-label).
+   * The label follows the status being added, since "Start reading" is only
+   * true of one of the three.
    * @param title - The book's title, as shown in the picker heading.
    * @param format - The format to pick.
+   * @param status - The status being added; defaults to Reading.
    * @returns The button locator.
    */
-  getPickButton(title: string, format: PickableFormat): Locator {
-    return this.page.getByRole('button', { name: `Start reading ${title} as ${format}` });
+  getPickButton(
+    title: string,
+    format: PickableFormat,
+    status: PickableStatus = 'Reading'
+  ): Locator {
+    const name =
+      status === 'Reading'
+        ? `Start reading ${title} as ${format}`
+        : `Add ${title} as ${status} in ${format}`;
+    return this.page.getByRole('button', { name });
   }
 
   /**
@@ -58,13 +69,19 @@ export class FormatPickSheetPage {
    * length (the picker skips the form and starts the read immediately).
    * @param title - The book's title.
    * @param format - The format to pick.
-   * @param audioLengthHhmm - Required for Audio when the book has no stored length.
+   * @param options.audioLengthHhmm - Required for Audio when the book has no stored length.
+   * @param options.status - The status chosen in the step before, if there was one.
    */
-  async pick(title: string, format: PickableFormat, audioLengthHhmm?: string): Promise<void> {
-    await this.getPickButton(title, format).click();
+  async pick(
+    title: string,
+    format: PickableFormat,
+    options: { audioLengthHhmm?: string; status?: PickableStatus } = {}
+  ): Promise<void> {
+    const { audioLengthHhmm, status } = options;
+    await this.getPickButton(title, format, status).click();
     if (format === 'Audio' && audioLengthHhmm !== undefined) {
       await this.getAudioLengthInput().fill(audioLengthHhmm);
-      await this.getPickButton(title, format).click();
+      await this.getPickButton(title, format, status).click();
     }
   }
 }

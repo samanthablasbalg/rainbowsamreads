@@ -12,7 +12,7 @@ export class SearchPanelPage {
 
   /** @param page - The Playwright page to drive the global search bar through. */
   constructor(public readonly page: Page) {
-    this.searchInput = page.getByRole('textbox', { name: 'Search books' });
+    this.searchInput = page.getByRole('combobox', { name: 'Search books' });
     this.searchError = page.getByRole('alert');
   }
 
@@ -27,13 +27,14 @@ export class SearchPanelPage {
   }
 
   /**
-   * Opens the bar, types the query, and submits it.
+   * Opens the bar and types the query. There is nothing to submit: the bar
+   * searches on a debounce, and Enter would land on the highlighted result and
+   * dismiss the popup, which collapses the bar.
    * @param query - The text to search for.
    */
   async searchFor(query: string): Promise<void> {
     await this.openSearchBar();
     await this.searchInput.fill(query);
-    await this.searchInput.press('Enter');
   }
 
   /**
@@ -57,11 +58,13 @@ export class SearchPanelPage {
   /**
    * Locates a search result row by title, to assert its state label
    * (e.g. "Finished") without matching identically-labeled rows elsewhere.
+   * Rows are combobox options, not list items -- the results live in the
+   * search bar's popup.
    * @param title - The result's title, as shown in the search results.
    * @returns The result row locator for that title.
    */
   getResultRow(title: string): Locator {
-    return this.page.getByRole('listitem').filter({ hasText: title });
+    return this.page.getByRole('option').filter({ hasText: title });
   }
 
   /**
