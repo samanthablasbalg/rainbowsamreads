@@ -1,7 +1,9 @@
 import { getAuthMeMockHandler } from '@/api/generated/auth/auth.msw';
+import { getEngagementsGetEngagementMockHandler } from '@/api/generated/engagements/engagements.msw';
 import { destinations } from '@/config/destinations';
 import { server } from '@/test/msw-server';
 import { renderRoute, screen } from '@/test/render';
+import { buildEngagement } from '@/testing/data-generators';
 
 describe('the route tree', () => {
   it.each(destinations)('$to resolves to its own page, not the catch-all', async ({ to }) => {
@@ -33,6 +35,17 @@ describe('the route tree', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeVisible();
     expect(screen.getByRole('navigation', { name: 'Library' })).toBeVisible();
+  });
+
+  // A leaf reached from a book's row rather than from the nav, so it is not in
+  // `destinations` and the loop above never sees it. Its heading is the book's title,
+  // which is also what proves the URL's segment reached the query.
+  it('/reads/:engagementId renders the read named by the URL', async () => {
+    server.use(getAuthMeMockHandler(), getEngagementsGetEngagementMockHandler(buildEngagement()));
+
+    renderRoute('/reads/engagement-Piranesi');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Piranesi' })).toBeVisible();
   });
 
   it('sends /library to the catalog, since it has no screen of its own', async () => {

@@ -85,6 +85,14 @@ export const routes = [
             ],
           },
           {
+            // One read, reached from a book's row rather than from the nav -- so it is
+            // a top-level leaf, not a child of /library, whose layout would put the
+            // shelf nav above it.
+            path: '/reads/:engagementId',
+            lazy: async () => ({ Component: (await import('./routes/read')).Read }),
+            HydrateFallback: Pending,
+          },
+          {
             path: '/insights',
             lazy: async () => ({ Component: (await import('./routes/insights')).Insights }),
             HydrateFallback: Pending,
