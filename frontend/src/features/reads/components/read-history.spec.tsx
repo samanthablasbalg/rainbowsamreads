@@ -139,16 +139,18 @@ describe('ReadHistory', () => {
   });
 
   // The link is a real href rather than a history pop, so it works on a cold load of the
-  // URL where there is nothing to go back to.
-  it('links back to currently reading', async () => {
-    server.use(getEngagementsGetEngagementMockHandler(buildEngagement()));
+  // URL where there is nothing to go back to. It points at wherever a read of this status
+  // is listed, which is the only place you can have come from.
+  it.each([
+    [ReadingStatus.reading, 'Currently reading', '/home'],
+    [ReadingStatus.finished, 'Finished', '/library/finished'],
+    [ReadingStatus.dnf, 'DNF', '/library/dnf'],
+  ])('links a %s read back to where it is shelved', async (status, label, href) => {
+    server.use(getEngagementsGetEngagementMockHandler(buildEngagement({ status })));
 
     render(<ReadHistory engagementId="engagement-Piranesi" />);
 
-    expect(screen.getByRole('link', { name: 'Currently reading' })).toHaveAttribute(
-      'href',
-      '/home'
-    );
+    expect(await screen.findByRole('link', { name: label })).toHaveAttribute('href', href);
   });
 
   it('shows a pending state while the read loads', () => {

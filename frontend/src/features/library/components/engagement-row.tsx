@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Delete02Icon, MoreVerticalIcon, StarIcon } from '@hugeicons/core-free-icons';
+import { Delete02Icon, HistoryIcon, MoreVerticalIcon, StarIcon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEngagementsDeleteEngagement } from '@/api/generated/engagements/engagements';
 import { ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
@@ -104,6 +105,14 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
                 }
               />
               <DropdownMenuContent>
+                <DropdownMenuItem
+                  aria-label={`View history for ${book.title}`}
+                  render={<Link to={`/reads/${engagement.id}`} />}
+                >
+                  <HugeiconsIcon icon={HistoryIcon} />
+                  View history
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   aria-label={`Rate and review ${book.title}`}
                   onClick={() => setReviewOpen(true)}

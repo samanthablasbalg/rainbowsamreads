@@ -35,20 +35,12 @@ export function ReadHistory({ engagementId }: { engagementId: string }) {
 
   return (
     <section>
-      {/* A link to the hierarchy's parent, not `navigate(-1)`: this survives a reload and
-          a cold load of the URL, where there is no history entry to go back to. /home is
-          truthful today because the Currently Reading card menu is the only way in; when
-          the book page exists this points at the book instead. */}
-      <Button variant="ghost" size="sm" className="-ml-3 mb-2" render={<Link to="/home" />}>
-        <HugeiconsIcon icon={ArrowLeft01Icon} data-icon="inline-start" />
-        Currently reading
-      </Button>
-
       {isPending && <Pending />}
       {isError && <p role="alert">Couldn&apos;t load this read. Try reloading the page.</p>}
 
       {engagement && (
         <>
+          <BackLink status={engagement.status} />
           <ReadHeader engagement={engagement} />
 
           {canLog && (
@@ -70,6 +62,30 @@ export function ReadHistory({ engagementId }: { engagementId: string }) {
         </>
       )}
     </section>
+  );
+}
+
+// Where a read of this status is listed, which is where you came from. A real link to the
+// hierarchy's parent rather than `navigate(-1)`: this survives a reload and a cold load of
+// the URL, where there is no history entry to go back to. The labels are the shelves' own,
+// from library-nav.
+//
+// When the book page exists it becomes the parent of all three and this collapses.
+const SHELVES = {
+  [ReadingStatus.reading]: { to: '/home', label: 'Currently reading' },
+  [ReadingStatus.finished]: { to: '/library/finished', label: 'Finished' },
+  [ReadingStatus.dnf]: { to: '/library/dnf', label: 'DNF' },
+} as const;
+
+function BackLink({ status }: { status: ReadingStatus }) {
+  // A read can also be tbr or interested, neither of which this page is reachable from.
+  const shelf = SHELVES[status as keyof typeof SHELVES] ?? SHELVES[ReadingStatus.reading];
+
+  return (
+    <Button variant="ghost" size="sm" className="-ml-3 mb-2" render={<Link to={shelf.to} />}>
+      <HugeiconsIcon icon={ArrowLeft01Icon} data-icon="inline-start" />
+      {shelf.label}
+    </Button>
   );
 }
 
