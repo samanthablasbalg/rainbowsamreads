@@ -1,14 +1,26 @@
 import { waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { getEngagementsGetEngagementMockHandler } from '@/api/generated/engagements/engagements.msw';
+import {
+  getEngagementsGetEngagementMockHandler,
+  getEngagementsListProgressLogsMockHandler,
+} from '@/api/generated/engagements/engagements.msw';
 import { Format, ReadingStatus } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { render, screen } from '@/test/render';
-import { buildEngagement } from '@/testing/data-generators';
+import { buildEngagement, buildPageLog } from '@/testing/data-generators';
 import { ReadHistory } from './read-history';
 
 describe('ReadHistory', () => {
+  // EntryList mounts with the read and fetches its own entries. Without this every test
+  // here would render the header against a history stuck in its error state -- the
+  // assertions still pass, which is exactly what makes it worth pinning. One entry rather
+  // than none: the empty state carries its own Log progress button, and this page's
+  // header has one too.
+  beforeEach(() => {
+    server.use(getEngagementsListProgressLogsMockHandler([buildPageLog()]));
+  });
+
   it('renders the read it was given the id of', async () => {
     server.use(
       getEngagementsGetEngagementMockHandler(
@@ -22,6 +34,11 @@ describe('ReadHistory', () => {
     expect(screen.getByText('Susanna Clarke')).toBeVisible();
     expect(screen.getByRole('img', { name: 'Format: print' })).toBeVisible();
     expect(screen.getByRole('progressbar')).toHaveAccessibleName('Piranesi progress: 37%');
+
+    // Waited for, not queried straight away: the entries are still loading when the
+    // header lands, and a pending list has no alert either.
+    expect(await screen.findByRole('list', { name: 'History' })).toBeVisible();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   // The dates are date-only strings; rendering them in local time would land on the
