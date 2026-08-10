@@ -3,6 +3,8 @@ import {
   Format,
   ReadingStatus,
   type EngagementRead,
+  type MinuteProgressLogRead,
+  type PageProgressLogRead,
 } from '@/api/generated/readingTracker.schemas';
 
 // Deterministic fixtures for specs and stories, as distinct from the generated
@@ -50,6 +52,36 @@ export function buildEngagement({
     review: null,
     created_at: '2025-01-01T00:00:00Z',
     updated_at: '2025-01-01T00:00:00Z',
+    ...overrides,
+  };
+}
+
+// Progress logs, in the order the API returns them: ascending by (logged_on, created_at).
+// Callers that care which entry is the newest state the dates; the rest take the default.
+export function buildPageLog(overrides: Partial<PageProgressLogRead> = {}): PageProgressLogRead {
+  return {
+    id: 'log-1',
+    engagement_id: 'engagement-Piranesi',
+    logged_on: '2025-06-15',
+    new_ground: true,
+    type: 'page',
+    page_start: 50,
+    page_end: 100,
+    ...overrides,
+  };
+}
+
+export function buildMinuteLog(
+  overrides: Partial<MinuteProgressLogRead> = {}
+): MinuteProgressLogRead {
+  return {
+    id: 'log-1',
+    engagement_id: 'engagement-Piranesi',
+    logged_on: '2025-06-15',
+    new_ground: true,
+    type: 'minute',
+    minute_start: 80,
+    minute_end: 125,
     ...overrides,
   };
 }
