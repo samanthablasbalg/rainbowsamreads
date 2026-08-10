@@ -1,13 +1,10 @@
 import { useState } from 'react';
-import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react';
+import { HugeiconsIcon } from '@hugeicons/react';
 import {
-  BookOpen01Icon,
   Cancel02Icon,
   Delete02Icon,
-  HeadphonesIcon,
   HistoryIcon,
   MoreVerticalIcon,
-  Tablet01Icon,
   Tick02Icon,
 } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -18,10 +15,10 @@ import {
 import {
   EngagementStatusUpdateStatus,
   type EngagementRead,
-  type Format,
 } from '@/api/generated/readingTracker.schemas';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { CoverImage } from '@/components/common/cover-image';
+import { FormatIcons } from '@/components/common/format-icons';
 import { ReadingProgress } from '@/components/common/reading-progress';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,16 +31,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { localIsoDate } from '@/utils/local-date';
 import { ProgressLogSheet } from './progress-log-sheet';
-
-// One icon per format a read is bound to. `formats` is an array, not a single value --
-// the data model allows a read to be bound to more than one edition (print and audio
-// on the same engagement) -- so this is a lookup applied per format, not a switch on
-// `formats[0]`.
-const FORMAT_ICONS: Record<Format, IconSvgElement> = {
-  print: BookOpen01Icon,
-  digital: Tablet01Icon,
-  audio: HeadphonesIcon,
-};
 
 // The three actions that ask before they act, keyed by the state that opens the dialog.
 // Copy lives here rather than inline so the three branches read side by side; `title` is
@@ -121,16 +108,7 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex items-baseline gap-1.5">
             <span className="font-medium leading-tight">{book.title}</span>
-            {formats.map((format) => (
-              <HugeiconsIcon
-                key={format}
-                icon={FORMAT_ICONS[format]}
-                size={14}
-                role="img"
-                aria-label={`Format: ${format}`}
-                className="text-muted-foreground"
-              />
-            ))}
+            <FormatIcons formats={formats} />
           </div>
 
           <p className="truncate text-sm text-muted-foreground">

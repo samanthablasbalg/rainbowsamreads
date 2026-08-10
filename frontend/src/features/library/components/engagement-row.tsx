@@ -1,22 +1,12 @@
 import { useState } from 'react';
-import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react';
-import {
-  BookOpen01Icon,
-  Delete02Icon,
-  HeadphonesIcon,
-  MoreVerticalIcon,
-  StarIcon,
-  Tablet01Icon,
-} from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Delete02Icon, MoreVerticalIcon, StarIcon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEngagementsDeleteEngagement } from '@/api/generated/engagements/engagements';
-import {
-  ReadingStatus,
-  type EngagementRead,
-  type Format,
-} from '@/api/generated/readingTracker.schemas';
+import { ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { CoverImage } from '@/components/common/cover-image';
+import { FormatIcons } from '@/components/common/format-icons';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,27 +16,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { formatIsoDate } from '@/utils/format-date';
 import { ReviewSheet } from './review-sheet';
 import { StarRating } from './star-rating';
-
-const FORMAT_ICONS: Record<Format, IconSvgElement> = {
-  print: BookOpen01Icon,
-  digital: Tablet01Icon,
-  audio: HeadphonesIcon,
-};
-
-// `finished_on` and `abandoned_on` are date-only strings ("2025-03-12"). `new Date` reads
-// those as UTC midnight, so formatting them in local time lands on the previous day for
-// anyone behind UTC -- ADR-0024's problem, in the other direction. Formatting in UTC too
-// keeps the calendar day the backend wrote.
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    timeZone: 'UTC',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
 
 // One row for both the finished and DNF shelves. They differ in two details, not in
 // structure, so this is a branch rather than a second component: which date is shown,
@@ -86,16 +58,7 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex items-baseline gap-1.5">
             <span className="font-medium leading-tight">{book.title}</span>
-            {formats.map((format) => (
-              <HugeiconsIcon
-                key={format}
-                icon={FORMAT_ICONS[format]}
-                size={14}
-                role="img"
-                aria-label={`Format: ${format}`}
-                className="text-muted-foreground"
-              />
-            ))}
+            <FormatIcons formats={formats} />
           </div>
 
           <p className="truncate text-sm text-muted-foreground">
@@ -104,7 +67,7 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
 
           {endedOn && (
             <p className="text-sm text-muted-foreground">
-              {isDnf ? 'Abandoned' : 'Finished'} {formatDate(endedOn)}
+              {isDnf ? 'Abandoned' : 'Finished'} {formatIsoDate(endedOn)}
             </p>
           )}
 
