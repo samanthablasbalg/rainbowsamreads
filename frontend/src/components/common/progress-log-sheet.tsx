@@ -5,7 +5,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { ErrorType } from '@/api/mutator/axios-instance';
 import {
   engagementsGetEngagement,
+  getEngagementsGetEngagementQueryKey,
   getEngagementsListEngagementsQueryKey,
+  getEngagementsListProgressLogsQueryKey,
   useEngagementsLogProgress,
 } from '@/api/generated/engagements/engagements';
 import { Format, ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
@@ -283,6 +285,16 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
           getEngagementsListEngagementsQueryKey({ status: ReadingStatus.reading }),
           (current) => current?.map((e) => (e.id === fresh.id ? fresh : e))
         );
+
+        // The read page mounts this sheet too, and reads the same engagement through its
+        // own query and a list of its logs. Seeding the one and invalidating the other is
+        // unconditional rather than told-where-it-is: from Currently Reading these land on
+        // queries nothing is rendering, which costs a cache write and no request.
+        queryClient.setQueryData(getEngagementsGetEngagementQueryKey(fresh.id), fresh);
+        await queryClient.invalidateQueries({
+          queryKey: getEngagementsListProgressLogsQueryKey(engagement.id),
+        });
+
         onClose();
       },
       onError: (err) => {

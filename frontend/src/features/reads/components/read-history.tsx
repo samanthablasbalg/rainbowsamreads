@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
@@ -11,6 +12,7 @@ import type { ErrorType } from '@/api/mutator/axios-instance';
 import { CoverImage } from '@/components/common/cover-image';
 import { FormatIcons } from '@/components/common/format-icons';
 import { Pending } from '@/components/common/pending';
+import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
 import { ReadingProgress } from '@/components/common/reading-progress';
 import { Button } from '@/components/ui/button';
 import { invalidateRead } from '../utils/invalidate-read';
@@ -25,6 +27,11 @@ import { InlineDateEdit } from './inline-date-edit';
 // mount this without a route of its own being involved.
 export function ReadHistory({ engagementId }: { engagementId: string }) {
   const { data: engagement, isPending, isError } = useEngagementsGetEngagement(engagementId);
+  const [logging, setLogging] = useState(false);
+
+  // Logging is only an action while the read is in progress. The sheet posts against the
+  // read's resume point, which a finished or abandoned read no longer advances.
+  const canLog = engagement?.status === ReadingStatus.reading;
 
   return (
     <section>
@@ -43,9 +50,23 @@ export function ReadHistory({ engagementId }: { engagementId: string }) {
       {engagement && (
         <>
           <ReadHeader engagement={engagement} />
+
+          {canLog && (
+            <Button className="mb-6 w-full sm:w-auto" onClick={() => setLogging(true)}>
+              Log progress
+            </Button>
+          )}
+
           {/* Its own query, mounted only once the read itself resolved -- a 404 on the id
               would otherwise raise two errors for one cause. */}
-          <EntryList engagementId={engagementId} />
+          <EntryList
+            engagementId={engagementId}
+            onLogProgress={canLog ? () => setLogging(true) : undefined}
+          />
+
+          {canLog && (
+            <ProgressLogSheet engagement={engagement} open={logging} onOpenChange={setLogging} />
+          )}
         </>
       )}
     </section>

@@ -101,6 +101,30 @@ describe('ReadHistory', () => {
     await waitFor(() => expect(sent).toEqual([{ finished_on: '2025-03-14' }]));
   });
 
+  it('offers logging on a read that is in progress', async () => {
+    server.use(
+      getEngagementsGetEngagementMockHandler(buildEngagement({ status: ReadingStatus.reading }))
+    );
+
+    render(<ReadHistory engagementId="engagement-Piranesi" />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Log progress' }));
+
+    expect(await screen.findByRole('dialog')).toBeVisible();
+  });
+
+  // The sheet posts against a resume point a finished read no longer advances.
+  it('does not offer logging on a finished read', async () => {
+    server.use(
+      getEngagementsGetEngagementMockHandler(buildEngagement({ status: ReadingStatus.finished }))
+    );
+
+    render(<ReadHistory engagementId="engagement-Piranesi" />);
+
+    expect(await screen.findByRole('heading', { name: 'Piranesi' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Log progress' })).not.toBeInTheDocument();
+  });
+
   it('renders one icon per bound format', async () => {
     server.use(
       getEngagementsGetEngagementMockHandler(

@@ -9,8 +9,10 @@ import {
 import type { ErrorType } from '@/api/mutator/axios-instance';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { Pending } from '@/components/common/pending';
+import { Button } from '@/components/ui/button';
 import {
   Empty,
+  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -27,7 +29,15 @@ import { EntryRow } from './entry-row';
 // sibling of the edit sheet rather than a child of it: Delete closes the sheet and opens
 // the confirmation, so there is never a dialog inside a dialog. ADR-0031 keeps the
 // confirmation itself as the one shared component.
-export function EntryList({ engagementId }: { engagementId: string }) {
+export function EntryList({
+  engagementId,
+  onLogProgress,
+}: {
+  engagementId: string;
+  // Absent on a read that is no longer in progress, which is what leaves a finished read
+  // with nothing logged showing an empty state and no action.
+  onLogProgress?: () => void;
+}) {
   const { data: logs, isPending, isError } = useEngagementsListProgressLogs(engagementId);
   const [editing, setEditing] = useState<EntryView | null>(null);
   const [deleting, setDeleting] = useState<EntryView | null>(null);
@@ -74,6 +84,11 @@ export function EntryList({ engagementId }: { engagementId: string }) {
             <EmptyTitle>Nothing logged yet</EmptyTitle>
             <EmptyDescription>Sessions you log against this read show up here.</EmptyDescription>
           </EmptyHeader>
+          {onLogProgress && (
+            <EmptyContent>
+              <Button onClick={onLogProgress}>Log progress</Button>
+            </EmptyContent>
+          )}
         </Empty>
       )}
 

@@ -52,6 +52,27 @@ describe('EntryList', () => {
     expect(screen.queryByRole('list', { name: 'History' })).not.toBeInTheDocument();
   });
 
+  it('offers logging from the empty state when the read can still be logged against', async () => {
+    server.use(getEngagementsListProgressLogsMockHandler([]));
+    const onLogProgress = vi.fn();
+
+    render(<EntryList engagementId="engagement-Piranesi" onLogProgress={onLogProgress} />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Log progress' }));
+
+    expect(onLogProgress).toHaveBeenCalledOnce();
+  });
+
+  // A finished or abandoned read gets the empty state with nothing to do about it.
+  it('leaves the empty state actionless without a logging handler', async () => {
+    server.use(getEngagementsListProgressLogsMockHandler([]));
+
+    render(<EntryList engagementId="engagement-Piranesi" />);
+
+    expect(await screen.findByText('Nothing logged yet')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Log progress' })).not.toBeInTheDocument();
+  });
+
   it('shows a pending state while the entries load', () => {
     server.use(getEngagementsListProgressLogsMockHandler([]));
 

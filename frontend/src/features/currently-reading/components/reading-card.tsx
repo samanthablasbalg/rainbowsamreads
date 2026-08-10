@@ -30,7 +30,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { localIsoDate } from '@/utils/local-date';
-import { ProgressLogSheet } from './progress-log-sheet';
+import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
 
 // The three actions that ask before they act, keyed by the state that opens the dialog.
 // Copy lives here rather than inline so the three branches read side by side; `title` is
