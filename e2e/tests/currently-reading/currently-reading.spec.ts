@@ -1,6 +1,6 @@
 import { expect, test } from '../../fixtures/api-client';
 import { CurrentlyReadingPage } from '../../page-objects/currently-reading.page';
-import { EngagementHistoryPage } from '../../page-objects/engagement-history.page';
+import { ReadHistoryPage } from '../../page-objects/read-history.page';
 import { ProgressLogSheetPage } from '../../page-objects/progress-log-sheet.page';
 
 test('Logging progress advances the card in place and survives reload', async ({
@@ -57,7 +57,7 @@ test('Logging progress advances the card in place and survives reload', async ({
 test('Backdating a log stores it under the chosen day', async ({ page, apiClient }) => {
   const currentlyReading = new CurrentlyReadingPage(page);
   const sheet = new ProgressLogSheetPage(page);
-  const history = new EngagementHistoryPage(page);
+  const history = new ReadHistoryPage(page);
 
   let engId = '';
 
@@ -82,9 +82,9 @@ test('Backdating a log stores it under the chosen day', async ({ page, apiClient
     );
   });
 
-  await test.step('Verify the history page shows the log under the chosen day', async () => {
+  await test.step('Verify the read’s page shows the entry under the chosen day', async () => {
     await history.goto(engId);
-    await expect(history.getLogDateButton(1)).toHaveText('Jun 15, 2025');
+    await expect(history.getEntryRow('Sun, Jun 15, 2025')).toBeVisible();
   });
 });
 

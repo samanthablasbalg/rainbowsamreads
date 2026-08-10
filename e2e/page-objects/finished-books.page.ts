@@ -71,6 +71,15 @@ export class FinishedBooksPage {
   }
 
   /**
+   * Opens a row's overflow menu. Its items are located through CardMenuPage, which the
+   * shelves share with the currently-reading cards.
+   * @param title - The book's title.
+   */
+  async openRowMenu(title: string): Promise<void> {
+    await this.getRowMenuButton(title).click();
+  }
+
+  /**
    * Opens the review sheet from the row menu, which is the only route to it once a
    * rating exists and the Add rating button is gone.
    * @param title - The book's title.

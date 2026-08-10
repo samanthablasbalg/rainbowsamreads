@@ -14,7 +14,13 @@ export function EntryRow({ entry, onEdit }: { entry: EntryView; onEdit: () => vo
   return (
     // Stacked on a phone and one line from sm up. The date leads either way: it is what
     // you scan for, and the amount is what you came to read off.
-    <li className="flex items-center gap-3 border-b border-border py-2.5 last:border-b-0">
+    //
+    // Named for its date, the way ReadingCard and EngagementRow name theirs for the book:
+    // it is what distinguishes one entry from another to a reader and to a test.
+    <li
+      aria-label={entry.dateLabel}
+      className="flex items-center gap-3 border-b border-border py-2.5 last:border-b-0"
+    >
       <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
         <span className="text-sm">{entry.dateLabel}</span>
 
