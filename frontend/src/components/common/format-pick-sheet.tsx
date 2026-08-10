@@ -14,9 +14,9 @@ import {
   useEngagementsCreateEngagement,
 } from '@/api/generated/engagements/engagements';
 import { EngagementCreateStatus, Format } from '@/api/generated/readingTracker.schemas';
+import { HhmmInput } from '@/components/common/hhmm-input';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -186,13 +186,10 @@ function AudioLengthField({ form }: { form: ReturnType<typeof useFormatPickForm>
   return (
     <Field data-invalid={!!form.lengthError}>
       <FieldLabel htmlFor="audio-length">How long is the audiobook?</FieldLabel>
-      <Input
+      <HhmmInput
         id="audio-length"
-        type="text"
-        inputMode="numeric"
-        placeholder="--:--"
         value={form.length}
-        onChange={(event) => form.setLength(event.target.value)}
+        onValueChange={form.setLength}
         onFocus={() => form.setLengthFocused(true)}
         onBlur={() => form.setLengthFocused(false)}
         aria-invalid={!!form.lengthError}

@@ -146,7 +146,9 @@ describe('FormatPickSheet', () => {
     const startButton = screen.getByRole('button', { name: 'Start reading Piranesi as Audio' });
     expect(startButton).toBeDisabled();
 
-    await user.type(screen.getByLabelText('How long is the audiobook?'), '600');
+    // The mask rules out most garbage -- "600" is typed as 06:00 -- but not a minute
+    // past 59, which is also the state on the way to 07:30.
+    await user.type(screen.getByLabelText('How long is the audiobook?'), '75');
     await user.tab();
 
     expect(startButton).toBeDisabled();

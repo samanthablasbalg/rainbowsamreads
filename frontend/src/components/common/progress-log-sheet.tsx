@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Calendar03Icon, Loading03Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -12,6 +12,7 @@ import {
 } from '@/api/generated/engagements/engagements';
 import { Format, ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { CoverImage } from '@/components/common/cover-image';
+import { HhmmInput } from '@/components/common/hhmm-input';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -39,9 +40,14 @@ type ProgressLogSheetProps = {
 // ReadingCard never unmounts, and would survive every close -- which is exactly the bug
 // this replaced.
 export function ProgressLogSheet({ engagement, open, onOpenChange }: ProgressLogSheetProps) {
+  const popupRef = useRef<HTMLDivElement>(null);
+
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent>
+      {/* Base UI moves focus to the popup's first tabbable element, which here is the
+          position field -- the sheet would open with a caret sitting in it. Focusing the
+          popup itself is what Base UI already does when the sheet is opened by touch. */}
+      <ResponsiveDialogContent ref={popupRef} initialFocus={popupRef}>
         <ProgressLogForm engagement={engagement} onDone={() => onOpenChange(false)} />
       </ResponsiveDialogContent>
     </ResponsiveDialog>
@@ -156,13 +162,10 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
         <Field className="flex-1" data-invalid={!!form.positionError}>
           <FieldLabel htmlFor="progress-log-position">To · now</FieldLabel>
           {form.isAudio ? (
-            <Input
+            <HhmmInput
               id="progress-log-position"
-              type="text"
-              inputMode="numeric"
-              placeholder="--:--"
               value={form.position}
-              onChange={(event) => form.setPosition(event.target.value)}
+              onValueChange={form.setPosition}
               onFocus={() => form.setPositionFocused(true)}
               onBlur={() => form.setPositionFocused(false)}
               aria-invalid={!!form.positionError}

@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEngagementsUpdateProgressLog } from '@/api/generated/engagements/engagements';
 import type { ProgressLogUpdate } from '@/api/generated/readingTracker.schemas';
 import type { ErrorType } from '@/api/mutator/axios-instance';
+import { HhmmInput } from '@/components/common/hhmm-input';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -99,18 +100,30 @@ function EntryEditForm({
             <FieldLabel htmlFor="entry-position">
               {entry.isAudio ? 'Ended at' : 'Ended at page'}
             </FieldLabel>
-            <Input
-              id="entry-position"
-              type="text"
-              inputMode="numeric"
-              placeholder={entry.isAudio ? '--:--' : '---'}
-              value={form.position}
-              disabled={form.savePending}
-              onChange={(event) => form.setPosition(event.target.value)}
-              onFocus={() => form.setPositionFocused(true)}
-              onBlur={() => form.setPositionFocused(false)}
-              aria-invalid={!!form.positionError}
-            />
+            {entry.isAudio ? (
+              <HhmmInput
+                id="entry-position"
+                value={form.position}
+                disabled={form.savePending}
+                onValueChange={form.setPosition}
+                onFocus={() => form.setPositionFocused(true)}
+                onBlur={() => form.setPositionFocused(false)}
+                aria-invalid={!!form.positionError}
+              />
+            ) : (
+              <Input
+                id="entry-position"
+                type="text"
+                inputMode="numeric"
+                placeholder="---"
+                value={form.position}
+                disabled={form.savePending}
+                onChange={(event) => form.setPosition(event.target.value)}
+                onFocus={() => form.setPositionFocused(true)}
+                onBlur={() => form.setPositionFocused(false)}
+                aria-invalid={!!form.positionError}
+              />
+            )}
             <FieldError>{form.positionError}</FieldError>
           </Field>
         ) : (
