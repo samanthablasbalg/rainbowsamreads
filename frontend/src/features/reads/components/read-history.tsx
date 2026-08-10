@@ -1,15 +1,21 @@
 import { Link } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
-import { useEngagementsGetEngagement } from '@/api/generated/engagements/engagements';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  useEngagementsGetEngagement,
+  useEngagementsUpdateEngagementDates,
+} from '@/api/generated/engagements/engagements';
 import { ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
+import type { ErrorType } from '@/api/mutator/axios-instance';
 import { CoverImage } from '@/components/common/cover-image';
 import { FormatIcons } from '@/components/common/format-icons';
 import { Pending } from '@/components/common/pending';
 import { ReadingProgress } from '@/components/common/reading-progress';
 import { Button } from '@/components/ui/button';
-import { formatIsoDate } from '@/utils/format-date';
+import { invalidateRead } from '../utils/invalidate-read';
 import { EntryList } from './entry-list';
+import { InlineDateEdit } from './inline-date-edit';
 
 // One read's page. Its history is all it holds today, which is why the route is
 // /reads/:id rather than /reads/:id/history -- stats or editions can land here later
@@ -46,16 +52,46 @@ export function ReadHistory({ engagementId }: { engagementId: string }) {
   );
 }
 
-// Identity, progress and the two dates that bound the read. The dates are text for now
-// and become editable in their own step.
-function ReadHeader({ engagement }: { engagement: EngagementRead }) {
-  const { book, formats, cover_url, completion_pct, started_on } = engagement;
-  const isDnf = engagement.status === ReadingStatus.dnf;
-  const endedOn = isDnf ? engagement.abandoned_on : engagement.finished_on;
+// The dates that bound a read, as a list rather than a hardcoded Started/Finished pair.
+// The engagement carries six lifecycle dates (ADR-0008) and the API exposes three today,
+// so the shape that grows is a list; the pair is just what that list holds now.
+//
+// `field: null` means "show it, don't open it" -- PATCH /dates takes started_on and
+// finished_on and nothing else, so an abandoned date is readable and not writable.
+function dateFields(engagement: EngagementRead) {
+  const started = {
+    field: 'started_on' as const,
+    prefix: 'Started',
+    label: 'start date',
+    value: engagement.started_on,
+  };
 
-  const dates: string[] = [];
-  if (started_on) dates.push(`Started ${formatIsoDate(started_on)}`);
-  if (endedOn) dates.push(`${isDnf ? 'Abandoned' : 'Finished'} ${formatIsoDate(endedOn)}`);
+  return engagement.status === ReadingStatus.dnf
+    ? [
+        started,
+        { field: null, prefix: 'Abandoned', label: 'abandon date', value: engagement.abandoned_on },
+      ]
+    : [
+        started,
+        {
+          field: 'finished_on' as const,
+          prefix: 'Finished',
+          label: 'finish date',
+          value: engagement.finished_on,
+        },
+      ];
+}
+
+// Identity, progress and the read's dates.
+function ReadHeader({ engagement }: { engagement: EngagementRead }) {
+  const { book, formats, cover_url, completion_pct } = engagement;
+
+  const queryClient = useQueryClient();
+  const updateDates = useEngagementsUpdateEngagementDates<ErrorType<{ detail?: string }>>({
+    mutation: {
+      onSuccess: () => invalidateRead(queryClient, engagement.id),
+    },
+  });
 
   return (
     <header className="mb-6 flex items-start gap-4">
@@ -73,7 +109,31 @@ function ReadHeader({ engagement }: { engagement: EngagementRead }) {
 
         <ReadingProgress title={book.title} pct={completion_pct} />
 
-        {dates.length > 0 && <p className="text-sm text-muted-foreground">{dates.join(' · ')}</p>}
+        <div className="flex flex-wrap items-center gap-x-4 text-sm text-muted-foreground">
+          {dateFields(engagement).map(({ field, prefix, label, value }) => (
+            <span key={label} className="inline-flex items-center gap-1.5">
+              {prefix}
+              <InlineDateEdit
+                value={value}
+                label={label}
+                disabled={field === null}
+                onSave={(next) =>
+                  field &&
+                  updateDates.mutate({ engagementId: engagement.id, data: { [field]: next } })
+                }
+              />
+            </span>
+          ))}
+        </div>
+
+        {/* The editor has already closed by the time a rejection lands, so the message
+            goes here rather than inside the control that caused it. */}
+        {updateDates.isError && (
+          <p role="alert" className="text-sm text-destructive">
+            {updateDates.error.response?.data?.detail ??
+              "Couldn't save that date. Please try again."}
+          </p>
+        )}
       </div>
     </header>
   );

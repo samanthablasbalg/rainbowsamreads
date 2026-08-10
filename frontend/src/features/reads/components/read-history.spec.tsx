@@ -1,3 +1,5 @@
+import { waitFor } from '@testing-library/react';
+import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { getEngagementsGetEngagementMockHandler } from '@/api/generated/engagements/engagements.msw';
 import { Format, ReadingStatus } from '@/api/generated/readingTracker.schemas';
@@ -32,10 +34,17 @@ describe('ReadHistory', () => {
 
     render(<ReadHistory engagementId="engagement-Piranesi" />);
 
-    expect(await screen.findByText('Started Jan 1, 2025 · Finished Mar 12, 2025')).toBeVisible();
+    expect(await screen.findByRole('button', { name: 'Edit start date' })).toHaveTextContent(
+      'Jan 1, 2025'
+    );
+    expect(screen.getByRole('button', { name: 'Edit finish date' })).toHaveTextContent(
+      'Mar 12, 2025'
+    );
   });
 
-  it('shows the abandoned date instead of a finish date for a DNF read', async () => {
+  // PATCH /dates takes started_on and finished_on only, so an abandoned date is shown
+  // but cannot be opened.
+  it('shows the abandoned date instead of a finish date for a DNF read, not editable', async () => {
     server.use(
       getEngagementsGetEngagementMockHandler(
         buildEngagement({
@@ -48,10 +57,14 @@ describe('ReadHistory', () => {
 
     render(<ReadHistory engagementId="engagement-Piranesi" />);
 
-    expect(await screen.findByText('Started Jan 1, 2025 · Abandoned Feb 4, 2025')).toBeVisible();
+    const abandoned = await screen.findByRole('button', { name: 'Edit abandon date' });
+    expect(abandoned).toHaveTextContent('Feb 4, 2025');
+    expect(abandoned).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Edit finish date' })).not.toBeInTheDocument();
   });
 
-  it('omits the dates line for a read with neither date set', async () => {
+  // An unset date still renders, as a dash: it is how you set one.
+  it('shows a dash for a date that is not set yet', async () => {
     server.use(
       getEngagementsGetEngagementMockHandler(
         buildEngagement({
@@ -64,8 +77,28 @@ describe('ReadHistory', () => {
 
     render(<ReadHistory engagementId="engagement-Piranesi" />);
 
-    expect(await screen.findByRole('heading', { name: 'Piranesi' })).toBeVisible();
-    expect(screen.queryByText(/^Started/)).not.toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Edit start date' })).toHaveTextContent('—');
+    expect(screen.getByRole('button', { name: 'Edit finish date' })).toHaveTextContent('—');
+  });
+
+  it('patches the engagement with a date that was edited in the header', async () => {
+    const sent: Record<string, unknown>[] = [];
+    server.use(
+      getEngagementsGetEngagementMockHandler(buildEngagement()),
+      http.patch('*/api/engagements/*/dates', async ({ request }) => {
+        sent.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({});
+      })
+    );
+
+    render(<ReadHistory engagementId="engagement-Piranesi" />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit finish date' }));
+    await userEvent.clear(screen.getByLabelText('finish date'));
+    await userEvent.type(screen.getByLabelText('finish date'), '2025-03-14');
+    await userEvent.click(screen.getByRole('button', { name: 'Save finish date' }));
+
+    await waitFor(() => expect(sent).toEqual([{ finished_on: '2025-03-14' }]));
   });
 
   it('renders one icon per bound format', async () => {
