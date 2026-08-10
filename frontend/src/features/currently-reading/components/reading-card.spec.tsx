@@ -132,6 +132,18 @@ describe('ReadingCard', () => {
     ]);
   });
 
+  // A link rather than a click handler, so a modified click opens the read in a new tab.
+  it('links View history at the read’s own page', async () => {
+    const user = userEvent.setup();
+    renderInList(buildEngagement({ id: 'engagement-Piranesi' }));
+
+    await user.click(screen.getByRole('button', { name: 'More actions for Piranesi' }));
+
+    expect(
+      await screen.findByRole('menuitem', { name: 'View history for Piranesi' })
+    ).toHaveAttribute('href', '/reads/engagement-Piranesi');
+  });
+
   it("prefers the read's own cover over the book's default", () => {
     const { container } = renderInList(
       buildEngagement({

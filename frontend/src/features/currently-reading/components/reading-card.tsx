@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Cancel02Icon,
@@ -61,7 +62,6 @@ type ConfirmAction = keyof typeof CONFIRMATIONS;
 // Cover-led row per ADR-0020: cover, title, author, format icon(s), progress. Finish,
 // DNF and delete each confirm first -- [[0031]] -- then PATCH/DELETE and invalidate the
 // engagements list so the card leaves this screen once its status no longer matches.
-// View history still has no handler -- it is its own, much later, punch list item.
 export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
   const { book, formats, cover_url, completion_pct } = engagement;
   const queryClient = useQueryClient();
@@ -138,7 +138,12 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
                 }
               />
               <DropdownMenuContent>
-                <DropdownMenuItem aria-label={`View history for ${book.title}`}>
+                {/* A real link rather than a navigate() on click, so the read's page
+                    opens in a new tab on a modified click like any other. */}
+                <DropdownMenuItem
+                  aria-label={`View history for ${book.title}`}
+                  render={<Link to={`/reads/${engagement.id}`} />}
+                >
                   <HugeiconsIcon icon={HistoryIcon} />
                   View history
                 </DropdownMenuItem>
