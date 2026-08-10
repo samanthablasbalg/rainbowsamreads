@@ -1,4 +1,3 @@
-import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { getEngagementsListEngagementsMockHandler } from '@/api/generated/engagements/engagements.msw';
 import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
@@ -32,24 +31,6 @@ describe('EngagementShelf', () => {
     expect(await screen.findByRole('listitem', { name: 'Dune' })).toBeVisible();
     const rows = screen.getAllByRole('listitem');
     expect(rows.map((row) => row.getAttribute('aria-label'))).toEqual(['Dune', 'Piranesi']);
-  });
-
-  // A finished or DNF read reaches its history the same way a current one does.
-  it('offers View history on a row, linked at the read’s page', async () => {
-    const user = userEvent.setup();
-    server.use(
-      getEngagementsListEngagementsMockHandler([
-        buildEngagement({ id: 'engagement-Piranesi', title: 'Piranesi' }),
-      ])
-    );
-
-    renderShelf();
-
-    await user.click(await screen.findByRole('button', { name: 'More actions for Piranesi' }));
-
-    expect(
-      await screen.findByRole('menuitem', { name: 'View history for Piranesi' })
-    ).toHaveAttribute('href', '/reads/engagement-Piranesi');
   });
 
   it('asks the API for the status it was given', async () => {

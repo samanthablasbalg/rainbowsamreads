@@ -15,6 +15,7 @@ import {
 } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { fireEvent, render, screen, waitFor } from '@/test/render';
+import { buildAudioEngagement } from '@/testing/data-generators';
 import { localIsoDate } from '@/utils/local-date';
 import { ProgressLogSheet } from './progress-log-sheet';
 
@@ -342,5 +343,98 @@ describe('ProgressLogSheet', () => {
     await user.click(await screen.findByRole('button', { name: 'Cancel' }));
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('saves an audio position as minutes, not as the HH:MM that was typed', async () => {
+    const user = userEvent.setup();
+    let capturedBody: unknown;
+    server.use(
+      getEngagementsLogProgressMockHandler(async (info) => {
+        capturedBody = await info.request.json();
+        return getEngagementsLogProgressResponseMock();
+      }),
+      getEngagementsGetEngagementMockHandler()
+    );
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+
+    await user.type(await screen.findByPlaceholderText('--:--'), '02:30');
+    await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(capturedBody).toEqual({ current_minute: 150, logged_on: localIsoDate() });
+  });
+
+  // The tab is the point of each of these: the error stays hidden while the field has
+  // focus, so a value part-way through being typed never flashes one.
+  it('rejects a page that is not a number', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement());
+
+    await user.type(await screen.findByPlaceholderText('---'), 'soon');
+    await user.tab();
+
+    expect(screen.getByText('Enter a number')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Save progress for Piranesi' })).toBeDisabled();
+  });
+
+  it('rejects a page before the one the read resumes from', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement({ resume_from_page: 100 }));
+
+    await user.type(await screen.findByPlaceholderText('---'), '50');
+    await user.tab();
+
+    expect(screen.getByText("Can't be before page 100")).toBeVisible();
+  });
+
+  it('rejects a page past the end of the book', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement());
+
+    await user.type(await screen.findByPlaceholderText('---'), '300');
+    await user.tab();
+
+    expect(screen.getByText('Cannot exceed 272 pages')).toBeVisible();
+  });
+
+  it('holds the error back until the field is left', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement({ resume_from_page: 100 }));
+
+    await user.type(await screen.findByPlaceholderText('---'), '50');
+    expect(screen.queryByText("Can't be before page 100")).not.toBeInTheDocument();
+
+    await user.tab();
+    expect(screen.getByText("Can't be before page 100")).toBeVisible();
+  });
+
+  it('rejects a time that is not HH:MM', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+
+    await user.type(await screen.findByPlaceholderText('--:--'), '00:73');
+    await user.tab();
+
+    expect(screen.getByText('Enter a time in HH:MM format')).toBeVisible();
+  });
+
+  it('rejects a time before the one the read resumes from', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+
+    await user.type(await screen.findByPlaceholderText('--:--'), '00:30');
+    await user.tab();
+
+    expect(screen.getByText("Can't be before 01:15")).toBeVisible();
+  });
+
+  it('rejects a time past the end of the audiobook', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+
+    await user.type(await screen.findByPlaceholderText('--:--'), '11:00');
+    await user.tab();
+
+    expect(screen.getByText('Cannot exceed 10:00')).toBeVisible();
   });
 });
