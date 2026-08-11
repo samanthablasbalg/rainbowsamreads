@@ -8,6 +8,7 @@ import {
 } from '@/api/generated/engagements/engagements';
 import type { ErrorType } from '@/api/mutator/axios-instance';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
+import { ErrorState } from '@/components/common/error-state';
 import { Pending } from '@/components/common/pending';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,7 +39,13 @@ export function EntryList({
   // with nothing logged showing an empty state and no action.
   onLogProgress?: () => void;
 }) {
-  const { data: logs, isPending, isError } = useEngagementsListProgressLogs(engagementId);
+  const {
+    data: logs,
+    isPending,
+    isError,
+    error,
+    refetch,
+  } = useEngagementsListProgressLogs(engagementId);
   const [editing, setEditing] = useState<EntryView | null>(null);
   const [deleting, setDeleting] = useState<EntryView | null>(null);
 
@@ -64,7 +71,16 @@ export function EntryList({
       </h2>
 
       {isPending && <Pending />}
-      {isError && <p role="alert">Couldn&apos;t load this read&apos;s history. Try reloading.</p>}
+      {isError && (
+        <ErrorState
+          error={error}
+          action={
+            <Button variant="outline" onClick={() => refetch()}>
+              Try again
+            </Button>
+          }
+        />
+      )}
 
       {/* The delete goes through the API rather than the sheet, so its failure has no
           form to land in -- it is rendered here, next to the list it failed to change. */}

@@ -2,7 +2,9 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { Book02Icon } from '@hugeicons/core-free-icons';
 import { useEngagementsListEngagements } from '@/api/generated/engagements/engagements';
 import type { ReadingStatus } from '@/api/generated/readingTracker.schemas';
+import { ErrorState } from '@/components/common/error-state';
 import { Pending } from '@/components/common/pending';
+import { Button } from '@/components/ui/button';
 import {
   Empty,
   EmptyDescription,
@@ -30,7 +32,13 @@ export function EngagementShelf({
   emptyTitle: string;
   emptyDescription: string;
 }) {
-  const { data: engagements, isPending, isError } = useEngagementsListEngagements({ status });
+  const {
+    data: engagements,
+    isPending,
+    isError,
+    error,
+    refetch,
+  } = useEngagementsListEngagements({ status });
 
   return (
     <section>
@@ -39,7 +47,16 @@ export function EngagementShelf({
       <h1 className="sr-only">{heading}</h1>
 
       {isPending && <Pending />}
-      {isError && <p role="alert">Couldn&apos;t load your books. Try reloading the page.</p>}
+      {isError && (
+        <ErrorState
+          error={error}
+          action={
+            <Button variant="outline" onClick={() => refetch()}>
+              Try again
+            </Button>
+          }
+        />
+      )}
 
       {engagements && engagements.length === 0 && (
         <Empty>

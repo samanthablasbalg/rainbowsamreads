@@ -1,7 +1,9 @@
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Book02Icon } from '@hugeicons/core-free-icons';
 import { useBooksListBooks } from '@/api/generated/books/books';
+import { ErrorState } from '@/components/common/error-state';
 import { Pending } from '@/components/common/pending';
+import { Button } from '@/components/ui/button';
 import {
   Empty,
   EmptyDescription,
@@ -22,14 +24,23 @@ import { CatalogRow } from './catalog-row';
 // visually and marks it aria-current. What that does not do is put the shelf in the
 // heading outline, which is a separate way to navigate, so the h1 stays in the tree.
 export function Catalog() {
-  const { data: books, isPending, isError } = useBooksListBooks();
+  const { data: books, isPending, isError, error, refetch } = useBooksListBooks();
 
   return (
     <section>
       <h1 className="sr-only">Catalog</h1>
 
       {isPending && <Pending />}
-      {isError && <p role="alert">Couldn&apos;t load your books. Try reloading the page.</p>}
+      {isError && (
+        <ErrorState
+          error={error}
+          action={
+            <Button variant="outline" onClick={() => refetch()}>
+              Try again
+            </Button>
+          }
+        />
+      )}
 
       {books && books.length === 0 && (
         <Empty>

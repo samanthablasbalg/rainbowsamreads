@@ -10,6 +10,7 @@ import {
 import { ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import type { ErrorType } from '@/api/mutator/axios-instance';
 import { CoverImage } from '@/components/common/cover-image';
+import { ErrorState } from '@/components/common/error-state';
 import { FormatIcons } from '@/components/common/format-icons';
 import { Pending } from '@/components/common/pending';
 import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
@@ -26,7 +27,13 @@ import { InlineDateEdit } from './inline-date-edit';
 // The id arrives as a prop rather than being read off the URL here, so the book page can
 // mount this without a route of its own being involved.
 export function ReadHistory({ engagementId }: { engagementId: string }) {
-  const { data: engagement, isPending, isError } = useEngagementsGetEngagement(engagementId);
+  const {
+    data: engagement,
+    isPending,
+    isError,
+    error,
+    refetch,
+  } = useEngagementsGetEngagement(engagementId);
   const [logging, setLogging] = useState(false);
 
   // Logging is only an action while the read is in progress. The sheet posts against the
@@ -36,7 +43,16 @@ export function ReadHistory({ engagementId }: { engagementId: string }) {
   return (
     <section>
       {isPending && <Pending />}
-      {isError && <p role="alert">Couldn&apos;t load this read. Try reloading the page.</p>}
+      {isError && (
+        <ErrorState
+          error={error}
+          action={
+            <Button variant="outline" onClick={() => refetch()}>
+              Try again
+            </Button>
+          }
+        />
+      )}
 
       {engagement && (
         <>

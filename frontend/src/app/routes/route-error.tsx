@@ -1,25 +1,25 @@
-import { isRouteErrorResponse, useRouteError } from 'react-router';
+import { useRouteError } from 'react-router';
+import { ErrorState } from '@/components/common/error-state';
+import { Button } from '@/components/ui/button';
 
-// Renders in place of `<Outlet />` when a screen inside AuthenticatedShell throws,
-// so the shell -- nav included -- survives instead of the whole document swapping
-// for react-router's unstyled default. isRouteErrorResponse distinguishes a thrown
-// Response (a loader's 404, say) from an actual JS error.
+// The router's error boundary. What it replaces depends entirely on which route it is
+// attached to -- a boundary renders in place of its own route's component, so the two
+// placements in router.tsx are what decide whether the shell survives.
+//
+// Reload rather than `useRevalidator`: the failure that lands here most often is a
+// screen chunk whose import() rejected, and re-running loaders will not re-fetch a
+// module. Reloading is the one action that fixes both that and a stale deploy.
 export function RouteError() {
   const error = useRouteError();
 
-  if (isRouteErrorResponse(error)) {
-    return (
-      <section>
-        <h1>
-          {error.status} {error.statusText}
-        </h1>
-      </section>
-    );
-  }
-
   return (
-    <section>
-      <h1>Something went wrong</h1>
-    </section>
+    <ErrorState
+      error={error}
+      action={
+        <Button variant="outline" onClick={() => location.reload()}>
+          Reload page
+        </Button>
+      }
+    />
   );
 }

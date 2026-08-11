@@ -72,6 +72,6 @@ describe('the route guards', () => {
 
     renderRoute('/home');
 
-    expect(await screen.findByRole('heading', { name: 'Something went wrong' })).toBeVisible();
+    expect(await screen.findByText('Something went wrong on our end')).toBeVisible();
   });
 });

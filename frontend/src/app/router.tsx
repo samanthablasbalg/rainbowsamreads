@@ -27,8 +27,9 @@ export const routes = [
         // children in shared chrome, so each child below carries its own full path. It
         // renders once and stays mounted while you move between destinations.
         //
-        // Its own boundary, so a screen that throws is replaced in place and the nav
-        // survives; the outer one would take the shell down with it.
+        // This boundary is the backstop for the shell itself -- if AuthenticatedShell
+        // throws, there is no chrome left to render an error inside, so the whole
+        // authenticated area is replaced. A screen throwing is caught lower down.
         Component: AppRoot,
         ErrorBoundary: RouteError,
         // Each screen is its own chunk. `HydrateFallback` sits on the lazy route
@@ -43,64 +44,89 @@ export const routes = [
         // especially: a chunk that cannot be fetched is exactly when it has to render.
         children: [
           {
-            path: '/home',
-            lazy: async () => ({ Component: (await import('./routes/home')).Home }),
-            HydrateFallback: Pending,
-          },
-          {
-            // The one destination that is a section rather than a screen. `Library` is
-            // a layout: it renders the shelf nav and an Outlet, so the nav stays put
-            // while the four shelves swap beneath it. Eager, unlike its children, for
-            // the same reason AuthenticatedShell is -- a HydrateFallback below it can
-            // only render inside chrome that is already there.
-            //
-            // Nesting is what keeps the rail and mobile navs untouched: NavLink's match
-            // is prefix-based, so `to="/library"` stays active across all four.
-            path: '/library',
-            Component: Library,
+            // Pathless and componentless: it adds no URL segment and renders a bare
+            // <Outlet />, so it exists only to hold a boundary. A boundary replaces
+            // its own route's component and everything nested inside it, so putting
+            // one here -- rather than on AppRoot above -- is what confines a broken
+            // screen to the content area and leaves the shell and its nav standing.
+            ErrorBoundary: RouteError,
             children: [
-              // /library itself has no screen. Catalog rather than the first shelf: To
-              // Read is a stub, so a bookmark to /library would otherwise dead-end.
-              { index: true, loader: () => redirect('/library/catalog') },
               {
-                path: 'tbr',
-                lazy: async () => ({ Component: (await import('./routes/tbr')).ToRead }),
+                path: '/home',
+                lazy: async () => ({ Component: (await import('./routes/home')).Home }),
                 HydrateFallback: Pending,
               },
               {
-                path: 'finished',
-                lazy: async () => ({ Component: (await import('./routes/finished')).Finished }),
+                // The one destination that is a section rather than a screen. `Library`
+                // is a layout: it renders the shelf nav and an Outlet, so the nav stays
+                // put while the four shelves swap beneath it. Eager, unlike its
+                // children, for the same reason AuthenticatedShell is -- a
+                // HydrateFallback below it can only render inside chrome that is
+                // already there.
+                //
+                // Nesting is what keeps the rail and mobile navs untouched: NavLink's
+                // match is prefix-based, so `to="/library"` stays active across all four.
+                path: '/library',
+                Component: Library,
+                children: [
+                  // /library itself has no screen. Catalog rather than the first shelf:
+                  // To Read is a stub, so a bookmark to /library would otherwise
+                  // dead-end.
+                  { index: true, loader: () => redirect('/library/catalog') },
+                  {
+                    // The same pathless-boundary trick one level down. Without it the
+                    // boundary above would catch a broken shelf and take `Library` --
+                    // and so the shelf nav -- with it, leaving no way to click over to
+                    // a shelf that still works.
+                    ErrorBoundary: RouteError,
+                    children: [
+                      {
+                        path: 'tbr',
+                        lazy: async () => ({ Component: (await import('./routes/tbr')).ToRead }),
+                        HydrateFallback: Pending,
+                      },
+                      {
+                        path: 'finished',
+                        lazy: async () => ({
+                          Component: (await import('./routes/finished')).Finished,
+                        }),
+                        HydrateFallback: Pending,
+                      },
+                      {
+                        path: 'dnf',
+                        lazy: async () => ({ Component: (await import('./routes/dnf')).Dnf }),
+                        HydrateFallback: Pending,
+                      },
+                      {
+                        path: 'catalog',
+                        lazy: async () => ({
+                          Component: (await import('./routes/catalog')).Catalog,
+                        }),
+                        HydrateFallback: Pending,
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                // One read, reached from a book's row rather than from the nav -- so it
+                // is a top-level leaf, not a child of /library, whose layout would put
+                // the shelf nav above it.
+                path: '/reads/:engagementId',
+                lazy: async () => ({ Component: (await import('./routes/read')).Read }),
                 HydrateFallback: Pending,
               },
               {
-                path: 'dnf',
-                lazy: async () => ({ Component: (await import('./routes/dnf')).Dnf }),
+                path: '/insights',
+                lazy: async () => ({ Component: (await import('./routes/insights')).Insights }),
                 HydrateFallback: Pending,
               },
               {
-                path: 'catalog',
-                lazy: async () => ({ Component: (await import('./routes/catalog')).Catalog }),
+                path: '/challenges',
+                lazy: async () => ({ Component: (await import('./routes/challenges')).Challenges }),
                 HydrateFallback: Pending,
               },
             ],
-          },
-          {
-            // One read, reached from a book's row rather than from the nav -- so it is
-            // a top-level leaf, not a child of /library, whose layout would put the
-            // shelf nav above it.
-            path: '/reads/:engagementId',
-            lazy: async () => ({ Component: (await import('./routes/read')).Read }),
-            HydrateFallback: Pending,
-          },
-          {
-            path: '/insights',
-            lazy: async () => ({ Component: (await import('./routes/insights')).Insights }),
-            HydrateFallback: Pending,
-          },
-          {
-            path: '/challenges',
-            lazy: async () => ({ Component: (await import('./routes/challenges')).Challenges }),
-            HydrateFallback: Pending,
           },
         ],
       },
