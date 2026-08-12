@@ -216,4 +216,11 @@
   html {
     @apply font-sans;
   }
+  /* The other half of the rule above: the sans is the document's default, the heading face
+     is every heading's, both by element rather than by remembering a class at each callsite.
+     Sizes stay as utilities -- this sets family only. Note base-ui renders Dialog.Title and
+     friends as h2, so dialog, alert-dialog and sheet titles pick this up too. */
+  :is(h1, h2, h3, h4, h5, h6) {
+    @apply font-heading;
+  }
 }

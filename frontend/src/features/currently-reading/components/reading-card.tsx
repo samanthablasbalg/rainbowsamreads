@@ -21,7 +21,7 @@ import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { CoverImage } from '@/components/common/cover-image';
 import { FormatIcons } from '@/components/common/format-icons';
 import { ReadingProgress } from '@/components/common/reading-progress';
-import { Card } from '@/components/ui/card';
+import { Card, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -124,7 +124,7 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
             `min-w-0` because a grid item defaults to `min-width: auto` and a long title
             would push the track wider than its share. */}
         <div className="flex min-w-0 flex-col gap-1">
-          <span className="font-medium leading-tight">{book.title}</span>
+          <CardTitle className="leading-tight">{book.title}</CardTitle>
 
           <p className="text-sm text-muted-foreground">
             {book.authors.map((author) => author.name).join(', ')}
