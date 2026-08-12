@@ -41,11 +41,12 @@ docker compose up
 | ----------- | ------ | -------------------------------------------------------------------- |
 | `db`        | `5432` | PostgreSQL 18                                                        |
 | `api`       | `8000` | `uvicorn --reload` — restarts on backend edits                       |
-| `frontend`  | —      | `ng serve --host 0.0.0.0` — rebuilds on frontend edits               |
+| `frontend`  | —      | `npm run dev -- --host 0.0.0.0` — Vite, rebuilds on frontend edits   |
 | `proxy`     | `8080` | Caddy. `/api/*` → `api`, everything else → `frontend`                |
 | `browsers`  | —      | `playwright run-server`. Browser binaries live here and nowhere else |
 | `workspace` | —      | Nothing. It exists to be attached to and `exec`'d into (see below)   |
 | `e2e`       | —      | CI's entry point for the Playwright suite. Not started by `up`       |
+| `storybook` | `6006` | Storybook and its Vitest browser project. Not started by `up`        |
 
 The app is at **http://localhost:8080** — the proxy, which is the only address where the app and its
 API share an origin, the shape production has (see
@@ -55,6 +56,12 @@ fails.
 
 The API docs stay at **http://localhost:8000/docs**. FastAPI serves them from the app root, outside
 the `/api` prefix the proxy routes, so that one is reached directly.
+
+`storybook` sits behind the `tools` profile, so a plain `up` doesn't pay for a container nothing
+else depends on. Start it deliberately with `docker compose up storybook` and it's at
+**http://localhost:6006**. It shares `frontend`'s `node_modules` volume — same package, different
+command — and depends on `browsers`, because the Vitest browser project drives a real browser there
+over a websocket, the same way e2e does.
 
 On the very first `up`, expect a few minutes: Docker builds the dev image, the database container
 creates its two databases, and the frontend runs `npm ci`. After that, starting is quick.
@@ -113,18 +120,30 @@ extensions, terminal and debugger inside `workspace`, while the UI stays native.
 
 All from inside the container:
 
-| Task               | Command                                                      |
-| ------------------ | ------------------------------------------------------------ |
-| Backend tests      | `cd backend && pytest`                                       |
-| Frontend tests     | `cd frontend && npm test`                                    |
-| E2E tests          | `cd e2e && npm test`                                         |
-| Apply migrations   | `cd backend && alembic upgrade head`                         |
-| Write a migration  | `cd backend && alembic revision --autogenerate -m "…"`       |
-| All static checks  | `pre-commit run --all-files`                                 |
-| Reinstall npm deps | `cd frontend && npm ci`                                      |
-| psql               | `docker compose exec db psql -U postgres reading_tracker` \* |
+| Task                      | Command                                                      |
+| ------------------------- | ------------------------------------------------------------ |
+| Backend tests             | `cd backend && pytest`                                       |
+| Frontend tests            | `cd frontend && npm test`                                    |
+| Storybook tests           | `cd frontend && npm run test:storybook`                      |
+| E2E tests                 | `cd e2e && npm test`                                         |
+| Lint + typecheck + tests  | `cd frontend && npm run check`                               |
+| Format the whole repo     | `cd frontend && npm run prettier:format`                     |
+| Regenerate the API client | `cd frontend && npm run generate:api`                        |
+| Apply migrations          | `cd backend && alembic upgrade head`                         |
+| Write a migration         | `cd backend && alembic revision --autogenerate -m "…"`       |
+| All static checks         | `pre-commit run --all-files`                                 |
+| Reinstall npm deps        | `cd frontend && npm ci`                                      |
+| psql                      | `docker compose exec db psql -U postgres reading_tracker` \* |
 
 \* that one is from the Mac, since it's aimed at the `db` container.
+
+`prettier:check` and `prettier:format` are run from `frontend/` but cover the **whole repo** — the
+scripts pass `..` with the root `.gitignore` and `.prettierignore`. Prettier lives in the frontend's
+dependencies, so that's where its scripts have to live; the scope isn't the frontend.
+
+`generate:api` reruns orval over the backend's OpenAPI schema
+([ADR-0026](decisions/0026-generated-frontend-api-client-orval.md)). A pre-commit hook regenerates
+it and CI fails on a diff, so this is mostly for when you want the client updated before committing.
 
 ### Why the checks have to run in here
 
@@ -368,8 +387,35 @@ Run these inside the container ([why](#why-the-checks-have-to-run-in-here)):
   npm test
   ```
 
-  This runs `ng test --watch=false` through Angular's build (which sets up the Vitest environment).
-  Don't run `vitest` directly — it bypasses that setup.
+  That's `vitest run --project unit` — jsdom, React Testing Library, and MSW standing in for the
+  API. Vitest is configured with two projects, so a bare `vitest` runs both and the `--project` flag
+  is what selects one.
+
+- **Storybook** — from `frontend/`:
+
+  ```bash
+  npm run test:storybook
+  ```
+
+  The second Vitest project. It renders every story in a real browser instead of jsdom, so it needs
+  the `browsers` service up — it drives one there over a websocket, the way e2e does.
+
+  The project binds its orchestration server to `VITEST_BROWSER_HOST`, which the remote browser
+  dials back into, so that variable has to be the running container's own compose alias. `workspace`
+  and `storybook` each set their own, which is why the command above works from either. CI runs it
+  as the `storybook` service, where it needs one more flag:
+
+  ```bash
+  docker compose run --rm --use-aliases storybook npm run test:storybook
+  ```
+
+  `--use-aliases` is not optional there. `docker compose run` doesn't register its ephemeral
+  container under the service's network alias the way `up` does, so without it the container can't
+  resolve `storybook` — including to find itself — and Vitest fails at startup with `EAI_AGAIN`.
+
+  A promoted component is expected to have a story, so this project grows with the component library
+  rather than being an occasional check. `npm run build-storybook` produces the static build CI also
+  checks.
 
 - **Static checks** — Ruff, mypy (strict), ESLint and Prettier, all through pre-commit:
 
@@ -403,14 +449,20 @@ Run these inside the container ([why](#why-the-checks-have-to-run-in-here)):
 
 No workflow installs anything on the runner. They `docker compose build` the dev image and run every
 check through it — `docker compose run --rm api ruff check .`,
-`docker compose run --rm frontend npm test`, `docker compose run --rm e2e npx playwright test` —
-against the same services used locally. A green run therefore means the toolchain you develop with
-agreed, not a similar one.
+`docker compose run --rm frontend npm test`,
+`docker compose run --rm --use-aliases storybook npm run test:storybook`,
+`docker compose run --rm e2e npx playwright test` — against the same services used locally. A green
+run therefore means the toolchain you develop with agreed, not a similar one.
 
-They use the `api`, `frontend` and `e2e` services rather than `workspace`, because `workspace`
-mounts personal config from `$HOME`, and a bind mount pointing at a path that doesn't exist silently
-creates an empty directory rather than failing. The e2e job uploads `e2e/playwright-report/` as an
-artifact when it fails.
+They use the `api`, `frontend`, `storybook` and `e2e` services rather than `workspace`, because
+`workspace` mounts personal config from `$HOME`, and a bind mount pointing at a path that doesn't
+exist silently creates an empty directory rather than failing. The e2e job uploads
+`e2e/playwright-report/` as an artifact when it fails.
+
+Four workflows, one per service: `backend.yml`, `frontend.yml`, `storybook.yml`, `e2e.yml`. The
+storybook job runs the browser-mode Vitest project and then `npm run build-storybook`, and it does
+its own `npm ci` — `node_modules` is a named volume, empty on a fresh runner no matter which service
+last filled it.
 
 ---
 
@@ -423,8 +475,8 @@ artifact when it fails.
    │                      │              │                      │
    │            /api/*    │              │  everything else     │
    │                      ▼              ▼                      │
-   │                  api :8000      frontend :4200             │
-   │                   (uvicorn)      (ng serve)                │
+   │                  api :8000      frontend :5173             │
+   │                   (uvicorn)        (vite)                  │
    │                      │ app_user                            │
    │                      ▼                                     │
    │                   db :5432                                 │
