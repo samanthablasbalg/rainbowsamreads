@@ -50,37 +50,48 @@ src
 ├── components   # shared presentational code: ui/ (shadcn primitives), layouts/, common/
 ├── config       # global configuration: route paths, env
 ├── features     # feature modules, each owning its api/, components/, hooks/, types/
+├── hooks        # shared React hooks with no domain knowledge
 ├── lib          # application infrastructure: auth, theme, configured libraries
-└── test         # test helpers and the MSW server
+├── test         # the Vitest harness, the MSW server, and shared fixtures
+└── utils        # pure functions that know nothing about this app
 ```
 
-`hooks/`, `types/` and `utils/` get added when a step demands them, not up front.
+`types/` gets added when a step demands it, not up front.
 
 ### Import direction
 
 1. **Dependencies flow one direction: shared → features → app.** Shared layers (`api`, `components`,
-   `config`, `lib`) may not import from `features/` or `app/`. `features/` may not import from
-   `app/`.
+   `config`, `hooks`, `lib`, `utils`) may not import from `features/` or `app/`. `features/` may not
+   import from `app/`.
 2. **Features never import each other.** Anything two features need is promoted to a shared layer.
 
-Enforced by `eslint-plugin-import`'s `import/no-restricted-paths`, not by discipline:
+Enforced by `eslint-plugin-import-x`'s `import-x/no-restricted-paths`, not by discipline:
 
 ```js
-'import/no-restricted-paths': ['error', {
+'import-x/no-restricted-paths': ['error', {
   zones: [
     { target: './src/features', from: './src/app' },
     {
-      target: ['./src/api', './src/components', './src/config', './src/lib'],
+      target: ['./src/api', './src/components', './src/config', './src/hooks',
+               './src/lib', './src/utils'],
       from: ['./src/features', './src/app'],
     },
-    // Added per feature as features land:
-    // { target: './src/features/books', from: './src/features', except: ['./books'] },
+    ...featureZones,
   ],
 }]
 ```
 
-`src/test/` is deliberately unrestricted — test helpers compose the real provider stack, so they
-import across layers by design.
+`featureZones` is read off `src/features/` with `readdirSync` rather than written out per feature.
+The rule needs a zone per feature to block cross-feature imports, and a feature added without one
+fails silently — nothing errors, the rule just stops covering it. That is not hypothetical:
+`landing` had no zone from the day it landed until the list was computed.
+
+A typescript resolver is configured alongside it, because the whole tree imports through the `@/*`
+alias and `no-restricted-paths` can only match real file paths.
+
+`src/test/` is deliberately unrestricted — `render.tsx` composes the real provider stack, so the
+harness imports across layers by design, and the fixtures beside it are consumed by specs and
+stories anywhere in the tree.
 
 ### Where a thing goes
 
@@ -98,6 +109,10 @@ the question that actually got answered wrong:
   our auth, our query client) and imports our own code; `utils/` holds code that could be pasted
   into an unrelated project unchanged. Roughly, `utils/` is what you could publish to npm and `lib/`
   is the wiring that makes a dependency ours.
+- **`hooks/`** — `utils/`'s rule applied to hooks: React behaviour with no knowledge of this app
+  (`use-media-query`, `use-debounced-value`). A hook that reaches our own infrastructure — the
+  session, the theme, the query client — is `lib/`; one that knows a domain type belongs to its
+  feature.
 - **`components/`** — shared presentational code. May consume `lib/`, never `features/` or `app/`.
   Three subdirectories, named by ownership or concern, and **nothing at its root**:
   - **`ui/`** — the primitive layer: domain-agnostic building blocks, added by `npx shadcn add`.
@@ -162,12 +177,14 @@ editions and engagements will be the first.
 - `lib/` is the layer most likely to become a junk drawer, because "infrastructure" is elastic. The
   test above is the guard, and it is judgment, not lint. A thing that only one feature uses belongs
   to that feature even if it feels infrastructural.
-- The zones list needs a line per feature to block cross-feature imports. Forgetting one silently
-  loses that protection for that feature.
+- Every shared directory has to be named in the zones list to be protected, and one that isn't is
+  invisible — `src/hooks/` sat outside the list from the day it was added. Computing `featureZones`
+  closed this for features; the shared-layer targets are still hand-written and still have to be
+  kept up.
 - Moving a file between layers is a real edit — the import paths change everywhere. This is cheap
   now and gets more expensive; the moves above were made at forty files precisely for that reason.
-- `import/no-restricted-paths` checks paths, not semantics. It cannot tell a legitimate `lib/`
-  import from a thing that should have been a feature.
+- `no-restricted-paths` checks paths, not semantics. It cannot tell a legitimate `lib/` import from
+  a thing that should have been a feature.
 
 ## Alternatives considered
 
@@ -193,5 +210,6 @@ editions and engagements will be the first.
 The `lib/` test ("does shared chrome legitimately need it?") is the part most likely to need
 sharpening once real features land — if `lib/` starts collecting things only one feature imports,
 the answer is to push them down into that feature, not to loosen the test. Revisit the zones
-themselves if `hooks/`, `types/` or `utils/` get added, since each needs to join the shared-layer
-target list to be protected.
+themselves if `types/` gets added, since it needs to join the shared-layer target list to be
+protected — and reconsider hand-writing that list at all if a second directory slips past it the way
+`hooks/` did.
