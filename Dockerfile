@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ ./
 
-COPY --from=frontend /frontend/dist/reading-tracker-app/browser /frontend/dist/reading-tracker-app/browser
+COPY --from=frontend /frontend/dist /frontend/dist
 
 # Three steps, in this order, on every boot:
 #   provision  creates app_user and reconciles its password to APP_DB_PASSWORD,

@@ -9,10 +9,11 @@ made. Start here to get your bearings, then follow a link when you want the reas
 
 ## System at a glance
 
-Three pieces, one deployment ([ADR-0001](decisions/0001-tech-stack-angular-fastapi-postgres.md)):
+Three pieces, one deployment ([ADR-0001](decisions/0001-tech-stack-angular-fastapi-postgres.md),
+frontend since replaced per [ADR-0032](decisions/0032-migrate-the-frontend-to-react.md)):
 
-- **Angular** single-page frontend.
-- **FastAPI** backend — a JSON API under `/api`, which _also_ serves the built Angular app as static
+- **React** single-page frontend.
+- **FastAPI** backend — a JSON API under `/api`, which _also_ serves the built React app as static
   files (any non-`/api` path falls back to `index.html` so client-side routing works). One process,
   one deploy.
 - **PostgreSQL 18** — the system of record, doing real work: enums, array columns, partial unique
@@ -68,23 +69,27 @@ hand-rolling `HTTPException` in every router.
 
 ## Frontend at a glance
 
-The Angular app uses modern Angular's defaults — standalone components and signals — with a thin
-service layer over the `/api` endpoints:
+React 19 built with Vite, with no hand-written service layer between the screens and the API:
 
-- **Standalone components, organized by feature.** Each screen or sheet is its own folder
-  (`currently-reading`, `book-search`, `progress-log-sheet`, `insights`, `nav-shell`, …), with
-  templates moving out of inline strings into their own `.html` files as the app matures.
-- **A thin service layer over a generated client.** Three injectable services — `auth`, `book`, and
-  `engagement` — wrap the `/api` endpoints; there's no store beyond them. The HTTP calls and types
-  themselves come from an orval-generated client, typed straight from the backend's OpenAPI schema
-  ([ADR-0026](decisions/0026-generated-frontend-api-client-orval.md)); the hand-written services
-  delegate to it and keep only the rxjs caching/reload layer (e.g. `books$`, the
-  engagements-by-status cache) that generation doesn't cover.
-- **Signals for state, reactive forms for input.** Component state lives in signals and `computed`;
-  input uses reactive `FormControl`s. (The [learnings notes](learnings/README.md) are mostly
-  hard-won lessons from exactly this.)
-- **Route guards.** `auth.guard` and `guest.guard` gate logged-in versus logged-out routes — the
-  client-side half of the auth story the backend enforces.
+- **Layered, with the direction of imports enforced by lint**
+  ([ADR-0033](decisions/0033-frontend-layering-and-import-direction.md)). That record is the place
+  to look for what each directory under `src/` is for and which layer a new thing belongs in — it
+  isn't repeated here.
+- **React Router in data mode.** The route tree is a plain array in `src/app/router.tsx`, and each
+  screen is its own lazily-imported chunk. `RequireAuth` and `RequireGuest` are pathless wrapper
+  routes gating logged-in versus logged-out — the client-side half of the auth story the backend
+  enforces. Error boundaries sit at three scopes deliberately, so a broken screen is confined to the
+  content area and leaves the nav standing.
+- **TanStack Query is the state layer.** There is no store. Server data lives in the query cache,
+  and the session is itself a query (`useAuth` in `src/lib/auth.ts`) rather than a flag copied out
+  of one — "signed out" is that query holding a 401.
+- **The API client is generated, not written.** orval reads the backend's OpenAPI schema
+  ([ADR-0026](decisions/0026-generated-frontend-api-client-orval.md)) and emits react-query hooks
+  over a hand-written axios mutator, plus the MSW handlers the specs and stories run against.
+- **shadcn/ui on Base UI primitives, styled with Tailwind v4.** shadcn copies source into
+  `src/components/ui/`, so those files are ours to edit. Storybook renders every promoted component
+  in its states and is the counterpart to [the design system doc](design/design-system.md): rendered
+  truth there, intent in the doc.
 
 ---
 
@@ -189,9 +194,9 @@ app serves traffic.
 
 ## Deployment
 
-The frontend and backend deploy together as a **single Docker image**: the build compiles the
-Angular app and bundles it into the FastAPI container, which serves both the API and the static
-frontend. One deploy, no separate frontend host.
+The frontend and backend deploy together as a **single Docker image**: the build compiles the React
+app and bundles it into the FastAPI container, which serves both the API and the static frontend.
+One deploy, no separate frontend host.
 
 It runs on **[Railway](https://railway.app)**, connected to the GitHub repo — a push rebuilds and
 redeploys — alongside a Railway-managed **Postgres** instance. The live app is at

@@ -8,6 +8,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   e2e:
     runs-on: ubuntu-latest
@@ -15,7 +20,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Same image as Backend and Frontend CI. Nothing is installed on the
       # runner: the test process runs in `e2e` on this image, and the browsers
@@ -36,7 +41,7 @@ jobs:
         run: docker compose run --rm e2e npx playwright test
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: ${{ failure() }}
         with:
           name: playwright-report
@@ -44,3 +49,44 @@ jobs:
             e2e/playwright-report/
             e2e/test-results/
           retention-days: 30
+
+      # Uploaded every run, pass or fail, so the publish-report job below has
+      # something to deploy regardless of test outcome. Kept separate from the
+      # failure-only artifact above: that one is a full debug bundle (traces
+      # included) for a human to download; this one is just the HTML report.
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-html-report
+          path: e2e/playwright-report/
+          retention-days: 30
+
+  # Deploying to Pages requires this job to declare `environment: github-pages`,
+  # which makes GitHub Actions track a deployment whose status mirrors this
+  # job's own conclusion. Keeping it separate from `e2e` means that status
+  # reflects whether the report actually published, not whether the tests
+  # passed — the `e2e` job above stays the real pass/fail signal.
+  publish-report:
+    needs: e2e
+    if: always()
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Download Playwright HTML report
+        uses: actions/download-artifact@v7
+        with:
+          name: playwright-html-report
+          path: playwright-report/
+
+      - name: Upload Playwright Report Artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: playwright-report/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

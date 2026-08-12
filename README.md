@@ -38,19 +38,24 @@ It's built mobile-friendly first. A phone is where I do most of my reading-track
 experience I design around, with the desktop layout built just as deliberately. I even run a
 separate staging environment so I can test in-progress work on my real phone before it ships.
 
+Two months in, I rebuilt the entire frontend from Angular to React. That's a wild thing to do to a
+deployed app that people are using, and [why I did it](docs/frontend-migration.md) is its own
+write-up.
+
 What's next is the part I actually built this for: tracking the reading no app has ever fit right.
-Multi-format and non-linear progress, a proper TBR, book and author pages, ownership, stats, as well
-as some infrastructure improvements like a proper local Docker setup and migrating to Orval. It's
-all in the [roadmap](docs/roadmap.md).
+Multi-format and non-linear progress, a proper TBR, book and author pages, ownership, and stats.
+It's all in the [roadmap](docs/roadmap.md).
 
 ## How it's tested
 
 Testing is the discipline I bring to building, so it's not an afterthought:
 
-- **Backend:** pytest against a [dedicated test database](docs/decisions/0014-dedicated-test-database.md)
-  that resets the schema, runs migrations, and truncates between tests so every run starts from a
-  known state.
-- **Frontend:** Vitest via Angular's runner, with Angular Testing Library for component specs.
+- **Backend:** pytest against a
+  [dedicated test database](docs/decisions/0014-dedicated-test-database.md) that resets the schema,
+  runs migrations, and truncates between tests so every run starts from a known state.
+- **Frontend:** Vitest in two projects — component specs in jsdom with React Testing Library and MSW
+  standing in for the API, and every Storybook story rendered in a real browser, where an
+  accessibility violation fails the run.
 - **End-to-end:** Playwright with page objects and fixtures, driving real browsers against
   [the same containerized stack as development](docs/decisions/0030-e2e-runs-against-the-compose-dev-stack.md),
   with a test-auth path so runs don't depend on live Google login.
@@ -72,8 +77,8 @@ they land. I'm learning a lot, and I'm proud of what's here.
 
 ## The stack
 
-Python · FastAPI · SQLAlchemy · Alembic · PostgreSQL 18 · Angular 22 · Angular Material · Tailwind
-CSS
+Python · FastAPI · SQLAlchemy · Alembic · PostgreSQL 18 · React 19 · Vite · React Router · TanStack
+Query · shadcn/ui on Base UI · Tailwind CSS · Storybook
 
 ## Dig in
 

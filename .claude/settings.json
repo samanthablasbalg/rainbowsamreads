@@ -7,6 +7,16 @@
       "Bash(cd * && python -m mypy *)",
       "Bash(cd * && python -m ruff *)",
       "Bash(cd * && python -m pytest *)",
+      "Bash(npm test *)",
+      "Bash(npm run lint *)",
+      "Bash(npm run typecheck *)",
+      "Bash(npm run build *)",
+      "Bash(cd * && npm test *)",
+      "Bash(cd * && npm run lint *)",
+      "Bash(cd * && npm run typecheck *)",
+      "Bash(cd * && npm run build *)",
+      "Bash(npm test > /tmp/test.log 2>&1*)",
+      "Bash(cd * && npm test > /tmp/test.log 2>&1*)",
       "Bash(* /tmp/*)",
       "Write(/tmp/*)"
     ],
@@ -30,12 +40,50 @@
     }
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // \"\"' | tr '\\n' ';'); printf '%s' \"$cmd\" | grep -Eq '(^|[;&|(])[[:space:]]*(sudo[[:space:]]+)?docker([[:space:]]|$)' && { printf \"Blocked: this session runs INSIDE the dev container - there is no docker CLI and never will be. Reach services over the compose network by name (proxy:8080, api:8000, db:5432), or run the tool directly.\\n\" >&2; exit 2; }; exit 0"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PROJECT_DIR:-/Users/samanthablasbalg/repos/reading-tracker}/.claude/hooks/test-command.sh\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // \"\"' | tr '\\n' ' '); printf '%s' \"$cmd\" | grep -Eq '\\.sh([[:space:]]|\"|$)|(^|[;&|(])[[:space:]]*(sh|bash|zsh|dash|ksh)[[:space:]]+[^-]' && { printf \"Blocked: never write a shell script and execute it. Run the documented command directly with the Bash tool.\\n\" >&2; exit 2; }; exit 0"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path // \"\"'); case \"$f\" in */.claude/hooks/*.sh) exit 0;; *.sh|*.bash|*.zsh) printf \"Blocked: do not create shell scripts. Run the command directly with the Bash tool.\\n\" >&2; exit 2;; esac; exit 0"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0\ncd \"$root\" || exit 0\nPC=$(command -v pre-commit) || { printf \"pre-commit not found on PATH\\n\" >&2; exit 1; }\nlist=$( { git diff --name-only HEAD; git ls-files --others --exclude-standard; } | sort -u )\n[ -n \"$list\" ] || exit 0\noldIFS=$IFS\nIFS=\"\n\"\nset --\nfor f in $list; do\n  set -- \"$@\" \"$f\"\ndone\nIFS=$oldIFS\n\"$PC\" run --files \"$@\" >/dev/null 2>&1 || { out=$(\"$PC\" run --files \"$@\" 2>&1) || { printf \"%s\\n\" \"$out\" >&2; exit 2; }; }",
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0\ncd \"$root\" || exit 0\nPC=$(command -v pre-commit) || { printf \"pre-commit not found on PATH\\n\" >&2; exit 1; }\nlist=$( { git diff --name-only HEAD; git ls-files --others --exclude-standard; } | sort -u )\n[ -n \"$list\" ] || exit 0\noldIFS=$IFS\nIFS=\"\n\"\nset --\nfor f in $list; do\n  set -- \"$@\" \"$f\"\ndone\nIFS=$oldIFS\nidx=$(mktemp) || exit 0\ncp \"$(git rev-parse --git-path index)\" \"$idx\" || exit 0\nexport GIT_INDEX_FILE=\"$idx\"\n\"$PC\" run --files \"$@\" >/dev/null 2>&1 || { out=$(\"$PC\" run --files \"$@\" 2>&1) || { rm -f \"$idx\"; printf \"%s\\n\" \"$out\" >&2; exit 2; }; }\nrm -f \"$idx\"",
             "statusMessage": "pre-commit"
           }
         ]

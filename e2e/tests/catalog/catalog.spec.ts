@@ -18,8 +18,11 @@ test('Marking a catalog book as reading moves it to Currently reading', async ({
     await catalog.markAsReading('Piranesi');
   });
 
+  await test.step('Verify the app navigates to Currently reading', async () => {
+    await expect(page).toHaveURL('/home');
+  });
+
   await test.step('Verify it appears under Currently reading', async () => {
-    await currentlyReading.goto();
     await expect(currentlyReading.getBookCard('Piranesi')).toBeVisible();
   });
 });
@@ -40,8 +43,11 @@ test('Starting a book as audio shows the audio icon on the Currently Reading row
     await catalog.markAsReading('Piranesi', 'Audio', '10:00');
   });
 
+  await test.step('Verify the app navigates to Currently reading', async () => {
+    await expect(page).toHaveURL('/home');
+  });
+
   await test.step('Verify the audio icon appears on the Currently Reading row', async () => {
-    await currentlyReading.goto();
     await expect(currentlyReading.getFormatIcon('Piranesi', 'audio')).toBeVisible();
   });
 });

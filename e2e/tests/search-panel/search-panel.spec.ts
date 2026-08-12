@@ -66,7 +66,7 @@ test('Adding a catalog result to my library sets its status', async ({ page, api
 
     const formatPickSheet = new FormatPickSheetPage(page);
     await formatPickSheet.chooseStatus(title, 'Finished');
-    await formatPickSheet.pick(title, 'Print');
+    await formatPickSheet.pick(title, 'Print', { status: 'Finished' });
   });
 
   await test.step('Verify it now shows its status, with no action', async () => {

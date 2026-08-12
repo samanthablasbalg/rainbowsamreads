@@ -1,6 +1,7 @@
 # 0001. Tech stack: Angular + FastAPI + PostgreSQL 18
 
-- Status: Accepted
+- Status: Accepted (superseded in part by [[0032-migrate-the-frontend-to-react]] — the frontend is
+  React; the FastAPI and PostgreSQL halves stand)
 - Date: 2026-06-07
 
 ## Context

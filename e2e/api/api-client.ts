@@ -53,10 +53,13 @@ export class ApiClient {
    * resume point, or the backend rejects it.
    * @param engagementId - The engagement to log against.
    * @param currentPage - The page reached.
+   * @param loggedOn - The date the session happened, yyyy-mm-dd. Defaults to today,
+   *   which makes every seeded log share one date -- pass distinct dates when a test
+   *   needs to tell its entries apart, since a row is named for its date.
    */
-  async logProgress(engagementId: string, currentPage: number): Promise<void> {
+  async logProgress(engagementId: string, currentPage: number, loggedOn?: string): Promise<void> {
     await this.request.post(`/api/engagements/${engagementId}/progress-logs`, {
-      data: { current_page: currentPage },
+      data: { current_page: currentPage, ...(loggedOn != null && { logged_on: loggedOn }) },
     });
   }
 

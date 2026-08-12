@@ -1,200 +1,226 @@
 /* You can add global styles to this file, and also import other style files */
 @import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/plus-jakarta-sans';
+@import '@fontsource-variable/lora';
+@import '@fontsource-variable/lora/wght-italic.css';
+@import '@fontsource-variable/newsreader';
 
-/* Design tokens from docs/design/design-system.md §4 — the single, canonical
-   definition of every color, light+dark. Registering them here (Tailwind's
-   theme block) gets us bg-/text-/border- utilities for free. material-theme.scss
-   does NOT redefine these — it points Material's own tokens at these same
-   variables with var(...), so there is exactly one copy of each hex value.
-   `static`: Tailwind v4 normally drops @theme entries that no utility class
-   in the templates references yet, which would silently delete tokens like
-   the chart/tint set this ticket registers for later use — `static` opts
-   this block out of that tree-shaking. */
-@theme static {
-  --font-serif: 'Lora', serif;
-  --font-sans: 'Plus Jakarta Sans', sans-serif;
-  --font-reading: 'Newsreader', serif;
+@custom-variant dark (&:is(.dark *));
 
-  --color-primary: light-dark(#e11584, #ff5fab);
-  --color-on-primary: light-dark(#ffffff, #23111b);
-  --color-secondary: light-dark(#ff7a2f, #ffa24d);
-  --color-background: light-dark(#fbf6ee, #18131b);
-  --color-surface: light-dark(#ffffff, #241c26);
-  --color-surface-2: light-dark(#fffdf9, #2e2432);
-  --color-text: light-dark(#241c22, #f3e9ee);
-  --color-muted: light-dark(#8a7a82, #b7a7b0);
-  /* Same role as --color-muted (secondary text) but darker in light mode. --color-muted
-     itself only measures ~3.8-4.1:1 against --color-background/--color-surface, short of
-     the 4.5:1 floor for small text (§10) - use this variant wherever muted text is small
-     (e.g. nav-shell's 10.5px labels) rather than the body-sized default. */
-  --color-muted-strong: light-dark(#756770, #b7a7b0);
-  --color-border: light-dark(#efe4d8, rgba(255, 255, 255, 0.09));
-
-  --color-track: light-dark(#f0e7db, #3a2f3f);
-  --color-success: light-dark(#16a34a, #4ade80);
-  /* Tailwind's red-600 (#dc2626) measures 4.49:1 on --color-background, just under the
-     4.5:1 floor (§10) - darkened slightly to #d42121 (4.83-5.2:1). Dark side is stock
-     red-400, already 5.4-6.6:1 against every surface it sits on. */
-  --color-error: light-dark(#d42121, #f87171);
-  /* Neutral hover/state wash for interactive rows (e.g. nav-shell's sidebar items).
-     Tinted from the theme's own text/background extremes rather than a flat gray so it
-     reads as "in family" with the rest of the palette. */
-  --color-hover: light-dark(rgba(36, 28, 34, 0.06), rgba(255, 255, 255, 0.08));
-
-  /* Categorical data palette (genres, moods, chart series) */
-  --color-chart-1: light-dark(#ec4899, #f472b6);
-  --color-chart-2: light-dark(#f97316, #fb923c);
-  --color-chart-3: light-dark(#8b5cf6, #a78bfa);
-  --color-chart-4: light-dark(#14b8a6, #2dd4bf);
-  --color-chart-5: light-dark(#3b82f6, #60a5fa);
-  --color-chart-6: light-dark(#84cc16, #a3e635);
-  --color-chart-7: light-dark(#f59e0b, #fbbf24);
-  --color-chart-8: light-dark(#f43f5e, #fb7185);
-
-  /* Pastel card tints */
-  --color-tint-1: light-dark(#ffd8ea, #4e2a44);
-  --color-tint-2: light-dark(#ece3ff, #3a2e56);
-  --color-tint-3: light-dark(#d5f3e1, #24503e);
-  --color-tint-4: light-dark(#ffe0cc, #5a3a2a);
-  --color-tint-5: light-dark(#d6ebff, #2a3e5a);
-  --color-tint-6: light-dark(#ffefb8, #5a4a22);
-}
-
-/* Type scale from docs/design/design-system.md §5 - named sizes so screens stop inventing
-   one-off pixel values. @utility (not a plain class) so these compose with Tailwind
-   variants (dark:, hover:, etc.) the same as any built-in utility. */
-@utility text-page-title {
-  font: 600 30px/1.2 var(--font-serif);
-}
-@utility text-section-title {
-  font: 600 17px/1.3 var(--font-serif);
-}
-@utility text-book-title {
-  font: 600 18px/1.3 var(--font-serif);
-}
-@utility text-prose {
-  font: 400 15px/1.6 var(--font-serif);
-}
-@utility text-stat {
-  font: 800 28px/1.1 var(--font-sans);
-  font-variant-numeric: tabular-nums;
-}
-@utility text-label {
-  font: 700 12px/1.2 var(--font-sans);
-}
-@utility text-label-sm {
-  font: 700 10.5px/1.2 var(--font-sans);
+@theme inline {
+  --font-sans: 'Plus Jakarta Sans Variable', sans-serif;
+  --font-serif: 'Lora Variable', serif;
+  --font-heading: 'Lora Variable', serif; /* headings, wordmark, card titles */
+  --font-reading: 'Newsreader Variable', serif; /* long-form: reviews, blog */
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-brand-orange-foreground: var(--brand-orange-foreground);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-pink: var(--brand-pink);
+  --color-category-8: var(--category-8);
+  --color-category-7: var(--category-7);
+  --color-category-6: var(--category-6);
+  --color-category-5: var(--category-5);
+  --color-category-4: var(--category-4);
+  --color-category-3: var(--category-3);
+  --color-category-2: var(--category-2);
+  --color-category-1: var(--category-1);
+  --color-tint-6: var(--tint-6);
+  --color-tint-5: var(--tint-5);
+  --color-tint-4: var(--tint-4);
+  --color-tint-3: var(--tint-3);
+  --color-tint-2: var(--tint-2);
+  --color-tint-1: var(--tint-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-.font-serif {
-  font-family: var(--font-serif);
+@theme {
+  /* The landing screenshots drift. Two of them share this at different durations so
+     they never sync up into one block moving together. */
+  --animate-floaty: floaty 6s ease-in-out infinite;
+
+  @keyframes floaty {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-14px);
+    }
+  }
 }
 
-.font-sans {
-  font-family: var(--font-sans);
-  font-variant-numeric: tabular-nums;
+/* Tags name the tone each value came from. Only the neutral ramp differs between the schemes. */
+
+/* `.light` alongside `:root` so a subtree can be pinned light the same way `.dark` pins
+   one dark -- the landing page uses it. Same declarations, so no second copy to keep in
+   step; an element carrying either class declares the tokens on itself and wins over
+   whatever it inherits. */
+:root,
+.light {
+  color-scheme: light;
+  --background: #fef9f1; /* neutral 98 */
+  --foreground: #1d1c17; /* neutral 10 */
+  --card: #ffffff; /* neutral 100 */
+  --card-foreground: #1d1c17; /* neutral 10 */
+  --popover: #ffffff; /* neutral 100 */
+  --popover-foreground: #1d1c17; /* neutral 10 */
+  --primary: #ff469e; /* primary 60 */
+  --primary-foreground: #3e0020; /* primary 10 */
+  --secondary: #ffd9e4; /* secondary 90 */
+  --secondary-foreground: #3e0020; /* secondary 10 */
+  --muted: #f2ede5; /* neutral 94 */
+  --muted-foreground: #4c463d; /* neutral-variant 30 */
+  --accent: #ece8e0; /* neutral 92 */
+  --accent-foreground: #1d1c17; /* neutral 10 */
+  --destructive: #ff5449; /* error 60 */
+  --destructive-foreground: #410002; /* error 10 */
+  --border: #cfc5b9; /* neutral-variant 80 */
+  --input: #cfc5b9; /* neutral-variant 80 */
+  --ring: #b8006a; /* primary 40 */
+  --chart-1: oklch(0.837 0.128 66.29);
+  --chart-2: oklch(0.705 0.213 47.604);
+  --chart-3: oklch(0.646 0.222 41.116);
+  --chart-4: oklch(0.553 0.195 38.402);
+  --chart-5: oklch(0.47 0.157 37.304);
+  --radius: 0.625rem;
+  --sidebar: #f8f3eb; /* neutral 96 */
+  --sidebar-foreground: #1d1c17; /* neutral 10 */
+  --sidebar-primary: #ff469e; /* primary 60 */
+  --sidebar-primary-foreground: #3e0020; /* primary 10 */
+  --sidebar-accent: #ece8e0; /* neutral 92 */
+  --sidebar-accent-foreground: #1d1c17; /* neutral 10 */
+  --sidebar-border: #cfc5b9; /* neutral-variant 80 */
+  --sidebar-ring: #b8006a; /* primary 40 */
+
+  /* Brand — authored, outside the role set. The format chip puts small text on the orange,
+     so that one carries a paired on-colour: #1d1c17 on #ff7a2f is 6.6:1, where white is
+     2.6:1 and fails. The pink has no such pairing because nothing sits on it yet. */
+  --brand-pink: #e11584;
+  --brand-orange: #ff7a2f;
+  --brand-orange-foreground: #1d1c17; /* neutral 10 */
+
+  /* Also authored: the categorical palette (genres, moods, series) and the pastel card
+     tints, both from docs/design/design-system.md § 4. Kept clear of shadcn's --chart-*,
+     which the scaffold owns and means something narrower. */
+  --category-1: #ec4899;
+  --category-2: #f97316;
+  --category-3: #8b5cf6;
+  --category-4: #14b8a6;
+  --category-5: #3b82f6;
+  --category-6: #84cc16;
+  --category-7: #f59e0b;
+  --category-8: #f43f5e;
+
+  --tint-1: #ffd8ea;
+  --tint-2: #ece3ff;
+  --tint-3: #d5f3e1;
+  --tint-4: #ffe0cc;
+  --tint-5: #d6ebff;
+  --tint-6: #ffefb8;
 }
 
-/* Shared UI primitives (pill button, eyebrow label, tag pill) used across
-   the landing page's components. Global rather than scoped to one component
-   because Angular's per-component style encapsulation would otherwise hide
-   these from sibling components that also need them. */
+/* Anything absent here is deliberately scheme-invariant and inherits from :root — the filled
+   controls (primary, destructive, their labels), the chart series and the orange. */
 
-.pill-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  border: none;
-  border-radius: 100px;
-  font-family: inherit;
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
+.dark {
+  color-scheme: dark;
+  --background: #161219; /* neutral 6 */
+  --foreground: #eadfeb; /* neutral 90 */
+  --card: #231e26; /* neutral 12 */
+  --card-foreground: #eadfeb; /* neutral 90 */
+  --popover: #2e2831; /* neutral 17 */
+  --popover-foreground: #eadfeb; /* neutral 90 */
+  --secondary: #841a4e; /* secondary 30 */
+  --secondary-foreground: #ffd9e4; /* secondary 90 */
+  --muted: #342e37; /* neutral 20 */
+  --muted-foreground: #cfc5b9; /* neutral-variant 80 */
+  --accent: #39333c; /* neutral 22 */
+  --accent-foreground: #eadfeb; /* neutral 90 */
+  --border: #4c463d; /* neutral-variant 30 */
+  --input: #4c463d; /* neutral-variant 30 */
+  --ring: #ff469e; /* primary 60 */
+  --sidebar: #231e26; /* neutral 12 */
+  --sidebar-foreground: #eadfeb; /* neutral 90 */
+  --sidebar-accent: #39333c; /* neutral 22 */
+  --sidebar-accent-foreground: #eadfeb; /* neutral 90 */
+  --sidebar-border: #4c463d; /* neutral-variant 30 */
+  --sidebar-ring: #ff469e; /* primary 60 */
+
+  --brand-pink: #ff5fab;
+
+  /* Lightened for dark grounds, per the same table. */
+  --category-1: #f472b6;
+  --category-2: #fb923c;
+  --category-3: #a78bfa;
+  --category-4: #2dd4bf;
+  --category-5: #60a5fa;
+  --category-6: #a3e635;
+  --category-7: #fbbf24;
+  --category-8: #fb7185;
+
+  /* Deepened, not washed out. */
+  --tint-1: #4e2a44;
+  --tint-2: #3a2e56;
+  --tint-3: #24503e;
+  --tint-4: #5a3a2a;
+  --tint-5: #2a3e5a;
+  --tint-6: #5a4a22;
 }
 
-.pill-btn:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-.pill-btn--primary {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  padding: 15px 26px;
-  font-size: 16px;
-  font-weight: 700;
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--color-primary) 28%, transparent);
-}
-
-.pill-btn--primary:hover {
-  background: color-mix(in srgb, var(--color-primary) 88%, black);
-}
-
-.pill-btn--outline {
-  background: var(--color-surface);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-  padding: 10px 18px;
-  font-size: 14px;
-  font-weight: 600;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-text) 5%, transparent);
-}
-
-.pill-btn--outline:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
-.eyebrow {
-  font-size: 13px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-weight: 700;
-  margin: 0 0 12px;
-}
-
-.eyebrow--primary {
-  color: var(--color-primary);
-}
-
-.eyebrow--secondary {
-  color: var(--color-secondary);
-}
-
-.tag {
-  display: inline-flex;
-  align-items: center;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--color-primary);
-  background: var(--color-tint-1);
-  padding: 5px 11px;
-  border-radius: 100px;
-  margin-bottom: 16px;
-}
-
-.mat-bottom-sheet-container {
-  border-top-left-radius: var(--mat-bottom-sheet-container-shape, 28px) !important;
-  border-top-right-radius: var(--mat-bottom-sheet-container-shape, 28px) !important;
-  /* Material's default 80vh cap can stop the sheet growing before the keyboard-inset
-     spacer (progress-log-sheet.ts) finishes lifting it clear of the on-screen keyboard. */
-  max-height: 100vh !important;
-  overflow-y: auto !important;
-}
-
-/* Mobile global search (nav-shell.ts): takes over the whole screen, not a centered card -
-   Material's dialog is centered with a max-width by default, neither of which apply here. */
-.search-dialog-fullscreen {
-  max-width: 100vw !important;
-  width: 100vw;
-  height: 100dvh;
-}
-.search-dialog-fullscreen .mat-mdc-dialog-surface {
-  width: 100%;
-  height: 100%;
-  border-radius: 0;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  /* The other half of the rule above: the sans is the document's default, the heading face
+     is every heading's, both by element rather than by remembering a class at each callsite.
+     Sizes stay as utilities -- this sets family only. Note base-ui renders Dialog.Title and
+     friends as h2, so dialog, alert-dialog and sheet titles pick this up too. */
+  :is(h1, h2, h3, h4, h5, h6) {
+    @apply font-heading;
+  }
 }

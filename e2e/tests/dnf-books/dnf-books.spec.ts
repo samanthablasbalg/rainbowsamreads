@@ -17,16 +17,17 @@ test('DNF books support adding a review the same way finished books do', async (
 
   await test.step('Navigate and open the review sheet', async () => {
     await dnfBooks.goto();
-    await dnfBooks.getAddReviewButton('Infinite Jest').click();
+    await dnfBooks.getAddRatingButton('Infinite Jest').click();
   });
 
   await test.step('Enter a rating and save', async () => {
-    await sheet.getWholeSelect('Infinite Jest').selectOption('2');
-    await sheet.getSaveButton('Infinite Jest').click();
+    await sheet.setRating(2);
+    await sheet.save('Infinite Jest');
+    await expect(sheet.sheet).toHaveCount(0);
   });
 
-  await test.step('Verify review summary appears and button changes to Edit review', async () => {
-    await expect(dnfBooks.getReviewSummary('Infinite Jest')).toHaveText('2.00 ★');
-    await expect(dnfBooks.getEditReviewButton('Infinite Jest')).toBeVisible();
+  await test.step('Verify the card shows the rating and the Add rating button is gone', async () => {
+    await expect(dnfBooks.getRating('Infinite Jest')).toHaveAccessibleName('Rated 2 out of 5');
+    await expect(dnfBooks.getAddRatingButton('Infinite Jest')).toHaveCount(0);
   });
 });
