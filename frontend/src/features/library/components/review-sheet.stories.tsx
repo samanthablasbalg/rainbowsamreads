@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState } from 'react';
+import { withPointer } from '@/testing/pointer-decorator';
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
 import {
   DatePrecision,
@@ -40,32 +41,6 @@ const baseEngagement: EngagementRead = {
   created_at: '2025-01-01T00:00:00Z',
   updated_at: '2025-01-01T00:00:00Z',
 };
-
-// Captured at import time so cleanup restores the browser's real implementation.
-const realMatchMedia = window.matchMedia;
-
-// ReviewSheet picks dialog-vs-drawer internally and Storybook runs under whatever pointer
-// the host machine has, so the drawer branch is unreachable without forcing the query.
-// Same shape progress-log-sheet.stories.tsx uses.
-function withPointer(coarse: boolean) {
-  return function PointerDecorator(Story: () => ReactNode) {
-    window.matchMedia = ((query: string) =>
-      ({
-        media: query,
-        matches: coarse,
-        onchange: null,
-        addEventListener: () => {},
-        removeEventListener: () => {},
-        dispatchEvent: () => false,
-        addListener: () => {},
-        removeListener: () => {},
-      }) as MediaQueryList) as typeof window.matchMedia;
-
-    useEffect(() => () => void (window.matchMedia = realMatchMedia), []);
-
-    return <Story />;
-  };
-}
 
 // ReviewSheet is controlled and has no defaultOpen -- the real app only drives it from
 // EngagementRow's own open state -- so each story supplies a trigger and opens it through

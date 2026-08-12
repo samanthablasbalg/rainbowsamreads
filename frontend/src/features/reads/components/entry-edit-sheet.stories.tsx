@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState } from 'react';
+import { withPointer } from '@/testing/pointer-decorator';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { Button } from '@/components/ui/button';
 import type { EntryView } from '../utils/entry-view';
@@ -16,32 +17,6 @@ const newestPageEntry: EntryView = {
   start: 50,
   end: 100,
 };
-
-// Captured at import time so cleanup restores the browser's real implementation.
-const realMatchMedia = window.matchMedia;
-
-// Same shape progress-log-sheet.stories.tsx uses: the sheet picks dialog-vs-drawer off
-// the pointer, and Storybook runs under whatever the host machine has, so the drawer
-// branch is unreachable without forcing the query.
-function withPointer(coarse: boolean) {
-  return function PointerDecorator(Story: () => ReactNode) {
-    window.matchMedia = ((query: string) =>
-      ({
-        media: query,
-        matches: coarse,
-        onchange: null,
-        addEventListener: () => {},
-        removeEventListener: () => {},
-        dispatchEvent: () => false,
-        addListener: () => {},
-        removeListener: () => {},
-      }) as MediaQueryList) as typeof window.matchMedia;
-
-    useEffect(() => () => void (window.matchMedia = realMatchMedia), []);
-
-    return <Story />;
-  };
-}
 
 // Controlled with no defaultOpen, exactly like ProgressLogSheet -- the list owns the open
 // state in the real app -- so each story supplies a trigger and opens it through `play`.

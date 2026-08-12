@@ -1,17 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
-// Lazy initialiser: `window.matchMedia` runs once, on mount, rather than on every
-// render. The effect below is what keeps `matches` current after that -- the OS or
-// the browser window can change which side of the query the device is on at any time.
+// `useSyncExternalStore` is React's hook for reading state that lives outside React --
+// here, the browser's answer to a media query. It re-reads the snapshot on every render
+// and whenever `subscribe` reports a change, so there is no mirrored `useState` to fall
+// out of date when `query` changes.
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+  // Identity matters: React resubscribes whenever this function changes, so it is
+  // memoised on `query` rather than recreated each render.
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      const mediaQueryList = window.matchMedia(query);
+      mediaQueryList.addEventListener('change', onStoreChange);
+      return () => mediaQueryList.removeEventListener('change', onStoreChange);
+    },
+    [query]
+  );
 
-  useEffect(() => {
-    const mediaQueryList = window.matchMedia(query);
-    const onChange = (event: MediaQueryListEvent) => setMatches(event.matches);
-    mediaQueryList.addEventListener('change', onChange);
-    return () => mediaQueryList.removeEventListener('change', onChange);
-  }, [query]);
-
-  return matches;
+  return useSyncExternalStore(subscribe, () => window.matchMedia(query).matches);
 }

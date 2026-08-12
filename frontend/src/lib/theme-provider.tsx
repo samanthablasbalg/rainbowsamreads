@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { ThemeContext, type Theme } from './theme-context';
 
 // Shared with the inline script in index.html, which applies the class before the
@@ -22,16 +23,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Passing the function itself rather than calling it makes this a lazy initialiser --
   // React runs it once on mount instead of on every render.
   const [theme, setThemeState] = useState<Theme>(readStoredTheme);
-  const [systemIsDark, setSystemIsDark] = useState(() => window.matchMedia(DARK_QUERY).matches);
 
-  // Track the OS preference regardless of the current setting, so switching back to
-  // 'system' is instant rather than waiting for the next OS change.
-  useEffect(() => {
-    const query = window.matchMedia(DARK_QUERY);
-    const onChange = (event: MediaQueryListEvent) => setSystemIsDark(event.matches);
-    query.addEventListener('change', onChange);
-    return () => query.removeEventListener('change', onChange);
-  }, []);
+  // Tracked regardless of the current setting, so switching back to 'system' is instant
+  // rather than waiting for the next OS change.
+  const systemIsDark = useMediaQuery(DARK_QUERY);
 
   const resolvedTheme = theme === 'system' ? (systemIsDark ? 'dark' : 'light') : theme;
 

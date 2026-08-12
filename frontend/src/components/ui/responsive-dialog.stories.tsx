@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useEffect, type ReactNode } from 'react';
 import { expect, screen, userEvent, within } from 'storybook/test';
+import { withPointer } from '@/testing/pointer-decorator';
 import { Button } from './button';
 import {
   ResponsiveDialog,
@@ -12,33 +12,6 @@ import {
   ResponsiveDialogTitle,
   ResponsiveDialogTrigger,
 } from './responsive-dialog';
-
-// Captured at import time, before any story has swapped it, so the cleanup below always
-// restores the browser's real implementation rather than another story's stub.
-const realMatchMedia = window.matchMedia;
-
-// Storybook runs under whatever pointer the machine running it has -- in CI and on a
-// laptop, always fine -- so the coarse branch is unreachable without forcing the query.
-// A vitest spec would reach for `vi.stubGlobal`, which browser stories lack.
-function withPointer(coarse: boolean) {
-  return function PointerDecorator(Story: () => ReactNode) {
-    window.matchMedia = ((query: string) =>
-      ({
-        media: query,
-        matches: coarse,
-        onchange: null,
-        addEventListener: () => {},
-        removeEventListener: () => {},
-        dispatchEvent: () => false,
-        addListener: () => {},
-        removeListener: () => {},
-      }) as MediaQueryList) as typeof window.matchMedia;
-
-    useEffect(() => () => void (window.matchMedia = realMatchMedia), []);
-
-    return <Story />;
-  };
-}
 
 const meta = {
   component: ResponsiveDialog,
