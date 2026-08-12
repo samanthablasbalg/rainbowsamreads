@@ -24,7 +24,9 @@ export function MobileNav() {
           className={({ isActive }) =>
             cn(
               'flex flex-1 flex-col items-center gap-0.5 rounded-full px-2 py-2 text-xs transition-colors',
-              isActive ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+              isActive
+                ? 'bg-secondary text-secondary-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
             )
           }
         >
