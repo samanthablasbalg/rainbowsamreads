@@ -15,7 +15,7 @@ import {
 } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { fireEvent, render, screen, waitFor } from '@/test/render';
-import { buildAudioEngagement } from '@/testing/data-generators';
+import { buildAudioEngagement } from '@/test/data-generators';
 import { localIsoDate } from '@/utils/local-date';
 import { ProgressLogSheet } from './progress-log-sheet';
 

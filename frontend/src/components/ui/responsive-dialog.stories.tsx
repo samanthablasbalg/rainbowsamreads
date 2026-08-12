@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, screen, userEvent, within } from 'storybook/test';
-import { withPointer } from '@/testing/pointer-decorator';
+import { withPointer } from '@/test/pointer-decorator';
 import { Button } from './button';
 import {
   ResponsiveDialog,

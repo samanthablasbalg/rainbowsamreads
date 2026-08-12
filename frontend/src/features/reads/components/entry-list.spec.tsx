@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { getEngagementsListProgressLogsMockHandler } from '@/api/generated/engagements/engagements.msw';
 import { server } from '@/test/msw-server';
 import { render, screen, within } from '@/test/render';
-import { buildPageLog } from '@/testing/data-generators';
+import { buildPageLog } from '@/test/data-generators';
 import { EntryList } from './entry-list';
 
 async function openEditorFor(dateLabel: string) {

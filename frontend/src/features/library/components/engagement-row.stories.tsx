@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, within } from 'storybook/test';
 import { Format, ReadingStatus } from '@/api/generated/readingTracker.schemas';
-import { buildEngagement } from '@/testing/data-generators';
+import { buildEngagement } from '@/test/data-generators';
 import { EngagementRow } from './engagement-row';
 
 // The row renders an <li>, so every story supplies the <ul> it belongs in -- a loose

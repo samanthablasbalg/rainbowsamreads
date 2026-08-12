@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { withPointer } from '@/testing/pointer-decorator';
+import { withPointer } from '@/test/pointer-decorator';
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
 import {
   DatePrecision,

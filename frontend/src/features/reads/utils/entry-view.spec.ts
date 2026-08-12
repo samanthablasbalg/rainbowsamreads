@@ -1,4 +1,4 @@
-import { buildMinuteLog, buildPageLog } from '@/testing/data-generators';
+import { buildMinuteLog, buildPageLog } from '@/test/data-generators';
 import { toEntryViews } from './entry-view';
 
 describe('toEntryViews', () => {

@@ -3,7 +3,7 @@ import { getEngagementsDeleteEngagementMockHandler } from '@/api/generated/engag
 import { ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
-import { buildEngagement } from '@/testing/data-generators';
+import { buildEngagement } from '@/test/data-generators';
 import { EngagementRow } from './engagement-row';
 
 function buildDnf(overrides: Partial<EngagementRead> = {}): EngagementRead {

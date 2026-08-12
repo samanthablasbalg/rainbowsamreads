@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { withPointer } from '@/testing/pointer-decorator';
+import { withPointer } from '@/test/pointer-decorator';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { EngagementCreateStatus } from '@/api/generated/readingTracker.schemas';
 import { Button } from '@/components/ui/button';

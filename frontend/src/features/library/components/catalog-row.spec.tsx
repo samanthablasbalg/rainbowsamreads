@@ -4,7 +4,7 @@ import { getBooksDeleteBookMockHandler } from '@/api/generated/books/books.msw';
 import type { BookRead } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
-import { buildBook } from '@/testing/data-generators';
+import { buildBook } from '@/test/data-generators';
 import { CatalogRow } from './catalog-row';
 
 function renderInList(book: BookRead) {

@@ -8,7 +8,7 @@ import {
 import { Format, ReadingStatus } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { render, screen } from '@/test/render';
-import { buildEngagement, buildPageLog } from '@/testing/data-generators';
+import { buildEngagement, buildPageLog } from '@/test/data-generators';
 import { ReadHistory } from './read-history';
 
 describe('ReadHistory', () => {

@@ -3,7 +3,7 @@ import { getEngagementsGetEngagementMockHandler } from '@/api/generated/engageme
 import { destinations } from '@/config/destinations';
 import { server } from '@/test/msw-server';
 import { renderRoute, screen } from '@/test/render';
-import { buildEngagement } from '@/testing/data-generators';
+import { buildEngagement } from '@/test/data-generators';
 
 describe('the route tree', () => {
   it.each(destinations)('$to resolves to its own page, not the catch-all', async ({ to }) => {

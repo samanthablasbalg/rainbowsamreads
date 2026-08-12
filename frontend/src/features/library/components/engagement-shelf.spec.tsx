@@ -3,7 +3,7 @@ import { getEngagementsListEngagementsMockHandler } from '@/api/generated/engage
 import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { render, screen } from '@/test/render';
-import { buildEngagement } from '@/testing/data-generators';
+import { buildEngagement } from '@/test/data-generators';
 import { EngagementShelf } from './engagement-shelf';
 
 function renderShelf(status: ReadingStatus = ReadingStatus.finished) {
