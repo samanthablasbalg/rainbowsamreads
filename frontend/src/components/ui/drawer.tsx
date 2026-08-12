@@ -138,7 +138,11 @@ function DrawerContent({ className, children, ...props }: DrawerPrimitive.Popup.
           <DrawerPrimitive.Content
             data-slot="drawer-content"
             className={cn(
-              'flex min-h-0 flex-1 flex-col overflow-hidden overscroll-contain rounded-[inherit] transition-opacity duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] select-text group-data-nested-drawer-open/drawer-popup:opacity-0 group-data-nested-drawer-swiping/drawer-popup:opacity-100 group-data-swiping/drawer-popup:select-none'
+              // `gap-4 p-4` here rather than on the header and footer, which is how
+              // DialogContent does it (`gap-6 p-6`). Padding the parts left body content
+              // -- anything rendered between a Header and a Footer -- with no horizontal
+              // padding at all, so it ran flush into the popup's rounded edge.
+              'flex min-h-0 flex-1 flex-col gap-4 overflow-hidden overscroll-contain rounded-[inherit] p-4 transition-opacity duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] select-text group-data-nested-drawer-open/drawer-popup:opacity-0 group-data-nested-drawer-swiping/drawer-popup:opacity-100 group-data-swiping/drawer-popup:select-none'
             )}
           >
             {children}
@@ -154,7 +158,10 @@ function DrawerHeader({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="drawer-header"
       className={cn(
-        'flex shrink-0 flex-col gap-0.5 p-4 pb-0 group-data-[swipe-axis=y]/drawer-popup:text-center md:gap-1.5 md:text-left',
+        // No centring below md: shadcn's default centres a bottom drawer's header, which
+        // leaves a title that sits beside a cover image reading as detached from it. Left
+        // throughout, matching DialogHeader, so a sheet reads the same in both hosts.
+        'flex shrink-0 flex-col gap-0.5 md:gap-1.5',
         className
       )}
       {...props}
@@ -166,7 +173,7 @@ function DrawerFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="drawer-footer"
-      className={cn('mt-auto flex shrink-0 flex-col gap-2 p-4 pt-0', className)}
+      className={cn('mt-auto flex shrink-0 flex-col gap-2', className)}
       {...props}
     />
   );

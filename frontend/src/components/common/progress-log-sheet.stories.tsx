@@ -85,7 +85,15 @@ export const Audiobook: Story = {
     <ControlledSheet
       engagement={{
         ...baseEngagement,
-        book: { ...baseEngagement.book, title: 'The House in the Cerulean Sea' },
+        // Length moves with format: the audio branch reads `default_audio_minutes`, so
+        // inheriting the base book's page count would leave this story with no length at
+        // all and no "of" total beside the field.
+        book: {
+          ...baseEngagement.book,
+          title: 'The House in the Cerulean Sea',
+          default_page_count: null,
+          default_audio_minutes: 600,
+        },
         formats: [Format.audio],
         resume_from_minute: 75,
         completion_pct: 30,

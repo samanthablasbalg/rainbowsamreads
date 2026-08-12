@@ -169,6 +169,26 @@ describe('ProgressLogSheet', () => {
     );
   });
 
+  // Opening the editor is enough to move selection, before any day has been chosen:
+  // `date` is still today at that point, so a chip reading its own value stayed lit
+  // alongside the calendar one.
+  it('deselects Today as soon as the date editor is opened', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement());
+
+    await user.click(await screen.findByRole('button', { name: 'Pick a date' }));
+
+    expect(screen.getByRole('button', { name: 'Pick a date' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    expect(screen.getByRole('button', { name: 'Today' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Yesterday' })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
+  });
+
   // The chips key off which control set the date, not off its value -- picking
   // yesterday in the calendar used to light the Yesterday chip and the calendar chip
   // at the same time.

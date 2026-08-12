@@ -1,6 +1,6 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Calendar03Icon, Loading03Icon } from '@hugeicons/core-free-icons';
+import { ArrowRight02Icon, Calendar03Icon, Loading03Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ErrorType } from '@/api/mutator/axios-instance';
 import {
@@ -12,8 +12,10 @@ import {
 } from '@/api/generated/engagements/engagements';
 import { Format, ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { CoverImage } from '@/components/common/cover-image';
+import { FormatIcons } from '@/components/common/format-icons';
 import { HhmmInput } from '@/components/common/hhmm-input';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
@@ -23,6 +25,7 @@ import {
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from '@/components/ui/responsive-dialog';
+import { cn } from '@/lib/utils';
 import { formatMinutesAsHhmm, parseHhmmToMinutes } from '@/utils/format-minutes';
 import { localIsoDate } from '@/utils/local-date';
 
@@ -92,9 +95,11 @@ function ProgressLogForm({
   );
 }
 
-// Cover + title, so the book being logged is unambiguous -- ADR-0019. The title is the
-// overlay's own Title part, so it keeps a real `aria-labelledby` association instead of
-// being a plain heading that happens to sit at the top.
+// Cover, title and format, so the book being logged is unambiguous -- ADR-0019. The
+// title is the overlay's own Title part, so it keeps a real `aria-labelledby`
+// association instead of being a plain heading that happens to sit at the top. The
+// format chip sits on its own line under the title, as it does on ReadingCard: a
+// multi-format read shows two, and as a chip it no longer sits on the title's baseline.
 function ProgressLogIdentity({ engagement }: { engagement: EngagementRead }) {
   return (
     <div className="flex items-center gap-3">
@@ -103,7 +108,12 @@ function ProgressLogIdentity({ engagement }: { engagement: EngagementRead }) {
         title={engagement.book.title}
         className="h-16 w-11"
       />
-      <ResponsiveDialogTitle>{engagement.book.title}</ResponsiveDialogTitle>
+      <div className="flex min-w-0 flex-col items-start gap-1.5">
+        <ResponsiveDialogTitle>{engagement.book.title}</ResponsiveDialogTitle>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <FormatIcons formats={engagement.formats} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -132,6 +142,16 @@ function ButtonLabel({
 
 type ProgressLogForm = ReturnType<typeof useProgressLogForm>;
 
+const POSITION_LABEL_CLASS = 'text-xs font-semibold tracking-wide text-muted-foreground uppercase';
+
+// The position is what the sheet exists to capture, so it is set at display size and
+// stripped back to an underline rather than wearing Input's pill. Everything else the
+// primitive brings -- the focus ring, aria-invalid's destructive border -- still applies:
+// `border-b-2` only replaces the box, and the ring reads as a rectangle here.
+// `md:text-3xl` is not redundant: Input drops to `md:text-sm` above that breakpoint.
+const POSITION_INPUT_CLASS =
+  'h-auto rounded-none border-0 border-b-2 border-primary bg-transparent px-0 py-1 text-3xl leading-none font-bold md:text-3xl';
+
 // Shared between both hosts, per the e2e page object's own comment: the sheet renders
 // identically as a dialog or a bottom sheet, so one set of content drives both.
 function ProgressLogFields({ form }: { form: ProgressLogForm }) {
@@ -140,9 +160,12 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
   // Keyed on which control set the date rather than on the value, so a day chosen in
   // the calendar reads as the calendar's even when it happens to be today or yesterday.
   const fromPicker = form.dateSource === 'picker';
-  const todaySelected = !fromPicker && form.date === today;
-  const yesterdaySelected = !fromPicker && form.date === yesterday;
+  // The picker wins from the moment its editor opens, before a day has been chosen --
+  // `date` is still today at that point, so the chips have to defer to it rather than
+  // read their own value, or Today stays lit alongside it.
   const pickerSelected = form.dateEditorOpen || fromPicker;
+  const todaySelected = !pickerSelected && form.date === today;
+  const yesterdaySelected = !pickerSelected && form.date === yesterday;
   const [year, month, day] = form.date.split('-').map(Number);
   const pickedDateLabel = fromPicker
     ? new Date(year, month - 1, day).toLocaleDateString(undefined, {
@@ -153,39 +176,72 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-end gap-4">
-        <div className="flex flex-col gap-1">
-          <span className="text-sm text-muted-foreground">From</span>
-          <span>{form.fromDisplay}</span>
-        </div>
+      {/* Card is the repo's panel: bg-card, the ring and the radius, its column layout
+          overridden the same way ReadingCard overrides it.
 
-        <Field className="flex-1" data-invalid={!!form.positionError}>
-          <FieldLabel htmlFor="progress-log-position">To · now</FieldLabel>
-          {form.isAudio ? (
-            <HhmmInput
-              id="progress-log-position"
-              value={form.position}
-              onValueChange={form.setPosition}
-              onFocus={() => form.setPositionFocused(true)}
-              onBlur={() => form.setPositionFocused(false)}
-              aria-invalid={!!form.positionError}
-            />
-          ) : (
-            <Input
-              id="progress-log-position"
-              type="text"
-              inputMode="numeric"
-              placeholder="---"
-              value={form.position}
-              onChange={(event) => form.setPosition(event.target.value)}
-              onFocus={() => form.setPositionFocused(true)}
-              onBlur={() => form.setPositionFocused(false)}
-              aria-invalid={!!form.positionError}
-            />
-          )}
-          <FieldError>{form.positionError}</FieldError>
-        </Field>
-      </div>
+          A grid, not a row of stacked columns: the two labels belong on one line and the
+          two values on the next, and flex can only get that by the columns happening to
+          be the same height -- which they are not, since one holds text and the other an
+          input. Every child is placed explicitly so the arrow and the total sit on the
+          value row without a margin pushing them there, and so an error can span beneath
+          the field without disturbing either row. */}
+      <Card
+        size="sm"
+        className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-x-3 gap-y-1 px-(--card-spacing)"
+      >
+        <span className={cn('col-start-1 row-start-1', POSITION_LABEL_CLASS)}>From</span>
+        <FieldLabel
+          htmlFor="progress-log-position"
+          className={cn('col-start-3 row-start-1', POSITION_LABEL_CLASS)}
+        >
+          To · now
+        </FieldLabel>
+
+        {/* Deliberately smaller than the To field: From is where the read already was,
+            To is the thing being entered, and matching their sizes made the panel read as
+            two equal inputs. */}
+        <span className="col-start-1 row-start-2 text-xl leading-none font-bold text-muted-foreground">
+          {form.fromDisplay}
+        </span>
+
+        <HugeiconsIcon
+          icon={ArrowRight02Icon}
+          className="col-start-2 row-start-2 text-muted-foreground"
+        />
+
+        {form.isAudio ? (
+          <HhmmInput
+            id="progress-log-position"
+            className={cn('col-start-3 row-start-2', POSITION_INPUT_CLASS)}
+            value={form.position}
+            onValueChange={form.setPosition}
+            onFocus={() => form.setPositionFocused(true)}
+            onBlur={() => form.setPositionFocused(false)}
+            aria-invalid={!!form.positionError}
+          />
+        ) : (
+          <Input
+            id="progress-log-position"
+            className={cn('col-start-3 row-start-2', POSITION_INPUT_CLASS)}
+            type="text"
+            inputMode="numeric"
+            placeholder="---"
+            value={form.position}
+            onChange={(event) => form.setPosition(event.target.value)}
+            onFocus={() => form.setPositionFocused(true)}
+            onBlur={() => form.setPositionFocused(false)}
+            aria-invalid={!!form.positionError}
+          />
+        )}
+
+        {form.maxDisplay && (
+          <span className="col-start-4 row-start-2 text-sm font-semibold whitespace-nowrap text-muted-foreground">
+            of {form.maxDisplay}
+          </span>
+        )}
+
+        <FieldError className="col-start-3 col-end-5 row-start-3">{form.positionError}</FieldError>
+      </Card>
 
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -315,6 +371,10 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
   const maxPosition = isAudio
     ? engagement.book.default_audio_minutes
     : engagement.book.default_page_count;
+  // Null for a book with no recorded length, which is why the "of N" it feeds renders
+  // conditionally rather than showing "of null".
+  const maxDisplay =
+    maxPosition == null ? null : isAudio ? formatMinutesAsHhmm(maxPosition) : String(maxPosition);
   const canSave =
     parsedPosition !== null &&
     parsedPosition >= fromValue &&
@@ -355,6 +415,7 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
   return {
     isAudio,
     fromDisplay,
+    maxDisplay,
     position,
     setPosition,
     setPositionFocused,
