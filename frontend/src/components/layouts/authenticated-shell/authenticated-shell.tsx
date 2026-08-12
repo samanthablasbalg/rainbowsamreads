@@ -30,7 +30,11 @@ export function AuthenticatedShell({
 }) {
   return (
     <div className="flex min-h-svh bg-background">
-      <div className="hidden lg:flex">
+      {/* sticky + h-svh, not the flex row's default stretch: stretched, the rail is as
+          tall as the document, which puts the streak and account menu at the bottom of
+          the page rather than the bottom of the screen. RailNav's h-full measures
+          against this. */}
+      <div className="sticky top-0 hidden h-svh lg:flex">
         <RailNav streakDays={PLACEHOLDER_STREAK_DAYS} />
       </div>
 
@@ -44,7 +48,10 @@ export function AuthenticatedShell({
         {/* min-h rather than content height: at lg every other child is hidden, so an
             expanded search bar -- which is absolutely positioned -- would leave nothing
             in flow to hold the header open. */}
-        <header className="relative flex min-h-15 items-center justify-between gap-2 border-b border-border px-4 py-3 lg:justify-end lg:px-6">
+        {/* sticky rather than relative: it is the containing block the expanded search
+            bar positions against, and sticky is positioned too, so that still holds.
+            The explicit bg is what stops content showing through as it scrolls under. */}
+        <header className="sticky top-0 z-30 flex min-h-15 items-center justify-between gap-2 border-b border-border bg-background px-4 py-3 lg:justify-end lg:px-6">
           <div className="lg:hidden">
             <Wordmark />
           </div>
@@ -59,13 +66,21 @@ export function AuthenticatedShell({
           </div>
         </header>
 
-        {/* The pill nav is fixed, so it sits over the bottom of the content. The extra
-            padding below md is what keeps the last of the page reachable. */}
-        <main className="flex-1 px-4 pt-4 pb-28 lg:px-6 lg:pb-8">{children}</main>
-      </div>
+        <main className="flex-1 px-4 pt-4 pb-4 lg:px-6 lg:pb-8">{children}</main>
 
-      <div className="lg:hidden">
-        <MobileNav />
+        {/* sticky, not fixed. Fixed would take the bar out of flow, and the last of the
+            page would need a hand-tuned pb on main to stay reachable -- a number that
+            silently goes wrong the moment the bar's height changes. Sticky stays in
+            flow, so it reserves exactly its own height and still pins to the bottom of
+            the viewport while there is page left to scroll.
+
+            It has to be a child of this column rather than a sibling: sticky travels
+            within its containing block, so a wrapper sized to the bar would leave it
+            nowhere to go. The bg is what content scrolls under -- the bar's padding is
+            the pill's inset from the screen edges. */}
+        <div className="sticky bottom-0 z-40 bg-background p-4 lg:hidden">
+          <MobileNav />
+        </div>
       </div>
     </div>
   );
