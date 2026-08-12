@@ -23,7 +23,17 @@ export function CurrentlyReading() {
 
   return (
     <section>
-      <h1 className="mb-4 text-2xl font-semibold">Currently Reading</h1>
+      {/* `items-baseline` so the count sits on the heading's baseline rather than centred
+          against its line box. Only rendered once there are books: at zero the empty state
+          below already says so, and "0 books" beside it would say it twice. */}
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <h1 className="text-2xl font-semibold">Currently Reading</h1>
+        {engagements && engagements.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            {engagements.length} {engagements.length === 1 ? 'book' : 'books'}
+          </p>
+        )}
+      </div>
 
       {isPending && <Pending />}
       {isError && (
