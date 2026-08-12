@@ -40,7 +40,11 @@ export function SearchResultRow({ result, importing, onAdd, onImport }: SearchRe
       <CoverImage src={result.cover_url} title={result.title} className="h-16 w-11" />
 
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate font-medium leading-tight">{result.title}</span>
+        {/* `truncate`, unlike the shelf rows: a wrapping title would make rows change
+            height as you arrow through results. */}
+        <span className="truncate font-heading text-base font-medium leading-tight">
+          {result.title}
+        </span>
         <p className="truncate text-sm text-muted-foreground">{result.authors.join(', ')}</p>
         {badge && <Badge className="mt-0.5">{badge}</Badge>}
         {result.state === 'in_catalog' && (
