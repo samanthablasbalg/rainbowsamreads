@@ -8,7 +8,7 @@ import { ReadingStatus, type EngagementRead } from '@/api/generated/readingTrack
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { CoverImage } from '@/components/common/cover-image';
 import { FormatIcons } from '@/components/common/format-icons';
-import { Card } from '@/components/ui/card';
+import { Card, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -53,16 +53,27 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
 
   return (
     <li aria-label={book.title}>
-      <Card size="sm" className="flex-row items-start gap-3">
-        <CoverImage src={cover_url ?? book.default_cover_url} title={book.title} />
+      {/* Same grid as ReadingCard, four columns rather than five -- the middle slot there
+          is the progress bar, which this row deliberately does not have (see above). One
+          container query decides stacked vs one line. */}
+      <Card
+        size="sm"
+        className="@container grid grid-cols-[auto_1fr_auto] items-center gap-x-4 gap-y-3 px-(--card-spacing) @xl:grid-cols-[auto_1fr_auto_auto]"
+      >
+        {/* Wrapped because Card treats a bare `img` first child as a full-bleed hero and
+            drops its top padding -- and CoverImage renders a bare `img` whenever a cover
+            loads, so without this the row's padding depends on whether the image arrived. */}
+        <div className="row-span-2 @xl:row-span-1">
+          <CoverImage src={cover_url ?? book.default_cover_url} title={book.title} />
+        </div>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-medium leading-tight">{book.title}</span>
-            <FormatIcons formats={formats} />
-          </div>
+        {/* The 1fr track. Format chips moved off the title's line onto their own, matching
+            ReadingCard: as chips they no longer sit on the title's baseline, and a
+            multi-format read shows two. */}
+        <div className="flex min-w-0 flex-col gap-1">
+          <CardTitle className="leading-tight">{book.title}</CardTitle>
 
-          <p className="truncate text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {book.authors.map((author) => author.name).join(', ')}
           </p>
 
@@ -76,63 +87,70 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
             <p className="text-sm text-muted-foreground">Stopped at {completion_pct}%</p>
           )}
 
-          <div className="mt-auto flex items-center gap-2 pt-1">
-            {review?.rating ? (
-              <StarRating rating={review.rating} />
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                aria-label={`Add a rating for ${book.title}`}
-                onClick={() => setReviewOpen(true)}
-              >
-                <HugeiconsIcon icon={StarIcon} />
-                Add rating
-              </Button>
-            )}
-
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="ml-auto"
-                    aria-label={`More actions for ${book.title}`}
-                  >
-                    <HugeiconsIcon icon={MoreVerticalIcon} />
-                  </Button>
-                }
-              />
-              <DropdownMenuContent>
-                <DropdownMenuItem
-                  aria-label={`View history for ${book.title}`}
-                  render={<Link to={`/reads/${engagement.id}`} />}
-                >
-                  <HugeiconsIcon icon={HistoryIcon} />
-                  View history
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  aria-label={`Rate and review ${book.title}`}
-                  onClick={() => setReviewOpen(true)}
-                >
-                  <HugeiconsIcon icon={StarIcon} />
-                  {review?.rating ? 'Edit rating & review' : 'Add rating & review'}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  aria-label={`Delete ${book.title}`}
-                  onClick={() => setConfirmOpen(true)}
-                >
-                  <HugeiconsIcon icon={Delete02Icon} />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+            <FormatIcons formats={formats} />
           </div>
         </div>
+
+        {review?.rating ? (
+          // Wrapped rather than given the span directly: StarRating takes no className,
+          // and stretching it would say nothing -- the stars stay at their own width.
+          <div className="col-span-2 @xl:col-span-1">
+            <StarRating rating={review.rating} />
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="col-span-2 @xl:col-span-1"
+            aria-label={`Add a rating for ${book.title}`}
+            onClick={() => setReviewOpen(true)}
+          >
+            <HugeiconsIcon icon={StarIcon} />
+            Add rating
+          </Button>
+        )}
+
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="col-start-3 row-start-1 self-start @xl:col-start-4 @xl:self-center"
+                aria-label={`More actions for ${book.title}`}
+              >
+                <HugeiconsIcon icon={MoreVerticalIcon} />
+              </Button>
+            }
+          />
+          <DropdownMenuContent>
+            <DropdownMenuItem
+              aria-label={`View history for ${book.title}`}
+              render={<Link to={`/reads/${engagement.id}`} />}
+            >
+              <HugeiconsIcon icon={HistoryIcon} />
+              View history
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              aria-label={`Rate and review ${book.title}`}
+              onClick={() => setReviewOpen(true)}
+            >
+              <HugeiconsIcon icon={StarIcon} />
+              {review?.rating ? 'Edit rating & review' : 'Add rating & review'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              variant="destructive"
+              aria-label={`Delete ${book.title}`}
+              onClick={() => setConfirmOpen(true)}
+            >
+              <HugeiconsIcon icon={Delete02Icon} />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </Card>
 
       <ReviewSheet engagement={engagement} open={reviewOpen} onOpenChange={setReviewOpen} />
