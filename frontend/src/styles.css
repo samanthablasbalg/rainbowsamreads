@@ -27,6 +27,7 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-brand-orange-foreground: var(--brand-orange-foreground);
   --color-brand-orange: var(--brand-orange);
   --color-brand-pink: var(--brand-pink);
   --color-category-8: var(--category-8);
@@ -130,9 +131,12 @@
   --sidebar-border: #cfc5b9; /* neutral-variant 80 */
   --sidebar-ring: #b8006a; /* primary 40 */
 
-  /* Brand — authored, outside the role set. Decorative only: no small text sits on these. */
+  /* Brand — authored, outside the role set. The format chip puts small text on the orange,
+     so that one carries a paired on-colour: #1d1c17 on #ff7a2f is 6.6:1, where white is
+     2.6:1 and fails. The pink has no such pairing because nothing sits on it yet. */
   --brand-pink: #e11584;
   --brand-orange: #ff7a2f;
+  --brand-orange-foreground: #1d1c17; /* neutral 10 */
 
   /* Also authored: the categorical palette (genres, moods, series) and the pastel card
      tints, both from docs/design/design-system.md § 4. Kept clear of shadcn's --chart-*,

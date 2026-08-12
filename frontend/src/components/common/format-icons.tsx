@@ -16,14 +16,19 @@ export function FormatIcons({ formats }: { formats: Format[] }) {
   return (
     <>
       {formats.map((format) => (
-        <HugeiconsIcon
+        <span
           key={format}
-          icon={FORMAT_ICONS[format]}
-          size={14}
-          role="img"
-          aria-label={`Format: ${format}`}
-          className="text-muted-foreground"
-        />
+          className="inline-flex items-center gap-1.5 rounded-full bg-brand-orange px-2 py-0.5 text-xs font-semibold tracking-wide text-brand-orange-foreground uppercase"
+        >
+          <HugeiconsIcon
+            icon={FORMAT_ICONS[format]}
+            size={14}
+            strokeWidth={2}
+            role="img"
+            aria-label={`Format: ${format}`}
+          />
+          {format}
+        </span>
       ))}
     </>
   );
