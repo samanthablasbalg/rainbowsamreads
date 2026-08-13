@@ -1,5 +1,6 @@
 import { HttpResponse, delay, http } from 'msw';
 import { getAuthMeMockHandler } from '@/api/generated/auth/auth.msw';
+import { getEngagementsListEngagementsMockHandler } from '@/api/generated/engagements/engagements.msw';
 import { server } from '@/test/msw-server';
 import { renderRoute, screen } from '@/test/render';
 
@@ -48,7 +49,7 @@ describe('the route guards', () => {
   });
 
   it('sends the landing page to the app when already signed in', async () => {
-    server.use(getAuthMeMockHandler());
+    server.use(getAuthMeMockHandler(), getEngagementsListEngagementsMockHandler());
 
     renderRoute('/');
 

@@ -1,9 +1,6 @@
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Book02Icon } from '@hugeicons/core-free-icons';
-import { useBooksListBooks } from '@/api/generated/books/books';
-import { ErrorState } from '@/components/common/error-state';
-import { Pending } from '@/components/common/pending';
-import { Button } from '@/components/ui/button';
+import { useBooksListBooksSuspense } from '@/api/generated/books/books';
 import {
   Empty,
   EmptyDescription,
@@ -20,29 +17,22 @@ import { CatalogRow } from './catalog-row';
 // `GET /api/books` takes no params and does not paginate, so there is nothing to pass
 // and nothing to sort -- this renders the order the API returns.
 //
+// The suspense hook, so `books` is the list and nothing else: waiting and failing are
+// the content area's, held by SuspendedOutlet and RouteError on the pathless route this
+// renders under. There is no isPending branch, no isError branch and no null to guard --
+// by the time this function runs, the data is there.
+//
 // The heading is sr-only: the shelf nav directly above already names this screen
 // visually and marks it aria-current. What that does not do is put the shelf in the
 // heading outline, which is a separate way to navigate, so the h1 stays in the tree.
 export function Catalog() {
-  const { data: books, isPending, isError, error, refetch } = useBooksListBooks();
+  const { data: books } = useBooksListBooksSuspense();
 
   return (
     <section>
       <h1 className="sr-only">Catalog</h1>
 
-      {isPending && <Pending />}
-      {isError && (
-        <ErrorState
-          error={error}
-          action={
-            <Button variant="outline" onClick={() => refetch()}>
-              Try again
-            </Button>
-          }
-        />
-      )}
-
-      {books && books.length === 0 && (
+      {books.length === 0 ? (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
@@ -54,9 +44,7 @@ export function Catalog() {
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
-      )}
-
-      {books && books.length > 0 && (
+      ) : (
         <ul className="flex flex-col gap-3">
           {books.map((book) => (
             <CatalogRow key={book.id} book={book} />

@@ -177,12 +177,4 @@ describe('ReadHistory', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading');
   });
-
-  it('shows an error state when the read fails to load', async () => {
-    server.use(http.get('*/api/engagements/*', () => new HttpResponse(null, { status: 404 })));
-
-    render(<ReadHistory engagementId="missing" />);
-
-    expect(await screen.findByRole('alert')).toBeVisible();
-  });
 });

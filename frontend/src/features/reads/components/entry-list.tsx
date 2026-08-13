@@ -4,12 +4,10 @@ import { HistoryIcon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useEngagementsDeleteProgressLog,
-  useEngagementsListProgressLogs,
+  useEngagementsListProgressLogsSuspense,
 } from '@/api/generated/engagements/engagements';
 import type { ErrorType } from '@/api/mutator/axios-instance';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
-import { ErrorState } from '@/components/common/error-state';
-import { Pending } from '@/components/common/pending';
 import { Button } from '@/components/ui/button';
 import {
   Empty,
@@ -39,13 +37,7 @@ export function EntryList({
   // with nothing logged showing an empty state and no action.
   onLogProgress?: () => void;
 }) {
-  const {
-    data: logs,
-    isPending,
-    isError,
-    error,
-    refetch,
-  } = useEngagementsListProgressLogs(engagementId);
+  const { data: logs } = useEngagementsListProgressLogsSuspense(engagementId);
   const [editing, setEditing] = useState<EntryView | null>(null);
   const [deleting, setDeleting] = useState<EntryView | null>(null);
 
@@ -70,18 +62,6 @@ export function EntryList({
         History
       </h2>
 
-      {isPending && <Pending />}
-      {isError && (
-        <ErrorState
-          error={error}
-          action={
-            <Button variant="outline" onClick={() => refetch()}>
-              Try again
-            </Button>
-          }
-        />
-      )}
-
       {/* The delete goes through the API rather than the sheet, so its failure has no
           form to land in -- it is rendered here, next to the list it failed to change. */}
       {deleteLog.isError && (
@@ -91,7 +71,7 @@ export function EntryList({
         </p>
       )}
 
-      {logs && logs.length === 0 && (
+      {logs.length === 0 && (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
@@ -108,7 +88,7 @@ export function EntryList({
         </Empty>
       )}
 
-      {logs && logs.length > 0 && (
+      {logs.length > 0 && (
         // labelledby rather than a second aria-label: the heading above already names
         // this list, and repeating the word would announce it twice.
         <ul aria-labelledby="entry-list-heading" className="flex flex-col">

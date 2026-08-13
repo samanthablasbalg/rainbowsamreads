@@ -4,15 +4,13 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  useEngagementsGetEngagement,
+  useEngagementsGetEngagementSuspense,
   useEngagementsUpdateEngagementDates,
 } from '@/api/generated/engagements/engagements';
 import { ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import type { ErrorType } from '@/api/mutator/axios-instance';
 import { CoverImage } from '@/components/common/cover-image';
-import { ErrorState } from '@/components/common/error-state';
 import { FormatIcons } from '@/components/common/format-icons';
-import { Pending } from '@/components/common/pending';
 import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
 import { ReadingProgress } from '@/components/common/reading-progress';
 import { Button } from '@/components/ui/button';
@@ -27,55 +25,33 @@ import { InlineDateEdit } from './inline-date-edit';
 // The id arrives as a prop rather than being read off the URL here, so the book page can
 // mount this without a route of its own being involved.
 export function ReadHistory({ engagementId }: { engagementId: string }) {
-  const {
-    data: engagement,
-    isPending,
-    isError,
-    error,
-    refetch,
-  } = useEngagementsGetEngagement(engagementId);
+  const { data: engagement } = useEngagementsGetEngagementSuspense(engagementId);
   const [logging, setLogging] = useState(false);
 
   // Logging is only an action while the read is in progress. The sheet posts against the
   // read's resume point, which a finished or abandoned read no longer advances.
-  const canLog = engagement?.status === ReadingStatus.reading;
+  const canLog = engagement.status === ReadingStatus.reading;
 
   return (
     <section>
-      {isPending && <Pending />}
-      {isError && (
-        <ErrorState
-          error={error}
-          action={
-            <Button variant="outline" onClick={() => refetch()}>
-              Try again
-            </Button>
-          }
-        />
+      <BackLink status={engagement.status} />
+      <ReadHeader engagement={engagement} />
+
+      {canLog && (
+        <Button className="mb-6 w-full sm:w-auto" onClick={() => setLogging(true)}>
+          Log progress
+        </Button>
       )}
 
-      {engagement && (
-        <>
-          <BackLink status={engagement.status} />
-          <ReadHeader engagement={engagement} />
+      {/* Its own query, and still reached only once the read itself resolved -- this
+          component suspends above it, so a 404 on the id raises one error, not two. */}
+      <EntryList
+        engagementId={engagementId}
+        onLogProgress={canLog ? () => setLogging(true) : undefined}
+      />
 
-          {canLog && (
-            <Button className="mb-6 w-full sm:w-auto" onClick={() => setLogging(true)}>
-              Log progress
-            </Button>
-          )}
-
-          {/* Its own query, mounted only once the read itself resolved -- a 404 on the id
-              would otherwise raise two errors for one cause. */}
-          <EntryList
-            engagementId={engagementId}
-            onLogProgress={canLog ? () => setLogging(true) : undefined}
-          />
-
-          {canLog && (
-            <ProgressLogSheet engagement={engagement} open={logging} onOpenChange={setLogging} />
-          )}
-        </>
+      {canLog && (
+        <ProgressLogSheet engagement={engagement} open={logging} onOpenChange={setLogging} />
       )}
     </section>
   );

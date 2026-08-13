@@ -1,10 +1,7 @@
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Book02Icon } from '@hugeicons/core-free-icons';
-import { useEngagementsListEngagements } from '@/api/generated/engagements/engagements';
+import { useEngagementsListEngagementsSuspense } from '@/api/generated/engagements/engagements';
 import type { ReadingStatus } from '@/api/generated/readingTracker.schemas';
-import { ErrorState } from '@/components/common/error-state';
-import { Pending } from '@/components/common/pending';
-import { Button } from '@/components/ui/button';
 import {
   Empty,
   EmptyDescription,
@@ -32,13 +29,7 @@ export function EngagementShelf({
   emptyTitle: string;
   emptyDescription: string;
 }) {
-  const {
-    data: engagements,
-    isPending,
-    isError,
-    error,
-    refetch,
-  } = useEngagementsListEngagements({ status });
+  const { data: engagements } = useEngagementsListEngagementsSuspense({ status });
 
   return (
     <section>
@@ -46,19 +37,7 @@ export function EngagementShelf({
           but the heading outline is a separate way to navigate. */}
       <h1 className="sr-only">{heading}</h1>
 
-      {isPending && <Pending />}
-      {isError && (
-        <ErrorState
-          error={error}
-          action={
-            <Button variant="outline" onClick={() => refetch()}>
-              Try again
-            </Button>
-          }
-        />
-      )}
-
-      {engagements && engagements.length === 0 && (
+      {engagements.length === 0 ? (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
@@ -68,9 +47,7 @@ export function EngagementShelf({
             <EmptyDescription>{emptyDescription}</EmptyDescription>
           </EmptyHeader>
         </Empty>
-      )}
-
-      {engagements && engagements.length > 0 && (
+      ) : (
         <ul className="flex flex-col gap-3">
           {engagements.map((engagement) => (
             <EngagementRow key={engagement.id} engagement={engagement} />

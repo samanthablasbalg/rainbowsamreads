@@ -153,14 +153,4 @@ describe('EntryList', () => {
       'Only the most recent progress log can be deleted.'
     );
   });
-
-  it('shows an error state when the entries fail to load', async () => {
-    server.use(
-      http.get('*/api/engagements/*/progress-logs', () => new HttpResponse(null, { status: 500 }))
-    );
-
-    render(<EntryList engagementId="engagement-Piranesi" />);
-
-    expect(await screen.findByRole('alert')).toBeVisible();
-  });
 });

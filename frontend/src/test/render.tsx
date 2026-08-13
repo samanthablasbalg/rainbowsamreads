@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from 'react';
+import { Suspense, type ReactElement, type ReactNode } from 'react';
 import {
   render,
   renderHook,
@@ -8,6 +8,7 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router';
 import { routes } from '@/app/router';
+import { Pending } from '@/components/common/pending';
 import { ThemeProvider } from '@/lib/theme-provider';
 
 type ProviderOptions = {
@@ -29,11 +30,19 @@ function createWrapper(initialEntries: string[]) {
     defaultOptions: { queries: { retry: false } },
   });
 
+  // The Suspense boundary stands in for SuspendedOutlet, which a component rendered
+  // directly does not sit under. Same fallback, so a screen on a suspense hook shows
+  // the same pending state here as it does in the app. No error boundary to match
+  // RouteError, deliberately: one here would swallow every unexpected render error in
+  // every test. A screen's failure path is asserted against the real tree instead --
+  // see router.spec.tsx.
   function Wrapper({ children }: { children: ReactNode }) {
     return (
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+          <MemoryRouter initialEntries={initialEntries}>
+            <Suspense fallback={<Pending />}>{children}</Suspense>
+          </MemoryRouter>
         </QueryClientProvider>
       </ThemeProvider>
     );

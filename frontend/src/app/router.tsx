@@ -4,6 +4,7 @@ import { AppRoot } from './routes/app-root';
 import { Landing } from './routes/landing';
 import { Library } from './routes/library';
 import { NotFound } from './routes/not-found';
+import { ContentBoundary } from './routes/content-boundary';
 import { RouteError } from './routes/route-error';
 import { RequireAuth, RequireGuest } from './require-auth';
 
@@ -44,12 +45,17 @@ export const routes = [
         // especially: a chunk that cannot be fetched is exactly when it has to render.
         children: [
           {
-            // Pathless and componentless: it adds no URL segment and renders a bare
-            // <Outlet />, so it exists only to hold a boundary. A boundary replaces
-            // its own route's component and everything nested inside it, so putting
-            // one here -- rather than on AppRoot above -- is what confines a broken
-            // screen to the content area and leaves the shell and its nav standing.
-            ErrorBoundary: RouteError,
+            // Pathless: it adds no URL segment, so it exists only to scope the content
+            // area's boundaries. ContentBoundary carries both -- pending and error --
+            // and holding them here rather than on AppRoot above is what confines a
+            // broken or waiting screen to the content area and leaves the shell and its
+            // nav standing. No ErrorBoundary key: the errors are caught inside the
+            // component now, by one that can be reset without a reload.
+            Component: ContentBoundary,
+            // Required now this route has a Component. Without one, react-router
+            // renders null here during initial hydration -- a blank content area
+            // where the lazy child's own fallback used to show.
+            HydrateFallback: Pending,
             children: [
               {
                 path: '/home',
@@ -75,10 +81,11 @@ export const routes = [
                   { index: true, loader: () => redirect('/library/catalog') },
                   {
                     // The same pathless-boundary trick one level down. Without it the
-                    // boundary above would catch a broken shelf and take `Library` --
-                    // and so the shelf nav -- with it, leaving no way to click over to
-                    // a shelf that still works.
-                    ErrorBoundary: RouteError,
+                    // boundary above would catch a broken or suspended shelf and take
+                    // `Library` -- and so the shelf nav -- with it, leaving no way to
+                    // click over to a shelf that still works.
+                    Component: ContentBoundary,
+                    HydrateFallback: Pending,
                     children: [
                       {
                         path: 'tbr',

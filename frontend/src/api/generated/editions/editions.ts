@@ -4,7 +4,7 @@
  * Reading Tracker
  * OpenAPI spec version: 0.1.0
  */
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -18,6 +18,8 @@ import type {
   UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
+  UseSuspenseQueryOptions,
+  UseSuspenseQueryResult,
 } from '@tanstack/react-query';
 
 import type {
@@ -255,6 +257,103 @@ export function useEditionsGetEdition<
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;
   };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getEditionsGetEditionSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof editionsGetEdition>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  editionId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getEditionsGetEditionQueryKey(editionId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof editionsGetEdition>>> = ({ signal }) =>
+    editionsGetEdition(editionId, requestOptions, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof editionsGetEdition>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type EditionsGetEditionSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof editionsGetEdition>>
+>;
+export type EditionsGetEditionSuspenseQueryError = ErrorType<HTTPValidationError>;
+
+export function useEditionsGetEditionSuspense<
+  TData = Awaited<ReturnType<typeof editionsGetEdition>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  editionId: string,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEditionsGetEditionSuspense<
+  TData = Awaited<ReturnType<typeof editionsGetEdition>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  editionId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEditionsGetEditionSuspense<
+  TData = Awaited<ReturnType<typeof editionsGetEdition>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  editionId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get Edition
+ */
+
+export function useEditionsGetEditionSuspense<
+  TData = Awaited<ReturnType<typeof editionsGetEdition>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  editionId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getEditionsGetEditionSuspenseQueryOptions(editionId, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
