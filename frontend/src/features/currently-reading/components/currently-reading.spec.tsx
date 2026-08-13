@@ -59,7 +59,7 @@ describe('CurrentlyReading', () => {
 
     render(<CurrentlyReading />);
 
-    expect(await screen.findByText('No books in progress')).toBeVisible();
+    expect(await screen.findByText('Nothing in progress')).toBeVisible();
   });
 
   it('shows a pending state while the list loads', () => {

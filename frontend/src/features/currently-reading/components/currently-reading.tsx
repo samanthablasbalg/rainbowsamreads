@@ -1,5 +1,6 @@
 import { useEngagementsListEngagementsSuspense } from '@/api/generated/engagements/engagements';
 import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
+import { EmptyState } from '@/components/common/empty-state';
 import { ReadingCard } from './reading-card';
 
 // The landing screen -- a thin shell around one list today, per ADR-0020, so a richer
@@ -27,7 +28,7 @@ export function CurrentlyReading() {
       </div>
 
       {engagements.length === 0 ? (
-        <p>No books in progress</p>
+        <EmptyState title="Nothing in progress" description="Books you're reading show up here." />
       ) : (
         <ul className="flex flex-col gap-3">
           {engagements.map((engagement) => (
