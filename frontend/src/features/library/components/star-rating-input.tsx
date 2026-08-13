@@ -1,8 +1,6 @@
-import { HugeiconsIcon } from '@hugeicons/react';
-import { StarIcon } from '@hugeicons/core-free-icons';
-
 import { cn } from '@/lib/utils';
-import { STARS, starFillPercent } from '../utils/star-fill';
+import { STARS } from '../utils/star-fill';
+import { StarRows } from './star-rows';
 
 const STAR_SIZE = 32;
 
@@ -49,34 +47,7 @@ export function StarRatingInput({
         className
       )}
     >
-      <span aria-hidden="true" className="flex text-muted-foreground/40">
-        {STARS.map((i) => (
-          <HugeiconsIcon
-            key={i}
-            icon={StarIcon}
-            size={STAR_SIZE}
-            fill="none"
-            className="shrink-0"
-          />
-        ))}
-      </span>
-
-      {/* pointer-events-none so a click passes through to the range beneath it. */}
-      <span
-        aria-hidden="true"
-        style={{ width: `${starFillPercent(value)}%` }}
-        className="pointer-events-none absolute inset-y-0 left-0 flex overflow-hidden text-amber-500"
-      >
-        {STARS.map((i) => (
-          <HugeiconsIcon
-            key={i}
-            icon={StarIcon}
-            size={STAR_SIZE}
-            fill="currentColor"
-            className="shrink-0"
-          />
-        ))}
-      </span>
+      <StarRows value={value} size={STAR_SIZE} />
 
       {/* -inset-y-2 gives a taller touch target than the glyphs without widening the
           track, which has to stay exactly as wide as the five stars. aria-valuetext
