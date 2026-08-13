@@ -208,6 +208,13 @@ services:
     # attach` working until the paths are found again.
     environment:
       PWTEST_SOCKETS_DIR: /tmp/pw-sockets
+      # Chromium takes its UI locale from here, and an unset LANG leaves glibc on
+      # POSIX -- which Chromium reports to the page as `navigator.language ===
+      # "en-US@posix"`. That is not a valid BCP-47 tag, so `new Intl.Locale()`
+      # rejects it, and @tanstack/query-devtools calls exactly that while its
+      # bundle is still evaluating: every page load in a container browser threw
+      # an uncaught RangeError and the devtools never finished mounting.
+      LANG: en_US.UTF-8
     volumes:
       - .:${PWD}
       - e2e_node_modules:${PWD}/e2e/node_modules
