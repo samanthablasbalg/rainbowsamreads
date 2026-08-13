@@ -47,8 +47,8 @@ test('Starting a book as audio shows the audio icon on the Currently Reading row
     await expect(page).toHaveURL('/home');
   });
 
-  await test.step('Verify the audio icon appears on the Currently Reading row', async () => {
-    await expect(currentlyReading.getFormatIcon('Piranesi', 'audio')).toBeVisible();
+  await test.step('Verify the audio chip appears on the Currently Reading row', async () => {
+    await expect(currentlyReading.getFormatChip('Piranesi', 'audio')).toBeVisible();
   });
 });
 

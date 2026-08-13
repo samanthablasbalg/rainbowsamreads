@@ -78,7 +78,11 @@ function ProgressLogForm({
 
       <ProgressLogFields form={form} />
 
-      {form.error && <p role="alert">{form.error}</p>}
+      {form.error && (
+        <p role="alert" className="text-sm text-destructive">
+          {form.error}
+        </p>
+      )}
 
       <ResponsiveDialogFooter>
         <Button variant="outline" disabled={form.savePending} onClick={onDone}>

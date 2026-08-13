@@ -87,18 +87,18 @@ describe('ReadingCard', () => {
     expect(screen.getByRole('listitem')).toHaveTextContent('Terry Pratchett, Neil Gaiman');
   });
 
-  it('renders one format icon per format the read is bound to', () => {
+  it('renders one format chip per format the read is bound to', () => {
     renderInList(buildEngagement({ formats: [Format.print, Format.digital, Format.audio] }));
 
-    expect(screen.getByRole('img', { name: 'Format: print' })).toBeVisible();
-    expect(screen.getByRole('img', { name: 'Format: digital' })).toBeVisible();
-    expect(screen.getByRole('img', { name: 'Format: audio' })).toBeVisible();
+    expect(screen.getByText('Print')).toBeVisible();
+    expect(screen.getByText('Digital')).toBeVisible();
+    expect(screen.getByText('Audio')).toBeVisible();
   });
 
-  it('renders no format icon when the read has no formats', () => {
+  it('renders no format chip when the read has no formats', () => {
     renderInList(buildEngagement({ formats: [] }));
 
-    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(screen.queryByText(/^(Print|Digital|Audio)$/)).not.toBeInTheDocument();
   });
 
   it('renders the log-progress and overflow-menu buttons with book-specific labels', () => {

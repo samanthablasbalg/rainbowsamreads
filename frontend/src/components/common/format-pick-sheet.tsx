@@ -1,12 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react';
-import {
-  ArrowLeft01Icon,
-  BookOpen01Icon,
-  HeadphonesIcon,
-  Tablet01Icon,
-} from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { errorDetail, type DetailError } from '@/api/error-detail';
 import {
@@ -25,14 +20,9 @@ import {
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from '@/components/ui/responsive-dialog';
+import { FORMATS } from '@/utils/format';
 import { parseHhmmToMinutes } from '@/utils/format-minutes';
 import { localIsoDate } from '@/utils/local-date';
-
-const FORMATS: { format: Format; label: string; icon: IconSvgElement }[] = [
-  { format: Format.print, label: 'Print', icon: BookOpen01Icon },
-  { format: Format.digital, label: 'Digital', icon: Tablet01Icon },
-  { format: Format.audio, label: 'Audio', icon: HeadphonesIcon },
-];
 
 const STATUS_LABEL: Record<EngagementCreateStatus, string> = {
   reading: 'Reading',
@@ -133,17 +123,17 @@ function FormatPickForm({ cancelLabel = 'Cancel', onDone, ...props }: FormatPick
 
       {form.step === 'format' && (
         <div className="flex flex-col gap-2">
-          {FORMATS.map(({ format, label, icon }) => (
+          {Object.values(Format).map((format) => (
             <Button
               key={format}
               variant="outline"
               className="justify-start"
               disabled={form.startPending}
-              aria-label={pickLabel(form.status, title, label)}
+              aria-label={pickLabel(form.status, title, FORMATS[format].label)}
               onClick={() => form.pickFormat(format)}
             >
-              <HugeiconsIcon icon={icon} data-icon="inline-start" />
-              {label}
+              <HugeiconsIcon icon={FORMATS[format].icon} data-icon="inline-start" />
+              {FORMATS[format].label}
             </Button>
           ))}
         </div>
@@ -151,7 +141,11 @@ function FormatPickForm({ cancelLabel = 'Cancel', onDone, ...props }: FormatPick
 
       {form.step === 'length' && <AudioLengthField form={form} />}
 
-      {form.error && <p role="alert">{form.error}</p>}
+      {form.error && (
+        <p role="alert" className="text-sm text-destructive">
+          {form.error}
+        </p>
+      )}
 
       {/* Back rather than a third button: it returns to the format list, which is where
           Cancel lives, so the length step never has to carry both. */}

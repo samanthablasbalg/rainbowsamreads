@@ -119,7 +119,11 @@ function EntryEditForm({
         )}
       </div>
 
-      {form.error && <p role="alert">{form.error}</p>}
+      {form.error && (
+        <p role="alert" className="text-sm text-destructive">
+          {form.error}
+        </p>
+      )}
 
       <ResponsiveDialogFooter>
         {entry.isNewest && (

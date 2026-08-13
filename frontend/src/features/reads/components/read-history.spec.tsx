@@ -32,7 +32,7 @@ describe('ReadHistory', () => {
 
     expect(await screen.findByRole('heading', { name: 'Piranesi' })).toBeVisible();
     expect(screen.getByText('Susanna Clarke')).toBeVisible();
-    expect(screen.getByRole('img', { name: 'Format: print' })).toBeVisible();
+    expect(screen.getByText('Print')).toBeVisible();
     expect(screen.getByRole('progressbar')).toHaveAccessibleName('Piranesi progress: 37%');
 
     // Waited for, not queried straight away: the entries are still loading when the
@@ -151,8 +151,8 @@ describe('ReadHistory', () => {
 
     render(<ReadHistory engagementId="engagement-Piranesi" />);
 
-    expect(await screen.findByRole('img', { name: 'Format: print' })).toBeVisible();
-    expect(screen.getByRole('img', { name: 'Format: audio' })).toBeVisible();
+    expect(await screen.findByText('Print')).toBeVisible();
+    expect(screen.getByText('Audio')).toBeVisible();
   });
 
   // The link is a real href rather than a history pop, so it works on a cold load of the

@@ -50,13 +50,16 @@ export class CurrentlyReadingPage {
   }
 
   /**
-   * Locates the format icon on a book's card.
+   * Locates the format chip on a book's card. The chip's text is the format, and the
+   * icon beside it is decorative -- so this matches the label rather than an accessible
+   * name on the glyph. The match is case-insensitive, since the chip is uppercased in
+   * CSS and rendered title-case in the DOM.
    * @param title - The book's title.
    * @param format - The expected format (e.g. 'audio', 'print', 'digital').
-   * @returns The icon locator.
+   * @returns The chip locator.
    */
-  getFormatIcon(title: string, format: string): Locator {
-    return this.getBookCard(title).getByRole('img', { name: `Format: ${format}` });
+  getFormatChip(title: string, format: string): Locator {
+    return this.getBookCard(title).getByText(format);
   }
 
   /**

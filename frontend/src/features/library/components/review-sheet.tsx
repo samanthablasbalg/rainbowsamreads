@@ -132,7 +132,11 @@ function ReviewForm({ engagement, onDone }: { engagement: EngagementRead; onDone
         </FieldGroup>
       </div>
 
-      {form.error && <p role="alert">{form.error}</p>}
+      {form.error && (
+        <p role="alert" className="text-sm text-destructive">
+          {form.error}
+        </p>
+      )}
 
       <ResponsiveDialogFooter>
         <Button variant="outline" disabled={form.savePending} onClick={onDone}>
