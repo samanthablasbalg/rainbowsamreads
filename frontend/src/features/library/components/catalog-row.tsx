@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { BookOpen01Icon, Delete02Icon, MoreVerticalIcon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
-import { useBooksDeleteBook } from '@/api/generated/books/books';
+import { getBooksListBooksQueryKey, useBooksDeleteBook } from '@/api/generated/books/books';
 import type { BookRead } from '@/api/generated/readingTracker.schemas';
 import { errorDetail, type DetailError } from '@/api/error-detail';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
@@ -60,7 +60,7 @@ export function CatalogRow({ book }: { book: BookRead }) {
 
   const deleteBook = useBooksDeleteBook<DetailError>({
     mutation: {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/books'] }),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: getBooksListBooksQueryKey() }),
     },
   });
 

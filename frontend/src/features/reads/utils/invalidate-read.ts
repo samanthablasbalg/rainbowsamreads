@@ -1,6 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import {
   getEngagementsGetEngagementQueryKey,
+  getEngagementsListEngagementsQueryKey,
   getEngagementsListProgressLogsQueryKey,
 } from '@/api/generated/engagements/engagements';
 
@@ -19,6 +20,6 @@ export function invalidateRead(queryClient: QueryClient, engagementId: string) {
       queryKey: getEngagementsListProgressLogsQueryKey(engagementId),
     }),
     queryClient.invalidateQueries({ queryKey: getEngagementsGetEngagementQueryKey(engagementId) }),
-    queryClient.invalidateQueries({ queryKey: ['/api/engagements'] }),
+    queryClient.invalidateQueries({ queryKey: getEngagementsListEngagementsQueryKey() }),
   ]);
 }

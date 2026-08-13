@@ -3,7 +3,10 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { PencilEdit02Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { errorDetail, type DetailError } from '@/api/error-detail';
-import { useEngagementsUpsertReview } from '@/api/generated/engagements/engagements';
+import {
+  getEngagementsListEngagementsQueryKey,
+  useEngagementsUpsertReview,
+} from '@/api/generated/engagements/engagements';
 import type { EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { ButtonLabel } from '@/components/common/button-label';
 import { CoverImage } from '@/components/common/cover-image';
@@ -173,7 +176,7 @@ function useReviewForm(engagement: EngagementRead, onClose: () => void) {
       // so a refetch cannot reshuffle the list under the user the way it would on the
       // reading shelf.
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['/api/engagements'] });
+        queryClient.invalidateQueries({ queryKey: getEngagementsListEngagementsQueryKey() });
         onClose();
       },
       onError: (err) => {

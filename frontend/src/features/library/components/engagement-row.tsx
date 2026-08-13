@@ -3,7 +3,10 @@ import { Link } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Delete02Icon, HistoryIcon, MoreVerticalIcon, StarIcon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEngagementsDeleteEngagement } from '@/api/generated/engagements/engagements';
+import {
+  getEngagementsListEngagementsQueryKey,
+  useEngagementsDeleteEngagement,
+} from '@/api/generated/engagements/engagements';
 import { ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { CoverImage } from '@/components/common/cover-image';
@@ -42,7 +45,8 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
 
   const deleteEngagement = useEngagementsDeleteEngagement({
     mutation: {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/engagements'] }),
+      onSuccess: () =>
+        queryClient.invalidateQueries({ queryKey: getEngagementsListEngagementsQueryKey() }),
     },
   });
 

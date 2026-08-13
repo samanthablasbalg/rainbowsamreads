@@ -10,6 +10,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  getEngagementsListEngagementsQueryKey,
   useEngagementsDeleteEngagement,
   useEngagementsUpdateEngagementStatus,
 } from '@/api/generated/engagements/engagements';
@@ -70,7 +71,7 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
   const [pendingAction, setPendingAction] = useState<ConfirmAction | null>(null);
 
   function invalidateEngagements() {
-    queryClient.invalidateQueries({ queryKey: ['/api/engagements'] });
+    queryClient.invalidateQueries({ queryKey: getEngagementsListEngagementsQueryKey() });
   }
 
   const updateStatus = useEngagementsUpdateEngagementStatus({
