@@ -1,14 +1,6 @@
-import { HugeiconsIcon } from '@hugeicons/react';
-import { Book02Icon } from '@hugeicons/core-free-icons';
 import { useEngagementsListEngagementsSuspense } from '@/api/generated/engagements/engagements';
 import type { ReadingStatus } from '@/api/generated/readingTracker.schemas';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/empty';
+import { EmptyState } from '@/components/common/empty-state';
 import { EngagementRow } from './engagement-row';
 
 // Both engagement shelves, one component. Finished and DNF differ in the status they
@@ -38,15 +30,7 @@ export function EngagementShelf({
       <h1 className="sr-only">{heading}</h1>
 
       {engagements.length === 0 ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <HugeiconsIcon icon={Book02Icon} />
-            </EmptyMedia>
-            <EmptyTitle>{emptyTitle}</EmptyTitle>
-            <EmptyDescription>{emptyDescription}</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <EmptyState title={emptyTitle} description={emptyDescription} />
       ) : (
         <ul className="flex flex-col gap-3">
           {engagements.map((engagement) => (

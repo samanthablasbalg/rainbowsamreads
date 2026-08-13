@@ -1,13 +1,5 @@
-import { HugeiconsIcon } from '@hugeicons/react';
-import { Book02Icon } from '@hugeicons/core-free-icons';
 import { useBooksListBooksSuspense } from '@/api/generated/books/books';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/empty';
+import { EmptyState } from '@/components/common/empty-state';
 import { CatalogRow } from './catalog-row';
 
 // Every book the app knows about, read or not. This is the books table, and it has
@@ -33,17 +25,10 @@ export function Catalog() {
       <h1 className="sr-only">Catalog</h1>
 
       {books.length === 0 ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <HugeiconsIcon icon={Book02Icon} />
-            </EmptyMedia>
-            <EmptyTitle>No books yet</EmptyTitle>
-            <EmptyDescription>
-              Books you add show up here, whether or not you&apos;ve read them.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <EmptyState
+          title="No books yet"
+          description="Books you add show up here, whether or not you've read them."
+        />
       ) : (
         <ul className="flex flex-col gap-3">
           {books.map((book) => (

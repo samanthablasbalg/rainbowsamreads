@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { HugeiconsIcon } from '@hugeicons/react';
 import { HistoryIcon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -8,15 +7,8 @@ import {
 } from '@/api/generated/engagements/engagements';
 import { errorDetail, type DetailError } from '@/api/error-detail';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
+import { EmptyState } from '@/components/common/empty-state';
 import { Button } from '@/components/ui/button';
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/empty';
 import { toEntryViews, type EntryView } from '../utils/entry-view';
 import { invalidateRead } from '../utils/invalidate-read';
 import { EntryEditSheet } from './entry-edit-sheet';
@@ -71,20 +63,12 @@ export function EntryList({
       )}
 
       {logs.length === 0 && (
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <HugeiconsIcon icon={HistoryIcon} />
-            </EmptyMedia>
-            <EmptyTitle>Nothing logged yet</EmptyTitle>
-            <EmptyDescription>Sessions you log against this read show up here.</EmptyDescription>
-          </EmptyHeader>
-          {onLogProgress && (
-            <EmptyContent>
-              <Button onClick={onLogProgress}>Log progress</Button>
-            </EmptyContent>
-          )}
-        </Empty>
+        <EmptyState
+          icon={HistoryIcon}
+          title="Nothing logged yet"
+          description="Sessions you log against this read show up here."
+          action={onLogProgress && <Button onClick={onLogProgress}>Log progress</Button>}
+        />
       )}
 
       {logs.length > 0 && (
