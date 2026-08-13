@@ -23,25 +23,12 @@ import {
 import { FORMATS } from '@/utils/format';
 import { parseHhmmToMinutes } from '@/utils/format-minutes';
 import { localIsoDate } from '@/utils/local-date';
-
-const STATUS_LABEL: Record<EngagementCreateStatus, string> = {
-  reading: 'Reading',
-  finished: 'Finished',
-  dnf: 'DNF',
-};
-
-// Where a finished sheet lands you. The status decides it, so the caller does not pass a
-// destination -- the catalog only ever creates `reading` and so still ends up on /home.
-const DESTINATION: Record<EngagementCreateStatus, string> = {
-  reading: '/home',
-  finished: '/library/finished',
-  dnf: '/library/dnf',
-};
+import { STATUSES } from '@/utils/status';
 
 function pickLabel(status: EngagementCreateStatus, title: string, format: string): string {
   return status === EngagementCreateStatus.reading
     ? `Start reading ${title} as ${format}`
-    : `Add ${title} as ${STATUS_LABEL[status]} in ${format}`;
+    : `Add ${title} as ${STATUSES[status].label} in ${format}`;
 }
 
 export type FormatPickSheetProps = {
@@ -112,10 +99,10 @@ function FormatPickForm({ cancelLabel = 'Cancel', onDone, ...props }: FormatPick
               key={status}
               variant="outline"
               className="justify-start"
-              aria-label={`Add ${title} as ${STATUS_LABEL[status]}`}
+              aria-label={`Add ${title} as ${STATUSES[status].label}`}
               onClick={() => form.pickStatus(status)}
             >
-              {STATUS_LABEL[status]}
+              {STATUSES[status].label}
             </Button>
           ))}
         </div>
@@ -223,7 +210,7 @@ function useFormatPickForm(
           queryKey: getEngagementsListEngagementsQueryKey(),
         });
         onClose();
-        navigate(DESTINATION[status]);
+        navigate(STATUSES[status].to);
       },
       onError: (err) => {
         setError(errorDetail(err, 'Failed to start this read. Please try again.'));

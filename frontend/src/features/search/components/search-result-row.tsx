@@ -3,12 +3,7 @@ import { CoverImage } from '@/components/common/cover-image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ComboboxItem } from '@/components/ui/combobox';
-
-const STATUS_LABEL = {
-  reading: 'Reading',
-  finished: 'Finished',
-  dnf: 'DNF',
-} as const;
+import { STATUSES } from '@/utils/status';
 
 // One row of global search, for a result in any of the three states. The state decides
 // both the badge and the single action, and the three are mutually exclusive:
@@ -33,7 +28,8 @@ type SearchResultRowProps = {
 };
 
 export function SearchResultRow({ result, importing, onAdd, onImport }: SearchResultRowProps) {
-  const badge = result.state === 'in_library' ? result.status && STATUS_LABEL[result.status] : null;
+  const badge =
+    result.state === 'in_library' ? result.status && STATUSES[result.status].label : null;
 
   return (
     <ComboboxItem value={result} className="gap-3 pr-3">

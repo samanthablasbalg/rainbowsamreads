@@ -15,6 +15,7 @@ import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
 import { ReadingProgress } from '@/components/common/reading-progress';
 import { Button } from '@/components/ui/button';
 import { authorNames, coverSrc } from '@/utils/book';
+import { STATUSES } from '@/utils/status';
 import { invalidateRead } from '../utils/invalidate-read';
 import { EntryList } from './entry-list';
 import { InlineDateEdit } from './inline-date-edit';
@@ -58,26 +59,21 @@ export function ReadHistory({ engagementId }: { engagementId: string }) {
   );
 }
 
-// Where a read of this status is listed, which is where you came from. A real link to the
-// hierarchy's parent rather than `navigate(-1)`: this survives a reload and a cold load of
-// the URL, where there is no history entry to go back to. The labels are the shelves' own,
-// from library-nav.
+// A real link to the hierarchy's parent rather than `navigate(-1)`: this survives a reload
+// and a cold load of the URL, where there is no history entry to go back to.
 //
 // When the book page exists it becomes the parent of all three and this collapses.
-const SHELVES = {
-  [ReadingStatus.reading]: { to: '/home', label: 'Currently reading' },
-  [ReadingStatus.finished]: { to: '/library/finished', label: 'Finished' },
-  [ReadingStatus.dnf]: { to: '/library/dnf', label: 'DNF' },
-} as const;
-
 function BackLink({ status }: { status: ReadingStatus }) {
   // A read can also be tbr or interested, neither of which this page is reachable from.
-  const shelf = SHELVES[status as keyof typeof SHELVES] ?? SHELVES[ReadingStatus.reading];
+  const shelf = STATUSES[status as keyof typeof STATUSES] ?? STATUSES[ReadingStatus.reading];
+  // Names the screen you came from, whose heading is Currently Reading -- not the status,
+  // which everywhere else is just "Reading".
+  const label = status === ReadingStatus.reading ? 'Currently reading' : shelf.label;
 
   return (
     <Button variant="ghost" size="sm" className="-ml-3 mb-2" render={<Link to={shelf.to} />}>
       <HugeiconsIcon icon={ArrowLeft01Icon} data-icon="inline-start" />
-      {shelf.label}
+      {label}
     </Button>
   );
 }
