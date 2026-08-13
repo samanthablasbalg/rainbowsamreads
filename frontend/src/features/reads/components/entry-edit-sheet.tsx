@@ -1,10 +1,9 @@
-import { type ReactNode, useState } from 'react';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { Loading03Icon } from '@hugeicons/core-free-icons';
+import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEngagementsUpdateProgressLog } from '@/api/generated/engagements/engagements';
 import type { ProgressLogUpdate } from '@/api/generated/readingTracker.schemas';
 import type { ErrorType } from '@/api/mutator/axios-instance';
+import { ButtonLabel } from '@/components/common/button-label';
 import { HhmmInput } from '@/components/common/hhmm-input';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
@@ -156,26 +155,6 @@ function EntryEditForm({
           </ButtonLabel>
         </Button>
       </ResponsiveDialogFooter>
-    </>
-  );
-}
-
-// Same swap ProgressLogSheet and ReviewSheet use: a disabled button reads as "working"
-// rather than inert while its own mutation is in flight.
-function ButtonLabel({
-  pending,
-  pendingLabel,
-  children,
-}: {
-  pending: boolean;
-  pendingLabel: string;
-  children: ReactNode;
-}) {
-  if (!pending) return <>{children}</>;
-  return (
-    <>
-      <HugeiconsIcon icon={Loading03Icon} className="animate-spin" data-icon="inline-start" />
-      {pendingLabel}
     </>
   );
 }

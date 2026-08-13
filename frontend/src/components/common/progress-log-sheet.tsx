@@ -1,6 +1,6 @@
-import { type ReactNode, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ArrowRight02Icon, Calendar03Icon, Loading03Icon } from '@hugeicons/core-free-icons';
+import { ArrowRight02Icon, Calendar03Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ErrorType } from '@/api/mutator/axios-instance';
 import {
@@ -11,6 +11,7 @@ import {
   useEngagementsLogProgress,
 } from '@/api/generated/engagements/engagements';
 import { Format, ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
+import { ButtonLabel } from '@/components/common/button-label';
 import { CoverImage } from '@/components/common/cover-image';
 import { FormatIcons } from '@/components/common/format-icons';
 import { HhmmInput } from '@/components/common/hhmm-input';
@@ -115,28 +116,6 @@ function ProgressLogIdentity({ engagement }: { engagement: EngagementRead }) {
         </div>
       </div>
     </div>
-  );
-}
-
-// Swaps a button's label for a spinner + verb-ing text while its own mutation is in
-// flight, so a disabled button reads as "working" rather than just inert. `data-icon`
-// is the same slot the Button component's own icon buttons key their padding off of
-// (see streak-indicator.tsx, account-menu.tsx).
-function ButtonLabel({
-  pending,
-  pendingLabel,
-  children,
-}: {
-  pending: boolean;
-  pendingLabel: string;
-  children: ReactNode;
-}) {
-  if (!pending) return <>{children}</>;
-  return (
-    <>
-      <HugeiconsIcon icon={Loading03Icon} className="animate-spin" data-icon="inline-start" />
-      {pendingLabel}
-    </>
   );
 }
 
