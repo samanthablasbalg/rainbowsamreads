@@ -7,6 +7,7 @@ import type { BookRead } from '@/api/generated/readingTracker.schemas';
 import { errorDetail, type DetailError } from '@/api/error-detail';
 import { BookRow } from '@/components/common/book-row';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
+import { ErrorText } from '@/components/common/error-text';
 import { FormatPickSheet } from '@/components/common/format-pick-sheet';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
@@ -75,9 +76,9 @@ export function CatalogRow({ book }: { book: BookRead }) {
           {lengths && <p className="text-sm text-muted-foreground">{lengths}</p>}
 
           {deleteBook.isError && (
-            <p role="alert" className="text-sm text-destructive">
+            <ErrorText>
               {errorDetail(deleteBook.error, "Couldn't delete this book. Please try again.")}
-            </p>
+            </ErrorText>
           )}
         </>
       }

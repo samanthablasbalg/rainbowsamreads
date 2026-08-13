@@ -8,6 +8,7 @@ import {
 import { errorDetail, type DetailError } from '@/api/error-detail';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { EmptyState } from '@/components/common/empty-state';
+import { ErrorText } from '@/components/common/error-text';
 import { Button } from '@/components/ui/button';
 import { toEntryViews, type EntryView } from '../utils/entry-view';
 import { invalidateRead } from '../utils/invalidate-read';
@@ -57,9 +58,9 @@ export function EntryList({
       {/* The delete goes through the API rather than the sheet, so its failure has no
           form to land in -- it is rendered here, next to the list it failed to change. */}
       {deleteLog.isError && (
-        <p role="alert" className="text-sm text-destructive">
+        <ErrorText>
           {errorDetail(deleteLog.error, "Couldn't delete that entry. Please try again.")}
-        </p>
+        </ErrorText>
       )}
 
       {logs.length === 0 && (

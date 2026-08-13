@@ -13,6 +13,7 @@ import {
 import { Format, ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { ButtonLabel } from '@/components/common/button-label';
 import { CoverImage } from '@/components/common/cover-image';
+import { ErrorText } from '@/components/common/error-text';
 import { FormatIcons } from '@/components/common/format-icons';
 import { PositionInput } from '@/components/common/position-input';
 import { Button } from '@/components/ui/button';
@@ -78,11 +79,7 @@ function ProgressLogForm({
 
       <ProgressLogFields form={form} />
 
-      {form.error && (
-        <p role="alert" className="text-sm text-destructive">
-          {form.error}
-        </p>
-      )}
+      {form.error && <ErrorText>{form.error}</ErrorText>}
 
       <ResponsiveDialogFooter>
         <Button variant="outline" disabled={form.savePending} onClick={onDone}>

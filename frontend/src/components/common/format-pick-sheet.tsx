@@ -9,6 +9,7 @@ import {
   useEngagementsCreateEngagement,
 } from '@/api/generated/engagements/engagements';
 import { EngagementCreateStatus, Format } from '@/api/generated/readingTracker.schemas';
+import { ErrorText } from '@/components/common/error-text';
 import { HhmmInput } from '@/components/common/hhmm-input';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
@@ -128,11 +129,7 @@ function FormatPickForm({ cancelLabel = 'Cancel', onDone, ...props }: FormatPick
 
       {form.step === 'length' && <AudioLengthField form={form} />}
 
-      {form.error && (
-        <p role="alert" className="text-sm text-destructive">
-          {form.error}
-        </p>
-      )}
+      {form.error && <ErrorText>{form.error}</ErrorText>}
 
       {/* Back rather than a third button: it returns to the format list, which is where
           Cancel lives, so the length step never has to carry both. */}

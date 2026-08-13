@@ -4,6 +4,7 @@ import { useEngagementsUpdateProgressLog } from '@/api/generated/engagements/eng
 import type { ProgressLogUpdate } from '@/api/generated/readingTracker.schemas';
 import { errorDetail, type DetailError } from '@/api/error-detail';
 import { ButtonLabel } from '@/components/common/button-label';
+import { ErrorText } from '@/components/common/error-text';
 import { PositionInput } from '@/components/common/position-input';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
@@ -119,11 +120,7 @@ function EntryEditForm({
         )}
       </div>
 
-      {form.error && (
-        <p role="alert" className="text-sm text-destructive">
-          {form.error}
-        </p>
-      )}
+      {form.error && <ErrorText>{form.error}</ErrorText>}
 
       <ResponsiveDialogFooter>
         {entry.isNewest && (

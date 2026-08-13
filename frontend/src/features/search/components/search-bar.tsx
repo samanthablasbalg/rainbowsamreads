@@ -12,6 +12,7 @@ import {
   EngagementCreateStatus,
   type BookSearchResult,
 } from '@/api/generated/readingTracker.schemas';
+import { ErrorText } from '@/components/common/error-text';
 import { FormatPickSheet, type FormatPickSheetProps } from '@/components/common/format-pick-sheet';
 import {
   Combobox,
@@ -255,9 +256,7 @@ function SearchPanel({
             {/* Outside ComboboxEmpty, which only renders when the list is empty -- a failed
               import leaves the results it was launched from on screen. */}
             {importFailed && (
-              <p role="alert" className="px-3 py-2 text-sm text-destructive">
-                Import failed — please try again.
-              </p>
+              <ErrorText className="px-3 py-2">Import failed — please try again.</ErrorText>
             )}
 
             <ComboboxEmpty>

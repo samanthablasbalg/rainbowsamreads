@@ -10,6 +10,7 @@ import {
 import type { EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { ButtonLabel } from '@/components/common/button-label';
 import { CoverImage } from '@/components/common/cover-image';
+import { ErrorText } from '@/components/common/error-text';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldTitle } from '@/components/ui/field';
 import { Textarea } from '@/components/ui/textarea';
@@ -132,11 +133,7 @@ function ReviewForm({ engagement, onDone }: { engagement: EngagementRead; onDone
         </FieldGroup>
       </div>
 
-      {form.error && (
-        <p role="alert" className="text-sm text-destructive">
-          {form.error}
-        </p>
-      )}
+      {form.error && <ErrorText>{form.error}</ErrorText>}
 
       <ResponsiveDialogFooter>
         <Button variant="outline" disabled={form.savePending} onClick={onDone}>

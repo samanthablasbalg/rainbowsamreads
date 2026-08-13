@@ -10,6 +10,7 @@ import {
 import { ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { errorDetail, type DetailError } from '@/api/error-detail';
 import { CoverImage } from '@/components/common/cover-image';
+import { ErrorText } from '@/components/common/error-text';
 import { FormatIcons } from '@/components/common/format-icons';
 import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
 import { ReadingProgress } from '@/components/common/reading-progress';
@@ -153,9 +154,9 @@ function ReadHeader({ engagement }: { engagement: EngagementRead }) {
         {/* The editor has already closed by the time a rejection lands, so the message
             goes here rather than inside the control that caused it. */}
         {updateDates.isError && (
-          <p role="alert" className="text-sm text-destructive">
+          <ErrorText>
             {errorDetail(updateDates.error, "Couldn't save that date. Please try again.")}
-          </p>
+          </ErrorText>
         )}
       </div>
     </header>
