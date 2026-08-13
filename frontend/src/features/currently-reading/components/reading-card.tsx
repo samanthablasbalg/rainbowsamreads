@@ -30,6 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { authorNames, coverSrc } from '@/utils/book';
 import { localIsoDate } from '@/utils/local-date';
 import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
 
@@ -63,7 +64,7 @@ type ConfirmAction = keyof typeof CONFIRMATIONS;
 // DNF and delete each confirm first -- [[0031]] -- then PATCH/DELETE and invalidate the
 // engagements list so the card leaves this screen once its status no longer matches.
 export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
-  const { book, formats, cover_url, completion_pct } = engagement;
+  const { book, formats, completion_pct } = engagement;
   const queryClient = useQueryClient();
   const [logOpen, setLogOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<ConfirmAction | null>(null);
@@ -116,7 +117,7 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
             hero and drops the card's top padding. Spans the three stacked rows so the
             title, bar and button all share one left edge beside it. */}
         <div className="row-span-3 @xl:row-span-1">
-          <CoverImage src={cover_url ?? book.default_cover_url} title={book.title} />
+          <CoverImage src={coverSrc(engagement)} title={book.title} />
         </div>
 
         {/* The 1fr track: every bit of the card's slack lands on the title and nothing else
@@ -126,9 +127,7 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
         <div className="flex min-w-0 flex-col gap-1">
           <CardTitle className="leading-tight">{book.title}</CardTitle>
 
-          <p className="text-sm text-muted-foreground">
-            {book.authors.map((author) => author.name).join(', ')}
-          </p>
+          <p className="text-sm text-muted-foreground">{authorNames(book)}</p>
 
           {/* Its own line under the author rather than trailing the title: as a chip it
               no longer sits on the title's baseline, and a multi-format read shows two. */}

@@ -17,6 +17,7 @@ import {
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from '@/components/ui/responsive-dialog';
+import { coverSrc } from '@/utils/book';
 import { StarRatingInput } from './star-rating-input';
 
 type ReviewSheetProps = {
@@ -51,11 +52,7 @@ function ReviewForm({ engagement, onDone }: { engagement: EngagementRead; onDone
     <>
       <ResponsiveDialogHeader>
         <div className="flex items-center gap-3">
-          <CoverImage
-            src={engagement.cover_url ?? engagement.book.default_cover_url}
-            title={title}
-            className="h-16 w-11"
-          />
+          <CoverImage src={coverSrc(engagement)} title={title} className="h-16 w-11" />
           <ResponsiveDialogTitle>{title}</ResponsiveDialogTitle>
         </div>
       </ResponsiveDialogHeader>

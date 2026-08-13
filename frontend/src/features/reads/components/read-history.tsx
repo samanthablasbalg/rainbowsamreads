@@ -14,6 +14,7 @@ import { FormatIcons } from '@/components/common/format-icons';
 import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
 import { ReadingProgress } from '@/components/common/reading-progress';
 import { Button } from '@/components/ui/button';
+import { authorNames, coverSrc } from '@/utils/book';
 import { invalidateRead } from '../utils/invalidate-read';
 import { EntryList } from './entry-list';
 import { InlineDateEdit } from './inline-date-edit';
@@ -113,7 +114,7 @@ function dateFields(engagement: EngagementRead) {
 
 // Identity, progress and the read's dates.
 function ReadHeader({ engagement }: { engagement: EngagementRead }) {
-  const { book, formats, cover_url, completion_pct } = engagement;
+  const { book, formats, completion_pct } = engagement;
 
   const queryClient = useQueryClient();
   const updateDates = useEngagementsUpdateEngagementDates<DetailError>({
@@ -124,7 +125,7 @@ function ReadHeader({ engagement }: { engagement: EngagementRead }) {
 
   return (
     <header className="mb-6 flex items-start gap-4">
-      <CoverImage src={cover_url ?? book.default_cover_url} title={book.title} />
+      <CoverImage src={coverSrc(engagement)} title={book.title} />
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-baseline gap-1.5">
@@ -132,9 +133,7 @@ function ReadHeader({ engagement }: { engagement: EngagementRead }) {
           <FormatIcons formats={formats} />
         </div>
 
-        <p className="truncate text-sm text-muted-foreground">
-          {book.authors.map((author) => author.name).join(', ')}
-        </p>
+        <p className="truncate text-sm text-muted-foreground">{authorNames(book)}</p>
 
         <ReadingProgress title={book.title} pct={completion_pct} />
 

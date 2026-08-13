@@ -17,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { authorNames, coverSrc } from '@/utils/book';
 import { formatIsoDate } from '@/utils/format-date';
 import { ReviewSheet } from './review-sheet';
 import { StarRating } from './star-rating';
@@ -32,8 +33,7 @@ import { StarRating } from './star-rating';
 // belongs to the sheet that wrote it, and a shelf of them would stop being a shelf.
 // Delete removes this read, not the book: the title stays in the catalog afterwards.
 export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
-  const { book, formats, cover_url, status, finished_on, abandoned_on, completion_pct, review } =
-    engagement;
+  const { book, formats, status, finished_on, abandoned_on, completion_pct, review } = engagement;
   const isDnf = status === ReadingStatus.dnf;
   const endedOn = isDnf ? abandoned_on : finished_on;
   const queryClient = useQueryClient();
@@ -64,7 +64,7 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
             drops its top padding -- and CoverImage renders a bare `img` whenever a cover
             loads, so without this the row's padding depends on whether the image arrived. */}
         <div className="row-span-2 @xl:row-span-1">
-          <CoverImage src={cover_url ?? book.default_cover_url} title={book.title} />
+          <CoverImage src={coverSrc(engagement)} title={book.title} />
         </div>
 
         {/* The 1fr track. Format chips moved off the title's line onto their own, matching
@@ -73,9 +73,7 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
         <div className="flex min-w-0 flex-col gap-1">
           <CardTitle className="leading-tight">{book.title}</CardTitle>
 
-          <p className="text-sm text-muted-foreground">
-            {book.authors.map((author) => author.name).join(', ')}
-          </p>
+          <p className="text-sm text-muted-foreground">{authorNames(book)}</p>
 
           {endedOn && (
             <p className="text-sm text-muted-foreground">

@@ -27,6 +27,7 @@ import {
   ResponsiveDialogTitle,
 } from '@/components/ui/responsive-dialog';
 import { cn } from '@/lib/utils';
+import { coverSrc } from '@/utils/book';
 import { formatMinutesAsHhmm, parseHhmmToMinutes } from '@/utils/format-minutes';
 import { localIsoDate } from '@/utils/local-date';
 
@@ -104,11 +105,7 @@ function ProgressLogForm({
 function ProgressLogIdentity({ engagement }: { engagement: EngagementRead }) {
   return (
     <div className="flex items-center gap-3">
-      <CoverImage
-        src={engagement.cover_url ?? engagement.book.default_cover_url}
-        title={engagement.book.title}
-        className="h-16 w-11"
-      />
+      <CoverImage src={coverSrc(engagement)} title={engagement.book.title} className="h-16 w-11" />
       <div className="flex min-w-0 flex-col items-start gap-1.5">
         <ResponsiveDialogTitle>{engagement.book.title}</ResponsiveDialogTitle>
         <div className="flex flex-wrap items-center gap-1.5">

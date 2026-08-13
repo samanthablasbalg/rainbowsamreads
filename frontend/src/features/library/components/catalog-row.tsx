@@ -16,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { authorNames } from '@/utils/book';
 
 // "8h 32m", dropping either half when it is zero -- 90 reads as "1h 30m", 45 as "45m",
 // 120 as "2h". Deliberately not `formatMinutesAsHhmm`, which renders "01:30": that is a
@@ -90,9 +91,7 @@ export function CatalogRow({ book }: { book: BookRead }) {
         <div className="flex min-w-0 flex-col gap-1">
           <CardTitle className="leading-tight">{book.title}</CardTitle>
 
-          <p className="text-sm text-muted-foreground">
-            {book.authors.map((author) => author.name).join(', ')}
-          </p>
+          <p className="text-sm text-muted-foreground">{authorNames(book)}</p>
 
           {lengths && <p className="text-sm text-muted-foreground">{lengths}</p>}
 
