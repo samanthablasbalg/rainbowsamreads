@@ -4,7 +4,7 @@ import { useEngagementsUpdateProgressLog } from '@/api/generated/engagements/eng
 import type { ProgressLogUpdate } from '@/api/generated/readingTracker.schemas';
 import { errorDetail, type DetailError } from '@/api/error-detail';
 import { ButtonLabel } from '@/components/common/button-label';
-import { HhmmInput } from '@/components/common/hhmm-input';
+import { PositionInput } from '@/components/common/position-input';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -15,8 +15,9 @@ import {
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from '@/components/ui/responsive-dialog';
-import { formatMinutesAsHhmm, parseHhmmToMinutes } from '@/utils/format-minutes';
+import { formatMinutesAsHhmm } from '@/utils/format-minutes';
 import { localIsoDate } from '@/utils/local-date';
+import { formatPosition, parsePosition } from '@/utils/position';
 import type { EntryView } from '../utils/entry-view';
 import { invalidateRead } from '../utils/invalidate-read';
 
@@ -99,30 +100,16 @@ function EntryEditForm({
             <FieldLabel htmlFor="entry-position">
               {entry.isAudio ? 'Ended at' : 'Ended at page'}
             </FieldLabel>
-            {entry.isAudio ? (
-              <HhmmInput
-                id="entry-position"
-                value={form.position}
-                disabled={form.savePending}
-                onValueChange={form.setPosition}
-                onFocus={() => form.setPositionFocused(true)}
-                onBlur={() => form.setPositionFocused(false)}
-                aria-invalid={!!form.positionError}
-              />
-            ) : (
-              <Input
-                id="entry-position"
-                type="text"
-                inputMode="numeric"
-                placeholder="---"
-                value={form.position}
-                disabled={form.savePending}
-                onChange={(event) => form.setPosition(event.target.value)}
-                onFocus={() => form.setPositionFocused(true)}
-                onBlur={() => form.setPositionFocused(false)}
-                aria-invalid={!!form.positionError}
-              />
-            )}
+            <PositionInput
+              id="entry-position"
+              isAudio={entry.isAudio}
+              value={form.position}
+              disabled={form.savePending}
+              onValueChange={form.setPosition}
+              onFocus={() => form.setPositionFocused(true)}
+              onBlur={() => form.setPositionFocused(false)}
+              aria-invalid={!!form.positionError}
+            />
             <FieldError>{form.positionError}</FieldError>
           </Field>
         ) : (
@@ -161,9 +148,7 @@ function EntryEditForm({
 
 function useEntryEditForm(engagementId: string, entry: EntryView, onDone: () => void) {
   const [date, setDateRaw] = useState(entry.loggedOn);
-  const [position, setPositionRaw] = useState(() =>
-    entry.isAudio ? formatMinutesAsHhmm(entry.end) : String(entry.end)
-  );
+  const [position, setPositionRaw] = useState(() => formatPosition(entry.end, entry.isAudio));
   const [positionFocused, setPositionFocused] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -191,11 +176,7 @@ function useEntryEditForm(engagementId: string, entry: EntryView, onDone: () => 
     },
   });
 
-  const parsedPosition = entry.isAudio
-    ? parseHhmmToMinutes(position)
-    : position.trim() === '' || Number.isNaN(Number(position))
-      ? null
-      : Number(position);
+  const parsedPosition = parsePosition(position, entry.isAudio);
 
   // No upper bound here: the book's length lives on the engagement, not on the entry, and
   // the backend rejects anything past it with a message this sheet already renders. The

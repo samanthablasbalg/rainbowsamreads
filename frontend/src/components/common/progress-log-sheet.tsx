@@ -14,7 +14,7 @@ import { Format, ReadingStatus, type EngagementRead } from '@/api/generated/read
 import { ButtonLabel } from '@/components/common/button-label';
 import { CoverImage } from '@/components/common/cover-image';
 import { FormatIcons } from '@/components/common/format-icons';
-import { HhmmInput } from '@/components/common/hhmm-input';
+import { PositionInput } from '@/components/common/position-input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
@@ -28,8 +28,9 @@ import {
 } from '@/components/ui/responsive-dialog';
 import { cn } from '@/lib/utils';
 import { coverSrc } from '@/utils/book';
-import { formatMinutesAsHhmm, parseHhmmToMinutes } from '@/utils/format-minutes';
+import { formatMinutesAsHhmm } from '@/utils/format-minutes';
 import { localIsoDate } from '@/utils/local-date';
+import { formatPosition, parsePosition } from '@/utils/position';
 
 type ProgressLogSheetProps = {
   engagement: EngagementRead;
@@ -185,30 +186,16 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
           className="col-start-2 row-start-2 text-muted-foreground"
         />
 
-        {form.isAudio ? (
-          <HhmmInput
-            id="progress-log-position"
-            className={cn('col-start-3 row-start-2', POSITION_INPUT_CLASS)}
-            value={form.position}
-            onValueChange={form.setPosition}
-            onFocus={() => form.setPositionFocused(true)}
-            onBlur={() => form.setPositionFocused(false)}
-            aria-invalid={!!form.positionError}
-          />
-        ) : (
-          <Input
-            id="progress-log-position"
-            className={cn('col-start-3 row-start-2', POSITION_INPUT_CLASS)}
-            type="text"
-            inputMode="numeric"
-            placeholder="---"
-            value={form.position}
-            onChange={(event) => form.setPosition(event.target.value)}
-            onFocus={() => form.setPositionFocused(true)}
-            onBlur={() => form.setPositionFocused(false)}
-            aria-invalid={!!form.positionError}
-          />
-        )}
+        <PositionInput
+          id="progress-log-position"
+          className={cn('col-start-3 row-start-2', POSITION_INPUT_CLASS)}
+          isAudio={form.isAudio}
+          value={form.position}
+          onValueChange={form.setPosition}
+          onFocus={() => form.setPositionFocused(true)}
+          onBlur={() => form.setPositionFocused(false)}
+          aria-invalid={!!form.positionError}
+        />
 
         {form.maxDisplay && (
           <span className="col-start-4 row-start-2 text-sm font-semibold whitespace-nowrap text-muted-foreground">
@@ -273,7 +260,7 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
 function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
   const isAudio = engagement.formats.includes(Format.audio);
   const fromValue = isAudio ? engagement.resume_from_minute : engagement.resume_from_page;
-  const fromDisplay = isAudio ? formatMinutesAsHhmm(fromValue) : String(fromValue);
+  const fromDisplay = formatPosition(fromValue, isAudio);
 
   const [position, setPositionRaw] = useState('');
   const [positionFocused, setPositionFocused] = useState(false);
@@ -338,19 +325,14 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     },
   });
 
-  const parsedPosition = isAudio
-    ? parseHhmmToMinutes(position)
-    : position.trim() === '' || Number.isNaN(Number(position))
-      ? null
-      : Number(position);
+  const parsedPosition = parsePosition(position, isAudio);
 
   const maxPosition = isAudio
     ? engagement.book.default_audio_minutes
     : engagement.book.default_page_count;
   // Null for a book with no recorded length, which is why the "of N" it feeds renders
   // conditionally rather than showing "of null".
-  const maxDisplay =
-    maxPosition == null ? null : isAudio ? formatMinutesAsHhmm(maxPosition) : String(maxPosition);
+  const maxDisplay = maxPosition == null ? null : formatPosition(maxPosition, isAudio);
   const canSave =
     parsedPosition !== null &&
     parsedPosition >= fromValue &&
