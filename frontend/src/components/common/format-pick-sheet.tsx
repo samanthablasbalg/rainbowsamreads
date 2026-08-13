@@ -8,7 +8,7 @@ import {
   Tablet01Icon,
 } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
-import type { ErrorType } from '@/api/mutator/axios-instance';
+import { errorDetail, type DetailError } from '@/api/error-detail';
 import {
   getEngagementsListEngagementsQueryKey,
   useEngagementsCreateEngagement,
@@ -219,7 +219,7 @@ function useFormatPickForm(
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const createEngagement = useEngagementsCreateEngagement<ErrorType<{ detail?: string }>>({
+  const createEngagement = useEngagementsCreateEngagement<DetailError>({
     mutation: {
       // The catalog itself does not change -- a book stays in it once read -- so only
       // the engagement lists are invalidated. No params: that is the prefix of every
@@ -232,7 +232,7 @@ function useFormatPickForm(
         navigate(DESTINATION[status]);
       },
       onError: (err) => {
-        setError(err.response?.data?.detail ?? 'Failed to start this read. Please try again.');
+        setError(errorDetail(err, 'Failed to start this read. Please try again.'));
       },
     },
   });

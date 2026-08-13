@@ -4,7 +4,7 @@ import { BookOpen01Icon, Delete02Icon, MoreVerticalIcon } from '@hugeicons/core-
 import { useQueryClient } from '@tanstack/react-query';
 import { useBooksDeleteBook } from '@/api/generated/books/books';
 import type { BookRead } from '@/api/generated/readingTracker.schemas';
-import type { ErrorType } from '@/api/mutator/axios-instance';
+import { errorDetail, type DetailError } from '@/api/error-detail';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { CoverImage } from '@/components/common/cover-image';
 import { FormatPickSheet } from '@/components/common/format-pick-sheet';
@@ -57,7 +57,7 @@ export function CatalogRow({ book }: { book: BookRead }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pickOpen, setPickOpen] = useState(false);
 
-  const deleteBook = useBooksDeleteBook<ErrorType<{ detail?: string }>>({
+  const deleteBook = useBooksDeleteBook<DetailError>({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/books'] }),
     },
@@ -98,8 +98,7 @@ export function CatalogRow({ book }: { book: BookRead }) {
 
           {deleteBook.isError && (
             <p role="alert" className="text-sm text-destructive">
-              {deleteBook.error.response?.data?.detail ??
-                "Couldn't delete this book. Please try again."}
+              {errorDetail(deleteBook.error, "Couldn't delete this book. Please try again.")}
             </p>
           )}
         </div>

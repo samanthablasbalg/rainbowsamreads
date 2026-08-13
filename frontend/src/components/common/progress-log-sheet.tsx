@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowRight02Icon, Calendar03Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
-import type { ErrorType } from '@/api/mutator/axios-instance';
+import { errorDetail, type DetailError } from '@/api/error-detail';
 import {
   engagementsGetEngagement,
   getEngagementsGetEngagementQueryKey,
@@ -310,7 +310,7 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
 
   const queryClient = useQueryClient();
 
-  const logProgress = useEngagementsLogProgress<ErrorType<{ detail?: string }>>({
+  const logProgress = useEngagementsLogProgress<DetailError>({
     mutation: {
       // Patch just this engagement into the cached reading list instead of invalidating
       // it -- the list is ordered by most-recent activity, so a refetch here would jump
@@ -336,7 +336,7 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
         onClose();
       },
       onError: (err) => {
-        setError(err.response?.data?.detail ?? 'Failed to save. Please try again.');
+        setError(errorDetail(err, 'Failed to save. Please try again.'));
       },
     },
   });

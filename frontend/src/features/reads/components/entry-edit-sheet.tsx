@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEngagementsUpdateProgressLog } from '@/api/generated/engagements/engagements';
 import type { ProgressLogUpdate } from '@/api/generated/readingTracker.schemas';
-import type { ErrorType } from '@/api/mutator/axios-instance';
+import { errorDetail, type DetailError } from '@/api/error-detail';
 import { ButtonLabel } from '@/components/common/button-label';
 import { HhmmInput } from '@/components/common/hhmm-input';
 import { Button } from '@/components/ui/button';
@@ -179,14 +179,14 @@ function useEntryEditForm(engagementId: string, entry: EntryView, onDone: () => 
 
   const queryClient = useQueryClient();
 
-  const updateLog = useEngagementsUpdateProgressLog<ErrorType<{ detail?: string }>>({
+  const updateLog = useEngagementsUpdateProgressLog<DetailError>({
     mutation: {
       onSuccess: async () => {
         await invalidateRead(queryClient, engagementId);
         onDone();
       },
       onError: (err) => {
-        setError(err.response?.data?.detail ?? 'Failed to save. Please try again.');
+        setError(errorDetail(err, 'Failed to save. Please try again.'));
       },
     },
   });

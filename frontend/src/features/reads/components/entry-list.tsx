@@ -6,7 +6,7 @@ import {
   useEngagementsDeleteProgressLog,
   useEngagementsListProgressLogsSuspense,
 } from '@/api/generated/engagements/engagements';
-import type { ErrorType } from '@/api/mutator/axios-instance';
+import { errorDetail, type DetailError } from '@/api/error-detail';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,7 +43,7 @@ export function EntryList({
 
   const queryClient = useQueryClient();
 
-  const deleteLog = useEngagementsDeleteProgressLog<ErrorType<{ detail?: string }>>({
+  const deleteLog = useEngagementsDeleteProgressLog<DetailError>({
     mutation: {
       onSuccess: () => invalidateRead(queryClient, engagementId),
     },
@@ -66,8 +66,7 @@ export function EntryList({
           form to land in -- it is rendered here, next to the list it failed to change. */}
       {deleteLog.isError && (
         <p role="alert" className="text-sm text-destructive">
-          {deleteLog.error.response?.data?.detail ??
-            "Couldn't delete that entry. Please try again."}
+          {errorDetail(deleteLog.error, "Couldn't delete that entry. Please try again.")}
         </p>
       )}
 

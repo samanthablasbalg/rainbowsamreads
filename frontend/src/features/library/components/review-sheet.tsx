@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { PencilEdit02Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
-import type { ErrorType } from '@/api/mutator/axios-instance';
+import { errorDetail, type DetailError } from '@/api/error-detail';
 import { useEngagementsUpsertReview } from '@/api/generated/engagements/engagements';
 import type { EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { ButtonLabel } from '@/components/common/button-label';
@@ -169,7 +169,7 @@ function useReviewForm(engagement: EngagementRead, onClose: () => void) {
 
   const queryClient = useQueryClient();
 
-  const upsertReview = useEngagementsUpsertReview<ErrorType<{ detail?: string }>>({
+  const upsertReview = useEngagementsUpsertReview<DetailError>({
     mutation: {
       // Invalidate rather than patch, matching the delete handler on EngagementRow. These
       // shelves are ordered by finished_on / abandoned_on, which a review does not touch,
@@ -180,7 +180,7 @@ function useReviewForm(engagement: EngagementRead, onClose: () => void) {
         onClose();
       },
       onError: (err) => {
-        setError(err.response?.data?.detail ?? 'Failed to save. Please try again.');
+        setError(errorDetail(err, 'Failed to save. Please try again.'));
       },
     },
   });

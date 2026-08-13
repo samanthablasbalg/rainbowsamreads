@@ -8,7 +8,7 @@ import {
   useEngagementsUpdateEngagementDates,
 } from '@/api/generated/engagements/engagements';
 import { ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
-import type { ErrorType } from '@/api/mutator/axios-instance';
+import { errorDetail, type DetailError } from '@/api/error-detail';
 import { CoverImage } from '@/components/common/cover-image';
 import { FormatIcons } from '@/components/common/format-icons';
 import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
@@ -116,7 +116,7 @@ function ReadHeader({ engagement }: { engagement: EngagementRead }) {
   const { book, formats, cover_url, completion_pct } = engagement;
 
   const queryClient = useQueryClient();
-  const updateDates = useEngagementsUpdateEngagementDates<ErrorType<{ detail?: string }>>({
+  const updateDates = useEngagementsUpdateEngagementDates<DetailError>({
     mutation: {
       onSuccess: () => invalidateRead(queryClient, engagement.id),
     },
@@ -159,8 +159,7 @@ function ReadHeader({ engagement }: { engagement: EngagementRead }) {
             goes here rather than inside the control that caused it. */}
         {updateDates.isError && (
           <p role="alert" className="text-sm text-destructive">
-            {updateDates.error.response?.data?.detail ??
-              "Couldn't save that date. Please try again."}
+            {errorDetail(updateDates.error, "Couldn't save that date. Please try again.")}
           </p>
         )}
       </div>
