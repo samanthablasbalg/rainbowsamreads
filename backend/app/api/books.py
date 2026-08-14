@@ -221,6 +221,12 @@ def list_books(db: Session = Depends(get_db)) -> list[BookRead]:
     return [_to_book_read(book) for book in books]
 
 
+@router.get("/{book_id}", response_model=BookRead)
+def get_book(book_id: uuid.UUID, db: Session = Depends(get_db)) -> BookRead:
+    book = book_crud.get_or_raise(db, book_id, options=_BOOK_READ_OPTIONS)
+    return _to_book_read(book)
+
+
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_book(book_id: uuid.UUID, db: Session = Depends(get_db)) -> None:
     book = book_crud.get_or_raise(db, book_id)

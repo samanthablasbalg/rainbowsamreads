@@ -632,6 +632,219 @@ export const useBooksImportBook = <TError = ErrorType<HTTPValidationError>, TCon
   return useMutation(getBooksImportBookMutationOptions(options), queryClient);
 };
 /**
+ * @summary Get Book
+ */
+export const booksGetBook = (
+  bookId: string,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<BookRead>({ url: `/api/books/${bookId}`, method: 'GET', signal }, options);
+};
+
+export const getBooksGetBookQueryKey = (bookId: string) => {
+  return [`/api/books/${bookId}`] as const;
+};
+
+export const getBooksGetBookQueryOptions = <
+  TData = Awaited<ReturnType<typeof booksGetBook>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof booksGetBook>>, TError, TData>>;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getBooksGetBookQueryKey(bookId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof booksGetBook>>> = ({ signal }) =>
+    booksGetBook(bookId, requestOptions, signal);
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: bookId !== null && bookId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof booksGetBook>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type BooksGetBookQueryResult = NonNullable<Awaited<ReturnType<typeof booksGetBook>>>;
+export type BooksGetBookQueryError = ErrorType<HTTPValidationError>;
+
+export function useBooksGetBook<
+  TData = Awaited<ReturnType<typeof booksGetBook>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof booksGetBook>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof booksGetBook>>,
+          TError,
+          Awaited<ReturnType<typeof booksGetBook>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useBooksGetBook<
+  TData = Awaited<ReturnType<typeof booksGetBook>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof booksGetBook>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof booksGetBook>>,
+          TError,
+          Awaited<ReturnType<typeof booksGetBook>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useBooksGetBook<
+  TData = Awaited<ReturnType<typeof booksGetBook>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof booksGetBook>>, TError, TData>>;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get Book
+ */
+
+export function useBooksGetBook<
+  TData = Awaited<ReturnType<typeof booksGetBook>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof booksGetBook>>, TError, TData>>;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getBooksGetBookQueryOptions(bookId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getBooksGetBookSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof booksGetBook>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof booksGetBook>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getBooksGetBookQueryKey(bookId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof booksGetBook>>> = ({ signal }) =>
+    booksGetBook(bookId, requestOptions, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof booksGetBook>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type BooksGetBookSuspenseQueryResult = NonNullable<Awaited<ReturnType<typeof booksGetBook>>>;
+export type BooksGetBookSuspenseQueryError = ErrorType<HTTPValidationError>;
+
+export function useBooksGetBookSuspense<
+  TData = Awaited<ReturnType<typeof booksGetBook>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof booksGetBook>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useBooksGetBookSuspense<
+  TData = Awaited<ReturnType<typeof booksGetBook>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof booksGetBook>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useBooksGetBookSuspense<
+  TData = Awaited<ReturnType<typeof booksGetBook>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof booksGetBook>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get Book
+ */
+
+export function useBooksGetBookSuspense<
+  TData = Awaited<ReturnType<typeof booksGetBook>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof booksGetBook>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getBooksGetBookSuspenseQueryOptions(bookId, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+/**
  * @summary Delete Book
  */
 export const booksDeleteBook = (

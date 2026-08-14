@@ -588,6 +588,39 @@ def test_list_books_empty(client: TestClient) -> None:
     assert response.json() == []
 
 
+# --- Get book ---
+
+
+def test_get_book_returns_detail(client: TestClient) -> None:
+    book = _create_book(client, title="Piranesi", author="Susanna Clarke")
+
+    response = client.get(f"/api/books/{book['id']}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == book["id"]
+    assert data["title"] == "Piranesi"
+    assert [author["name"] for author in data["authors"]] == ["Susanna Clarke"]
+
+
+def test_get_book_returns_stored_date_precision(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json=_fake_volume(published_date="2020-09"))
+
+    _patch_google(monkeypatch, handler)
+    book = client.post("/api/books/import", json={"google_books_id": "abc123"}).json()
+
+    data = client.get(f"/api/books/{book['id']}").json()
+    assert data["publication_date"] == "2020-09-01"
+    assert data["publication_date_precision"] == "month"
+
+
+def test_get_book_unknown_id_returns_404(client: TestClient) -> None:
+    response = client.get(f"/api/books/{uuid.uuid4()}")
+    assert response.status_code == 404
+
+
 # --- Delete book ---
 
 
