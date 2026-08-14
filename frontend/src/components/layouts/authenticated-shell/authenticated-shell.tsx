@@ -2,11 +2,7 @@ import type * as React from 'react';
 import { MobileNav } from './mobile-nav';
 import { RailNav } from './rail-nav';
 import { Wordmark } from './wordmark';
-import { StreakIndicator } from './streak-indicator';
 import { AccountMenuSheet } from './account-menu';
-
-// Nothing serves a streak yet.
-const PLACEHOLDER_STREAK_DAYS = 7;
 
 export function AuthenticatedShell({
   search,
@@ -18,7 +14,7 @@ export function AuthenticatedShell({
   return (
     <div className="flex min-h-svh bg-background">
       <div className="sticky top-0 hidden h-svh lg:flex">
-        <RailNav streakDays={PLACEHOLDER_STREAK_DAYS} />
+        <RailNav />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -27,9 +23,6 @@ export function AuthenticatedShell({
             <Wordmark />
           </div>
           <div className="flex items-center gap-1">
-            <div className="lg:hidden">
-              <StreakIndicator days={PLACEHOLDER_STREAK_DAYS} />
-            </div>
             {search}
             <div className="lg:hidden">
               <AccountMenuSheet />

@@ -6,9 +6,6 @@ const reader = { id: 'a-user', email: 'reader@example.com', picture: null };
 
 const meta = {
   component: RailNav,
-  args: {
-    streakDays: 7,
-  },
   async beforeEach({ msw }) {
     msw.use(getAuthMeMockHandler(reader));
   },

@@ -7,7 +7,7 @@ describe('RailNav', () => {
   it('renders one link per destination', () => {
     server.use(getAuthMeMockHandler());
 
-    render(<RailNav streakDays={7} />);
+    render(<RailNav />);
 
     const nav = screen.getByRole('navigation', { name: 'Main' });
     expect(within(nav).getAllByRole('link')).toHaveLength(4);
@@ -17,7 +17,7 @@ describe('RailNav', () => {
   it('marks the destination matching the current URL as current', () => {
     server.use(getAuthMeMockHandler());
 
-    render(<RailNav streakDays={7} />, { initialEntries: ['/library'] });
+    render(<RailNav />, { initialEntries: ['/library'] });
 
     expect(screen.getByRole('link', { name: 'Library' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
@@ -26,15 +26,8 @@ describe('RailNav', () => {
   it('shows the signed-in reader once the session request resolves', async () => {
     server.use(getAuthMeMockHandler({ id: 'a-user', email: 'reader@example.com', picture: null }));
 
-    render(<RailNav streakDays={7} />);
+    render(<RailNav />);
 
     expect(await screen.findByRole('button', { name: /reader@example\.com/ })).toBeInTheDocument();
-  });
-
-  it('renders the streak it is given', () => {
-    server.use(getAuthMeMockHandler());
-
-    render(<RailNav streakDays={1} />);
-    expect(screen.getByText('1 day')).toBeInTheDocument();
   });
 });
