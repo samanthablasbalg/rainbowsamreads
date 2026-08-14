@@ -7,21 +7,12 @@ description:
 when_to_use:
   Auto-invoke when the user says "write a Playwright test", "add an e2e test", "create a test for
   <feature>", "test that <behavior>", or points at a issue/plan and asks for an e2e test.
-allowed-tools: Bash(npx playwright test:*), Bash(npx playwright cli:*), Bash(npm test:*)
+allowed-tools:
+  Bash(npx playwright test:*), Bash(npx playwright cli:*), Bash(npm test:*), Bash(python -m
+  scripts.seed_dev)
 ---
 
 # Author a new Playwright e2e test
-
-> **⚠️ This skill has one step that cannot be run. Read this before starting.**
->
-> Step 3 drives the live app through a seed spec paused under `--debug=cli`. That spec was deleted
-> and has not been rebuilt, and there is no `seed` project in `playwright.config.ts` to run it —
-> **#190**. Without it there is nothing to attach to, and locators cannot be confirmed against a
-> live snapshot, which every later step depends on.
->
-> **Say so and stop.** Do not substitute `npx playwright cli open` (there are no browsers in this
-> container), do not write the spec from source locators, and do not invent a seed spec — what it
-> should do is the open question on #190. Every other step is current and correct for when it lands.
 
 Turn a GitHub issue, a markdown test plan, or a plain-English description into one working, verified
 Playwright test for the reading tracker app.
@@ -31,9 +22,11 @@ Playwright test for the reading tracker app.
 - **NEVER touch the backend with raw HTTP. No `curl`, `wget`, `fetch`, `httpie`, or any hand-rolled
   request — in ANY step, for ANY reason.** Spec data setup goes through `ApiClient` only (Step 5),
   and `ApiClient` exists _only_ inside a test's fixture context — it is NOT available while driving.
-  You almost never need to create anything; if you think you do, you're wrong — `snapshot` and look
-  at what's there. If something is genuinely missing, STOP and ask the user. Reaching around the
-  harness with `curl` is the single most forbidden move in this skill.
+  While driving, the data you get is what the run skill's Setup step seeded and nothing else —
+  `snapshot` and look at what's there. Do not add data through the app's own UI either: adding a
+  book calls the live Google Books API. If the scenario genuinely needs something the seed doesn't
+  have, STOP and ask the user. Reaching around the harness with `curl` is the single most forbidden
+  move in this skill.
 - **NEVER manipulate a database out-of-band.** No `alembic stamp` / `alembic downgrade`, no raw
   `psql`/SQL DDL (`ALTER` / `DROP` / `CREATE` / `ADD COLUMN`), no hand-editing of `alembic_version`
   or the schema — against ANY database. The schema is owned entirely by the `api` service, which
@@ -49,16 +42,20 @@ Playwright test for the reading tracker app.
   command. When in doubt, you have already taken too many actions — stop and read.
 - **You run in the main conversation loop.** Do NOT spawn sub-agents — the user needs to see
   progress and step in. Work the steps yourself, in order.
-- **CLI-first.** Drive the browser with `npx playwright cli` through the seed test; it **prints the
-  Playwright TypeScript for every action** — that emitted code is what goes into the Page Object /
-  spec.
-- **The live snapshot is the source of truth for locators.** Angular source is a _hint_.
+- **The browser harness is the `run-reading-tracker` skill — load it, don't reconstruct it.**
+  `.claude/skills/run-reading-tracker/` owns every browser command used here: seeding, attaching,
+  logging in, driving, tearing down. It is the only sanctioned way to reach the app, and its gotchas
+  (the mandatory `?browser=chromium`, service names not `localhost`, the first `find` after a `goto`
+  lying) are the failures you will otherwise hit and misdiagnose. Do not improvise a
+  `playwright cli` invocation from memory or from this file — a command with no attached session
+  fails in a way that reads as a broken endpoint, and the recovery attempts from there (installing
+  browsers, `curl`, driving scripts) are all forbidden.
+- **The live snapshot is the source of truth for locators.** React source is a _hint_.
 - **Conventions are auto-loaded** from `.claude/rules/playwright-e2e.md` (it loads whenever you
   touch `e2e/**`). This file is the _procedure_; that rule is the _standards_ — follow both, and
   don't restate the rule's contents here.
-- **Always tear down by calling `npx playwright cli --s=<session> resume` when you are done
-  driving.** This unblocks `page.pause()`, the test completes, the browser closes, and the process
-  exits — all automatically. Never use `close`, `kill`, `pkill`, or `TaskStop`.
+- **Always tear down when you are done driving** — the run skill's Tear down step, and confirm it
+  reports `(no browsers)`. Skipping it leaves a browser running in another container.
 - **Stop and ask — don't spin.** If the _environment_ is broken — the app is a blank screen or won't
   boot — STOP immediately and tell the user exactly what you saw. Do NOT re-attach, re-snapshot,
   retry, or keep driving. A broken app is the user's to fix, not yours to work around; spinning on
@@ -70,8 +67,8 @@ Decide whether this is actually a Playwright e2e concern before writing anything
 
 - **Playwright (this skill):** real-browser user journeys, navigation, auth-gated flows,
   cross-component behavior, anything needing a rendered DOM + backend.
-- **Vitest** (`@testing-library/angular` + `vitest`): pure logic, services, pipes, a single
-  component's behavior in isolation. Faster and closer to the code.
+- **Vitest** (`@testing-library/react` + `vitest`): pure logic, hooks, utils, a single component's
+  behavior in isolation. Faster and closer to the code.
 
 If the request is better served by Vitest, **say so and recommend that instead** — proceed as e2e
 only once the user confirms, or when it's clearly a browser-level journey.
@@ -94,27 +91,30 @@ is too vague to build a scenario, clarify inline.
 ## Step 2 — Orient (do NOT scan the whole suite)
 
 - The conventions rule auto-loads when you read `e2e/` files; follow it.
-- Read the relevant Angular component template(s) under `src/app/` to understand the feature and
-  draft **candidate** locators. Flag dynamic / PrimeNG / icon-only elements — those need live
-  confirmation. If a flagged element clearly has **no usable hook** in source (icon-only button with
-  no `aria-label`, a detached `<label>`), do the Step 4 a11y fix **now, before driving** — so the
-  snapshot already carries the hook and you derive the real locator in one pass instead of snapshot
-  → find nothing → fix → re-snapshot.
+- Read the relevant React component(s) — feature code lives at
+  `frontend/src/features/<feature>/components/`, shared pieces at `frontend/src/components/common/`
+  and the primitives at `frontend/src/components/ui/` — to understand the feature and draft
+  **candidate** locators. Flag dynamic / Base UI (dialog, drawer, dropdown-menu) / icon-only
+  elements — those need live confirmation. If a flagged element clearly has **no usable hook** in
+  source (icon-only button with no `aria-label`, a detached `<label>`), do the Step 4 a11y fix
+  **now, before driving** — so the snapshot already carries the hook and you derive the real locator
+  in one pass instead of snapshot → find nothing → fix → re-snapshot.
 - Open an existing Page Object **only if one already exists for this feature** (to extend it). Don't
   read unrelated tests/POMs.
 
 ### Vitest triage — mandatory before driving
 
-**Read the Vitest spec for the feature** (`frontend/src/app/<feature>/<feature>.spec.ts`) if it
-exists. Then produce a written triage — do not skip this, do not abbreviate it:
+**Read the Vitest spec for the feature** if it exists — they are colocated with the component
+(`frontend/src/features/<feature>/components/<name>.spec.tsx`). Then produce a written triage — do
+not skip this, do not abbreviate it:
 
 1. List every scenario the Vitest spec already covers (one line each).
 2. For each scenario you are considering as an e2e test, answer: **"What does this test that Vitest
    cannot?"** Valid answers are narrow:
    - Real cross-component navigation (a router transition that spans two mounted components)
    - Real backend contract (the frontend's request shape actually reaches and is accepted by the
-     live backend, and the response is correctly rendered — not just that Angular called
-     `http.patch()`)
+     live backend, and the response is correctly rendered — not just that a mutation hook fired
+     against an MSW handler)
    - Real browser behaviour JSDOM cannot replicate (file choosers, clipboard, resize observers,
      etc.)
 3. **Always keep one happy-path round-trip per major user action,** even when Vitest covers the same
@@ -133,68 +133,40 @@ data are the target. Duplicate error-display tests, input-validation tests, and 
 tests almost never meet the bar when a Vitest spec already exists.
 
 > **HARD GATE — no code, no plan, no confirmation request.** After Step 2 (including the Vitest
-> triage) your next action is launching the seed (Step 3). Do not write POM or spec code. Do not
+> triage) your next action is driving the live app (Step 3). Do not write POM or spec code. Do not
 > present a plan and ask the user to confirm it. The user invoking this skill is already the
 > confirmation. Candidate locators from source are unconfirmed until a live
 > `playwright cli snapshot` validates them — writing tests from source locators is the mistake this
 > gate exists to prevent. The Vitest triage is the other mistake this gate exists to prevent.
 
-## Step 3 — Drive the live app (CLI-first)
+## Step 3 — Drive the live app
 
-> **Blocked on #190 — the seed spec and its `seed` project do not exist.** Stop here, tell the user
-> the loop is broken and point at the issue. The rest of this step is what it looks like once the
-> seed is back.
+**Load `.claude/skills/run-reading-tracker/` and follow it.** It is the harness — Setup (seed), Run
+(attach, log in, `goto` a real route), the driving commands, Gotchas, and Tear down. Do not
+reconstruct any of it from memory, and do not use a command this file quotes without the run skill's
+surrounding steps.
 
-The app is already up: `docker compose up` runs it, and the test process reaches the proxy and the
-`browsers` service by name. Run these from `e2e/`.
+Two things that skill leaves to the caller, because they are this skill's job:
 
-Drive through the seed so one command gives a single paused session.
+- **Seed before you attach, and drive as the `dev` persona.** `python -m scripts.seed_dev` from
+  `backend/` gives you 8 books to work against; it truncates and recreates the user with a new id,
+  so it must run _before_ the login call. An unseeded app is an empty app and you will derive
+  locators for a page that never renders.
+- **Capture locators as you go.** Every action the CLI performs echoes Playwright TypeScript — that
+  emitted code is what goes into the Page Object. `--raw generate-locator <ref>` gives the robust
+  form for a single element. Confirm **every** candidate locator from Step 2 against a live
+  `snapshot` before it goes anywhere near a file.
 
-**Launch it with the Bash tool's background mode — a PLAIN command, NEVER a shell `&`:**
-
-- ✅ Bash tool, `run_in_background: true`, command exactly:
-  `npx playwright test --project=seed --debug=cli`
-- ❌ `... --debug=cli &` (or `2>&1 &`, `$!`, env prefixes). The `&` **orphans the process**: the
-  shell returns exit 0 immediately (looks "completed" but the test is still running, detached), the
-  harness can't track it, and **teardown can't stop it**. This is the #1 way this skill breaks.
-  Plain command + `run_in_background` only — nothing appended.
-
-```bash
-# 1. Background; wait for "Debugging Instructions" + a session id like tw-abcdef.
-npx playwright test --project=seed --debug=cli
-
-# 2. Attach (give the WebSocket ~3s; retry once if the first command errors), then resume —
-#    that runs the seed (navigate to /) and stops at page.pause(), leaving the app open to drive.
-npx playwright cli attach tw-abcdef
-npx playwright cli resume
-
-# 3. Rehearse the scenario; each action echoes the Playwright TS to reuse.
-npx playwright cli snapshot                     # refs = source of truth
-npx playwright cli click e15
-npx playwright cli fill e3 "hello"
-npx playwright cli --raw generate-locator e15   # robust locator for the POM
-```
-
-Confirm every candidate locator against the snapshot. The seed ends in `page.pause()` so the page
-stays open after the first `resume` — without it the test would finish and close the session before
-you can drive it (don't remove it). It runs on plain `@playwright/test` and doesn't truncate, so
-whatever the seed established is still there when you attach. Drive against it: `snapshot` first to
-see what's there. Do NOT create or seed data during driving by any means — not `curl`/HTTP, and not
-through the app UI either (adding a book hits the live Google Books API). If the scenario needs
-something that isn't already there, **STOP and ask the user.** Full stop — never conjure the data
-yourself.
-
-**When done driving, call `npx playwright cli --s=<session> resume` one more time.** This unblocks
-`page.pause()`, the test completes naturally, the browser closes, and the background process exits
-on its own (exit code 0). No `close`, no `kill`, no `TaskStop` needed.
+Then tear down. Leaving a browser attached is a mess in another container, and the run skill's final
+`list` is how you know you actually did it.
 
 ## Step 4 — Improve a11y when a locator is weak
 
 Timing: **fix first when the gap is already visible from source (before Step 3)** — see Step 2 — so
 the snapshot has the hook; fix **reactively** if you only discover the gap while driving. Either
-way: if an element can't be located robustly, **fix the Angular source semantically** (proper
-`role`, `<label for>`, or `aria-label`) rather than shipping a brittle locator. Keep edits minimal
-and matching the component's style. (The rule covers what's allowed; e.g. no `data-testid`.)
+way: if an element can't be located robustly, **fix the React source semantically** (proper `role`,
+`<label for>`, or `aria-label`) rather than shipping a brittle locator. Keep edits minimal and
+matching the component's style. (The rule covers what's allowed; e.g. no `data-testid`.)
 
 ## Step 5 — Build / extend the Page Object, then write the spec
 
@@ -217,7 +189,10 @@ npm test -- tests/<feature>/<name>.spec.ts --reporter=dot
 
 Up to **3 fix-and-rerun cycles**. **Timeouts are almost never the real problem** — if it times out,
 the element probably isn't appearing at all; fix the **locator in the POM** (re-derive from a fresh
-`playwright cli snapshot`) or improve source a11y (Step 4) rather than extending timeouts.
+snapshot, going back through Step 3) or improve source a11y (Step 4) rather than extending timeouts.
+
+**Going back to Step 3 after a test run means seeding again.** The suite truncates the database
+before every test, so the `dev` data you drove against in Step 3 is gone once you have run a spec.
 
 **Stop and ask the user** if: the 3 cycles are exhausted; you can't find a working locator; you're
 unsure whether the behavior is a bug; or you're guessing rather than working from
@@ -231,5 +206,5 @@ snapshot/console/network evidence. State what you tried, what failed, what would
    `.claude/rules/playwright-e2e.md`. Check it against that list (don't rely on memory).
 4. Format: `npm run format` (also enforced on commit via husky/lint-staged).
 
-Confirm no background `playwright` / `playwright cli` process is still running, then summarize what
-you created (POM + spec) and the validation results.
+Confirm the browser is torn down — `npx playwright cli list` reports `(no browsers)` — then
+summarize what you created (POM + spec) and the validation results.
