@@ -41,6 +41,7 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
   return (
     <BookRow
       title={book.title}
+      to={`/books/${book.id}`}
       author={authorNames(book)}
       cover={coverSrc(engagement)}
       details={

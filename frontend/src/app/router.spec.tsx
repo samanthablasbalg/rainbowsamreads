@@ -1,7 +1,10 @@
 import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { getAuthMeMockHandler } from '@/api/generated/auth/auth.msw';
-import { getBooksListBooksMockHandler } from '@/api/generated/books/books.msw';
+import {
+  getBooksGetBookMockHandler,
+  getBooksListBooksMockHandler,
+} from '@/api/generated/books/books.msw';
 import {
   getEngagementsGetEngagementMockHandler,
   getEngagementsListEngagementsMockHandler,
@@ -10,7 +13,7 @@ import {
 import { destinations } from '@/config/destinations';
 import { server } from '@/test/msw-server';
 import { renderRoute, screen } from '@/test/render';
-import { buildEngagement } from '@/test/data-generators';
+import { buildBook, buildEngagement } from '@/test/data-generators';
 
 describe('the route tree', () => {
   it.each(destinations)('$to resolves to its own page, not the catch-all', async ({ to }) => {
@@ -54,6 +57,25 @@ describe('the route tree', () => {
     renderRoute('/reads/engagement-Piranesi');
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Piranesi' })).toBeVisible();
+  });
+
+  it('/books/:bookId renders the book named by the URL', async () => {
+    server.use(getAuthMeMockHandler(), getBooksGetBookMockHandler(buildBook()));
+
+    renderRoute('/books/book-Piranesi');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Piranesi' })).toBeVisible();
+  });
+
+  it('replaces an unknown book with the error boundary rather than a broken page', async () => {
+    server.use(
+      getAuthMeMockHandler(),
+      http.get('*/api/books/:bookId', () => new HttpResponse(null, { status: 404 }))
+    );
+
+    renderRoute('/books/missing');
+
+    expect(await screen.findByRole('alert')).toBeVisible();
   });
 
   it('replaces a failed shelf with the error boundary and keeps the library nav', async () => {
