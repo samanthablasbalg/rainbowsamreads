@@ -27,33 +27,24 @@ export function toEntryViews(logs: ProgressLog[]): EntryView[] {
 }
 
 function toEntryView(log: ProgressLog, isNewest: boolean): EntryView {
-  const dateLabel = formatIsoDate(log.logged_on, { weekday: 'short' });
-
   // `in` rather than the `type` discriminant: the generated union types it as optional,
   // so narrowing on the columns that actually differ cannot disagree with the payload.
-  if ('minute_end' in log) {
-    return {
-      id: log.id,
-      dateLabel,
-      rangeLabel: `${formatMinutesAsHhmm(log.minute_start)}–${formatMinutesAsHhmm(log.minute_end)}`,
-      amountLabel: `+${log.minute_end - log.minute_start} min`,
-      isNewest,
-      loggedOn: log.logged_on,
-      isAudio: true,
-      start: log.minute_start,
-      end: log.minute_end,
-    };
-  }
+  const isAudio = 'minute_end' in log;
+  const [start, end] = isAudio
+    ? [log.minute_start, log.minute_end]
+    : [log.page_start, log.page_end];
 
   return {
     id: log.id,
-    dateLabel,
-    rangeLabel: `pp. ${log.page_start}–${log.page_end}`,
-    amountLabel: `+${log.page_end - log.page_start} pp`,
+    dateLabel: formatIsoDate(log.logged_on, { weekday: 'short' }),
+    rangeLabel: isAudio
+      ? `${formatMinutesAsHhmm(start)}–${formatMinutesAsHhmm(end)}`
+      : `pp. ${start}–${end}`,
+    amountLabel: `+${end - start} ${isAudio ? 'min' : 'pp'}`,
     isNewest,
     loggedOn: log.logged_on,
-    isAudio: false,
-    start: log.page_start,
-    end: log.page_end,
+    isAudio,
+    start,
+    end,
   };
 }
