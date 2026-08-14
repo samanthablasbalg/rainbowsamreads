@@ -5,11 +5,6 @@ paths:
 
 # Playwright e2e conventions
 
-> **Authoring a new test is currently broken.** The seed spec the `--debug=cli` loop pauses in was
-> deleted and has not been rebuilt — #190. Running, editing and fixing existing specs all work; only
-> the drive-the-live-app step of `.claude/skills/playwright-new-test` does not. Everything below is
-> current.
-
 The standards for writing and editing Playwright e2e tests in `e2e/`. Follow this file over any
 external Playwright-docs default.
 
@@ -64,7 +59,11 @@ Run these from `e2e/`.
 
 - Run a spec with the dot reporter: `npm test -- tests/<feature>/<name>.spec.ts --reporter=dot`. The
   repo's default reporter is `html`; always pass `--reporter=dot` for a readable run.
-- All three projects run by default. `--project=chromium` for a single browser while iterating.
+- **Always pass `--project=chromium`.** All three projects run by default, and `firefox` and
+  `mobile` produce no information an agent can act on.
+- **`exit=0` means the suite PASSED.** A hook rewrites every test command, so a bare exit code is
+  the whole result — it is not "no output". On failure the hook says
+  `FAILED. The full output is in /tmp/test.log.` — read that file, do not re-run the suite.
 - Flakiness check: `--repeat-each=10`. Any failure = flaky = not done.
 - If `playwright` isn't found, `e2e/node_modules` is an empty volume — run `npm ci`.
 
@@ -132,8 +131,8 @@ line is setup, action, or assertion. Production-code habits are anti-patterns:
   before the test proceeds) rides inside that setup/exercise step instead of standing alone.
 - No `page.waitForTimeout()` and no `networkidle` — use `toBeVisible` / `toHaveURL` /
   `waitForResponse` / `domcontentloaded`.
-- **Wait for a modal to be gone before asserting anything about the page behind it.** While a CDK
-  dialog or bottom sheet is open, the rest of the page is `aria-hidden`, so a role-based absence
+- **Wait for a modal to be gone before asserting anything about the page behind it.** While a Base
+  UI dialog or drawer is open, the rest of the page is `aria-hidden`, so a role-based absence
   assertion (`toHaveCount(0)`, `not.toBeVisible`) passes **whether or not the action ran** — and the
   test then races past the request that action fires. Gate on the sheet's root locator inside the
   step that dismisses it: `await expect(sheet.sheet).toHaveCount(0);`. Every sheet POM exposes that
