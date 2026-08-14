@@ -19,9 +19,8 @@ const points = [
   },
 ];
 
-// The two screenshots have different aspect ratios, so they are sized by height and left
-// to find their own width -- matching on width instead makes the taller one tower over
-// its neighbour.
+// The two screenshots have different aspect ratios, so they are sized by height: matching
+// on width instead makes the taller one tower over its neighbour.
 export function Differentiators() {
   return (
     <section className="mx-auto w-full max-w-6xl px-5 pt-6 pb-2 sm:px-8">

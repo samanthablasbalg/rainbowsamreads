@@ -16,8 +16,6 @@ export const Print: Story = {};
 export const Digital: Story = { args: { formats: [Format.digital] } };
 export const Audio: Story = { args: { formats: [Format.audio] } };
 
-// The case the component exists for: a read bound to more than one edition renders an
-// icon per format, rather than picking one.
 export const PrintAndAudio: Story = { args: { formats: [Format.print, Format.audio] } };
 
 export const None: Story = { args: { formats: [] } };

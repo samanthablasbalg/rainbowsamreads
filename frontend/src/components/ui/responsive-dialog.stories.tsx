@@ -36,8 +36,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// Each story asserts the data-slot of the part that actually rendered, so a regression
-// that quietly picks the wrong family fails here rather than only on a real phone.
 export const FinePointer: Story = {
   decorators: [withPointer(false)],
   async play({ canvasElement }) {

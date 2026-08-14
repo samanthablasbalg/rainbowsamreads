@@ -1,4 +1,3 @@
-import { http, HttpResponse } from 'msw';
 import { getBooksListBooksMockHandler } from '@/api/generated/books/books.msw';
 import { DatePrecision, type BookRead } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
@@ -50,16 +49,6 @@ describe('Catalog', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Loading');
   });
 
-  it('shows an error state when the list fails to load', async () => {
-    server.use(http.get('*/api/books', () => new HttpResponse(null, { status: 500 })));
-
-    render(<Catalog />);
-
-    expect(await screen.findByRole('alert')).toBeVisible();
-  });
-
-  // The heading is deliberately invisible rather than absent -- sr-only keeps the shelf
-  // in the heading outline while the nav above carries it visually.
   it('keeps a heading in the accessibility tree', async () => {
     server.use(getBooksListBooksMockHandler([]));
 

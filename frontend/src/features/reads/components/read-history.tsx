@@ -4,18 +4,19 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  useEngagementsGetEngagement,
+  useEngagementsGetEngagementSuspense,
   useEngagementsUpdateEngagementDates,
 } from '@/api/generated/engagements/engagements';
 import { ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
-import type { ErrorType } from '@/api/mutator/axios-instance';
+import { errorDetail, type DetailError } from '@/api/error-detail';
 import { CoverImage } from '@/components/common/cover-image';
-import { ErrorState } from '@/components/common/error-state';
+import { ErrorText } from '@/components/common/error-text';
 import { FormatIcons } from '@/components/common/format-icons';
-import { Pending } from '@/components/common/pending';
 import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
 import { ReadingProgress } from '@/components/common/reading-progress';
 import { Button } from '@/components/ui/button';
+import { authorNames, coverSrc } from '@/utils/book';
+import { STATUSES } from '@/utils/status';
 import { invalidateRead } from '../utils/invalidate-read';
 import { EntryList } from './entry-list';
 import { InlineDateEdit } from './inline-date-edit';
@@ -23,93 +24,51 @@ import { InlineDateEdit } from './inline-date-edit';
 // One read's page. Its history is all it holds today, which is why the route is
 // /reads/:id rather than /reads/:id/history -- stats or editions can land here later
 // without a URL migration.
-//
-// The id arrives as a prop rather than being read off the URL here, so the book page can
-// mount this without a route of its own being involved.
 export function ReadHistory({ engagementId }: { engagementId: string }) {
-  const {
-    data: engagement,
-    isPending,
-    isError,
-    error,
-    refetch,
-  } = useEngagementsGetEngagement(engagementId);
+  const { data: engagement } = useEngagementsGetEngagementSuspense(engagementId);
   const [logging, setLogging] = useState(false);
 
-  // Logging is only an action while the read is in progress. The sheet posts against the
-  // read's resume point, which a finished or abandoned read no longer advances.
-  const canLog = engagement?.status === ReadingStatus.reading;
+  // The sheet posts against the read's resume point, which a finished or abandoned read
+  // no longer advances. Update when reflow is implemented.
+  const canLog = engagement.status === ReadingStatus.reading;
 
   return (
     <section>
-      {isPending && <Pending />}
-      {isError && (
-        <ErrorState
-          error={error}
-          action={
-            <Button variant="outline" onClick={() => refetch()}>
-              Try again
-            </Button>
-          }
-        />
+      <BackLink status={engagement.status} />
+      <ReadHeader engagement={engagement} />
+
+      {canLog && (
+        <Button className="mb-6 w-full sm:w-auto" onClick={() => setLogging(true)}>
+          Log progress
+        </Button>
       )}
 
-      {engagement && (
-        <>
-          <BackLink status={engagement.status} />
-          <ReadHeader engagement={engagement} />
+      <EntryList
+        engagementId={engagementId}
+        onLogProgress={canLog ? () => setLogging(true) : undefined}
+      />
 
-          {canLog && (
-            <Button className="mb-6 w-full sm:w-auto" onClick={() => setLogging(true)}>
-              Log progress
-            </Button>
-          )}
-
-          {/* Its own query, mounted only once the read itself resolved -- a 404 on the id
-              would otherwise raise two errors for one cause. */}
-          <EntryList
-            engagementId={engagementId}
-            onLogProgress={canLog ? () => setLogging(true) : undefined}
-          />
-
-          {canLog && (
-            <ProgressLogSheet engagement={engagement} open={logging} onOpenChange={setLogging} />
-          )}
-        </>
+      {canLog && (
+        <ProgressLogSheet engagement={engagement} open={logging} onOpenChange={setLogging} />
       )}
     </section>
   );
 }
 
-// Where a read of this status is listed, which is where you came from. A real link to the
-// hierarchy's parent rather than `navigate(-1)`: this survives a reload and a cold load of
-// the URL, where there is no history entry to go back to. The labels are the shelves' own,
-// from library-nav.
-//
-// When the book page exists it becomes the parent of all three and this collapses.
-const SHELVES = {
-  [ReadingStatus.reading]: { to: '/home', label: 'Currently reading' },
-  [ReadingStatus.finished]: { to: '/library/finished', label: 'Finished' },
-  [ReadingStatus.dnf]: { to: '/library/dnf', label: 'DNF' },
-} as const;
-
 function BackLink({ status }: { status: ReadingStatus }) {
   // A read can also be tbr or interested, neither of which this page is reachable from.
-  const shelf = SHELVES[status as keyof typeof SHELVES] ?? SHELVES[ReadingStatus.reading];
+  const shelf = STATUSES[status as keyof typeof STATUSES] ?? STATUSES[ReadingStatus.reading];
+  const label = status === ReadingStatus.reading ? 'Currently reading' : shelf.label;
 
   return (
     <Button variant="ghost" size="sm" className="-ml-3 mb-2" render={<Link to={shelf.to} />}>
       <HugeiconsIcon icon={ArrowLeft01Icon} data-icon="inline-start" />
-      {shelf.label}
+      {label}
     </Button>
   );
 }
 
-// The dates that bound a read, as a list rather than a hardcoded Started/Finished pair.
-// The engagement carries six lifecycle dates (ADR-0008) and the API exposes three today,
-// so the shape that grows is a list; the pair is just what that list holds now.
-//
-// `field: null` means "show it, don't open it" -- PATCH /dates takes started_on and
+// `field: null` means "show it, don't open it": PATCH /dates takes started_on and
 // finished_on and nothing else, so an abandoned date is readable and not writable.
 function dateFields(engagement: EngagementRead) {
   const started = {
@@ -135,12 +94,11 @@ function dateFields(engagement: EngagementRead) {
       ];
 }
 
-// Identity, progress and the read's dates.
 function ReadHeader({ engagement }: { engagement: EngagementRead }) {
-  const { book, formats, cover_url, completion_pct } = engagement;
+  const { book, formats, completion_pct } = engagement;
 
   const queryClient = useQueryClient();
-  const updateDates = useEngagementsUpdateEngagementDates<ErrorType<{ detail?: string }>>({
+  const updateDates = useEngagementsUpdateEngagementDates<DetailError>({
     mutation: {
       onSuccess: () => invalidateRead(queryClient, engagement.id),
     },
@@ -148,7 +106,7 @@ function ReadHeader({ engagement }: { engagement: EngagementRead }) {
 
   return (
     <header className="mb-6 flex items-start gap-4">
-      <CoverImage src={cover_url ?? book.default_cover_url} title={book.title} />
+      <CoverImage src={coverSrc(engagement)} title={book.title} />
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-baseline gap-1.5">
@@ -156,9 +114,7 @@ function ReadHeader({ engagement }: { engagement: EngagementRead }) {
           <FormatIcons formats={formats} />
         </div>
 
-        <p className="truncate text-sm text-muted-foreground">
-          {book.authors.map((author) => author.name).join(', ')}
-        </p>
+        <p className="truncate text-sm text-muted-foreground">{authorNames(book)}</p>
 
         <ReadingProgress title={book.title} pct={completion_pct} />
 
@@ -182,10 +138,9 @@ function ReadHeader({ engagement }: { engagement: EngagementRead }) {
         {/* The editor has already closed by the time a rejection lands, so the message
             goes here rather than inside the control that caused it. */}
         {updateDates.isError && (
-          <p role="alert" className="text-sm text-destructive">
-            {updateDates.error.response?.data?.detail ??
-              "Couldn't save that date. Please try again."}
-          </p>
+          <ErrorText>
+            {errorDetail(updateDates.error, "Couldn't save that date. Please try again.")}
+          </ErrorText>
         )}
       </div>
     </header>

@@ -1,6 +1,4 @@
-// The nav shell is being built before any of the screens it frames, so every
-// destination renders this. The only thing these pages prove today is that routing
-// reached them; each one is replaced by its real screen in punch list § 5 and § 7.
+// Stands in for a destination whose screen does not exist yet, so the nav can reach it.
 export function ComingSoon({ title }: { title: string }) {
   return (
     <section>

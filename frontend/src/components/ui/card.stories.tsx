@@ -10,7 +10,6 @@ import {
   CardFooter,
 } from './card';
 
-// children is supplied by `render`, not `args` -- see avatar.stories.tsx for why.
 const meta = {
   component: Card,
   args: {

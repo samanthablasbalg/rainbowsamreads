@@ -19,9 +19,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// Only the parts global search uses are storied. Chips, multi-select, the trigger and
-// the value display come with the registry component but nothing renders them yet --
-// they get stories when something first does.
 export const Closed: Story = {
   args: { items: books },
   render: (args) => (
@@ -49,15 +46,11 @@ export const Closed: Story = {
   ),
 };
 
-// The popup is only in the DOM while open, so the closed story gives addon-a11y nothing
-// but an input -- this is the one that audits the list, the group and the items.
 export const Open: Story = {
   args: { items: books, defaultOpen: true },
   render: Closed.render,
 };
 
-// ComboboxEmpty is shown by the popup's data-empty state, so it needs a genuinely empty
-// item set rather than a story that just renders the element on its own.
 export const Empty: Story = {
   args: { items: [], defaultOpen: true },
   render: (args) => (

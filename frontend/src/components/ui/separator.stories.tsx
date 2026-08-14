@@ -8,8 +8,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// A horizontal separator divides stacked content, so the demo container stacks too --
-// a row would put the full-width line at an angle to what it's meant to divide.
 export const Horizontal: Story = {
   args: { orientation: 'horizontal' },
   render: (args) => (

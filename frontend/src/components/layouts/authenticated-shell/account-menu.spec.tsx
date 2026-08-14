@@ -7,8 +7,6 @@ import { AccountMenuDropdown, AccountMenuSheet } from './account-menu';
 const reader = { id: 'a-user', email: 'reader@example.com', picture: null };
 
 describe('the account menu', () => {
-  // The theme test sets the class and persists a choice; keep both from leaking
-  // into a test that runs after it in this file.
   afterEach(() => {
     localStorage.clear();
     document.documentElement.classList.remove('dark');
@@ -27,7 +25,6 @@ describe('the account menu', () => {
 
     render(<AccountMenuSheet />);
 
-    // Uppercased -- the address itself is lower case.
     expect(await screen.findByText('R')).toBeInTheDocument();
   });
 
@@ -46,9 +43,6 @@ describe('the account menu', () => {
     render(<AccountMenuDropdown />);
 
     await user.click(await screen.findByRole('button', { name: /reader@example\.com/ }));
-    // Without this, the assertion below can't distinguish "the click toggled it"
-    // from "it started dark" -- setup.ts's matchMedia stub always reports light,
-    // but that's an assumption living in another file, not a fact this test checks.
     expect(document.documentElement).not.toHaveClass('dark');
 
     await user.click(await screen.findByRole('menuitem', { name: /toggle theme/i }));
@@ -58,8 +52,6 @@ describe('the account menu', () => {
 
   it('logs out when Log out is clicked', async () => {
     server.use(getAuthMeMockHandler(reader), getAuthLogoutMockHandler());
-    // useAuthLogout's mutate() is fire-and-forget from the click handler's point of
-    // view; the request landing on MSW is the observable proof it ran.
     const requests: string[] = [];
     server.events.on('request:start', ({ request }) => {
       requests.push(`${request.method} ${new URL(request.url).pathname}`);

@@ -1,7 +1,5 @@
-// Per ADR-0024, business dates come from the client's local day, never the server's
-// clock -- `toISOString()` converts to UTC first, which is the wrong calendar day for
-// part of the evening in any timezone behind UTC. This reads the local
-// year/month/day directly instead.
+// ADR-0024: business dates are the client's local day, never the server's clock, and
+// never `toISOString()` -- both land an evening behind UTC on tomorrow's date.
 export function localIsoDate(offsetDays = 0): string {
   const date = new Date();
   date.setDate(date.getDate() + offsetDays);

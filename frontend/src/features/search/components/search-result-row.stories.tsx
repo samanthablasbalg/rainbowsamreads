@@ -21,10 +21,6 @@ const result: BookSearchResult = {
   status: ReadingStatus.reading,
 };
 
-// The row is a ComboboxItem, so it only renders inside an open Combobox popup -- hence
-// the wrapper, held open, rather than a bare row. `items` is what Base UI needs to know
-// the list is non-empty; `filter={null}` matches how SearchBar drives it, the filtering
-// having already happened on the server.
 const meta = {
   component: SearchResultRow,
   args: { result, importing: false, onAdd: () => {}, onImport: () => {} },
@@ -42,14 +38,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// The three states, which decide both the badge and the single action offered.
 export const InLibrary: Story = {};
 
 export const InLibraryFinished: Story = {
   args: { result: { ...result, status: ReadingStatus.finished } },
 };
 
-// A book the app knows but you have no engagement with: Add, and no status badge.
 export const InCatalog: Story = {
   args: {
     result: { ...result, state: BookSearchResultState.in_catalog, status: null },
@@ -70,12 +64,10 @@ export const NotInApp: Story = {
   },
 };
 
-// Held while the import request is in flight -- the only state the row itself owns.
 export const Importing: Story = {
   args: { ...NotInApp.args, importing: true },
 };
 
-// Multiple authors and a title long enough to truncate.
 export const ManyAuthors: Story = {
   args: {
     result: {

@@ -50,8 +50,6 @@ function buildEngagement(overrides: Partial<EngagementRead> = {}): EngagementRea
   };
 }
 
-// Controlled the same way EngagementRow drives it -- there is no defaultOpen to render it
-// pre-opened on its own.
 function ControlledReviewSheet({ engagement }: { engagement: EngagementRead }) {
   const [open, setOpen] = useState(true);
   return <ReviewSheet engagement={engagement} open={open} onOpenChange={setOpen} />;
@@ -61,8 +59,6 @@ function renderSheet(engagement: EngagementRead) {
   return render(<ControlledReviewSheet engagement={engagement} />);
 }
 
-// Registers the upsert handler and hands back whatever body reached it, so the payload
-// assertions can look at what the API was actually asked to store.
 function captureUpsert() {
   const captured: { body?: unknown } = {};
   server.use(
@@ -74,9 +70,6 @@ function captureUpsert() {
   return captured;
 }
 
-// fireEvent.change, not userEvent: a range input's arrow keys and drags are native
-// default actions, and userEvent's events are untrusted, so neither moves the value.
-// Setting it directly is what the control's own onChange sees either way.
 function setRating(value: string) {
   fireEvent.change(screen.getByRole('slider', { name: 'Rating' }), { target: { value } });
 }
@@ -117,8 +110,6 @@ describe('ReviewSheet', () => {
     ).not.toBeInTheDocument();
   });
 
-  // A rating with no body has nothing to show statically, so there is no Edit step to
-  // click through before writing one.
   it('opens straight into the editor when a rating has no body', async () => {
     renderSheet(buildEngagement({ review: { rating: '3', body: null } }));
 
@@ -142,9 +133,6 @@ describe('ReviewSheet', () => {
     expect(captured.body).toEqual({ rating: 4.25, body: 'Halls and tides.' });
   });
 
-  // The one place the control's scale and the API's disagree: the range runs from 0 so it
-  // lines up with the stars, but the API takes 1.00-5.00 or null. Sending 0 would be a
-  // 422, and is also how a rating gets cleared.
   it('sends a null rating rather than zero when no star is set', async () => {
     const user = userEvent.setup();
     const captured = captureUpsert();
@@ -227,9 +215,6 @@ describe('ReviewSheet', () => {
     expect(captured.body).toEqual({ rating: 4, body: 'Second thoughts.' });
   });
 
-  // Unlike the reading shelf, these are ordered by finished_on / abandoned_on, which a
-  // review does not touch -- so a refetch cannot reshuffle the list under the user and
-  // invalidating is safe.
   it('invalidates the engagement lists so the new rating reaches the shelf', async () => {
     const user = userEvent.setup();
     server.use(getEngagementsUpsertReviewMockHandler());
@@ -305,8 +290,6 @@ describe('ReviewSheet', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Failed to save. Please try again.');
   });
 
-  // No MSW handler registered -- the suite's onUnhandledRequest: 'error' means a mutation
-  // firing anyway fails the test rather than just leaving an assertion unmet.
   it('closes without saving when Cancel is clicked', async () => {
     const user = userEvent.setup();
     renderSheet(buildEngagement());

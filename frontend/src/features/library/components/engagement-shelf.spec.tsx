@@ -63,12 +63,4 @@ describe('EngagementShelf', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading');
   });
-
-  it('shows an error state when the list fails to load', async () => {
-    server.use(http.get('*/api/engagements', () => new HttpResponse(null, { status: 500 })));
-
-    renderShelf();
-
-    expect(await screen.findByRole('alert')).toBeVisible();
-  });
 });

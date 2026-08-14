@@ -3,16 +3,9 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from '@/lib/utils';
 import { destinations } from '@/config/destinations';
 import { Wordmark } from './wordmark';
-import { StreakIndicator } from './streak-indicator';
 import { AccountMenuDropdown } from './account-menu';
 
-// The left rail, shared by tablet-landscape and desktop -- the handoff draws them as
-// separate screens but the rail itself is identical, so it is built once.
-//
-// Unlike the other two navs this one carries the wordmark, streak and account menu,
-// because at these sizes the rail is the persistent chrome and the content area's top
-// bar holds only the page title and search.
-export function RailNav({ streakDays }: { streakDays: number }) {
+export function RailNav() {
   return (
     <div className="flex h-full w-56 shrink-0 flex-col border-r border-border bg-background">
       <div className="p-4">
@@ -39,11 +32,7 @@ export function RailNav({ streakDays }: { streakDays: number }) {
         ))}
       </nav>
 
-      {/* Streak sits above the account row at the rail's base, per the handoff. */}
       <div className="flex flex-col gap-2 border-t border-border p-2">
-        <div className="px-1">
-          <StreakIndicator days={streakDays} />
-        </div>
         <AccountMenuDropdown />
       </div>
     </div>

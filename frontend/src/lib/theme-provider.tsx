@@ -20,18 +20,12 @@ function readStoredTheme(): Theme {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // Passing the function itself rather than calling it makes this a lazy initialiser --
-  // React runs it once on mount instead of on every render.
   const [theme, setThemeState] = useState<Theme>(readStoredTheme);
 
-  // Tracked regardless of the current setting, so switching back to 'system' is instant
-  // rather than waiting for the next OS change.
   const systemIsDark = useMediaQuery(DARK_QUERY);
 
   const resolvedTheme = theme === 'system' ? (systemIsDark ? 'dark' : 'light') : theme;
 
-  // The one place the class is written. `styles.css` keys both the token blocks and
-  // Tailwind's `dark:` variant off it.
   useEffect(() => {
     document.documentElement.classList.toggle('dark', resolvedTheme === 'dark');
   }, [resolvedTheme]);

@@ -4,9 +4,6 @@ import { AxiosError, type AxiosResponse } from 'axios';
 import { Button } from '@/components/ui/button';
 import { ErrorState } from './error-state';
 
-// A rejection shaped like the ones the generated hooks produce. Passing no status
-// leaves `response` undefined, which is what a request that never reached the server
-// looks like.
 const axiosFailure = (status?: number) =>
   new AxiosError(
     status ? `Request failed with status code ${status}` : 'Network Error',
@@ -16,9 +13,6 @@ const axiosFailure = (status?: number) =>
     status ? ({ status } as AxiosResponse) : undefined
   );
 
-// The other shape that carries a status: a Response thrown by a loader. Built as a
-// literal matching what isRouteErrorResponse tests for, rather than reaching for a
-// react-router internal to construct one.
 const routeErrorResponse = (status: number) => ({
   status,
   statusText: 'Error',
@@ -27,9 +21,6 @@ const routeErrorResponse = (status: number) => ({
 });
 
 describe('ErrorState', () => {
-  // The bucket that exists for the failure the reader can actually fix. It arrives as
-  // a bare TypeError, so the only thing separating it from the generic fallback is the
-  // message -- which makes it the branch most worth pinning down.
   it('names a stale build when a chunk fails to import', () => {
     render(
       <ErrorState
@@ -63,9 +54,6 @@ describe('ErrorState', () => {
     expect(screen.getByText(title)).toBeVisible();
   });
 
-  // Same statuses, the other error shape -- a loader throwing a Response has to land in
-  // the same buckets as an axios rejection, or the copy would depend on which layer
-  // happened to fail.
   it.each([
     [404, "We couldn't find that"],
     [403, "You don't have access to that"],
@@ -82,7 +70,6 @@ describe('ErrorState', () => {
     expect(screen.getByText('Something went wrong')).toBeVisible();
   });
 
-  // A 4xx that has no bucket of its own still has to say something.
   it('falls back for a status with no dedicated copy', () => {
     render(<ErrorState error={axiosFailure(418)} />);
 

@@ -4,7 +4,7 @@
  * Reading Tracker
  * OpenAPI spec version: 0.1.0
  */
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -18,6 +18,8 @@ import type {
   UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
+  UseSuspenseQueryOptions,
+  UseSuspenseQueryResult,
 } from '@tanstack/react-query';
 
 import type {
@@ -276,6 +278,104 @@ export function useEngagementsListEngagements<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export const getEngagementsListEngagementsSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof engagementsListEngagements>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: EngagementsListEngagementsParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof engagementsListEngagements>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getEngagementsListEngagementsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof engagementsListEngagements>>> = ({
+    signal,
+  }) => engagementsListEngagements(params, requestOptions, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof engagementsListEngagements>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type EngagementsListEngagementsSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsListEngagements>>
+>;
+export type EngagementsListEngagementsSuspenseQueryError = ErrorType<HTTPValidationError>;
+
+export function useEngagementsListEngagementsSuspense<
+  TData = Awaited<ReturnType<typeof engagementsListEngagements>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: EngagementsListEngagementsParams,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof engagementsListEngagements>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEngagementsListEngagementsSuspense<
+  TData = Awaited<ReturnType<typeof engagementsListEngagements>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: EngagementsListEngagementsParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof engagementsListEngagements>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEngagementsListEngagementsSuspense<
+  TData = Awaited<ReturnType<typeof engagementsListEngagements>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: EngagementsListEngagementsParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof engagementsListEngagements>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List Engagements
+ */
+
+export function useEngagementsListEngagementsSuspense<
+  TData = Awaited<ReturnType<typeof engagementsListEngagements>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: EngagementsListEngagementsParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof engagementsListEngagements>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getEngagementsListEngagementsSuspenseQueryOptions(params, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 /**
  * @summary Update Engagement Status
  */
@@ -494,6 +594,104 @@ export function useEngagementsGetEngagement<
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;
   };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getEngagementsGetEngagementSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof engagementsGetEngagement>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getEngagementsGetEngagementQueryKey(engagementId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof engagementsGetEngagement>>> = ({
+    signal,
+  }) => engagementsGetEngagement(engagementId, requestOptions, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof engagementsGetEngagement>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type EngagementsGetEngagementSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsGetEngagement>>
+>;
+export type EngagementsGetEngagementSuspenseQueryError = ErrorType<HTTPValidationError>;
+
+export function useEngagementsGetEngagementSuspense<
+  TData = Awaited<ReturnType<typeof engagementsGetEngagement>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEngagementsGetEngagementSuspense<
+  TData = Awaited<ReturnType<typeof engagementsGetEngagement>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEngagementsGetEngagementSuspense<
+  TData = Awaited<ReturnType<typeof engagementsGetEngagement>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get Engagement
+ */
+
+export function useEngagementsGetEngagementSuspense<
+  TData = Awaited<ReturnType<typeof engagementsGetEngagement>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof engagementsGetEngagement>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getEngagementsGetEngagementSuspenseQueryOptions(engagementId, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -889,6 +1087,124 @@ export function useEngagementsListProgressLogs<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export const getEngagementsListProgressLogsSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof engagementsListProgressLogs>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof engagementsListProgressLogs>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getEngagementsListProgressLogsQueryKey(engagementId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof engagementsListProgressLogs>>> = ({
+    signal,
+  }) => engagementsListProgressLogs(engagementId, requestOptions, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof engagementsListProgressLogs>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type EngagementsListProgressLogsSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsListProgressLogs>>
+>;
+export type EngagementsListProgressLogsSuspenseQueryError = ErrorType<HTTPValidationError>;
+
+export function useEngagementsListProgressLogsSuspense<
+  TData = Awaited<ReturnType<typeof engagementsListProgressLogs>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof engagementsListProgressLogs>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEngagementsListProgressLogsSuspense<
+  TData = Awaited<ReturnType<typeof engagementsListProgressLogs>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof engagementsListProgressLogs>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEngagementsListProgressLogsSuspense<
+  TData = Awaited<ReturnType<typeof engagementsListProgressLogs>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof engagementsListProgressLogs>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List Progress Logs
+ */
+
+export function useEngagementsListProgressLogsSuspense<
+  TData = Awaited<ReturnType<typeof engagementsListProgressLogs>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof engagementsListProgressLogs>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getEngagementsListProgressLogsSuspenseQueryOptions(engagementId, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 /**
  * @summary Update Progress Log
  */
@@ -1278,6 +1594,104 @@ export function useEngagementsListBindings<
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;
   };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getEngagementsListBindingsSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof engagementsListBindings>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getEngagementsListBindingsQueryKey(engagementId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof engagementsListBindings>>> = ({
+    signal,
+  }) => engagementsListBindings(engagementId, requestOptions, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof engagementsListBindings>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type EngagementsListBindingsSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsListBindings>>
+>;
+export type EngagementsListBindingsSuspenseQueryError = ErrorType<HTTPValidationError>;
+
+export function useEngagementsListBindingsSuspense<
+  TData = Awaited<ReturnType<typeof engagementsListBindings>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEngagementsListBindingsSuspense<
+  TData = Awaited<ReturnType<typeof engagementsListBindings>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useEngagementsListBindingsSuspense<
+  TData = Awaited<ReturnType<typeof engagementsListBindings>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List Bindings
+ */
+
+export function useEngagementsListBindingsSuspense<
+  TData = Awaited<ReturnType<typeof engagementsListBindings>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  engagementId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof engagementsListBindings>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getEngagementsListBindingsSuspenseQueryOptions(engagementId, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }

@@ -9,8 +9,6 @@ const meta = {
     label: 'start date',
     onSave: fn(),
   },
-  // It sits mid-sentence in the read header, and half the point of the control is that it
-  // matches the text around it until you hover it.
   decorators: [
     (Story) => (
       <p className="text-sm text-muted-foreground">

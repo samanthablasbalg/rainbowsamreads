@@ -2,9 +2,6 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Field, FieldLabel } from './field';
 import { Input } from './input';
 
-// A bare Input has no accessible name of its own -- every story pairs it with a
-// FieldLabel so axe has something to check, and so each story looks like how this
-// app actually uses it.
 const meta = {
   component: Input,
   render: (args) => (

@@ -42,9 +42,6 @@ const baseEngagement: EngagementRead = {
   updated_at: '2025-01-01T00:00:00Z',
 };
 
-// ReviewSheet is controlled and has no defaultOpen -- the real app only drives it from
-// EngagementRow's own open state -- so each story supplies a trigger and opens it through
-// `play`.
 function ControlledSheet({ engagement }: { engagement: EngagementRead }) {
   const [open, setOpen] = useState(false);
   return (
@@ -57,8 +54,6 @@ function ControlledSheet({ engagement }: { engagement: EngagementRead }) {
   );
 }
 
-// screen, not `within(canvasElement)`: the content renders through a portal, which lands
-// outside the story's own element.
 async function openSheet({ canvasElement }: { canvasElement: HTMLElement }) {
   await userEvent.click(within(canvasElement).getByRole('button', { name: 'Open' }));
   expect(await screen.findByRole('dialog')).toBeInTheDocument();
@@ -83,9 +78,6 @@ const reviewed: EngagementRead = {
   },
 };
 
-// A quarter rating and a body, which is the state the form re-seeds itself from. 4.25 is
-// deliberately not a whole or half star: it is the case the input exists for. Existing
-// text opens static, so this is the Edit button's own story too.
 export const Existing: Story = {
   render: () => <ControlledSheet engagement={reviewed} />,
   play: async (context) => {
@@ -94,8 +86,6 @@ export const Existing: Story = {
   },
 };
 
-// A rating with no body has nothing to show statically, so it opens straight into the
-// editor with no Edit button in the way.
 export const RatingOnly: Story = {
   render: () => (
     <ControlledSheet engagement={{ ...reviewed, review: { rating: '3', body: null } }} />
@@ -117,10 +107,6 @@ export const EditingExisting: Story = {
   },
 };
 
-// A review long enough to overrun the popup. DialogContent sets no max height, so before
-// the fields got their own scroll region this pushed Save off the bottom of the screen
-// with no way to reach it. The assertion is that the footer is still there; how it looks
-// is the point of the story.
 export const LongReview: Story = {
   render: () => (
     <ControlledSheet
@@ -140,9 +126,6 @@ export const LongReview: Story = {
   play: async (context) => {
     await openSheet(context);
     const save = await screen.findByRole('button', { name: /Save review/ });
-    // Geometry, not toBeVisible: the bug left Save fully visible by CSS while sitting
-    // below the bottom of the screen, which is exactly what that matcher does not check.
-    // waitFor because the popup is still fading and settling on its first frames.
     await waitFor(() => {
       const { top, bottom } = save.getBoundingClientRect();
       expect(top).toBeGreaterThanOrEqual(0);
@@ -156,14 +139,6 @@ export const MobileSheet: Story = {
   render: () => <ControlledSheet engagement={baseEngagement} />,
 };
 
-// The slider is the whole point of the screen, so one story drives it rather than only
-// rendering it.
-//
-// fireEvent.change, not userEvent's arrow keys: userEvent dispatches untrusted events,
-// and a browser runs no default action for those, so a range input's native key handling
-// never fires and the value stays put. Same reason progress-log-sheet.stories.tsx sets
-// its date input this way. What is being checked here is the wiring either way -- that a
-// new value reaches the label and the fill -- not Chromium's own key handling.
 export const RatingChanged: Story = {
   render: () => <ControlledSheet engagement={baseEngagement} />,
   play: async (context) => {

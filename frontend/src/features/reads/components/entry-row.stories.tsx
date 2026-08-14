@@ -20,7 +20,6 @@ const meta = {
     entry: pageEntry,
     onEdit: fn(),
   },
-  // A row is a list item; rendering one outside a list is invalid markup and axe says so.
   decorators: [
     (Story) => (
       <ul className="w-full max-w-md">
@@ -48,8 +47,6 @@ export const Audio: Story = {
   },
 };
 
-// An older entry looks identical -- what it can and cannot change is the sheet's business,
-// not the row's. This story exists to keep that true.
 export const Older: Story = {
   args: { entry: { ...pageEntry, isNewest: false } },
 };

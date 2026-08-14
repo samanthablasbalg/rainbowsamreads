@@ -3,7 +3,6 @@ import { DatePrecision, Format, ReadingStatus } from '@/api/generated/readingTra
 import type { EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { render, screen } from '@/test/render';
-import { http, HttpResponse } from 'msw';
 import { CurrentlyReading } from './currently-reading';
 
 function buildEngagement(title: string): EngagementRead {
@@ -60,7 +59,7 @@ describe('CurrentlyReading', () => {
 
     render(<CurrentlyReading />);
 
-    expect(await screen.findByText('No books in progress')).toBeVisible();
+    expect(await screen.findByText('Nothing in progress')).toBeVisible();
   });
 
   it('shows a pending state while the list loads', () => {
@@ -69,13 +68,5 @@ describe('CurrentlyReading', () => {
     render(<CurrentlyReading />);
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading');
-  });
-
-  it('shows an error state when the list fails to load', async () => {
-    server.use(http.get('*/api/engagements', () => new HttpResponse(null, { status: 500 })));
-
-    render(<CurrentlyReading />);
-
-    expect(await screen.findByRole('alert')).toBeVisible();
   });
 });

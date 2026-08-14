@@ -1,11 +1,16 @@
-import { type ReactNode, useState } from 'react';
+import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Loading03Icon, PencilEdit02Icon } from '@hugeicons/core-free-icons';
+import { PencilEdit02Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
-import type { ErrorType } from '@/api/mutator/axios-instance';
-import { useEngagementsUpsertReview } from '@/api/generated/engagements/engagements';
+import { errorDetail, type DetailError } from '@/api/error-detail';
+import {
+  getEngagementsListEngagementsQueryKey,
+  useEngagementsUpsertReview,
+} from '@/api/generated/engagements/engagements';
 import type { EngagementRead } from '@/api/generated/readingTracker.schemas';
+import { ButtonLabel } from '@/components/common/button-label';
 import { CoverImage } from '@/components/common/cover-image';
+import { ErrorText } from '@/components/common/error-text';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldTitle } from '@/components/ui/field';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,6 +21,7 @@ import {
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from '@/components/ui/responsive-dialog';
+import { coverSrc } from '@/utils/book';
 import { StarRatingInput } from './star-rating-input';
 
 type ReviewSheetProps = {
@@ -24,14 +30,6 @@ type ReviewSheetProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-// Rate and review a finished or abandoned read. Both entry points on EngagementRow -- the
-// Add rating button and the dropdown item -- open this same overlay, so there is one form
-// rather than one per trigger.
-//
-// The split between this and ReviewForm is the same one ProgressLogSheet documents:
-// everything below ResponsiveDialogContent lives inside Base UI's portal, which tears its
-// subtree down on close. The form's state has to live there so reopening re-seeds it from
-// whatever the row now holds, instead of showing the values from the last time it opened.
 export function ReviewSheet({ engagement, open, onOpenChange }: ReviewSheetProps) {
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
@@ -50,11 +48,7 @@ function ReviewForm({ engagement, onDone }: { engagement: EngagementRead; onDone
     <>
       <ResponsiveDialogHeader>
         <div className="flex items-center gap-3">
-          <CoverImage
-            src={engagement.cover_url ?? engagement.book.default_cover_url}
-            title={title}
-            className="h-16 w-11"
-          />
+          <CoverImage src={coverSrc(engagement)} title={title} className="h-16 w-11" />
           <ResponsiveDialogTitle>{title}</ResponsiveDialogTitle>
         </div>
       </ResponsiveDialogHeader>
@@ -92,19 +86,14 @@ function ReviewForm({ engagement, onDone }: { engagement: EngagementRead; onDone
                   placeholder="What did you think?"
                   value={form.body}
                   disabled={form.savePending}
-                  // Focused only when the Edit button is what mounted this, which is
-                  // exactly when the sheet opened onto existing text. Autofocusing the
-                  // empty case too would raise a keyboard over the drawer on touch before
-                  // the rating has been looked at, let alone set.
+                  // Only when Edit mounted this. Autofocusing the empty case would raise a
+                  // keyboard over the drawer on touch before the rating has been set.
                   autoFocus={form.startedWithBody}
                   onChange={(event) => form.setBody(event.target.value)}
                 />
               </>
             ) : (
               <>
-                {/* FieldTitle rather than FieldLabel: there is no control to point `htmlFor`
-                  at while the text is static, and a label whose target does not exist is
-                  worse than a heading. */}
                 <div className="flex items-center justify-between gap-2">
                   <FieldTitle>Review</FieldTitle>
                   <Button
@@ -118,10 +107,6 @@ function ReviewForm({ engagement, onDone }: { engagement: EngagementRead; onDone
                     Edit
                   </Button>
                 </div>
-                {/* A filled panel rather than an outlined one: in this app a border is the
-                  input signal -- Input and Textarea both draw one -- so anything bordered
-                  reads as typeable however it is filled. whitespace-pre-wrap so the
-                  paragraphs the review was written with survive. */}
                 <p className="rounded-xl bg-muted p-3 text-base whitespace-pre-wrap md:text-sm">
                   {form.body}
                 </p>
@@ -131,7 +116,7 @@ function ReviewForm({ engagement, onDone }: { engagement: EngagementRead; onDone
         </FieldGroup>
       </div>
 
-      {form.error && <p role="alert">{form.error}</p>}
+      {form.error && <ErrorText>{form.error}</ErrorText>}
 
       <ResponsiveDialogFooter>
         <Button variant="outline" disabled={form.savePending} onClick={onDone}>
@@ -151,55 +136,24 @@ function ReviewForm({ engagement, onDone }: { engagement: EngagementRead; onDone
   );
 }
 
-// Same swap ProgressLogSheet uses: a disabled button reads as "working" rather than inert
-// while its own mutation is in flight.
-function ButtonLabel({
-  pending,
-  pendingLabel,
-  children,
-}: {
-  pending: boolean;
-  pendingLabel: string;
-  children: ReactNode;
-}) {
-  if (!pending) return <>{children}</>;
-  return (
-    <>
-      <HugeiconsIcon icon={Loading03Icon} className="animate-spin" data-icon="inline-start" />
-      {pendingLabel}
-    </>
-  );
-}
-
 function useReviewForm(engagement: EngagementRead, onClose: () => void) {
-  // `rating` arrives as a string because JSON has no decimal type, and null when the read
-  // has no review yet or a body without a score. Both become 0, the input's empty end.
   const [rating, setRating] = useState(() => Number(engagement.review?.rating ?? 0));
   const [body, setBody] = useState(() => engagement.review?.body ?? '');
   const [error, setError] = useState<string | null>(null);
 
-  // Text that already exists opens as a static block with an Edit button rather than a
-  // textarea, so a finished review reads as a thing you wrote instead of a form waiting
-  // on you. A read with a rating but no body has nothing to show statically, so it opens
-  // straight into the editor. This is only ever entered, never left -- Cancel or a close
-  // is the way back, and both unmount the form and re-seed it from the review.
   const [startedWithBody] = useState(() => (engagement.review?.body ?? '') !== '');
   const [editingBody, setEditingBody] = useState(!startedWithBody);
 
   const queryClient = useQueryClient();
 
-  const upsertReview = useEngagementsUpsertReview<ErrorType<{ detail?: string }>>({
+  const upsertReview = useEngagementsUpsertReview<DetailError>({
     mutation: {
-      // Invalidate rather than patch, matching the delete handler on EngagementRow. These
-      // shelves are ordered by finished_on / abandoned_on, which a review does not touch,
-      // so a refetch cannot reshuffle the list under the user the way it would on the
-      // reading shelf.
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['/api/engagements'] });
+        queryClient.invalidateQueries({ queryKey: getEngagementsListEngagementsQueryKey() });
         onClose();
       },
       onError: (err) => {
-        setError(err.response?.data?.detail ?? 'Failed to save. Please try again.');
+        setError(errorDetail(err, 'Failed to save. Please try again.'));
       },
     },
   });
@@ -209,7 +163,6 @@ function useReviewForm(engagement: EngagementRead, onClose: () => void) {
     upsertReview.mutate({
       engagementId: engagement.id,
       data: {
-        // The API takes 1.00-5.00 or null; the input's 0 is how you get back to null.
         rating: rating === 0 ? null : rating,
         body: body.trim() === '' ? null : body.trim(),
       },

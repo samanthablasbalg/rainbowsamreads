@@ -18,8 +18,6 @@ const newestPageEntry: EntryView = {
   end: 100,
 };
 
-// Controlled with no defaultOpen, exactly like ProgressLogSheet -- the list owns the open
-// state in the real app -- so each story supplies a trigger and opens it through `play`.
 function ControlledSheet({ entry }: { entry: EntryView }) {
   const [open, setOpen] = useState(false);
   return (
@@ -38,8 +36,6 @@ function ControlledSheet({ entry }: { entry: EntryView }) {
   );
 }
 
-// screen, not `within(canvasElement)`: the content renders through a portal, which lands
-// outside the story's own element.
 async function openSheet({ canvasElement }: { canvasElement: HTMLElement }) {
   await userEvent.click(within(canvasElement).getByRole('button', { name: 'Open' }));
   expect(await screen.findByRole('dialog')).toBeInTheDocument();

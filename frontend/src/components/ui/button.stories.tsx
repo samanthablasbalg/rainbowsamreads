@@ -38,13 +38,6 @@ export const SizeXs: Story = { args: { size: 'xs' } };
 export const SizeSm: Story = { args: { size: 'sm' } };
 export const SizeLg: Story = { args: { size: 'lg' } };
 
-// Icon sizes render icon-only in real usage (see sheet.tsx's close button, size="icon-sm"),
-// so text children would misrender -- and an icon-only button needs an aria-label for axe's
-// button-name rule, the same way account-menu.tsx's icon buttons carry one.
-//
-// render, not args.children: an arg has to be a plain, serializable value for the
-// controls/docs machinery to source-print it, and a JSX element isn't (see
-// avatar.stories.tsx). aria-label stays a plain arg since it's just a string.
 function renderIconOnly(args: ComponentProps<typeof Button>) {
   return (
     <Button {...args}>

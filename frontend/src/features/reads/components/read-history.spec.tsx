@@ -12,11 +12,6 @@ import { buildEngagement, buildPageLog } from '@/test/data-generators';
 import { ReadHistory } from './read-history';
 
 describe('ReadHistory', () => {
-  // EntryList mounts with the read and fetches its own entries. Without this every test
-  // here would render the header against a history stuck in its error state -- the
-  // assertions still pass, which is exactly what makes it worth pinning. One entry rather
-  // than none: the empty state carries its own Log progress button, and this page's
-  // header has one too.
   beforeEach(() => {
     server.use(getEngagementsListProgressLogsMockHandler([buildPageLog()]));
   });
@@ -32,20 +27,13 @@ describe('ReadHistory', () => {
 
     expect(await screen.findByRole('heading', { name: 'Piranesi' })).toBeVisible();
     expect(screen.getByText('Susanna Clarke')).toBeVisible();
-    expect(screen.getByRole('img', { name: 'Format: print' })).toBeVisible();
+    expect(screen.getByText('Print')).toBeVisible();
     expect(screen.getByRole('progressbar')).toHaveAccessibleName('Piranesi progress: 37%');
 
-    // Waited for, not queried straight away: the entries are still loading when the
-    // header lands, and a pending list has no alert either.
     expect(await screen.findByRole('list', { name: 'History' })).toBeVisible();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  // The dates are date-only strings; rendering them in local time would land on the
-  // previous calendar day for anyone behind UTC, which is what formatIsoDate's pinned
-  // timeZone prevents -- so this guards the day, whatever the machine's clock says. The
-  // expected text does assume the runtime's default locale is en-US, which holds in the
-  // container the suite runs in (ADR-0028).
   it('shows the start and finish dates of a finished read', async () => {
     server.use(getEngagementsGetEngagementMockHandler(buildEngagement()));
 
@@ -80,7 +68,6 @@ describe('ReadHistory', () => {
     expect(screen.queryByRole('button', { name: 'Edit finish date' })).not.toBeInTheDocument();
   });
 
-  // An unset date still renders, as a dash: it is how you set one.
   it('shows a dash for a date that is not set yet', async () => {
     server.use(
       getEngagementsGetEngagementMockHandler(
@@ -130,7 +117,6 @@ describe('ReadHistory', () => {
     expect(await screen.findByRole('dialog')).toBeVisible();
   });
 
-  // The sheet posts against a resume point a finished read no longer advances.
   it('does not offer logging on a finished read', async () => {
     server.use(
       getEngagementsGetEngagementMockHandler(buildEngagement({ status: ReadingStatus.finished }))
@@ -151,13 +137,10 @@ describe('ReadHistory', () => {
 
     render(<ReadHistory engagementId="engagement-Piranesi" />);
 
-    expect(await screen.findByRole('img', { name: 'Format: print' })).toBeVisible();
-    expect(screen.getByRole('img', { name: 'Format: audio' })).toBeVisible();
+    expect(await screen.findByText('Print')).toBeVisible();
+    expect(screen.getByText('Audio')).toBeVisible();
   });
 
-  // The link is a real href rather than a history pop, so it works on a cold load of the
-  // URL where there is nothing to go back to. It points at wherever a read of this status
-  // is listed, which is the only place you can have come from.
   it.each([
     [ReadingStatus.reading, 'Currently reading', '/home'],
     [ReadingStatus.finished, 'Finished', '/library/finished'],
@@ -176,13 +159,5 @@ describe('ReadHistory', () => {
     render(<ReadHistory engagementId="engagement-Piranesi" />);
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading');
-  });
-
-  it('shows an error state when the read fails to load', async () => {
-    server.use(http.get('*/api/engagements/*', () => new HttpResponse(null, { status: 404 })));
-
-    render(<ReadHistory engagementId="missing" />);
-
-    expect(await screen.findByRole('alert')).toBeVisible();
   });
 });

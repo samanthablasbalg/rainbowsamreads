@@ -53,8 +53,6 @@ function buildEngagement(overrides: Partial<EngagementRead> = {}): EngagementRea
   };
 }
 
-// ProgressLogSheet is controlled (open/onOpenChange), the same way ReadingCard will
-// drive it -- there's no defaultOpen prop to render it pre-opened on its own.
 function ControlledProgressLogSheet({ engagement }: { engagement: EngagementRead }) {
   const [open, setOpen] = useState(true);
   return <ProgressLogSheet engagement={engagement} open={open} onOpenChange={setOpen} />;
@@ -64,8 +62,6 @@ function renderSheet(engagement: EngagementRead) {
   return render(<ControlledProgressLogSheet engagement={engagement} />);
 }
 
-// Lets a test hold a mock response open so it can assert on the pending state before
-// letting it resolve, the same way MSW's own docs recommend for in-flight assertions.
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((res) => {
@@ -169,9 +165,6 @@ describe('ProgressLogSheet', () => {
     );
   });
 
-  // Opening the editor is enough to move selection, before any day has been chosen:
-  // `date` is still today at that point, so a chip reading its own value stayed lit
-  // alongside the calendar one.
   it('deselects Today as soon as the date editor is opened', async () => {
     const user = userEvent.setup();
     renderSheet(buildEngagement());
@@ -189,9 +182,6 @@ describe('ProgressLogSheet', () => {
     );
   });
 
-  // The chips key off which control set the date, not off its value -- picking
-  // yesterday in the calendar used to light the Yesterday chip and the calendar chip
-  // at the same time.
   it('leaves the Yesterday chip unselected when yesterday is chosen in the calendar', async () => {
     const user = userEvent.setup();
     renderSheet(buildEngagement());
@@ -231,8 +221,6 @@ describe('ProgressLogSheet', () => {
     renderSheet(buildEngagement());
 
     await user.click(screen.getByRole('button', { name: 'Pick a date' }));
-    // fireEvent.change, not userEvent.type: jsdom's native <input type="date"> doesn't
-    // support typed keystrokes the way a real browser's segmented date picker does.
     fireEvent.change(screen.getByLabelText('Log date'), { target: { value: '2025-06-15' } });
     const positionInput = await screen.findByPlaceholderText('---');
     await user.type(positionInput, '200');
@@ -242,9 +230,6 @@ describe('ProgressLogSheet', () => {
     expect(capturedBody).toEqual({ current_page: 200, logged_on: '2025-06-15' });
   });
 
-  // Regression test for a real bug: the reading list is ordered by most-recent
-  // activity (backend), so invalidating and refetching it after a save would jump
-  // the saved book to the top mid-interaction. The cache must be patched in place.
   it('patches the saved engagement into the reading list cache without reordering it', async () => {
     const user = userEvent.setup();
     const engagement = buildEngagement();
@@ -354,8 +339,6 @@ describe('ProgressLogSheet', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  // No MSW handler registered for this one -- the suite's onUnhandledRequest: 'error'
-  // means a mutation firing anyway would fail the test, not just an assertion missing.
   it('closes without saving when Cancel is clicked', async () => {
     const user = userEvent.setup();
     renderSheet(buildEngagement());
@@ -384,8 +367,6 @@ describe('ProgressLogSheet', () => {
     expect(capturedBody).toEqual({ current_minute: 150, logged_on: localIsoDate() });
   });
 
-  // The tab is the point of each of these: the error stays hidden while the field has
-  // focus, so a value part-way through being typed never flashes one.
   it('rejects a page that is not a number', async () => {
     const user = userEvent.setup();
     renderSheet(buildEngagement());

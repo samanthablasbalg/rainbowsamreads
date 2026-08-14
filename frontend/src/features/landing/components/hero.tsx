@@ -24,19 +24,13 @@ export function Hero() {
       </div>
 
       <div className="relative flex justify-center pb-12 md:items-start md:pt-2 md:pb-14">
-        {/* Orange, and a real radial falloff rather than a blurred disc -- a flat circle
-            at this size reads as a smudge instead of a glow.
-
-            Centred on the screenshots while the hero is stacked, since they centre too;
-            the offset toward the top-right only applies once the two columns split. */}
         <div
           aria-hidden
           className="absolute -top-5 left-1/2 size-70 -translate-x-1/2 bg-[radial-gradient(circle,color-mix(in_srgb,var(--brand-orange)_22%,transparent),transparent_70%)] blur-sm md:-top-10 md:-right-5 md:left-auto md:size-105 md:translate-x-0"
         />
         {/* The screenshots are opaque PNGs with the device frame drawn inside a light
-            margin. The radius has to hug that frame, which is why these two are the one
-            place here reaching past the scale -- anything smaller leaves the margin's
-            square corners showing, and a ring outlines the margin rather than the phone. */}
+            margin, so the radius has to hug that frame -- anything smaller leaves the
+            margin's square corners showing. */}
         <img
           src="/landing/home-dark.png"
           alt="Rainbow Sam Reads home screen concept, dark mode"
