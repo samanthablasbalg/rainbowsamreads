@@ -1,215 +1,147 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this
-repository.
-
-## Project Overview
+## Project overview
 
 Reading tracker — React frontend + FastAPI backend + PostgreSQL 18.
 
-**Deployed, multi-user, holding real people's personal data.** Access is Google OAuth gated by an
-email allowlist; per-user isolation is enforced in Postgres via row-level security
-([ADR-0023](docs/decisions/0023-per-user-data-isolation-via-rls.md)).
+**Deployed, multi-user, holding real people's personal data.** Google OAuth gated by an email
+allowlist; per-user isolation enforced in Postgres via row-level security
+([ADR-0023](docs/decisions/0023-per-user-data-isolation-via-rls.md)). "Solo project" here means
+**one developer**. It says nothing about the running app — never infer a threat model, a user count,
+or the stakes of an auth failure. If an argument rests on stakes, cite the doc or don't make it.
 
-"Solo project" in this file means **one developer**. It says nothing about the running app. Never
-infer a threat model, a user count, or the stakes of an auth failure — they are documented in
-`docs/decisions/`. If an argument's justification rests on stakes, cite the doc or don't make it.
+## Working style
 
-The frontend is mid-migration from Angular to React. Read the next section before touching anything
-under `frontend/` or `angular-frontend/`.
+The owner is an SDET with over a decade of experience from the testing side, not the building side.
+Assume solid engineering intuition and familiarity with software concepts; explain **Python and
+React specifics** — syntax, idioms, library patterns, hooks, the render model, TanStack Query's
+cache, React Router's data APIs — as new vocabulary for concepts she already has.
 
-## The React migration — read this first
+**Explain before you build.** Before writing code, say what you are about to build and why it is
+structured that way, any non-obvious decisions (naming, types, file layout, patterns), and how it
+connects to what exists. Write code only after she confirms. Multi-step work gets explained and
+confirmed one step at a time, at the granularity of the _item_ — not every key inside it. The goal
+is that she can read every file here and understand it: optimise for understanding, not speed.
 
-The Angular app has been moved to `angular-frontend/`. The React app is being built from scratch at
-`frontend/`. Treat this repo as if `frontend/` were a **fresh project in a repo that has a backend
-already**.
-
-**`angular-frontend/` is closed by default.** It is not background reading, not context to gather,
-and not a source of code to bring forward. The owner opens it one file at a time, deliberately.
-
-- Never edit it, refactor it, fix it, or add to it.
-- Never lint, test, typecheck, format or build it.
-- Never run its `npm` scripts or install its dependencies.
-- Never import from it. Values move by being copied into `frontend/` deliberately.
-- It gets deleted wholesale at the end (punch list § 8). Nothing in it needs saving beyond what a
-  port step explicitly copies.
-
-**Do not read old code unless the owner names the file in this conversation.** This covers
-`angular-frontend/`, and equally `git show`, `git log -p`, `git diff` and any other branch, tag or
-commit — abandoned branches are not a reference, they are abandoned. "The plan mentions porting X"
-is not permission to go find X. Ask, then read the one file named, then stop.
-
-**Why this is a hard rule and not a preference.** Every line of Angular pulled into the conversation
-is a line pulling the port back towards what the app already was — the accumulated shape this
-migration exists to escape. Old code read "just for context" becomes old code reproduced. Volume is
-the harm: the owner cannot un-see a file that got dumped into the session, and the clean-room
-premise dies quietly. When in doubt, build it fresh from the requirement and let the owner correct
-it. Guessing wrong costs one round of feedback; importing the old shape costs the migration.
-
-**`frontend/` is new code.** Its config comes from the `vite@latest --template react-ts` scaffold
-and is then adapted per the punch list. It does **not** inherit Angular's config by default — not
-`.prettierrc`, not `eslint.config.js`, not `.nvmrc`, not `angular.json`, not `tsconfig*.json`, not
-`package.json`. Those files show as deleted in the Angular tree's history because they moved, and
-they are not coming back.
-
-**Do not ask which Angular config files to keep, port, restore or reuse.** That decision is made:
-none of them, unless a punch list item names one. If a step needs a setting the Angular app had,
-copy that single setting as part of that step and say so. The same goes for `node_modules`,
-lockfiles and build output — `frontend/` gets its own, fresh.
-
-### The punch list is the contract
-
-`REACT-MIGRATION-PUNCHLIST.md` is the ordered plan of record. `REACT-MIGRATION-PLAN.md` holds the
-reasoning behind it.
-
-- Work the punch list **in order**. One numbered item at a time.
-- Items marked **[decide]** are the only open questions. Everything else is settled.
-- **§ 0 "Decisions — settled" is closed.** Router, folder boundaries, primitive layer and palette
-  are decided, with reasons recorded. Do not reopen, re-argue, or re-present alternatives for them.
-  If you believe one is actually wrong, say so once, in a sentence, with the specific thing that
-  broke — then keep going.
-- The gates at the end of each section are real. Do not start the next section until the current
-  gate passes.
-- The **stop rule** in the punch list's standing rules governs primitives, and it outranks finishing
-  a screen.
-
-**Working Style still applies**, but at punch-list granularity: explain and confirm the _item_, not
-each config key inside it. "I'm scaffolding Vite into `frontend/`, here's what the template ships
-and what I'm stripping" is one confirmation, not fifteen.
-
-## Working Style
-
-The owner of this project is an SDET with over a decade of software experience from the testing
-side, not the building side. Python is completely new to them. This context should calibrate how you
-explain things: assume solid engineering intuition and familiarity with software concepts, but
-explain Python-specific syntax, idioms, and library patterns as if they are new.
-
-React and its ecosystem are also new to them. Explain React idioms — hooks, the render model,
-TanStack Query's cache, React Router's data APIs — on the same terms: the concepts are not new, the
-specific vocabulary and patterns are.
-
-**Do not jump ahead and implement things without explaining them first.**
-
-Before writing any code, explain:
-
-- What you are about to build and why it is structured that way
-- Any non-obvious decisions (naming, types, file layout, patterns)
-- How the new code connects to what already exists
-
-Only write code after the owner has confirmed. If a task is multi-step, explain and confirm one step
-at a time.
-
-The goal is for the owner to be able to read every file in this project and understand it fully.
-Optimise for understanding, not for speed.
-
-**That sentence is about explanations, not design.** It is not a licence to write non-standard code,
-and it is the sentence agents most often misuse to justify exactly that.
+**That is about explanations, not design.** It is not a licence to write non-standard code, and it
+is the sentence agents most often misuse to justify exactly that.
 
 **Take the smaller option.** When two approaches differ only in how explicit, verbose or ceremonious
-they are — more imports, more boilerplate, more repetition, a bespoke variant of a documented
-pattern, a longer commit message — take the smaller one. Every time. There is no comprehension
-argument for the larger one: the owner has a decade of experience and reads code faster than you
-write it, and what is new here is React's _patterns_, so the standard one is precisely what they
-need to see.
+they are — more imports, more boilerplate, a bespoke variant of a documented pattern, a longer
+commit message — take the smaller one. Every time.
 
 **Audit your own justification before you give it.** If the reason is about the reader — "readable",
-"traceable", "greppable", "explicit", "so it's obvious", "so you can understand it" — the reason is
-invalid. Discard it and decide again on technical grounds alone. If no technical ground survives,
-use the default: the library's documented pattern, or the convention already present in this repo.
-
-Deviating from a documented pattern is not a decision you make. Raise it as a question first, naming
-the specific breakage, and write the standard version unless told otherwise.
+"traceable", "greppable", "explicit", "so it's obvious" — it is invalid. Discard it and decide on
+technical grounds alone. If none survives, use the default: the library's documented pattern, or the
+convention already in this repo. Deviating from a documented pattern is not your call — raise it as
+a question, naming the specific breakage, and write the standard version unless told otherwise.
 
 **Answer the question that was asked.** A factual question gets the fact, not the set of things you
-considered. Never surface a candidate you rejected — that is your process, and it costs the owner a
-decision she did not ask to make. Present options _only_ when the decision is genuinely hers and
-more than one is defensible; otherwise give the answer.
+considered. Never surface a candidate you rejected — that is your process, and it costs her a
+decision she didn't ask to make. Present options only when the decision is genuinely hers and more
+than one is defensible; list them neutrally, and recommend only if asked.
 
-When presenting options, list them neutrally and let the owner reason. Only offer a recommendation
-if explicitly asked.
+## Scope
 
-## Scope and Forward Momentum
+Momentum comes from **narrowing scope, not lowering comprehension** — build less, still explain
+every step. She is deliberately training the scoping instinct; build it, don't substitute for it.
 
-Governs _how much_ to design/build in a stretch of work. Subordinate to **Working Style**:
-explaining before building and never letting the owner rubber-stamp is invariant. Momentum comes
-from **narrowing scope, not lowering comprehension** — build less, still explain every step.
+- **Door check.** When a net-new capability question appears ("should we also support X later?"),
+  have her classify it first: is adding X later **additive** (new column/table/endpoint — cheap) or
+  **destructive** (rewrite, migrate data, break a contract)? Design effort goes to the destructive
+  ones; additive ones get parked in a sentence.
+- **Parking is for net-new capability only, never cover for shirking.** Defects, regressions,
+  failing tests and finishing what's started are never scope. **Branch responsibility is total** —
+  own what's broken on the branch regardless of who broke it. If genuinely blocked, say so loudly;
+  never silently punt.
+- **Name scope drift, don't police it.** When a design discussion balloons past the loose intent
+  agreed at the start, say so and let her choose. Chosen depth, not no depth.
+- **Capture, don't design, future work.** A backlog item gets a problem statement and a few
+  acceptance bullets. Note a landmine you actually hit ("verify when pulled: …"); never invent the
+  blueprint — most backlog is cut or reprioritised before it ships.
+- **Prefer vertical slices** — "add a book, see it in a browser" over "build all the models".
+- **Taper.** Flag at genuine decision points, not micro-choices, and get lighter over time
+  (walk-through → "you call it, I'll check" → flag only miscalls). If it isn't getting lighter, say
+  so.
 
-The owner is a recovering perfectionist with an SDET completeness instinct, training the skill of
-scoping. Build that instinct; don't substitute for it.
+## Where you are running
 
-- **Door check.** When a _net-new capability_ decision appears ("should we also support X later?"),
-  pause and have the owner classify it _first_: is adding X later **additive** (new
-  column/table/endpoint — cheap) or **destructive** (rewrite, migrate data, break a contract)?
-  Confirm or correct. Design effort goes to destructive decisions; additive ones get parked in a
-  sentence. Most are additive, especially now (no data, no app).
-- **Parking is for net-new capability ONLY — never a cover for shirking.** Never license to abandon
-  required work ("tests won't pass, leave it"), disclaim a branch bug because "I didn't introduce it
-  this session" (**branch responsibility is total** — own what's broken regardless of who broke it),
-  or defer something just because it's hard. Defects, regressions, failing tests, and finishing
-  what's started are never scope. If genuinely blocked, say so loudly and escalate — never silently
-  punt.
-- **Scope-drift detector.** Get a loose intent at the start ("a book in a browser today"). The owner
-  can't feel when a design discussion balloons past it — they're enjoying the dive. Be the outside
-  signal: name the drift, let them choose. Chosen depth, not no depth.
-- **Calibration.** Fire only at genuine decision points, not every micro-choice. Taper over time
-  (walk-through → "you call it, I'll check" → flag only miscalls); if it isn't getting lighter, say
-  so. The same triage applies to test design — draw the parallel so the instinct generalizes.
-- **Capture, don't design, future work.** Backlog items get a problem statement + a few acceptance
-  bullets — not schema, enums, or full edge-case analysis. _Gray-area exception:_ DO note a
-  constraint or gotcha you've **already discovered** — a known one-way-door implication, or a
-  non-obvious landmine the future implementer would hit — as a short, flagged caveat ("note, verify
-  when pulled: …"). The line is _facts you found_ (capture) vs _solutions you're inventing ahead_
-  (don't): note the landmines, not the blueprints. If a note grows into a schema or real edge-case
-  analysis, stop and mark it "design when pulled" — most backlog is reprioritized or cut before it
-  ships, so upfront design has a high waste rate.
-- **Prefer vertical slices.** Favor outcome-shaped milestones that run end-to-end ("add a book, see
-  it in a browser") over layer-shaped ones ("build all the models"); layer milestones have no
-  natural stopping point and hide a working app until the end.
+Development happens **inside the dev container** (ADR-0028), and so does this session.
 
-## Branching and Commits
+- **There is no `docker` CLI in here** — a hook blocks any command containing one. Reach services
+  over the compose network by name: `proxy:8080`, `api:8000`, `db:5432`, `browsers:5000`.
+- **No virtualenv to activate.** `/opt/venv` is first on `PATH`, so `python`, `pytest`, `ruff`,
+  `mypy`, `alembic` and `pre-commit` are simply there. Never `source` anything.
+- **Never write a shell script and run it** — another hook blocks that. Run the command directly.
 
-This is a solo-developer project but uses branches and PRs deliberately, as a learning and
-documentation tool. PR descriptions serve as breadcrumbs the owner can return to later to understand
-why decisions were made.
+## Commands
 
-- Features should be chunked into reasonably scoped branches.
-- Within a branch, work should be committed in small, logical units — one coherent change per
-  commit, not one giant commit per branch.
-- PR descriptions should be written to explain the _why_ behind decisions, not just the _what_,
-  since the owner may return to them months later.
-- Do not push branches or open PRs without explicit instruction.
+| Task                           | Command                                                   |
+| ------------------------------ | --------------------------------------------------------- |
+| Backend tests                  | `cd backend && pytest`                                    |
+| One backend test               | `cd backend && pytest tests/test_books.py::test_name`     |
+| Frontend unit tests            | `cd frontend && npm test`                                 |
+| One frontend spec              | `cd frontend && npm test -- src/path/to/file.spec.tsx`    |
+| Storybook tests (real browser) | `cd frontend && npm run test:storybook`                   |
+| Lint + typecheck + unit tests  | `cd frontend && npm run check`                            |
+| E2E                            | `cd e2e && npm test -- --project=chromium --reporter=dot` |
+| All static checks              | `pre-commit run --all-files`                              |
+| Format the whole repo          | `cd frontend && npm run prettier:format`                  |
+| Regenerate the API client      | `cd frontend && npm run generate:api`                     |
+| Write a migration              | `cd backend && alembic revision --autogenerate -m "…"`    |
+| Apply migrations               | `cd backend && alembic upgrade head`                      |
+| Reseed the dev database        | `cd backend && python -m scripts.seed_dev`                |
 
-## Running Tests
+- **A hook rewrites every test command** to log to `/tmp/test.log`. A bare **`exit=0` means the
+  suite PASSED** — it is not "no output". On failure read that file; don't re-run to see it.
+- `prettier:*` runs from `frontend/` but covers the **whole repo** (the scripts pass `..`).
+- Migrations apply themselves when the stack starts; run `alembic` by hand only when authoring one.
+- **An e2e run truncates the dev database.** Reseed afterwards, then log out and in — the seed
+  replaces the user row with a new id.
+- `playwright: command not found` means `e2e/node_modules` is an empty volume: `cd e2e && npm ci`.
 
-- **Backend:** `pytest` from the `backend/` directory.
-- **Frontend:** `npm test` from the `frontend/` directory.
-- **E2E:** Playwright, run in containers. See `docs/development.md`.
-- **Never run tests, linters or builds in `angular-frontend/`.**
+## Architecture
 
-## Working from GitHub Issues
+Full picture in `docs/architecture.md`; the **why** for everything below lives in `docs/decisions/`,
+which is where significant decisions get recorded (template and index in its README) rather than
+restated in other docs or PR summaries.
 
-Branches follow the pattern `<issue#>-<slug>` — for example `29-add-engagement-statuses` (GitHub's
-built-in "Create a branch" format). The issue number is always the **first** hyphen-separated
-segment of the branch name.
+Three pieces, one deploy: React SPA → FastAPI (JSON API under `/api`, also serving the built SPA) →
+PostgreSQL 18. Locally a Caddy proxy puts them on one origin at `localhost:8080`, the shape
+production has (ADR-0029) — never assume separate origins.
 
-When the owner refers to "this issue" / "the issue", or asks to continue or finish the current work
-without naming a number:
+**Per-user isolation is the load-bearing invariant**, in two layers (ADR-0023). `get_db` sets
+`app.current_user_id` on the connection and RLS policies filter every personal row; shared reference
+data (`books`/`authors`/`editions`) and the auth path use `get_unscoped_db`, because those joins
+must stay unrestricted — picking the wrong dependency silently gets you empty results or a leak.
+Personal child tables also FK to the composite `(engagements.id, engagements.user_id)`. The app and
+the test suite both connect as the restricted `app_user` role, so RLS is exercised, not bypassed.
 
-1. Get the current branch: `git branch --show-current`.
-2. Extract the issue number — everything before the first hyphen (e.g. `29-add-engagement-statuses`
-   → `29`). If the branch does not match this pattern, say so and ask for the number rather than
-   guessing.
-3. Pull the issue: `gh issue view <#>`. This is a solo repo with no comment threads — do NOT use
-   `--comments` (it shows only comments, hides the body, and is empty here, which agents misread as
-   failure and retry-spiral).
-4. Compare the issue's requirements against what already exists — review `git diff main...HEAD` and
-   the working tree — before deciding what remains.
-5. Summarize what's done vs. outstanding, then continue per **Working Style** (explain before
-   building; confirm one step at a time).
+**Backend layering** (ADR-0025): `app/api/` routers parse, call a service, commit, shape the
+response → `app/services/` holds business rules as plain functions → `app/crud/` is one generic
+`CRUDBase[Model]`, instantiated once per model in `crud/__init__.py` and imported from there. Domain
+errors are plain-Python exceptions in `app/exceptions.py`, mapped to HTTP status once in `main.py` —
+services and crud never import FastAPI. mypy strict, Ruff, 88 columns.
 
-Use `gh` for all issue/PR context (`gh issue view`, `gh pr view`). It is already authenticated. Run
-these bare — no `--comments`, no pipes/redirects/`echo`.
+**Frontend layering** (ADR-0033 — read it before placing a new file): dependencies flow shared →
+features → app, features never import each other, enforced by `import-x/no-restricted-paths`.
+`src/api/generated/` is orval output — **never edit it**; a pre-commit hook regenerates it from the
+backend schema and CI fails on a diff. TanStack Query is the state layer (no store; the session is
+itself a query in `src/lib/auth.ts`). Specs and stories sit beside their component; unit specs
+render through `src/test/render.tsx` against MSW, and a promoted component is expected to have a
+story, which the storybook project runs in a real browser, failing on a11y violations.
 
-**Exception during the migration:** the current branch is `convert-app-from-angular-to-react`, which
-has no issue number. Do not try to resolve one. `REACT-MIGRATION-PUNCHLIST.md` is the source of
-truth for what's next.
+`.claude/rules/playwright-e2e.md` is the standard for anything under `e2e/` and outranks Playwright
+docs defaults — read it before writing or editing a spec.
+
+## Branching, commits, and issues
+
+Branches are `<issue#>-<slug>` (GitHub's "Create a branch" format); the issue number is everything
+before the first hyphen. When she says "this issue" without naming one, read it off
+`git branch --show-current`, then `gh issue view <#>` — bare, no `--comments` (it hides the body,
+and this repo has no comment threads, which agents misread as failure and retry-spiral). Compare the
+issue against `git diff main...HEAD` and the working tree before deciding what's left.
+
+- Commit in small, logical units — one coherent change per commit, not one per branch.
+- PR descriptions explain the _why_, not the _what_. She returns to them months later.
+- **Never push a branch or open a PR without explicit instruction.**
