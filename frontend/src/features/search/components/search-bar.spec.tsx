@@ -28,9 +28,6 @@ function buildResult(overrides: Partial<BookSearchResult> = {}): BookSearchResul
   };
 }
 
-// Returns the queries the bar actually sent, so the short-query test can assert on the
-// absence of a request rather than on the absence of results -- which would pass while
-// the debounce was still pending.
 function stubSearch(results: BookSearchResult[]) {
   const queries: string[] = [];
   server.use(
@@ -82,7 +79,6 @@ const googleResult = buildResult({
   title: 'The Left Hand of Darkness',
 });
 
-// The bar debounces, so every action test has to get through a real search first.
 async function search(results: BookSearchResult[]) {
   stubSearch(results);
   const user = await expand();
@@ -202,10 +198,6 @@ describe('SearchBar', () => {
     expect(screen.queryByRole('option', { name: /Piranesi/ })).not.toBeInTheDocument();
   });
 
-  // The results are held while a refined query is in flight, which is the point of
-  // keepPreviousData -- but "previous" must not reach back across a collapse. Asserted
-  // at the moment the second request goes out, because that is when the stale results
-  // would be standing in for it.
   it('does not show the last search results against a new query after reopening', async () => {
     const queries: string[] = [];
     server.use(
@@ -213,7 +205,6 @@ describe('SearchBar', () => {
         const q = new URL(request.url).searchParams.get('q') ?? '';
         queries.push(q);
         if (q.startsWith('gideon')) return [buildResult({ title: 'Gideon the Ninth' })];
-        // Held open so the assertion lands while the new query is still unanswered.
         await delay('infinite');
         return [];
       })
@@ -243,8 +234,6 @@ describe('SearchBar', () => {
       expect(await screen.findByRole('dialog')).toBeVisible();
       expect(screen.getByRole('button', { name: 'Add Small Gods as Reading' })).toBeVisible();
 
-      // Only assertable once the sheet is gone: it is modal, so while it is open the
-      // rest of the document is aria-hidden and nothing behind it has a role.
       await user.keyboard('{Escape}');
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
       expect(screen.getByRole('button', { name: 'Search books' })).toBeInTheDocument();
@@ -266,8 +255,6 @@ describe('SearchBar', () => {
       expect(screen.getByRole('button', { name: 'No thanks — just import' })).toBeVisible();
     });
 
-    // The import already happened, so backing out is not an undo -- the book stays in
-    // the catalog and the bar stays collapsed.
     it('leaves the book imported when the add is declined', async () => {
       stubImport();
       const user = await search([googleResult]);

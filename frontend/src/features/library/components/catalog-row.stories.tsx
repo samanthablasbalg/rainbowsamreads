@@ -18,8 +18,6 @@ const book: BookRead = {
   updated_at: '2025-01-01T00:00:00Z',
 };
 
-// The row renders an <li>, so every story supplies the <ul> it belongs in rather than
-// leaving a list item loose in the document -- which axe reports, correctly.
 const meta = {
   component: CatalogRow,
   args: { book },
@@ -33,13 +31,8 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// Every story leaves `default_cover_url` null. That is the common case anyway -- a book
-// only has a cover if it was imported with one -- and a real src would be a live network
-// request from the headless browser these run in, which is why cover-image.stories.tsx
-// has no loaded-image story either. The cover is CoverImage's behaviour, not this row's.
 export const Default: Story = {};
 
-// The length combinations, which are the row's only real branch.
 export const AudioOnly: Story = {
   args: { book: { ...book, default_page_count: null, default_audio_minutes: 512 } },
 };
@@ -52,7 +45,6 @@ export const NoLength: Story = {
   args: { book: { ...book, default_page_count: null, default_audio_minutes: null } },
 };
 
-// Multiple authors and a title long enough to hit the truncation.
 export const ManyAuthors: Story = {
   args: {
     book: {

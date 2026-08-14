@@ -3,8 +3,6 @@ import { server } from '@/test/msw-server';
 import { render, screen, within } from '@/test/render';
 import { RailNav } from './rail-nav';
 
-// RailNav touches the whole chain: destinations through NavLink, and an account row that
-// calls useAuth -- an orval hook, React Query, and a request MSW has to answer.
 describe('RailNav', () => {
   it('renders one link per destination', () => {
     server.use(getAuthMeMockHandler());
@@ -21,8 +19,6 @@ describe('RailNav', () => {
 
     render(<RailNav streakDays={7} />, { initialEntries: ['/library'] });
 
-    // aria-current is what NavLink sets on the active link, and what a screen reader is
-    // told. Asserting on it rather than the Tailwind classes survives restyling.
     expect(screen.getByRole('link', { name: 'Library' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
   });
@@ -32,8 +28,6 @@ describe('RailNav', () => {
 
     render(<RailNav streakDays={7} />);
 
-    // findBy, not getBy: the account row renders nothing until useAuthMe resolves, so
-    // this is what proves the request went through MSW rather than never being made.
     expect(await screen.findByRole('button', { name: /reader@example\.com/ })).toBeInTheDocument();
   });
 
@@ -41,8 +35,6 @@ describe('RailNav', () => {
     server.use(getAuthMeMockHandler());
 
     render(<RailNav streakDays={1} />);
-
-    // Singular, to pin the pluralisation in StreakIndicator.
     expect(screen.getByText('1 day')).toBeInTheDocument();
   });
 });

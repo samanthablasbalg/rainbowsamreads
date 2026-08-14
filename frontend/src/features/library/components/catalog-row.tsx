@@ -13,18 +13,12 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { authorNames } from '@/utils/book';
 
-// "8h 32m", dropping either half when it is zero -- 90 reads as "1h 30m", 45 as "45m",
-// 120 as "2h". Deliberately not `formatMinutesAsHhmm`, which renders "01:30": that is a
-// clock position, the right shape for where you are in an audiobook and the wrong one
-// for how long the whole thing is.
 function formatAudioLength(totalMinutes: number): string {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   return [hours && `${hours}h`, minutes && `${minutes}m`].filter(Boolean).join(' ');
 }
 
-// A book can have a page count, an audio length, both, or neither -- these are the
-// defaults on the book itself, not on an edition someone owns.
 function formatLengths({ default_page_count, default_audio_minutes }: BookRead): string | null {
   const lengths = [
     default_page_count && `${default_page_count} ${default_page_count === 1 ? 'page' : 'pages'}`,
@@ -34,19 +28,6 @@ function formatLengths({ default_page_count, default_audio_minutes }: BookRead):
   return lengths.length > 0 ? lengths.join(' · ') : null;
 }
 
-// The catalog's row: every book known to the app, whether or not it has ever been read.
-// Same cover-led shape as ReadingCard, but off `BookRead` rather than an engagement --
-// there is no progress, no format and no status here, because none of those exist until
-// a book is picked up.
-//
-// "Mark as reading" opens the format picker rather than starting a read directly: an
-// engagement binds to an edition, and the format is what picks which one.
-//
-// Deleting a book is not deleting a read, and `books` carries no user_id -- it is one
-// shared table, so this removes the title for every user, not from a personal shelf.
-// The backend refuses with a 409 while any engagement or standalone entry still points
-// at it, anyone's included, which is the ordinary outcome from this screen rather than
-// an edge case -- so the failure is rendered on the row instead of being swallowed.
 export function CatalogRow({ book }: { book: BookRead }) {
   const lengths = formatLengths(book);
   const queryClient = useQueryClient();
@@ -71,8 +52,6 @@ export function CatalogRow({ book }: { book: BookRead }) {
       cover={book.default_cover_url}
       details={
         <>
-          {/* Lengths and the delete failure sit under the author rather than in a slot of
-              their own: both are prose about this book, and neither is an action. */}
           {lengths && <p className="text-sm text-muted-foreground">{lengths}</p>}
 
           {deleteBook.isError && (

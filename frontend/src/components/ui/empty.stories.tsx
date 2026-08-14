@@ -11,10 +11,6 @@ import {
   EmptyContent,
 } from './empty';
 
-// children is supplied by `render`, not `args` -- see avatar.stories.tsx for why.
-//
-// `variant` lives on EmptyMedia rather than on Empty, so the two stories override
-// `render` instead of passing an arg.
 const meta = {
   component: Empty,
 } satisfies Meta<typeof Empty>;
@@ -22,8 +18,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// The `icon` variant: a small glyph on a muted tile, for an empty list inside a page
-// that already has its own heading.
 export const Default: Story = {
   render: (args) => (
     <Empty {...args}>
@@ -41,8 +35,6 @@ export const Default: Story = {
   ),
 };
 
-// The `default` variant: no tile, so the media sizes itself -- for a larger illustration
-// carrying the whole empty state.
 export const Illustration: Story = {
   render: (args) => (
     <Empty {...args}>

@@ -16,9 +16,6 @@ type SheetProps = Omit<React.ComponentProps<typeof FormatPickSheet>, 'open' | 'o
 
 const baseBook: SheetProps = { bookId: 'book-1', title: 'Piranesi', audioMinutes: null };
 
-// The sheet is controlled the way CatalogRow drives it, and renders the router's
-// current path beside it -- the success path navigates, and MemoryRouter has nothing
-// else mounted to show where it landed.
 function ControlledFormatPickSheet(props: SheetProps) {
   const [open, setOpen] = useState(true);
   return (
@@ -146,8 +143,6 @@ describe('FormatPickSheet', () => {
     const startButton = screen.getByRole('button', { name: 'Start reading Piranesi as Audio' });
     expect(startButton).toBeDisabled();
 
-    // The mask rules out most garbage -- "600" is typed as 06:00 -- but not a minute
-    // past 59, which is also the state on the way to 07:30.
     await user.type(screen.getByLabelText('How long is the audiobook?'), '75');
     await user.tab();
 
@@ -171,9 +166,6 @@ describe('FormatPickSheet', () => {
     expect(screen.getByLabelText('How long is the audiobook?')).toHaveValue('');
   });
 
-  // The catalog is the screen most likely to hit this: the backend refuses a second
-  // reading engagement for the same book and format, and refuses a format the book has
-  // no edition for. Either way the sheet has to stay open and say why.
   it('shows the failure reason and stays open when the read cannot be started', async () => {
     const user = userEvent.setup();
     server.use(
@@ -196,8 +188,6 @@ describe('FormatPickSheet', () => {
     expect(screen.getByText('path: /')).toBeInTheDocument();
   });
 
-  // Search opens the sheet with a choice of status; the catalog passes none and goes
-  // straight to the format list, which every test above relies on.
   describe('with a choice of status', () => {
     it('asks for a status before the format', async () => {
       renderSheet({ statuses: ALL_STATUSES });

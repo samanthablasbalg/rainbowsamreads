@@ -2,8 +2,6 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@/components/ui/button';
 import { ButtonLabel } from './button-label';
 
-// Rendered inside a Button: this is a fragment, and the spinner's size and spacing come
-// from the Button it sits in.
 const meta = {
   component: ButtonLabel,
   args: {

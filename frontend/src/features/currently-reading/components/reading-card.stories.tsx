@@ -33,8 +33,6 @@ const baseEngagement = {
   updated_at: '2025-01-01T00:00:00Z',
 };
 
-// Rendered inside a <ul> in every story -- ReadingCard is an <li>, and a listitem
-// outside a list role is exactly the kind of structure axe's a11y check flags.
 const meta = {
   component: ReadingCard,
   args: {

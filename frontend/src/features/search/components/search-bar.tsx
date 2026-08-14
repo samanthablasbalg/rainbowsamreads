@@ -30,11 +30,8 @@ import { SearchResultRow } from './search-result-row';
 
 const DEBOUNCE_MS = 300;
 
-// One character matches most of the catalog, which is noise rather than a result set.
 const MIN_QUERY_LENGTH = 2;
 
-// Adding from search is not necessarily starting a read -- a book you have already
-// finished is exactly the kind of thing you go looking for -- so all three are offered.
 const ADD_STATUSES = [
   EngagementCreateStatus.reading,
   EngagementCreateStatus.finished,
@@ -43,9 +40,6 @@ const ADD_STATUSES = [
 
 type PendingSheet = Omit<FormatPickSheetProps, 'open' | 'onOpenChange'>;
 
-// The backend returns one flat, deduped list; the grouping is ours. Fixed order, and a
-// section with nothing in it is not rendered -- so "New from Google Books" being absent
-// means Google offered nothing this call, whether it was reachable or not.
 const SECTIONS: { heading: string; hint: string | null; state: BookSearchResultState }[] = [
   { heading: 'In your library', hint: null, state: BookSearchResultState.in_library },
   {
@@ -60,33 +54,14 @@ const SECTIONS: { heading: string; hint: string | null; state: BookSearchResultS
   },
 ];
 
-// Global book search: your library, the shared catalog, and Google Books, in one query.
-//
-// Two states. Collapsed it is the icon button that has always been in the header.
-// Expanded it is a search field laid over the header row -- absolutely positioned, so
-// the wordmark, streak and account menu are covered rather than squashed. It is
-// right-anchored and animates its own width, which is why it is `right-4 w-[...]`
-// rather than `inset-x-4`: only one of the two can be transitioned.
-//
-// Everything below the field -- the popup, its position, dismissal, arrow-key
-// navigation through results -- is Base UI's combobox. `filter={null}` turns off its
-// client-side filtering, because the filtering already happened on the server.
-//
-// Nothing survives collapsing it. No query in the URL, no recent searches: reopening is
-// blank, deliberately.
 export function SearchBar() {
   const [expanded, setExpanded] = useState(false);
-  // The sheet the two row actions open. Held here rather than in the panel, and kept
-  // out of `expanded`, because both actions collapse the bar first -- a dialog stacked
-  // on the results popup, over a bar that collapses the moment focus leaves it, is not
-  // a workable place to put a three-step form.
   const [sheet, setSheet] = useState<PendingSheet | null>(null);
   const queryClient = useQueryClient();
 
   const importBook = useBooksImportBook({
     mutation: {
       onSuccess: async (book) => {
-        // The catalog gained a book, which is a different list from the search results.
         await queryClient.invalidateQueries({ queryKey: getBooksListBooksQueryKey() });
         collapse();
         setSheet({
@@ -94,8 +69,6 @@ export function SearchBar() {
           title: book.title,
           audioMinutes: book.default_audio_minutes,
           statuses: ADD_STATUSES,
-          // Importing is a complete action on its own -- the book is in the catalog
-          // either way -- so backing out here is a real answer, not a cancellation.
           cancelLabel: 'No thanks — just import',
         });
       },
@@ -152,10 +125,6 @@ type SearchPanelProps = {
   importFailed: boolean;
 };
 
-// The field and the query it drives, mounted only while the bar is open. That is what
-// makes "nothing survives collapsing it" true rather than merely hidden: the query
-// observer goes with it, and `keepPreviousData` below cannot reach back past a collapse
-// to answer the next search with the last one's results.
 function SearchPanel({
   onCollapse,
   onAdd,
@@ -163,21 +132,19 @@ function SearchPanel({
   importingGoogleBooksId,
   importFailed,
 }: SearchPanelProps) {
-  // The popup anchors to this rather than to the input, which sits inside an InputGroup
-  // and so starts after the leading icon -- anchoring there aligns the panel to the
-  // start of the text and sizes it to the input alone.
+  // The popup anchors to this, not the input: the input sits inside an InputGroup and so
+  // starts after the leading icon.
   const barRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query.trim(), DEBOUNCE_MS);
   // Both, not just the debounced one: the debounce still holds the old query for
-  // DEBOUNCE_MS after the field is cleared, which keeps the panel open on stale results.
+  // DEBOUNCE_MS after the field is cleared, which would keep the panel open on stale
+  // results.
   const enabled =
     query.trim().length >= MIN_QUERY_LENGTH && debouncedQuery.length >= MIN_QUERY_LENGTH;
 
   const { data, isFetching, isError } = useBooksSearchBooks(
     { q: debouncedQuery },
-    // keepPreviousData holds the last results on screen while the next query is in
-    // flight, so refining a search dims rather than empties the panel.
     { query: { enabled, placeholderData: keepPreviousData } }
   );
 
@@ -187,12 +154,11 @@ function SearchPanel({
     <>
       <div
         ref={barRef}
-        // Only reached while the popup is shut -- a query under MIN_QUERY_LENGTH. Once it
-        // is open Base UI handles Escape itself and stops the event here, which is what
-        // `onOpenChange` below is for.
+        // Only reached while the popup is shut. Once it is open Base UI handles Escape
+        // itself and stops the event here, which is what `onOpenChange` below is for.
         onKeyDown={(event) => event.key === 'Escape' && onCollapse()}
-        // Collapsing on focus leaving the bar, rather than on any outside click, is what
-        // keeps it open while the pointer is in the results list.
+        // Focus leaving the bar, not any outside click, so it stays open while the
+        // pointer is in the results list.
         onBlur={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) onCollapse();
         }}
@@ -201,16 +167,9 @@ function SearchPanel({
         <Combobox
           items={results}
           filter={null}
-          // Held at null so no row is ever the selected one -- this list is a set of
-          // destinations, not a value being picked. `onValueChange` is where opening the
-          // book page will hang once that page exists.
           value={null}
           inputValue={query}
           onInputValueChange={setQuery}
-          // Visibility is ours -- the popup is exactly "the query is long enough" -- so
-          // Base UI cannot close itself. onOpenChange is it asking to be dismissed
-          // (Escape, a click outside), and for this bar dismissing the popup means
-          // collapsing the whole thing.
           open={enabled}
           onOpenChange={(open) => !open && onCollapse()}
         >
@@ -263,8 +222,6 @@ function SearchPanel({
               {isFetching ? (
                 'Searching…'
               ) : isError ? (
-                // Announced, like the import failure above it -- both arrive well after
-                // the keystroke that caused them.
                 <span role="alert">Search failed — please try again.</span>
               ) : (
                 'No results.'

@@ -8,18 +8,6 @@ import {
   type PageProgressLogRead,
 } from '@/api/generated/readingTracker.schemas';
 
-// Deterministic fixtures for specs and stories, as distinct from the generated
-// `*.faker.ts` mocks: those produce *random* valid entities, which is right for "some
-// response came back" and wrong here, since you cannot assert on a random rating and a
-// story that changes every run churns snapshots.
-//
-// Here rather than in a feature because two features need EngagementRead -- library and
-// currently-reading -- and the lint zones forbid features importing each other, so a
-// fixture either lives outside them or gets copied. This is the folder punch list § 0
-// reserved for it.
-//
-// Builder rather than a frozen literal so each caller states only what it varies; the
-// rest is understood to be beside the point.
 export function buildBook({
   title = 'Piranesi',
   ...overrides
@@ -65,9 +53,6 @@ export function buildEngagement({
   };
 }
 
-// The audio counterpart. Format and length move together -- an audio read whose book
-// still carries a page count and no runtime is not a state the app produces -- so a
-// caller asking for audio gets both rather than restating the book.
 export function buildAudioEngagement({
   title = 'Piranesi',
   ...overrides
@@ -80,8 +65,6 @@ export function buildAudioEngagement({
   });
 }
 
-// Progress logs, in the order the API returns them: ascending by (logged_on, created_at).
-// Callers that care which entry is the newest state the dates; the rest take the default.
 export function buildPageLog(overrides: Partial<PageProgressLogRead> = {}): PageProgressLogRead {
   return {
     id: 'log-1',

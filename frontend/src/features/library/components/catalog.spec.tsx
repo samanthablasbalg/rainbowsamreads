@@ -49,8 +49,6 @@ describe('Catalog', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Loading');
   });
 
-  // The heading is deliberately invisible rather than absent -- sr-only keeps the shelf
-  // in the heading outline while the nav above carries it visually.
   it('keeps a heading in the accessibility tree', async () => {
     server.use(getBooksListBooksMockHandler([]));
 

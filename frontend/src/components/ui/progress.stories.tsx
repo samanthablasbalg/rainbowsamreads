@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Progress, ProgressLabel, ProgressValue } from './progress';
 
-// children is supplied by `render`, not `args` -- see avatar.stories.tsx for why.
 const meta = {
   component: Progress,
   args: {

@@ -4,9 +4,6 @@
     "target": "es2023",
     "lib": ["ES2023", "DOM"],
     "module": "esnext",
-    // "vitest/globals" is what makes describe/it/expect/vi exist for TypeScript. It is
-    // the type-level half of `globals: true` in vite.config.ts; without it the runtime
-    // works and the typecheck fails.
     "types": [
       "vite/client",
       "vitest/globals",

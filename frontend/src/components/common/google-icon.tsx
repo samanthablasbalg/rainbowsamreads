@@ -1,8 +1,3 @@
-// Google's brand mark, inline because it has to keep its four fixed colours -- an icon
-// font or a currentColor glyph would be the wrong asset. That also means it needs its
-// own white ground: the blue and green have nothing like enough contrast against the
-// pink of a filled Button. The white disc is padding on the svg itself so the Button's
-// `[&_svg]:size-4` rule still sizes it.
 export function GoogleIcon(props: React.ComponentProps<'svg'>) {
   return (
     <svg viewBox="0 0 48 48" aria-hidden="true" {...props}>

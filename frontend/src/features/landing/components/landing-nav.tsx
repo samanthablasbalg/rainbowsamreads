@@ -17,9 +17,9 @@ export function LandingNav() {
           Rainbow Sam Reads
         </span>
       </div>
-      {/* Both the wordmark and a button label are whitespace-nowrap, and together they
-          overflow a narrow phone -- so the label sheds "with Google" rather than the
-          wordmark breaking across two lines. */}
+      {/* The wordmark and this label are both whitespace-nowrap and together overflow a
+          narrow phone, so the label sheds "with Google" rather than the wordmark
+          breaking across two lines. */}
       <Button variant="outline" onClick={login}>
         <GoogleIcon />
         Log in<span className="hidden sm:inline"> with Google</span>

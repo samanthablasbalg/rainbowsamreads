@@ -54,9 +54,6 @@ describe('EngagementRow', () => {
     expect(screen.queryByText(/Finished|Abandoned/)).not.toBeInTheDocument();
   });
 
-  // The dates are date-only strings, which `new Date` reads as UTC midnight -- formatting
-  // them in local time lands on the previous day for anyone behind UTC. TZ is stubbed
-  // because the test container runs at UTC, where both the fix and the bug look identical.
   it('keeps the calendar day the backend wrote when the reader is behind UTC', () => {
     vi.stubEnv('TZ', 'America/Los_Angeles');
 
@@ -136,7 +133,6 @@ describe('EngagementRow', () => {
     ]);
   });
 
-  // A finished or DNF read reaches its history the same way a current one does.
   it('links View history at the read’s page', async () => {
     const user = userEvent.setup();
     renderInList(buildEngagement());
@@ -194,8 +190,6 @@ describe('EngagementRow', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
-  // No MSW handler registered for this one -- the suite's onUnhandledRequest: 'error'
-  // means a mutation firing anyway would fail the test, not just an assertion missing.
   it('leaves the read alone when the confirmation is cancelled', async () => {
     const user = userEvent.setup();
     renderInList(buildEngagement());

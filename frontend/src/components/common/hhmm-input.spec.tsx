@@ -3,8 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { act, render, screen } from '@/test/render';
 import { HhmmInput } from './hhmm-input';
 
-// The mask is only observable through a controlled parent: each keystroke's formatted
-// value is what the next keystroke is applied to.
 function ControlledHhmmInput({ initial = '' }: { initial?: string }) {
   const [value, setValue] = useState(initial);
   return <HhmmInput aria-label="Position" value={value} onValueChange={setValue} />;
@@ -49,9 +47,6 @@ describe('HhmmInput', () => {
     expect(field).toHaveValue('00:12');
   });
 
-  // Backspacing the last digit out has to leave the caller holding '' rather than a
-  // 00:00 it would treat as an entered position -- visible once the field is blurred and
-  // the focused mask drops away.
   it('empties back out rather than resting on 00:00', async () => {
     const field = renderInput();
 
@@ -73,8 +68,6 @@ describe('HhmmInput', () => {
   it('accepts a value set in one go, the way an e2e fill() sets it', async () => {
     const field = renderInput();
 
-    // fireEvent-level assignment rather than keystrokes: Playwright's fill() sets the
-    // whole value and dispatches one input event, and the mask has to survive that.
     await userEvent.click(field);
     await userEvent.paste('02:30');
 
@@ -89,10 +82,6 @@ describe('HhmmInput', () => {
     expect(field).toHaveValue('20:55');
   });
 
-  // focus(), not userEvent.tab(): a browser applies its tab-focus select-all before
-  // dispatching focus, so the handler collapsing it wins -- verified in Chromium via
-  // hhmm-input.stories.tsx. user-event applies that selection *after* focus, so tabbing
-  // here would measure user-event's ordering rather than the field's behaviour.
   it('puts the caret at the end when the field takes focus', () => {
     const field = renderInput('02:05');
 
@@ -103,8 +92,6 @@ describe('HhmmInput', () => {
     expect(field.selectionEnd).toBe(5);
   });
 
-  // The reason the mask appears at all: an empty field parks the caret at its left edge
-  // while the first digit lands at the right, so the caret jumps the field's width.
   it('renders the zeroed mask while an empty field is focused', () => {
     const field = renderInput();
 

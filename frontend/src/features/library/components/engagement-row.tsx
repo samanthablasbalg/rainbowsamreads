@@ -18,16 +18,6 @@ import { formatIsoDate } from '@/utils/format-date';
 import { ReviewSheet } from './review-sheet';
 import { StarRating } from './star-rating';
 
-// One row for both the finished and DNF shelves. They differ in two details, not in
-// structure, so this is a branch rather than a second component: which date is shown,
-// and whether the point it was abandoned at is.
-//
-// `completion_pct` is text rather than the ReadingProgress bar deliberately -- a bar
-// reads as a read still in motion, which is the one thing a DNF is not.
-//
-// The rating shows on the card but the review body does not: the body is long-form and
-// belongs to the sheet that wrote it, and a shelf of them would stop being a shelf.
-// Delete removes this read, not the book: the title stays in the catalog afterwards.
 export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
   const { book, formats, status, finished_on, abandoned_on, completion_pct, review } = engagement;
   const isDnf = status === ReadingStatus.dnf;
@@ -65,9 +55,6 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
             <p className="text-sm text-muted-foreground">Stopped at {completion_pct}%</p>
           )}
 
-          {/* Format chips on their own line rather than the title's, matching ReadingCard:
-              as chips they no longer sit on the title's baseline, and a multi-format read
-              shows two. */}
           <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
             <FormatIcons formats={formats} />
           </div>
@@ -75,8 +62,6 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
       }
       slots={[
         review?.rating ? (
-          // Wrapped rather than given the span directly: StarRating takes no className,
-          // and stretching it would say nothing -- the stars stay at their own width.
           <div className="col-span-2 @xl:col-span-1">
             <StarRating rating={review.rating} />
           </div>

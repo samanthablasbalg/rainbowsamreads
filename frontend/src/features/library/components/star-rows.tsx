@@ -3,18 +3,12 @@ import { StarIcon } from '@hugeicons/core-free-icons';
 
 import { STARS, starFillPercent } from '../utils/star-fill';
 
-// The two stacked rows both star widgets are built from: five muted stars, and five amber
-// ones over them clipped to the score. `overflow-hidden` on a width-constrained overlay is
-// what makes a partial star possible; the row underneath shows through the rest.
+// `overflow-hidden` on a width-constrained overlay is what makes a partial star possible,
+// and `shrink-0` is what stops flex compressing the glyphs and detuning the fill maths.
 //
-// Shared because the two rows have to stay geometrically identical -- hence `shrink-0` on
-// every glyph -- and a second copy at a second size is exactly how that stops being true.
-// Taking `value` rather than a percentage keeps the fill maths here too, so a caller
-// cannot clip to a scale the other one is not using.
-//
-// Both rows are aria-hidden: ten stars and no number is worse than nothing. The meaning
-// belongs to the caller's wrapper, which is also what has to be positioned -- the fill row
-// is absolute, and the callers' wrappers are `relative` for their own reasons anyway.
+// Both rows are aria-hidden -- ten stars and no number is worse than nothing -- so the
+// caller's wrapper carries the label. That wrapper also has to be `relative`, since the
+// fill row is absolute.
 export function StarRows({ value, size }: { value: number; size: number }) {
   return (
     <>

@@ -3,11 +3,6 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { BookRow } from './book-row';
 
-// The row renders an <li>, so every story supplies the <ul> it belongs in rather than
-// leaving a list item loose in the document -- which axe reports, correctly.
-//
-// `cover` is null throughout: a real src would be a live network request from the headless
-// browser these run in, and the cover is CoverImage's behaviour rather than this row's.
 const meta = {
   component: BookRow,
   args: {
@@ -31,9 +26,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// The two shapes the row supports. Both are worth looking at at a few widths: the @xl
-// container query is what decides stacked vs one line, and the slot count is what decides
-// how many tracks that line has.
 export const OneSlot: Story = {};
 
 export const TwoSlots: Story = {
@@ -49,14 +41,12 @@ export const TwoSlots: Story = {
   },
 };
 
-// Details are the lines under the author -- formats, dates, lengths, a failed action.
 export const WithDetails: Story = {
   args: {
     details: <p className="text-sm text-muted-foreground">272 pages</p>,
   },
 };
 
-// A title long enough to prove the 1fr track holds it rather than widening the row.
 export const LongTitle: Story = {
   args: {
     title: 'The Rise and Fall of the Third Chimpanzee: Evolution and Human Life',

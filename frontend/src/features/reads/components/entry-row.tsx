@@ -3,20 +3,10 @@ import { PencilEdit02Icon } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import type { EntryView } from '../utils/entry-view';
 
-// One row per logged session, with a single action on it -- the same shape CatalogRow,
-// ReadingCard and EngagementRow use. The row itself is not clickable: this list is read
-// far more often than it is edited, and a row-wide hit area would put every entry in the
+// The row is deliberately not clickable: a row-wide hit area would put every entry in the
 // tab order with nothing on screen saying it was editable.
-//
-// One control rather than one per editable thing: the date, the position and delete all
-// live inside the sheet this opens, so there is nothing else for the row to carry.
 export function EntryRow({ entry, onEdit }: { entry: EntryView; onEdit: () => void }) {
   return (
-    // Stacked on a phone and one line from sm up. The date leads either way: it is what
-    // you scan for, and the amount is what you came to read off.
-    //
-    // Named for its date, the way ReadingCard and EngagementRow name theirs for the book:
-    // it is what distinguishes one entry from another to a reader and to a test.
     <li
       aria-label={entry.dateLabel}
       className="flex items-center gap-3 border-b border-border py-2.5 last:border-b-0"

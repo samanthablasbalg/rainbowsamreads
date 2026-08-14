@@ -8,24 +8,16 @@ import { localIsoDate } from '@/utils/local-date';
 
 type InlineDateEditProps = {
   value: string | null;
-  // Names the thing being edited, lowercase, for the controls' accessible names:
-  // "start date" gives "Edit start date" / "Save start date".
+  // Lowercase: "start date" gives "Edit start date" / "Save start date".
   label: string;
   disabled?: boolean;
   onSave: (value: string) => void;
 };
 
-// A date that reads as text until you touch it, then becomes an input in the same slot.
-//
-// A swap, not a reveal: the text and the editor never coexist, so a page that is otherwise
-// read-only never carries an idle form control, and there is no editor left standing open
-// behind you once you are done with it.
 export function InlineDateEdit({ value, label, disabled = false, onSave }: InlineDateEditProps) {
   const [editing, setEditing] = useState(false);
 
   if (editing) {
-    // Mounted fresh each time, which is what re-seeds the draft from `value` -- state held
-    // up here would still be showing the last edit's half-typed date on the second open.
     return (
       <DateEditor
         value={value}
@@ -42,8 +34,6 @@ export function InlineDateEdit({ value, label, disabled = false, onSave }: Inlin
   return (
     <Button
       variant="link"
-      // Stripped back to the surrounding text: this sits mid-sentence in the header, and
-      // the link variant's underline-on-hover is the whole affordance it needs.
       className="h-auto p-0 font-normal text-inherit"
       disabled={disabled}
       aria-label={`Edit ${label}`}
@@ -67,12 +57,7 @@ function DateEditor({
 }) {
   const [draft, setDraft] = useState(value ?? '');
 
-  // Explicit rather than fired on change: a native date input emits a change for every
-  // part you touch, so two of every three would be a half-typed date.
   function save() {
-    // An emptied field cancels rather than clearing. The API does take null, but clearing
-    // `started_on` moves the bound every log date is validated against -- a real action
-    // with its own consequences, not something to fall out of backspacing.
     if (draft === '') return onCancel();
     onSave(draft);
   }

@@ -1,8 +1,6 @@
 import { render, screen, within } from '@/test/render';
 import { MobileNav } from './mobile-nav';
 
-// Same contract as the rail, different layout: one link per destination, and the active
-// one named by aria-current rather than by its styling.
 describe('MobileNav', () => {
   it('renders one link per destination', () => {
     render(<MobileNav />);

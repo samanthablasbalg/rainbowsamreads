@@ -3,8 +3,6 @@ import { AxiosError, type AxiosResponse } from 'axios';
 import { Button } from '@/components/ui/button';
 import { ErrorState } from './error-state';
 
-// Builds a rejection shaped like the ones the generated hooks produce, so the stories
-// exercise the real branches in describeError rather than a stand-in.
 const axiosFailure = (status?: number) =>
   new AxiosError(
     status ? `Request failed with status code ${status}` : 'Network Error',

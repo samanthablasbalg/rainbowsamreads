@@ -63,7 +63,6 @@ describe('EntryList', () => {
     expect(onLogProgress).toHaveBeenCalledOnce();
   });
 
-  // A finished or abandoned read gets the empty state with nothing to do about it.
   it('leaves the empty state actionless without a logging handler', async () => {
     server.use(getEngagementsListProgressLogsMockHandler([]));
 
@@ -95,8 +94,6 @@ describe('EntryList', () => {
     expect(await screen.findByRole('dialog')).toHaveTextContent('Sat, Jun 14, 2025');
   });
 
-  // The confirmation is a sibling of the editor, not a child: Delete closes the sheet and
-  // opens the confirmation, so there is never a dialog inside a dialog.
   it('closes the editor before confirming a delete', async () => {
     server.use(getEngagementsListProgressLogsMockHandler([buildPageLog({ id: 'only' })]));
 

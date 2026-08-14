@@ -132,7 +132,6 @@ describe('ReadingCard', () => {
     ]);
   });
 
-  // A link rather than a click handler, so a modified click opens the read in a new tab.
   it('links View history at the read’s own page', async () => {
     const user = userEvent.setup();
     renderInList(buildEngagement({ id: 'engagement-Piranesi' }));
@@ -172,9 +171,6 @@ describe('ReadingCard', () => {
     );
   });
 
-  // The date is asserted, not just the status: ADR-0024 § 3 puts every `_on` business
-  // date on the client, and the backend silently falls back to its own clock when one
-  // is missing -- which lands an evening finish on tomorrow anywhere behind UTC.
   it('marks the engagement finished, after confirming, when Mark as finished is chosen', async () => {
     const user = userEvent.setup();
     let capturedBody: unknown;
@@ -234,8 +230,6 @@ describe('ReadingCard', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
-  // No MSW handler registered for this one -- the suite's onUnhandledRequest: 'error'
-  // means a mutation firing anyway would fail the test, not just an assertion missing.
   it('leaves the engagement unchanged when the confirmation is cancelled', async () => {
     const user = userEvent.setup();
     renderInList(buildEngagement());

@@ -14,10 +14,8 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// The shelves, which take the default icon and no action.
 export const Default: Story = {};
 
-// A screen listing something other than books passes its own icon.
 export const OwnIcon: Story = {
   args: {
     icon: HistoryIcon,

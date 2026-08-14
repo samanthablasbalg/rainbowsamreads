@@ -43,8 +43,6 @@ describe('EntryRow', () => {
     expect(onEdit).toHaveBeenCalledOnce();
   });
 
-  // The row is deliberately not a button: this list is read far more than edited, and a
-  // row-wide hit area would put every entry in the tab order.
   it('exposes exactly one control, the edit button', () => {
     render(
       <ul>

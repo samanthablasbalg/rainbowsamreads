@@ -22,9 +22,6 @@ import { authorNames, coverSrc } from '@/utils/book';
 import { localIsoDate } from '@/utils/local-date';
 import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
 
-// The three actions that ask before they act, keyed by the state that opens the dialog.
-// Copy lives here rather than inline so the three branches read side by side; `title` is
-// a function only because the book's name goes in it.
 const CONFIRMATIONS = {
   finished: {
     title: (bookTitle: string) => `Mark "${bookTitle}" as finished?`,
@@ -48,9 +45,6 @@ const CONFIRMATIONS = {
 
 type ConfirmAction = keyof typeof CONFIRMATIONS;
 
-// Cover-led row per ADR-0020: cover, title, author, format icon(s), progress. Finish,
-// DNF and delete each confirm first -- [[0031]] -- then PATCH/DELETE and invalidate the
-// engagements list so the card leaves this screen once its status no longer matches.
 export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
   const { book, formats, completion_pct } = engagement;
   const queryClient = useQueryClient();
@@ -72,10 +66,6 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
     if (pendingAction === 'delete') {
       deleteEngagement.mutate({ engagementId: engagement.id });
     } else if (pendingAction !== null) {
-      // `effective_on` per ADR-0024 § 3, same as `started_on` on the way in. It lands on
-      // `finished_on`/`abandoned_on` and on the completion log the backend writes when a
-      // print read is finished short of its last page, so the server's date would date
-      // all three to tomorrow for an evening finish behind UTC.
       updateStatus.mutate({
         engagementId: engagement.id,
         data: {
@@ -95,16 +85,12 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
       author={authorNames(book)}
       cover={coverSrc(engagement)}
       details={
-        // Its own line under the author rather than trailing the title: as a chip it no
-        // longer sits on the title's baseline, and a multi-format read shows two.
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
           <FormatIcons formats={formats} />
         </div>
       }
       slots={[
-        // Stacked, the bar spans both content columns -- the full width beside the cover,
-        // so it can't be crushed into the ~60px the old shared line gave it. On one line
-        // its track is `auto`, so it needs a width of its own.
+        // On one line the grid track is `auto`, so the bar needs a width of its own.
         <ReadingProgress
           title={book.title}
           pct={completion_pct}

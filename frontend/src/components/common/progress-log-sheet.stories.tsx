@@ -42,9 +42,6 @@ const baseEngagement: EngagementRead = {
   updated_at: '2025-01-01T00:00:00Z',
 };
 
-// ProgressLogSheet is controlled and has no defaultOpen -- the real app only ever drives
-// it from ReadingCard's own open state -- so each story supplies a trigger and opens it
-// through `play`, the same shape as account-menu.stories.tsx.
 function ControlledSheet({ engagement }: { engagement: EngagementRead }) {
   const [open, setOpen] = useState(false);
   return (
@@ -57,18 +54,11 @@ function ControlledSheet({ engagement }: { engagement: EngagementRead }) {
   );
 }
 
-// screen, not `within(canvasElement)`, for the assertion: the content renders through a
-// portal, which lands outside the story's own element.
 async function openSheet({ canvasElement }: { canvasElement: HTMLElement }) {
   await userEvent.click(within(canvasElement).getByRole('button', { name: 'Open' }));
   expect(await screen.findByRole('dialog')).toBeInTheDocument();
 }
 
-// No `component`: every story renders ControlledSheet, which supplies the open state
-// ProgressLogSheet requires, so declaring the component here would only make `args`
-// mandatory on stories that never pass any. Save behaviour is covered by
-// progress-log-sheet.spec.tsx -- these stories exist for the format and presentation
-// variants and the a11y gate, not a second copy of the same interaction assertions.
 const meta = {
   play: openSheet,
 } satisfies Meta;
@@ -85,9 +75,6 @@ export const Audiobook: Story = {
     <ControlledSheet
       engagement={{
         ...baseEngagement,
-        // Length moves with format: the audio branch reads `default_audio_minutes`, so
-        // inheriting the base book's page count would leave this story with no length at
-        // all and no "of" total beside the field.
         book: {
           ...baseEngagement.book,
           title: 'The House in the Cerulean Sea',
@@ -107,17 +94,11 @@ export const MobileSheet: Story = {
   render: () => <ControlledSheet engagement={baseEngagement} />,
 };
 
-// The stories above all open on today, so they only ever show the chip row in its
-// default state. This is the other half of it: the calendar chip selected and carrying a
-// date label, and the date input it reveals. A story's own `play` replaces meta's rather
-// than composing with it, hence the explicit openSheet call.
 export const CustomDate: Story = {
   render: () => <ControlledSheet engagement={baseEngagement} />,
   play: async (context) => {
     await openSheet(context);
     await userEvent.click(await screen.findByRole('button', { name: 'Pick a date' }));
-    // fireEvent.change, not userEvent.type: a native date input takes segmented
-    // keystrokes, so typing the ISO string into it doesn't land.
     fireEvent.change(screen.getByLabelText('Log date'), { target: { value: '2025-06-15' } });
     expect(await screen.findByRole('button', { name: 'Jun 15' })).toBeInTheDocument();
   },

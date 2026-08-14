@@ -12,30 +12,14 @@ import { Pending } from '@/components/common/pending';
 import { ThemeProvider } from '@/lib/theme-provider';
 
 type ProviderOptions = {
-  // The router's history. A single entry is the starting URL, which is what NavLink
-  // reads to decide whether it is active.
   initialEntries?: string[];
 };
 
-// The same providers as main.tsx and provider.tsx, in the same order.
-//
-// MemoryRouter rather than the createBrowserRouter tree in app/router.tsx: it takes the
-// component under test directly instead of requiring it to be reachable through a
-// route. Tests that need real routing -- redirects, loaders -- want the actual router.
 function createWrapper(initialEntries: string[]) {
-  // A fresh client per render, so nothing cached in one test leaks into another.
-  // retry: false matters: the app's client in provider.tsx retries twice with a
-  // backoff, and every error-path test would sit through it.
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
 
-  // The Suspense boundary stands in for SuspendedOutlet, which a component rendered
-  // directly does not sit under. Same fallback, so a screen on a suspense hook shows
-  // the same pending state here as it does in the app. No error boundary to match
-  // RouteError, deliberately: one here would swallow every unexpected render error in
-  // every test. A screen's failure path is asserted against the real tree instead --
-  // see router.spec.tsx.
   function Wrapper({ children }: { children: ReactNode }) {
     return (
       <ThemeProvider>
@@ -70,10 +54,6 @@ function customRenderHook<Result, Props>(
   return { queryClient, ...renderHook(hook, { wrapper: Wrapper, ...options }) };
 }
 
-// Walks the real route tree from app/router.tsx instead of wrapping one component the
-// way `render` does. Anything whose subject IS the routing -- the guards, redirects,
-// the catch-all -- needs the actual tree, and createMemoryRouter is the constructor
-// that takes a starting URL.
 function renderRoute(path: string) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -81,8 +61,6 @@ function renderRoute(path: string) {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
 
   return {
-    // Returned so routing tests can assert where the guards landed rather than
-    // inferring it from whatever the destination happens to render.
     router,
     queryClient,
     ...render(

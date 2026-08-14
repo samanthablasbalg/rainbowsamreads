@@ -12,22 +12,11 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 
-// Vite's `import()` rejects with a plain TypeError whose message differs per browser,
-// so this matches on text rather than a type. It is worth its own bucket twice over:
-// in dev it means a module that failed to compile, and in production it means a chunk
-// whose hash stopped existing because the app was redeployed while the tab was open.
-// Both are fixed by reloading, which no other error here is.
 function isChunkLoadError(error: unknown) {
   const message = error instanceof Error ? error.message : '';
   return /dynamically imported module|module script failed/i.test(message);
 }
 
-// Turns whatever was thrown into copy a reader can act on. Ordered most specific
-// first: a failed chunk import is a bare TypeError, so the generic fallback would
-// claim it if it ran first.
-//
-// Private: exporting it alongside a component breaks Fast Refresh, and ErrorState is
-// its only caller. Its branches get covered through the component.
 function describeError(error: unknown): { title: string; description: string } {
   if (isChunkLoadError(error)) {
     return {
@@ -36,14 +25,12 @@ function describeError(error: unknown): { title: string; description: string } {
     };
   }
 
-  // Two shapes carry a status: a Response thrown by a loader, and an axios rejection.
   const status = isRouteErrorResponse(error)
     ? error.status
     : isAxiosError(error)
       ? error.response?.status
       : undefined;
 
-  // An axios error with no response never reached the server at all.
   if (isAxiosError(error) && status === undefined) {
     return {
       title: "Can't reach the server",
@@ -75,13 +62,6 @@ function describeError(error: unknown): { title: string; description: string } {
   };
 }
 
-// The error twin of the empty states: same Empty primitives, same silhouette, so a
-// failure reads as part of the app rather than as the app falling over. The media
-// tile overrides the primitive's neutral `bg-muted` with destructive, which is the
-// one thing that distinguishes it at a glance from the empty state beside it.
-//
-// `action` is a slot rather than a baked-in button because callers want different
-// verbs: a query passes Retry wired to `refetch`, the route boundary passes Reload.
 export function ErrorState({ error, action }: { error: unknown; action?: ReactNode }) {
   const { title, description } = describeError(error);
 

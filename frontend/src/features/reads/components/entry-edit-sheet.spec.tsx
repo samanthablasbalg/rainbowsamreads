@@ -30,8 +30,6 @@ function renderSheet(entry: EntryView, onRequestDelete = () => {}) {
   );
 }
 
-// A PATCH that records what the sheet actually sent, so the assertions are about the
-// request rather than about the component's own state.
 function capturePatch() {
   const sent: Record<string, unknown>[] = [];
   server.use(
@@ -61,8 +59,6 @@ describe('EntryEditSheet', () => {
     const sent = capturePatch();
     renderSheet(newest);
 
-    // fireEvent.change, not userEvent.type: a native date input takes segmented
-    // keystrokes, so typing the ISO string into it doesn't land.
     fireEvent.change(await screen.findByLabelText('Log date'), {
       target: { value: '2025-06-10' },
     });
@@ -113,8 +109,6 @@ describe('EntryEditSheet', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 
-  // The rule the backend enforces: only the newest entry of a read can have its position
-  // changed or be deleted. An older one still edits its date.
   it('offers neither a position field nor delete on an older entry', async () => {
     renderSheet({ ...newest, isNewest: false });
 

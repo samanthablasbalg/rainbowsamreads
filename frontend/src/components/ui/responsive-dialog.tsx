@@ -26,12 +26,6 @@ import {
 // under a coarse one, so a screen writes a single tree instead of forking. Every class
 // here comes from dialog.tsx and drawer.tsx untouched -- this file styles nothing, it
 // only chooses which family's part to render.
-//
-// The pointer is read once, at the root, and shared through context rather than each
-// part calling useIsCoarsePointer() for itself. A resize between two parts' renders
-// would otherwise let them disagree, and a DialogTitle inside a DrawerPopup is not just
-// cosmetic -- the title is what names the popup for assistive tech, and the association
-// is per-family.
 const CoarseContext = React.createContext<boolean | null>(null);
 
 function useCoarse() {
@@ -44,13 +38,9 @@ function useCoarse() {
   return coarse;
 }
 
-// Props come from the Drawer side throughout, and that direction is load-bearing rather
-// than arbitrary. Drawer's close reasons are Dialog's plus 'swipe' and 'close-watcher',
-// and a callback typed for the smaller set cannot be handed to the branch that emits the
-// larger one -- Dialog's props spread into Drawer is a compile error, the reverse is not.
-// Typing from Drawer keeps the whole Base UI surface: `reason`, `cancel()`, `event`,
-// `preventUnmountOnClose()`. Drawer-only props land on Dialog.Root under a fine pointer,
-// which renders no DOM element of its own, so they are inert there rather than wrong.
+// Props are typed from the Drawer side throughout, and the direction is load-bearing:
+// Drawer's close reasons are Dialog's plus 'swipe' and 'close-watcher', so Dialog's props
+// spread into Drawer is a compile error while the reverse is not.
 function ResponsiveDialog({ children, ...props }: React.ComponentProps<typeof Drawer>) {
   const coarse = useIsCoarsePointer();
 
@@ -65,20 +55,9 @@ function ResponsiveDialogTrigger(props: React.ComponentProps<typeof DrawerTrigge
   return useCoarse() ? <DrawerTrigger {...props} /> : <DialogTrigger {...props} />;
 }
 
-// Both families' Content render their own portal and backdrop, so this is a straight
-// swap. It is also the mount boundary that matters: children of this part live inside a
-// portal that defaults to keepMounted={false}, so they unmount once a close finishes.
-// Put a form's state in a component rendered *here* and it resets itself between opens.
-// State hoisted above this line belongs to a component that never unmounts, and will
-// survive every close -- that is a bug this layer cannot prevent for you.
-//
-// Popup is the one part where the families genuinely diverge, on three props that each
-// take a plain value or a function of the part's own state. Only the function form is
-// per-family: DrawerPopupState carries `expanded`, `swiping` and the nested-drawer flags
-// DialogPopupState has no equivalent for, so a function written against either cannot be
-// handed to the other branch. The plain forms cross fine and are what this repo uses --
-// every `render` here is the element form -- and the same state is on the element as
-// `data-*`, which is how drawer.tsx styles it anyway.
+// The mount boundary: children of this part live inside a portal that defaults to
+// keepMounted={false}, so they unmount once a close finishes. A form's state rendered
+// *here* resets between opens; hoisted above this line it survives every close.
 type ResponsiveDialogContentProps = Omit<
   React.ComponentProps<typeof DrawerContent>,
   'className' | 'style' | 'render'

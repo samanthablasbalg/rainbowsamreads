@@ -24,15 +24,12 @@ import { InlineDateEdit } from './inline-date-edit';
 // One read's page. Its history is all it holds today, which is why the route is
 // /reads/:id rather than /reads/:id/history -- stats or editions can land here later
 // without a URL migration.
-//
-// The id arrives as a prop rather than being read off the URL here, so the book page can
-// mount this without a route of its own being involved.
 export function ReadHistory({ engagementId }: { engagementId: string }) {
   const { data: engagement } = useEngagementsGetEngagementSuspense(engagementId);
   const [logging, setLogging] = useState(false);
 
-  // Logging is only an action while the read is in progress. The sheet posts against the
-  // read's resume point, which a finished or abandoned read no longer advances.
+  // The sheet posts against the read's resume point, which a finished or abandoned read
+  // no longer advances. Update when reflow is implemented.
   const canLog = engagement.status === ReadingStatus.reading;
 
   return (
@@ -46,8 +43,6 @@ export function ReadHistory({ engagementId }: { engagementId: string }) {
         </Button>
       )}
 
-      {/* Its own query, and still reached only once the read itself resolved -- this
-          component suspends above it, so a 404 on the id raises one error, not two. */}
       <EntryList
         engagementId={engagementId}
         onLogProgress={canLog ? () => setLogging(true) : undefined}
@@ -60,15 +55,9 @@ export function ReadHistory({ engagementId }: { engagementId: string }) {
   );
 }
 
-// A real link to the hierarchy's parent rather than `navigate(-1)`: this survives a reload
-// and a cold load of the URL, where there is no history entry to go back to.
-//
-// When the book page exists it becomes the parent of all three and this collapses.
 function BackLink({ status }: { status: ReadingStatus }) {
   // A read can also be tbr or interested, neither of which this page is reachable from.
   const shelf = STATUSES[status as keyof typeof STATUSES] ?? STATUSES[ReadingStatus.reading];
-  // Names the screen you came from, whose heading is Currently Reading -- not the status,
-  // which everywhere else is just "Reading".
   const label = status === ReadingStatus.reading ? 'Currently reading' : shelf.label;
 
   return (
@@ -79,11 +68,7 @@ function BackLink({ status }: { status: ReadingStatus }) {
   );
 }
 
-// The dates that bound a read, as a list rather than a hardcoded Started/Finished pair.
-// The engagement carries six lifecycle dates (ADR-0008) and the API exposes three today,
-// so the shape that grows is a list; the pair is just what that list holds now.
-//
-// `field: null` means "show it, don't open it" -- PATCH /dates takes started_on and
+// `field: null` means "show it, don't open it": PATCH /dates takes started_on and
 // finished_on and nothing else, so an abandoned date is readable and not writable.
 function dateFields(engagement: EngagementRead) {
   const started = {
@@ -109,7 +94,6 @@ function dateFields(engagement: EngagementRead) {
       ];
 }
 
-// Identity, progress and the read's dates.
 function ReadHeader({ engagement }: { engagement: EngagementRead }) {
   const { book, formats, completion_pct } = engagement;
 

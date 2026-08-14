@@ -31,8 +31,6 @@ describe('toEntryViews', () => {
     expect(entries.map((entry) => entry.id)).toEqual(['newer', 'older']);
   });
 
-  // The rule the backend enforces, and the one thing V1 has to compute rather than infer
-  // from a rendered position -- see the comment on toEntryViews.
   it('marks only the last of the read as newest, whatever order it renders in', () => {
     const entries = toEntryViews([
       buildPageLog({ id: 'older', logged_on: '2025-06-14' }),

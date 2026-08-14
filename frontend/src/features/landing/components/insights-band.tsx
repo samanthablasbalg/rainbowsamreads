@@ -1,6 +1,5 @@
-// A dark strip by design, not by theme: the `dark` class re-declares the palette tokens
-// for this subtree, so everything inside resolves to its dark value regardless of what
-// the rest of the page is doing.
+// Dark by design, not by theme: the `dark` class re-declares the palette tokens for this
+// subtree, so it stays dark whatever the rest of the page is doing.
 export function InsightsBand() {
   return (
     <section className="dark mt-14 bg-background text-foreground">

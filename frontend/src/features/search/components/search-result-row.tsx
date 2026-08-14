@@ -5,21 +5,6 @@ import { Button } from '@/components/ui/button';
 import { ComboboxItem } from '@/components/ui/combobox';
 import { STATUSES } from '@/utils/status';
 
-// One row of global search, for a result in any of the three states. The state decides
-// both the badge and the single action, and the three are mutually exclusive:
-//
-//   in_library  -- your reading status, no action (a book page is what this row will
-//                  eventually open; until then it is deliberately inert)
-//   in_catalog  -- the app has it, you don't: Add, which relates it to you with a status
-//   not_in_app  -- nobody has it: Import, which puts it in the shared catalog first
-//
-// Not CatalogRow: that one is off `BookRead`, carries a delete menu, and always means
-// "mark as reading". The only thing the two share is a cover-led layout.
-//
-// Both buttons stop the click reaching the row: the row is a combobox option, and
-// selecting one asks the popup to close, which for this bar means collapsing the whole
-// search. Add does collapse -- but on its own terms, after the sheet is open -- and
-// Import must not, because the request is still in flight with nothing to show yet.
 type SearchResultRowProps = {
   result: BookSearchResult;
   importing: boolean;

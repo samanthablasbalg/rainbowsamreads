@@ -15,19 +15,11 @@ import { invalidateRead } from '../utils/invalidate-read';
 import { EntryEditSheet } from './entry-edit-sheet';
 import { EntryRow } from './entry-row';
 
-// Every session logged against one read, newest first.
-//
-// Both overlays are owned here rather than by the row, and the delete confirmation is a
-// sibling of the edit sheet rather than a child of it: Delete closes the sheet and opens
-// the confirmation, so there is never a dialog inside a dialog. ADR-0031 keeps the
-// confirmation itself as the one shared component.
 export function EntryList({
   engagementId,
   onLogProgress,
 }: {
   engagementId: string;
-  // Absent on a read that is no longer in progress, which is what leaves a finished read
-  // with nothing logged showing an empty state and no action.
   onLogProgress?: () => void;
 }) {
   const { data: logs } = useEngagementsListProgressLogsSuspense(engagementId);
@@ -55,8 +47,6 @@ export function EntryList({
         History
       </h2>
 
-      {/* The delete goes through the API rather than the sheet, so its failure has no
-          form to land in -- it is rendered here, next to the list it failed to change. */}
       {deleteLog.isError && (
         <ErrorText>
           {errorDetail(deleteLog.error, "Couldn't delete that entry. Please try again.")}
@@ -73,8 +63,6 @@ export function EntryList({
       )}
 
       {logs.length > 0 && (
-        // labelledby rather than a second aria-label: the heading above already names
-        // this list, and repeating the word would announce it twice.
         <ul aria-labelledby="entry-list-heading" className="flex flex-col">
           {toEntryViews(logs).map((entry) => (
             <EntryRow key={entry.id} entry={entry} onEdit={() => setEditing(entry)} />

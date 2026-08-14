@@ -4,8 +4,6 @@ import { useTheme } from './theme-context';
 
 const STORAGE_KEY = 'reading-tracker-theme';
 
-// Reports what the context resolved to as text, so the assertions read off the DOM
-// rather than off the hook's internals.
 function ThemeProbe() {
   const { theme, resolvedTheme, setTheme } = useTheme();
   return (
@@ -17,8 +15,6 @@ function ThemeProbe() {
   );
 }
 
-// setup.ts stubs matchMedia to always report light. Tests that care about the OS
-// preference replace it before rendering.
 function setSystemPrefersDark(prefersDark: boolean) {
   vi.stubGlobal(
     'matchMedia',
@@ -39,8 +35,6 @@ function setSystemPrefersDark(prefersDark: boolean) {
 describe('ThemeProvider', () => {
   afterEach(() => {
     localStorage.clear();
-    // documentElement is shared by every test in the file -- unmounting the provider
-    // does not take the class back off.
     document.documentElement.classList.remove('dark');
   });
 
@@ -85,7 +79,6 @@ describe('ThemeProvider', () => {
 
   it('applies the choice for the session even when storage refuses to write', async () => {
     setSystemPrefersDark(false);
-    // Private browsing throws on setItem. The choice should still take effect.
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('QuotaExceededError');
     });

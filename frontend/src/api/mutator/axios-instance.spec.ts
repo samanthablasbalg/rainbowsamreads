@@ -2,8 +2,6 @@ import { HttpResponse, http } from 'msw';
 import { server } from '@/test/msw-server';
 import { customInstance } from './axios-instance';
 
-// Every generated hook in the app calls this instead of axios, so the unwrapping below
-// is what decides whether call sites read `data.email` or `data.data.email`.
 describe('customInstance', () => {
   it('resolves to the response body rather than the whole response', async () => {
     server.use(http.get('*/api/books', () => HttpResponse.json({ title: 'Piranesi' })));

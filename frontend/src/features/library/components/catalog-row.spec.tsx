@@ -72,8 +72,6 @@ describe('CatalogRow', () => {
     expect(card).not.toHaveTextContent('page');
   });
 
-  // Mark as reading opens the picker rather than starting a read: the format is what
-  // chooses the edition the engagement binds to.
   it('opens the format picker from Mark as reading', async () => {
     const user = userEvent.setup();
     renderInList(buildBook());
@@ -98,8 +96,6 @@ describe('CatalogRow', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
-  // No MSW handler registered for this one -- the suite's onUnhandledRequest: 'error'
-  // means a mutation firing anyway would fail the test, not just an assertion missing.
   it('leaves the book alone when the confirmation is cancelled', async () => {
     const user = userEvent.setup();
     renderInList(buildBook());

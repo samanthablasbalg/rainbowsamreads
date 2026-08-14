@@ -71,8 +71,6 @@ describe('InlineDateEdit', () => {
     expect(onSave).toHaveBeenCalledWith('2025-06-15');
   });
 
-  // Emptying the field is a cancel, not a clear: clearing started_on moves the bound every
-  // log date is validated against, which is not something to fall out of backspacing.
   it('treats an emptied field as a cancel', async () => {
     const { onSave } = renderEdit();
 
