@@ -13,10 +13,10 @@ import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { FormatIcons } from '@/components/common/format-icons';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { StarRating } from '@/components/common/star-rating';
 import { authorNames, coverSrc } from '@/utils/book';
 import { formatIsoDate } from '@/utils/format-date';
 import { ReviewSheet } from './review-sheet';
-import { StarRating } from './star-rating';
 
 export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
   const { book, formats, status, finished_on, abandoned_on, completion_pct, review } = engagement;

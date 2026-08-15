@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
-import { STARS } from '../utils/star-fill';
-import { StarRows } from './star-rows';
+import { STARS } from '@/utils/star-fill';
+import { StarRows } from '@/components/common/star-rows';
 
 const STAR_SIZE = 32;
 
