@@ -24,7 +24,9 @@ describe('BookDetail', () => {
     expect(screen.getByText('Susanna Clarke')).toBeVisible();
     expect(screen.getByText('Fantasy')).toBeVisible();
     expect(screen.getByText('Literary fiction')).toBeVisible();
-    expect(screen.getByText('272 pages · 2h 35m · English')).toBeVisible();
+    expect(screen.getByText('272 pages')).toBeVisible();
+    expect(screen.getByText('2h 35m')).toBeVisible();
+    expect(screen.getByText('English')).toBeVisible();
   });
 
   it('renders a month-precise publication date without inventing a day', async () => {
