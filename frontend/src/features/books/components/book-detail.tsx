@@ -61,7 +61,7 @@ export function BookDetail({ bookId }: { bookId: string }) {
           {/* Contents takes the wide column because it can run to thirty rows; the history
               under it caps its own width so a single entry still looks deliberate. */}
           <div className="order-2 col-span-2 flex flex-col gap-6 lg:order-none">
-            <BookContents tracked={tracked} />
+            <BookContents />
             <BookReadings tracked={tracked} engagements={engagements} />
           </div>
         </div>
