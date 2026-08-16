@@ -25,3 +25,10 @@ const PRECISION_OPTIONS: Record<DatePrecision, Intl.DateTimeFormatOptions> = {
 export function formatDateAtPrecision(iso: string, precision: DatePrecision): string {
   return formatIsoDate(iso, PRECISION_OPTIONS[precision]);
 }
+
+// Both `_on` dates are UTC midnight (see above), so this is already a whole number of
+// days -- no rounding needed.
+export function formatDaysBetween(startIso: string, endIso: string): string {
+  const days = (Date.parse(endIso) - Date.parse(startIso)) / (1000 * 60 * 60 * 24);
+  return `${days} ${days === 1 ? 'day' : 'days'}`;
+}

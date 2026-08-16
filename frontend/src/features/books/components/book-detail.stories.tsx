@@ -1,7 +1,8 @@
 import { Suspense } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { getBooksGetBookMockHandler } from '@/api/generated/books/books.msw';
-import { buildBook } from '@/test/data-generators';
+import { getEngagementsListBookEngagementsMockHandler } from '@/api/generated/engagements/engagements.msw';
+import { buildBook, buildEngagement } from '@/test/data-generators';
 import { BookDetail } from './book-detail';
 
 const piranesi = buildBook({
@@ -25,7 +26,10 @@ const meta = {
     ),
   ],
   async beforeEach({ msw }) {
-    msw.use(getBooksGetBookMockHandler(piranesi));
+    msw.use(
+      getBooksGetBookMockHandler(piranesi),
+      getEngagementsListBookEngagementsMockHandler([buildEngagement({ title: piranesi.title })])
+    );
   },
 } satisfies Meta<typeof BookDetail>;
 

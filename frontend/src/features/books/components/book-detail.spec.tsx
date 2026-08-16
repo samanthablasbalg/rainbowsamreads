@@ -1,8 +1,15 @@
+import userEvent from '@testing-library/user-event';
 import { getBooksGetBookMockHandler } from '@/api/generated/books/books.msw';
-import { DatePrecision } from '@/api/generated/readingTracker.schemas';
+import {
+  getEngagementsListBookEngagementsMockHandler,
+  getEngagementsUpdateEngagementStatusMockHandler,
+  getEngagementsUpdateEngagementStatusResponseMock,
+} from '@/api/generated/engagements/engagements.msw';
+import { DatePrecision, ReadingStatus } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
-import { render, screen } from '@/test/render';
-import { buildBook } from '@/test/data-generators';
+import { render, screen, waitFor } from '@/test/render';
+import { buildBook, buildEngagement } from '@/test/data-generators';
+import { localIsoDate } from '@/utils/local-date';
 import { BookDetail } from './book-detail';
 
 describe('BookDetail', () => {
@@ -15,7 +22,8 @@ describe('BookDetail', () => {
           default_audio_minutes: 155,
           original_language: 'en',
         })
-      )
+      ),
+      getEngagementsListBookEngagementsMockHandler([])
     );
 
     render(<BookDetail bookId="book-Piranesi" />);
@@ -37,7 +45,8 @@ describe('BookDetail', () => {
           publication_date: '2019-03-01',
           publication_date_precision: DatePrecision.month,
         })
-      )
+      ),
+      getEngagementsListBookEngagementsMockHandler([])
     );
 
     render(<BookDetail bookId="book-Piranesi" />);
@@ -53,7 +62,8 @@ describe('BookDetail', () => {
           publication_date: '2019-01-01',
           publication_date_precision: DatePrecision.year,
         })
-      )
+      ),
+      getEngagementsListBookEngagementsMockHandler([])
     );
 
     render(<BookDetail bookId="book-Piranesi" />);
@@ -65,7 +75,8 @@ describe('BookDetail', () => {
     server.use(
       getBooksGetBookMockHandler(
         buildBook({ default_page_count: null, default_audio_minutes: null })
-      )
+      ),
+      getEngagementsListBookEngagementsMockHandler([])
     );
 
     render(<BookDetail bookId="book-Piranesi" />);
@@ -75,10 +86,74 @@ describe('BookDetail', () => {
   });
 
   it('falls back to the raw code for a language Intl cannot parse', async () => {
-    server.use(getBooksGetBookMockHandler(buildBook({ original_language: 'not a tag' })));
+    server.use(
+      getBooksGetBookMockHandler(buildBook({ original_language: 'not a tag' })),
+      getEngagementsListBookEngagementsMockHandler([])
+    );
 
     render(<BookDetail bookId="book-Piranesi" />);
 
     expect(await screen.findByText(/not a tag/)).toBeVisible();
+  });
+
+  // The status menu is built from the generated `EngagementStatusUpdateStatus`, so this
+  // pins the thing that matters: it offers what the endpoint accepts and nothing else.
+  it('offers only the statuses the endpoint accepts', async () => {
+    const user = userEvent.setup();
+    server.use(
+      getBooksGetBookMockHandler(buildBook()),
+      getEngagementsListBookEngagementsMockHandler([
+        buildEngagement({ status: ReadingStatus.reading }),
+      ])
+    );
+
+    render(<BookDetail bookId="book-Piranesi" />);
+
+    await user.click(await screen.findByRole('button', { name: /Reading/ }));
+
+    expect(await screen.findByRole('menuitem', { name: 'Reading' })).toBeVisible();
+    expect(screen.getByRole('menuitem', { name: 'Finished' })).toBeVisible();
+    expect(screen.getByRole('menuitem', { name: 'DNF' })).toBeVisible();
+    expect(screen.queryByRole('menuitem', { name: 'Interested' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'To read' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Paused' })).not.toBeInTheDocument();
+  });
+
+  it('changes the status of the read the pill is showing', async () => {
+    const user = userEvent.setup();
+    const captured: { body?: unknown } = {};
+    server.use(
+      getBooksGetBookMockHandler(buildBook()),
+      getEngagementsListBookEngagementsMockHandler([
+        buildEngagement({ id: 'engagement-1', status: ReadingStatus.reading }),
+      ]),
+      getEngagementsUpdateEngagementStatusMockHandler(async (info) => {
+        captured.body = await info.request.json();
+        return getEngagementsUpdateEngagementStatusResponseMock();
+      })
+    );
+
+    render(<BookDetail bookId="book-Piranesi" />);
+
+    await user.click(await screen.findByRole('button', { name: /Reading/ }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Finished' }));
+
+    await waitFor(() =>
+      expect(captured.body).toEqual({ status: 'finished', effective_on: localIsoDate() })
+    );
+  });
+
+  it('starts a read from an untracked book without leaving the page', async () => {
+    const user = userEvent.setup();
+    server.use(
+      getBooksGetBookMockHandler(buildBook()),
+      getEngagementsListBookEngagementsMockHandler([])
+    );
+
+    render(<BookDetail bookId="book-Piranesi" />);
+
+    await user.click(await screen.findByRole('button', { name: /Not tracked/ }));
+
+    expect(await screen.findByRole('button', { name: 'Add Piranesi as Reading' })).toBeVisible();
   });
 });

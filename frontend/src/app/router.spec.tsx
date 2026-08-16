@@ -7,6 +7,7 @@ import {
 } from '@/api/generated/books/books.msw';
 import {
   getEngagementsGetEngagementMockHandler,
+  getEngagementsListBookEngagementsMockHandler,
   getEngagementsListEngagementsMockHandler,
   getEngagementsListProgressLogsMockHandler,
 } from '@/api/generated/engagements/engagements.msw';
@@ -60,7 +61,11 @@ describe('the route tree', () => {
   });
 
   it('/books/:bookId renders the book named by the URL', async () => {
-    server.use(getAuthMeMockHandler(), getBooksGetBookMockHandler(buildBook()));
+    server.use(
+      getAuthMeMockHandler(),
+      getBooksGetBookMockHandler(buildBook()),
+      getEngagementsListBookEngagementsMockHandler([])
+    );
 
     renderRoute('/books/book-Piranesi');
 

@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { useBooksGetBookSuspense } from '@/api/generated/books/books';
+import { useEngagementsListBookEngagementsSuspense } from '@/api/generated/engagements/engagements';
 import { CoverImage } from '@/components/common/cover-image';
 import { Button } from '@/components/ui/button';
 import { BookBlurb } from './book-blurb';
@@ -10,14 +11,11 @@ import { BookMetadata } from './book-metadata';
 import { BookChips, BookHeader } from './book-header';
 import { BookReadings } from './book-readings';
 
-// Status, ratings, ownership, recommender, parts and readings are all placeholder content:
-// none of them is fetchable yet. This is the one switch that decides whether the page
-// renders as read-three-times or never-touched, and it goes when the engagement query for
-// a book lands.
-const TRACKED = true;
-
 export function BookDetail({ bookId }: { bookId: string }) {
   const { data: book } = useBooksGetBookSuspense(bookId);
+  const { data: engagements } = useEngagementsListBookEngagementsSuspense(bookId);
+
+  const tracked = engagements.length > 0;
 
   return (
     <section>
@@ -46,7 +44,7 @@ export function BookDetail({ bookId }: { bookId: string }) {
           {/* Sits under the blurb on a phone, where the book itself comes first and this
               earns its place after it; back up into the rail once there is one. */}
           <div className="order-1 col-span-2 lg:order-none">
-            <BookMetadata tracked={TRACKED} />
+            <BookMetadata book={book} tracked={tracked} engagements={engagements} />
           </div>
         </aside>
 
@@ -63,8 +61,8 @@ export function BookDetail({ bookId }: { bookId: string }) {
           {/* Contents takes the wide column because it can run to thirty rows; the history
               under it caps its own width so a single entry still looks deliberate. */}
           <div className="order-2 col-span-2 flex flex-col gap-6 lg:order-none">
-            <BookContents tracked={TRACKED} />
-            <BookReadings tracked={TRACKED} />
+            <BookContents tracked={tracked} />
+            <BookReadings tracked={tracked} engagements={engagements} />
           </div>
         </div>
       </div>

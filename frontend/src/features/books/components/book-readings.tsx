@@ -1,37 +1,38 @@
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import type { EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { EmptyState } from '@/components/common/empty-state';
 import { StarRating } from '@/components/common/star-rating';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { FORMATS } from '@/utils/format';
+import { formatDaysBetween, formatIsoDate } from '@/utils/format-date';
 
-// One row per engagement, newest first. Engagements can't be fetched per book yet -- the
-// list endpoint filters by status only -- so these are placeholders. Rating, dates, format
-// and review all belong to the row and never to the book: that is the whole reason this
-// page has a list here instead of a single rating at the top.
-const READINGS = [
-  {
-    date: 'Feb 2026',
-    descriptor: 'audiobook · 6 days · your edition',
-    rating: '5.00',
-    review:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-  },
-  {
-    date: 'Aug 2023',
-    descriptor: 'paperback · 11 days',
-    rating: '4.50',
-    review: 'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.',
-  },
-  {
-    date: 'Mar 2019',
-    descriptor: 'paperback · 3 weeks',
-    rating: '4.00',
-    review: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore.',
-  },
-];
+// The row's date: when it finished, when it was abandoned, or when it started, in that
+// order -- whichever of those actually happened last for this engagement.
+function readingDate(engagement: EngagementRead): string | null {
+  return engagement.finished_on ?? engagement.abandoned_on ?? engagement.started_on;
+}
 
-export function BookReadings({ tracked }: { tracked: boolean }) {
+function readingDescriptor(engagement: EngagementRead): string {
+  const formats = engagement.formats.map((format) => FORMATS[format].label).join(', ');
+  const endedOn = engagement.finished_on ?? engagement.abandoned_on;
+  if (!engagement.started_on || !endedOn) {
+    return formats;
+  }
+  return `${formats} · ${formatDaysBetween(engagement.started_on, endedOn)}`;
+}
+
+// One row per engagement, newest first -- the order the API already returns them in.
+// Rating, dates, format and review all belong to the row and never to the book: that is
+// the whole reason this page has a list here instead of a single rating at the top.
+export function BookReadings({
+  tracked,
+  engagements,
+}: {
+  tracked: boolean;
+  engagements: EngagementRead[];
+}) {
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
@@ -46,33 +47,40 @@ export function BookReadings({ tracked }: { tracked: boolean }) {
 
       {tracked ? (
         <Card className="gap-0 divide-y divide-accent py-0">
-          {READINGS.map((reading) => (
-            <details key={reading.date} className="group">
-              <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5">
-                <span className="w-20 shrink-0 text-sm font-bold">{reading.date}</span>
-                <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
-                  {reading.descriptor}
-                </span>
-                <StarRating rating={reading.rating} />
-                <HugeiconsIcon
-                  icon={ArrowRight01Icon}
-                  className="shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
-                />
-              </summary>
+          {engagements.map((engagement) => {
+            const date = readingDate(engagement);
+            return (
+              <details key={engagement.id} className="group">
+                <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5">
+                  <span className="w-24 shrink-0 text-sm font-bold whitespace-nowrap">
+                    {date && formatIsoDate(date)}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
+                    {readingDescriptor(engagement)}
+                  </span>
+                  {engagement.review?.rating && <StarRating rating={engagement.review.rating} />}
+                  <HugeiconsIcon
+                    icon={ArrowRight01Icon}
+                    className="shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
+                  />
+                </summary>
 
-              <div className="flex flex-col items-start gap-2 px-4 pb-4 sm:pl-27">
-                <p className="font-serif text-sm leading-relaxed">{reading.review}</p>
-                <div className="flex gap-4">
-                  <Button variant="link" size="xs" className="h-auto p-0 font-bold text-ring">
-                    Progress log
-                  </Button>
-                  <Button variant="link" size="xs" className="h-auto p-0 font-bold text-ring">
-                    Edit read
-                  </Button>
+                <div className="flex flex-col items-start gap-2 px-4 pb-4 sm:pl-27">
+                  {engagement.review?.body && (
+                    <p className="font-serif text-sm leading-relaxed">{engagement.review.body}</p>
+                  )}
+                  <div className="flex gap-4">
+                    <Button variant="link" size="xs" className="h-auto p-0 font-bold text-ring">
+                      Progress log
+                    </Button>
+                    <Button variant="link" size="xs" className="h-auto p-0 font-bold text-ring">
+                      Edit read
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </details>
-          ))}
+              </details>
+            );
+          })}
         </Card>
       ) : (
         <EmptyState
