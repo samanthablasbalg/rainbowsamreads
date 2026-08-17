@@ -17,4 +17,29 @@ describe('CoverImage', () => {
     expect(container.querySelector('img')).not.toBeInTheDocument();
     expect(screen.getByText('D')).toBeInTheDocument();
   });
+
+  it('asks Google for a bigger, uncurled cover', () => {
+    const { container } = render(
+      <CoverImage
+        src="http://books.google.com/books/content?id=abc&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api"
+        title="Piranesi"
+      />
+    );
+
+    const src = container.querySelector('img')!.getAttribute('src')!;
+    expect(src).toContain('zoom=3');
+    expect(src).not.toContain('edge=curl');
+    expect(src).toContain('id=abc');
+  });
+
+  it('leaves covers from anywhere else alone', () => {
+    const { container } = render(
+      <CoverImage src="https://example.com/cover.jpg?zoom=1" title="Dune" />
+    );
+
+    expect(container.querySelector('img')).toHaveAttribute(
+      'src',
+      'https://example.com/cover.jpg?zoom=1'
+    );
+  });
 });
