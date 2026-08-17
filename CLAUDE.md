@@ -145,3 +145,20 @@ issue against `git diff main...HEAD` and the working tree before deciding what's
 - Commit in small, logical units — one coherent change per commit, not one per branch.
 - PR descriptions explain the _why_, not the _what_. She returns to them months later.
 - **Never push a branch or open a PR without explicit instruction.**
+
+## Agent skills
+
+### Issue tracker
+
+GitHub issues on `samanthablasbalg/rainbowsamreads`. Creating one goes through the `make-ticket`
+skill, never bare `gh issue create`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles verbatim — all already exist as repo labels, so apply them, don't create
+them. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context. ADRs live in `docs/decisions/`, not `docs/adr/`, and
+`.claude/skills/domain-modeling/ADR-FORMAT.md` is the format standard. See `docs/agents/domain.md`.

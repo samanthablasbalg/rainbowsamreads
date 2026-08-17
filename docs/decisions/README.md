@@ -4,9 +4,6 @@ This directory records the **why** behind significant decisions in the reading t
 captures one decision: the context that forced it, what was chosen, the consequences accepted, and
 the trigger that would make us revisit it.
 
-ADRs are the durable home for reasoning that would otherwise be lost in chat, commit messages, or
-planning docs. They're written for future-you, months later, asking "why is it like this?"
-
 ## Conventions
 
 - **One decision per file**, named `NNNN-short-slug.md`.
@@ -16,41 +13,11 @@ planning docs. They're written for future-you, months later, asking "why is it l
 - **Status** is one of: `Accepted`, `Proposed`, or `Superseded by NNNN`. `Proposed` means the
   decision isn't yet ratified (or we're not sure it was consciously made) — don't treat it as
   settled until it's `Accepted`.
-- A record carrying `> **Stub — write-up pending.**` is a placeholder: the prose isn't written yet.
-  Fill at leisure.
 - Records **0001–0014 were backfilled** from `PLANNING.md` to capture decisions made before this log
   existed, so their dates are approximate. Most of the data-model ones (0002–0012) were decided
-  together, so their order relative to each other is cosmetic. `PLANNING.md` can be retired once its
-  reasoning is fully captured here.
-
-## Template
-
-```markdown
-# NNNN. <Title>
-
-- Status: Accepted
-- Date: YYYY-MM-DD
-
-## Context
-
-What forced a decision; the constraints in play.
-
-## Decision
-
-What we chose, stated plainly.
-
-## Consequences
-
-What this makes easy, what it makes hard, what we accept.
-
-## Alternatives considered
-
-- <Option> — why not.
-
-## Revisit when
-
-The concrete trigger that would reopen this (e.g. "if this goes multi-user").
-```
+  together, so their order relative to each other is cosmetic.
+- Records are **immutable once accepted**. If a decision changes, that creates an entirely new ADR
+  with the old one `Superseded` rather than ever editing the content of a previous decision record.
 
 ## Index
 
