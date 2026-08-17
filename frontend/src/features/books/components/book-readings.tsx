@@ -1,7 +1,13 @@
+import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
-import type { EngagementRead } from '@/api/generated/readingTracker.schemas';
+import {
+  EngagementCreateStatus,
+  type BookRead,
+  type EngagementRead,
+} from '@/api/generated/readingTracker.schemas';
 import { EmptyState } from '@/components/common/empty-state';
+import { FormatPickSheet } from '@/components/common/format-pick-sheet';
 import { StarRating } from '@/components/common/star-rating';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -27,22 +33,33 @@ function readingDescriptor(engagement: EngagementRead): string {
 // Rating, dates, format and review all belong to the row and never to the book: that is
 // the whole reason this page has a list here instead of a single rating at the top.
 export function BookReadings({
+  book,
   tracked,
   engagements,
 }: {
+  book: BookRead;
   tracked: boolean;
   engagements: EngagementRead[];
 }) {
+  const [logOpen, setLogOpen] = useState(false);
+
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 className="text-lg font-semibold">Reading history</h2>
 
-        {/* The only place on the page that offers to log a read. A book with three reads
-            should not open with a banner shouting at you to read it again. */}
-        <Button variant="link" size="xs" className="h-auto p-0 font-extrabold text-ring">
-          + Log a reading
-        </Button>
+        {/* Only alongside a list -- the empty state below carries its own call to action,
+            and two of them on one screen is one too many. */}
+        {tracked && (
+          <Button
+            variant="link"
+            size="xs"
+            className="h-auto p-0 font-extrabold text-ring"
+            onClick={() => setLogOpen(true)}
+          >
+            + Log a reading
+          </Button>
+        )}
       </div>
 
       {tracked ? (
@@ -86,9 +103,25 @@ export function BookReadings({
         <EmptyState
           title="No readings yet"
           description="Log a reading and its dates, format, rating and review live here — one row per time through."
-          action={<Button variant="outline">Log a reading</Button>}
+          action={
+            <Button variant="outline" onClick={() => setLogOpen(true)}>
+              Log a reading
+            </Button>
+          }
         />
       )}
+
+      {/* Every status the endpoint will create, since this logs a read that may already be
+          over. It stays on the page: the new row belongs in the list above. */}
+      <FormatPickSheet
+        bookId={book.id}
+        title={book.title}
+        audioMinutes={book.default_audio_minutes}
+        statuses={Object.values(EngagementCreateStatus)}
+        redirectOnCreate={false}
+        open={logOpen}
+        onOpenChange={setLogOpen}
+      />
     </section>
   );
 }

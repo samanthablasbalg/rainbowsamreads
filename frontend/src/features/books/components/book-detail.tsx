@@ -62,7 +62,7 @@ export function BookDetail({ bookId }: { bookId: string }) {
               under it caps its own width so a single entry still looks deliberate. */}
           <div className="order-2 col-span-2 flex flex-col gap-6 lg:order-none">
             <BookContents />
-            <BookReadings tracked={tracked} engagements={engagements} />
+            <BookReadings book={book} tracked={tracked} engagements={engagements} />
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { buildEngagement } from '@/test/data-generators';
+import { buildBook, buildEngagement } from '@/test/data-generators';
 import { BookReadings } from './book-readings';
 
 const engagements = [
@@ -25,7 +25,7 @@ const engagements = [
 
 const meta = {
   component: BookReadings,
-  args: { tracked: true, engagements },
+  args: { book: buildBook(), tracked: true, engagements },
   decorators: [
     (Story) => (
       <div className="max-w-2xl">

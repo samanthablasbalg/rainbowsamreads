@@ -156,4 +156,32 @@ describe('BookDetail', () => {
 
     expect(await screen.findByRole('button', { name: 'Add Piranesi as Reading' })).toBeVisible();
   });
+
+  it('logs another reading from the reading history', async () => {
+    const user = userEvent.setup();
+    server.use(
+      getBooksGetBookMockHandler(buildBook()),
+      getEngagementsListBookEngagementsMockHandler([buildEngagement()])
+    );
+
+    render(<BookDetail bookId="book-Piranesi" />);
+
+    await user.click(await screen.findByRole('button', { name: '+ Log a reading' }));
+
+    expect(await screen.findByRole('button', { name: 'Add Piranesi as Finished' })).toBeVisible();
+  });
+
+  // Two of them would sit one above the other: the empty state's own button is the one to
+  // keep, because it is the thing explaining why the list is empty.
+  it('leaves the history heading without a log button until there is a history', async () => {
+    server.use(
+      getBooksGetBookMockHandler(buildBook()),
+      getEngagementsListBookEngagementsMockHandler([])
+    );
+
+    render(<BookDetail bookId="book-Piranesi" />);
+
+    expect(await screen.findByRole('button', { name: 'Log a reading' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: '+ Log a reading' })).not.toBeInTheDocument();
+  });
 });
