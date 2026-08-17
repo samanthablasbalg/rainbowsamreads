@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.crud import book_crud, engagement_crud
+from app.crud import engagement_crud
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.engagement import Engagement
@@ -20,38 +20,11 @@ from app.schemas import (
     EngagementStatusUpdate,
 )
 from app.services.engagements import lifecycle as lifecycle_service
+from app.services.engagements._shared import ENGAGEMENT_READ_OPTIONS
 
-from ._shared import ENGAGEMENT_READ_OPTIONS, reload
+from ._shared import reload
 
 router = APIRouter()
-
-# Mounted at /books. A book's read history is an engagement query, so it is served from
-# the package that owns engagement loading rather than from the books router.
-book_router = APIRouter()
-
-
-@book_router.get("/{book_id}/engagements", response_model=list[EngagementRead])
-def list_book_engagements(
-    book_id: uuid.UUID,
-    db: Session = Depends(get_db),
-) -> list[EngagementRead]:
-    # 404 on an unknown book, so a bad id doesn't read as "no reads yet". RLS scopes the
-    # engagements to the current user, so there is no user filter here.
-    book_crud.get_or_raise(db, book_id)
-    engagements = (
-        db.execute(
-            select(Engagement)
-            .where(Engagement.book_id == book_id)
-            # Postgres sorts NULLs first under DESC, which would put an undated read at
-            # the top and make it the "latest". Ordering by start rather than end keeps
-            # a row in place when it finishes.
-            .order_by(Engagement.started_on.desc().nulls_last(), Engagement.id.asc())
-            .options(*ENGAGEMENT_READ_OPTIONS)
-        )
-        .scalars()
-        .all()
-    )
-    return [EngagementRead.model_validate(e) for e in engagements]
 
 
 @router.post("", response_model=EngagementRead, status_code=status.HTTP_201_CREATED)

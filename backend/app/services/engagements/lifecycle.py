@@ -19,7 +19,27 @@ from app.models.engagement import Engagement
 from app.models.enums import Format, LogUnit, ReadingStatus
 from app.models.progress_log import ProgressLog
 from app.services.books import capture_audio_length
+from app.services.engagements._shared import ENGAGEMENT_READ_OPTIONS
 from app.services.engagements.progress_logs import latest_log, reject_future_date
+
+
+def list_for_book(db: Session, book_id: uuid.UUID) -> list[Engagement]:
+    """A book's read history, newest first. Raises NotFoundError for an unknown book, so
+    a bad id doesn't read as "no reads yet"."""
+    book_crud.get_or_raise(db, book_id)
+    return list(
+        db.execute(
+            select(Engagement)
+            .where(Engagement.book_id == book_id)
+            # Postgres sorts NULLs first under DESC, which would put an undated read at
+            # the top and make it the "latest". Ordering by start rather than end keeps
+            # a row in place when it finishes.
+            .order_by(Engagement.started_on.desc().nulls_last(), Engagement.id.asc())
+            .options(*ENGAGEMENT_READ_OPTIONS)
+        )
+        .scalars()
+        .all()
+    )
 
 
 def create_engagement(

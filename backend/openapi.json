@@ -365,6 +365,53 @@
         }
       }
     },
+    "/api/books/{book_id}/engagements": {
+      "get": {
+        "tags": [
+          "books"
+        ],
+        "summary": "List Book Engagements",
+        "operationId": "books-list_book_engagements",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EngagementRead"
+                  },
+                  "title": "Response Books-List Book Engagements"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/editions": {
       "post": {
         "tags": [
@@ -748,53 +795,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EngagementRead"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/books/{book_id}/engagements": {
-      "get": {
-        "tags": [
-          "engagements"
-        ],
-        "summary": "List Book Engagements",
-        "operationId": "engagements-list_book_engagements",
-        "parameters": [
-          {
-            "name": "book_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Book Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/EngagementRead"
-                  },
-                  "title": "Response Engagements-List Book Engagements"
                 }
               }
             }

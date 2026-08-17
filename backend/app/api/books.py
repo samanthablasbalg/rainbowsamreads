@@ -21,8 +21,10 @@ from app.schemas import (
     BookImportRequest,
     BookRead,
     BookSearchResult,
+    EngagementRead,
 )
 from app.services import books as book_service
+from app.services.engagements import lifecycle as engagement_service
 from app.services.google_books import GoogleBooksError, search_volumes
 
 router = APIRouter(prefix="/books", tags=["books"])
@@ -228,6 +230,14 @@ def list_books(db: Session = Depends(get_db)) -> list[BookRead]:
 def get_book(book_id: uuid.UUID, db: Session = Depends(get_db)) -> BookRead:
     book = book_crud.get_or_raise(db, book_id, options=_BOOK_READ_OPTIONS)
     return _to_book_read(book)
+
+
+@router.get("/{book_id}/engagements", response_model=list[EngagementRead])
+def list_book_engagements(
+    book_id: uuid.UUID, db: Session = Depends(get_db)
+) -> list[EngagementRead]:
+    engagements = engagement_service.list_for_book(db, book_id)
+    return [EngagementRead.model_validate(e) for e in engagements]
 
 
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)

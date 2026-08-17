@@ -4,8 +4,8 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { errorDetail, type DetailError } from '@/api/error-detail';
+import { getBooksListBookEngagementsQueryKey } from '@/api/generated/books/books';
 import {
-  getEngagementsListBookEngagementsQueryKey,
   getEngagementsListEngagementsQueryKey,
   useEngagementsCreateEngagement,
 } from '@/api/generated/engagements/engagements';
@@ -184,7 +184,7 @@ function useFormatPickForm(
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: getEngagementsListEngagementsQueryKey() }),
           queryClient.invalidateQueries({
-            queryKey: getEngagementsListBookEngagementsQueryKey(bookId),
+            queryKey: getBooksListBookEngagementsQueryKey(bookId),
           }),
         ]);
         onClose();

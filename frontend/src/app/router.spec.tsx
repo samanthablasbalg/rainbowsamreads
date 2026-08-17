@@ -3,11 +3,11 @@ import { http, HttpResponse } from 'msw';
 import { getAuthMeMockHandler } from '@/api/generated/auth/auth.msw';
 import {
   getBooksGetBookMockHandler,
+  getBooksListBookEngagementsMockHandler,
   getBooksListBooksMockHandler,
 } from '@/api/generated/books/books.msw';
 import {
   getEngagementsGetEngagementMockHandler,
-  getEngagementsListBookEngagementsMockHandler,
   getEngagementsListEngagementsMockHandler,
   getEngagementsListProgressLogsMockHandler,
 } from '@/api/generated/engagements/engagements.msw';
@@ -64,7 +64,7 @@ describe('the route tree', () => {
     server.use(
       getAuthMeMockHandler(),
       getBooksGetBookMockHandler(buildBook()),
-      getEngagementsListBookEngagementsMockHandler([])
+      getBooksListBookEngagementsMockHandler([])
     );
 
     renderRoute('/books/book-Piranesi');

@@ -9,8 +9,8 @@ import {
   type BookRead,
   type EngagementRead,
 } from '@/api/generated/readingTracker.schemas';
+import { getBooksListBookEngagementsQueryKey } from '@/api/generated/books/books';
 import {
-  getEngagementsListBookEngagementsQueryKey,
   getEngagementsListEngagementsQueryKey,
   useEngagementsUpdateEngagementStatus,
 } from '@/api/generated/engagements/engagements';
@@ -81,7 +81,7 @@ export function BookMetadata({
       onSuccess: () => {
         // This card's own source, plus the shelves elsewhere that group by status.
         queryClient.invalidateQueries({
-          queryKey: getEngagementsListBookEngagementsQueryKey(book.id),
+          queryKey: getBooksListBookEngagementsQueryKey(book.id),
         });
         queryClient.invalidateQueries({ queryKey: getEngagementsListEngagementsQueryKey() });
       },

@@ -1,8 +1,10 @@
 import { Link } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
-import { useBooksGetBookSuspense } from '@/api/generated/books/books';
-import { useEngagementsListBookEngagementsSuspense } from '@/api/generated/engagements/engagements';
+import {
+  useBooksGetBookSuspense,
+  useBooksListBookEngagementsSuspense,
+} from '@/api/generated/books/books';
 import { CoverImage } from '@/components/common/cover-image';
 import { Button } from '@/components/ui/button';
 import { BookBlurb } from './book-blurb';
@@ -13,7 +15,7 @@ import { BookReadings } from './book-readings';
 
 export function BookDetail({ bookId }: { bookId: string }) {
   const { data: book } = useBooksGetBookSuspense(bookId);
-  const { data: engagements } = useEngagementsListBookEngagementsSuspense(bookId);
+  const { data: engagements } = useBooksListBookEngagementsSuspense(bookId);
 
   const tracked = engagements.length > 0;
 

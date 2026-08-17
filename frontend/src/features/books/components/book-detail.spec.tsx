@@ -1,7 +1,9 @@
 import userEvent from '@testing-library/user-event';
-import { getBooksGetBookMockHandler } from '@/api/generated/books/books.msw';
 import {
-  getEngagementsListBookEngagementsMockHandler,
+  getBooksGetBookMockHandler,
+  getBooksListBookEngagementsMockHandler,
+} from '@/api/generated/books/books.msw';
+import {
   getEngagementsUpdateEngagementStatusMockHandler,
   getEngagementsUpdateEngagementStatusResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
@@ -23,7 +25,7 @@ describe('BookDetail', () => {
           original_language: 'en',
         })
       ),
-      getEngagementsListBookEngagementsMockHandler([])
+      getBooksListBookEngagementsMockHandler([])
     );
 
     render(<BookDetail bookId="book-Piranesi" />);
@@ -46,7 +48,7 @@ describe('BookDetail', () => {
           publication_date_precision: DatePrecision.month,
         })
       ),
-      getEngagementsListBookEngagementsMockHandler([])
+      getBooksListBookEngagementsMockHandler([])
     );
 
     render(<BookDetail bookId="book-Piranesi" />);
@@ -63,7 +65,7 @@ describe('BookDetail', () => {
           publication_date_precision: DatePrecision.year,
         })
       ),
-      getEngagementsListBookEngagementsMockHandler([])
+      getBooksListBookEngagementsMockHandler([])
     );
 
     render(<BookDetail bookId="book-Piranesi" />);
@@ -76,7 +78,7 @@ describe('BookDetail', () => {
       getBooksGetBookMockHandler(
         buildBook({ default_page_count: null, default_audio_minutes: null })
       ),
-      getEngagementsListBookEngagementsMockHandler([])
+      getBooksListBookEngagementsMockHandler([])
     );
 
     render(<BookDetail bookId="book-Piranesi" />);
@@ -88,7 +90,7 @@ describe('BookDetail', () => {
   it('falls back to the raw code for a language Intl cannot parse', async () => {
     server.use(
       getBooksGetBookMockHandler(buildBook({ original_language: 'not a tag' })),
-      getEngagementsListBookEngagementsMockHandler([])
+      getBooksListBookEngagementsMockHandler([])
     );
 
     render(<BookDetail bookId="book-Piranesi" />);
@@ -99,7 +101,7 @@ describe('BookDetail', () => {
   it('rates the book as the average of every read of it', async () => {
     server.use(
       getBooksGetBookMockHandler(buildBook()),
-      getEngagementsListBookEngagementsMockHandler([
+      getBooksListBookEngagementsMockHandler([
         buildEngagement({ id: 'engagement-1', review: { rating: '5.00', body: null } }),
         buildEngagement({ id: 'engagement-2', review: { rating: '4.00', body: null } }),
         buildEngagement({ id: 'engagement-3', review: null }),
@@ -112,10 +114,7 @@ describe('BookDetail', () => {
   });
 
   it('shows empty stars for a book nothing has rated', async () => {
-    server.use(
-      getBooksGetBookMockHandler(buildBook()),
-      getEngagementsListBookEngagementsMockHandler([])
-    );
+    server.use(getBooksGetBookMockHandler(buildBook()), getBooksListBookEngagementsMockHandler([]));
 
     render(<BookDetail bookId="book-Piranesi" />);
 
@@ -128,9 +127,7 @@ describe('BookDetail', () => {
     const user = userEvent.setup();
     server.use(
       getBooksGetBookMockHandler(buildBook()),
-      getEngagementsListBookEngagementsMockHandler([
-        buildEngagement({ status: ReadingStatus.reading }),
-      ])
+      getBooksListBookEngagementsMockHandler([buildEngagement({ status: ReadingStatus.reading })])
     );
 
     render(<BookDetail bookId="book-Piranesi" />);
@@ -150,7 +147,7 @@ describe('BookDetail', () => {
     const captured: { body?: unknown } = {};
     server.use(
       getBooksGetBookMockHandler(buildBook()),
-      getEngagementsListBookEngagementsMockHandler([
+      getBooksListBookEngagementsMockHandler([
         buildEngagement({ id: 'engagement-1', status: ReadingStatus.reading }),
       ]),
       getEngagementsUpdateEngagementStatusMockHandler(async (info) => {
@@ -171,10 +168,7 @@ describe('BookDetail', () => {
 
   it('starts a read from an untracked book without leaving the page', async () => {
     const user = userEvent.setup();
-    server.use(
-      getBooksGetBookMockHandler(buildBook()),
-      getEngagementsListBookEngagementsMockHandler([])
-    );
+    server.use(getBooksGetBookMockHandler(buildBook()), getBooksListBookEngagementsMockHandler([]));
 
     render(<BookDetail bookId="book-Piranesi" />);
 
@@ -187,7 +181,7 @@ describe('BookDetail', () => {
     const user = userEvent.setup();
     server.use(
       getBooksGetBookMockHandler(buildBook()),
-      getEngagementsListBookEngagementsMockHandler([buildEngagement()])
+      getBooksListBookEngagementsMockHandler([buildEngagement()])
     );
 
     render(<BookDetail bookId="book-Piranesi" />);
@@ -200,10 +194,7 @@ describe('BookDetail', () => {
   // Two of them would sit one above the other: the empty state's own button is the one to
   // keep, because it is the thing explaining why the list is empty.
   it('leaves the history heading without a log button until there is a history', async () => {
-    server.use(
-      getBooksGetBookMockHandler(buildBook()),
-      getEngagementsListBookEngagementsMockHandler([])
-    );
+    server.use(getBooksGetBookMockHandler(buildBook()), getBooksListBookEngagementsMockHandler([]));
 
     render(<BookDetail bookId="book-Piranesi" />);
 
