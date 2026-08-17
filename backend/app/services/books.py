@@ -74,6 +74,8 @@ def import_book_from_google(db: Session, *, google_books_id: str) -> tuple[Book,
 
     pub_date, pub_precision = _parse_published_date(volume.published_date)
 
+    # `volume.language` is deliberately not passed: it is the *edition's* language, and
+    # `original_language` answers "is this a translation?", which Google Books cannot.
     book = create_book(
         db,
         title=volume.title,
@@ -81,18 +83,21 @@ def import_book_from_google(db: Session, *, google_books_id: str) -> tuple[Book,
         page_count=volume.page_count,
         google_books_id=volume.google_books_id,
         cover_url=volume.cover_url,
-        language=volume.language,
         genres=volume.categories,
         publication_date=pub_date,
         publication_date_precision=pub_precision,
     )
 
+    # Print is the real edition (ADR-0022), so the volume's own facts land here rather
+    # than on the two synthetic siblings below.
     edition_crud.create(
         db,
         Edition(
             book_id=book.id,
             edition_format=Format.print,
             isbn=volume.isbn,
+            publisher=volume.publisher,
+            description=volume.description,
             page_count=volume.page_count,
             cover_url=volume.cover_url,
         ),

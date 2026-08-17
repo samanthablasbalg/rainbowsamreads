@@ -1,20 +1,29 @@
 import { useState } from 'react';
+import { Format, type BookRead } from '@/api/generated/readingTracker.schemas';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-// The model has no summary column yet -- Google Books returns one, nothing stores it. The
-// point of the placeholder is its length: publisher summaries run long, and the clamp is
-// what stops one pushing the reading history off the screen.
-const PLACEHOLDER =
-  'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.';
-
-export function BookBlurb() {
+export function BookBlurb({ book }: { book: BookRead }) {
   const [expanded, setExpanded] = useState(false);
+
+  // The print edition is the one Google actually described (ADR-0022); its synthetic
+  // siblings carry no blurb of their own.
+  const blurb = book.editions.find((e) => e.edition_format === Format.print)?.description;
+
+  if (!blurb) {
+    return null;
+  }
 
   return (
     <div className="max-w-[68ch]">
       <div className="relative">
-        <p className={cn('text-sm leading-relaxed', !expanded && 'line-clamp-4')}>{PLACEHOLDER}</p>
+        {/* The stored text keeps Google's paragraph breaks as newlines, which HTML would
+            otherwise collapse into one run-on block. */}
+        <p
+          className={cn('text-sm leading-relaxed whitespace-pre-line', !expanded && 'line-clamp-4')}
+        >
+          {blurb}
+        </p>
 
         {/* Fades the clamped last line into the page rather than cutting it mid-stroke. */}
         {!expanded && (

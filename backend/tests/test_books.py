@@ -38,6 +38,8 @@ def _fake_volume(
     categories: list[str] | None = None,
     cover_url: str | None = "https://example.com/cover.jpg",
     language: str | None = "en",
+    publisher: str | None = None,
+    description: str | None = None,
 ) -> dict[str, Any]:
     info: dict[str, Any] = {"title": title}
     if authors is not None:
@@ -52,6 +54,10 @@ def _fake_volume(
         info["imageLinks"] = {"thumbnail": cover_url}
     if language is not None:
         info["language"] = language
+    if publisher is not None:
+        info["publisher"] = publisher
+    if description is not None:
+        info["description"] = description
     return {"id": id, "volumeInfo": info}
 
 
@@ -332,7 +338,8 @@ def test_import_book_returns_201(
     assert data["google_books_id"] == "abc123"
     assert data["default_cover_url"] == "https://example.com/cover.jpg"
     assert data["default_page_count"] == 272
-    assert data["original_language"] == "en"
+    # Google only reports the edition's language, so nothing is claimed about the work.
+    assert data["original_language"] is None
     assert data["genres"] == ["Fantasy"]
     assert data["publication_date"] == "2020-09-15"
     assert len(data["authors"]) == 1
@@ -477,6 +484,44 @@ def test_import_seeds_three_editions(
     assert audio_ed.page_count is None
     assert audio_ed.cover_url == "https://example.com/cover.jpg"
     assert audio_ed.isbn is None
+
+
+def test_import_stores_publisher_and_plain_text_description(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, db: Session
+) -> None:
+    volume = _fake_volume(
+        publisher="Bloomsbury",
+        description=(
+            "<p>A <b>house</b> that is<br>the whole world. &amp; more</p>"
+            "<p>A second paragraph.</p>"
+        ),
+    )
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json=volume)
+
+    _patch_google(monkeypatch, handler)
+
+    response = client.post("/api/books/import", json={"google_books_id": "abc123"})
+    assert response.status_code == 201
+    book_id = uuid.UUID(response.json()["id"])
+
+    editions = (
+        db.execute(select(Edition).where(Edition.book_id == book_id)).scalars().all()
+    )
+    by_format = {e.edition_format: e for e in editions}
+
+    # Both are the volume's own facts, so they land on the real print edition and
+    # nowhere else -- the synthetic siblings make no claim about who published them.
+    print_ed = by_format[Format.print]
+    assert print_ed.publisher == "Bloomsbury"
+    assert print_ed.description == (
+        "A house that is\nthe whole world. & more\n\nA second paragraph."
+    )
+
+    assert by_format[Format.digital].publisher is None
+    assert by_format[Format.digital].description is None
+    assert by_format[Format.audio].publisher is None
 
 
 def test_import_upstream_failure_returns_502(

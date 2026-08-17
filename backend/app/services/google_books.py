@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import dataclasses
+import html
 import os
+import re
 import time
 from typing import Any
 
@@ -27,6 +29,8 @@ class GoogleVolume:
     cover_url: str | None
     language: str | None
     isbn: str | None
+    publisher: str | None
+    description: str | None
 
 
 def _api_key_params() -> dict[str, str]:
@@ -37,6 +41,24 @@ def _api_key_params() -> dict[str, str]:
 def _extract_isbn(identifiers: list[dict[str, str]]) -> str | None:
     by_type = {entry["type"]: entry["identifier"] for entry in identifiers}
     return by_type.get("ISBN_13") or by_type.get("ISBN_10")
+
+
+_TAG = re.compile(r"<[^>]+>")
+_PARAGRAPH_END = re.compile(r"</p\s*>", re.IGNORECASE)
+_BREAK = re.compile(r"<br\s*/?>", re.IGNORECASE)
+_BLANK_LINES = re.compile(r"\n{3,}")
+
+
+def _plain_text(markup: str | None) -> str | None:
+    """Google's description is HTML. Stored as text, so it can be rendered without
+    handing third-party markup to a browser -- but the breaks have to survive the
+    conversion, or a multi-paragraph blurb arrives as one unreadable block. A paragraph
+    ends with a blank line, a `br` with a single one."""
+    if not markup:
+        return None
+    text = _BREAK.sub("\n", _PARAGRAPH_END.sub("\n\n", markup))
+    text = html.unescape(_TAG.sub("", text))
+    return _BLANK_LINES.sub("\n\n", text).strip() or None
 
 
 def _https_url(url: str | None) -> str | None:
@@ -58,6 +80,8 @@ def _parse_volume(item: dict[str, Any]) -> GoogleVolume:
         cover_url=_https_url(image_links.get("thumbnail")),
         language=info.get("language"),
         isbn=_extract_isbn(info.get("industryIdentifiers", [])),
+        publisher=info.get("publisher"),
+        description=_plain_text(info.get("description")),
     )
 
 

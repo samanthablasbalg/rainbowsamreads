@@ -27,7 +27,10 @@ from app.services.google_books import GoogleBooksError, search_volumes
 
 router = APIRouter(prefix="/books", tags=["books"])
 
-_BOOK_READ_OPTIONS = (selectinload(Book.book_authors).selectinload(BookAuthor.author),)
+_BOOK_READ_OPTIONS = (
+    selectinload(Book.book_authors).selectinload(BookAuthor.author),
+    selectinload(Book.editions),
+)
 
 
 def _reload(db: Session, book_id: uuid.UUID) -> Book:

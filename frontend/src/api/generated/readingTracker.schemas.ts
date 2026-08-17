@@ -29,6 +29,28 @@ export const DatePrecision = {
   year: 'year',
 } as const;
 
+export type Format = (typeof Format)[keyof typeof Format];
+
+export const Format = {
+  print: 'print',
+  digital: 'digital',
+  audio: 'audio',
+} as const;
+
+export interface EditionRead {
+  id: string;
+  book_id: string;
+  edition_format: Format;
+  isbn: string | null;
+  publisher: string | null;
+  description: string | null;
+  page_count: number | null;
+  audio_minutes: number | null;
+  cover_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface BookRead {
   id: string;
   title: string;
@@ -41,6 +63,7 @@ export interface BookRead {
   genres: string[];
   publication_date: string | null;
   publication_date_precision: DatePrecision;
+  editions: EditionRead[];
   created_at: string;
   updated_at: string;
 }
@@ -89,14 +112,6 @@ export interface CurrentUser {
   picture: string | null;
 }
 
-export type Format = (typeof Format)[keyof typeof Format];
-
-export const Format = {
-  print: 'print',
-  digital: 'digital',
-  audio: 'audio',
-} as const;
-
 export interface EditionCreate {
   book_id: string;
   edition_format: Format;
@@ -104,18 +119,6 @@ export interface EditionCreate {
   page_count?: number | null;
   audio_minutes?: number | null;
   cover_url?: string | null;
-}
-
-export interface EditionRead {
-  id: string;
-  book_id: string;
-  edition_format: Format;
-  isbn: string | null;
-  page_count: number | null;
-  audio_minutes: number | null;
-  cover_url: string | null;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface EditionUpdate {

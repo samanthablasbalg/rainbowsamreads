@@ -49,6 +49,33 @@ export const getEngagementsCreateEngagementResponseMock = (
       null,
     ]),
     publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
+    editions: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+      () => ({
+        id: faker.string.uuid(),
+        book_id: faker.string.uuid(),
+        edition_format: faker.helpers.arrayElement(Object.values(Format)),
+        isbn: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        publisher: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        description: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        page_count: faker.helpers.arrayElement([faker.number.int(), null]),
+        audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
+        cover_url: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+        updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+      })
+    ),
     created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
     updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
   },
@@ -116,6 +143,33 @@ export const getEngagementsListEngagementsResponseMock = (): EngagementRead[] =>
         null,
       ]),
       publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
+      editions: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+        () => ({
+          id: faker.string.uuid(),
+          book_id: faker.string.uuid(),
+          edition_format: faker.helpers.arrayElement(Object.values(Format)),
+          isbn: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          publisher: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          description: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          page_count: faker.helpers.arrayElement([faker.number.int(), null]),
+          audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
+          cover_url: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+          updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+        })
+      ),
       created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
       updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
     },
@@ -183,6 +237,33 @@ export const getEngagementsUpdateEngagementStatusResponseMock = (
       null,
     ]),
     publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
+    editions: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+      () => ({
+        id: faker.string.uuid(),
+        book_id: faker.string.uuid(),
+        edition_format: faker.helpers.arrayElement(Object.values(Format)),
+        isbn: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        publisher: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        description: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        page_count: faker.helpers.arrayElement([faker.number.int(), null]),
+        audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
+        cover_url: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+        updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+      })
+    ),
     created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
     updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
   },
@@ -251,6 +332,33 @@ export const getEngagementsGetEngagementResponseMock = (
       null,
     ]),
     publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
+    editions: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+      () => ({
+        id: faker.string.uuid(),
+        book_id: faker.string.uuid(),
+        edition_format: faker.helpers.arrayElement(Object.values(Format)),
+        isbn: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        publisher: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        description: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        page_count: faker.helpers.arrayElement([faker.number.int(), null]),
+        audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
+        cover_url: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+        updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+      })
+    ),
     created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
     updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
   },
@@ -319,6 +427,33 @@ export const getEngagementsUpdateEngagementDatesResponseMock = (
       null,
     ]),
     publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
+    editions: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+      () => ({
+        id: faker.string.uuid(),
+        book_id: faker.string.uuid(),
+        edition_format: faker.helpers.arrayElement(Object.values(Format)),
+        isbn: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        publisher: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        description: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        page_count: faker.helpers.arrayElement([faker.number.int(), null]),
+        audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
+        cover_url: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+        updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+      })
+    ),
     created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
     updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
   },
@@ -386,6 +521,33 @@ export const getEngagementsListBookEngagementsResponseMock = (): EngagementRead[
         null,
       ]),
       publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
+      editions: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+        () => ({
+          id: faker.string.uuid(),
+          book_id: faker.string.uuid(),
+          edition_format: faker.helpers.arrayElement(Object.values(Format)),
+          isbn: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          publisher: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          description: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          page_count: faker.helpers.arrayElement([faker.number.int(), null]),
+          audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
+          cover_url: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+          updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+        })
+      ),
       created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
       updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
     },
@@ -540,6 +702,14 @@ export const getEngagementsCreateBindingResponseMock = (
     book_id: faker.string.uuid(),
     edition_format: faker.helpers.arrayElement(Object.values(Format)),
     isbn: faker.helpers.arrayElement([faker.string.alpha({ length: { min: 10, max: 20 } }), null]),
+    publisher: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    description: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
     page_count: faker.helpers.arrayElement([faker.number.int(), null]),
     audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
     cover_url: faker.helpers.arrayElement([
@@ -561,6 +731,14 @@ export const getEngagementsListBindingsResponseMock = (): EngagementEditionRead[
       book_id: faker.string.uuid(),
       edition_format: faker.helpers.arrayElement(Object.values(Format)),
       isbn: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      publisher: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      description: faker.helpers.arrayElement([
         faker.string.alpha({ length: { min: 10, max: 20 } }),
         null,
       ]),
@@ -612,6 +790,33 @@ export const getEngagementsUpsertReviewResponseMock = (
       null,
     ]),
     publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
+    editions: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+      () => ({
+        id: faker.string.uuid(),
+        book_id: faker.string.uuid(),
+        edition_format: faker.helpers.arrayElement(Object.values(Format)),
+        isbn: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        publisher: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        description: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        page_count: faker.helpers.arrayElement([faker.number.int(), null]),
+        audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
+        cover_url: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+        updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+      })
+    ),
     created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
     updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
   },

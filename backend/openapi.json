@@ -1419,6 +1419,13 @@
           "publication_date_precision": {
             "$ref": "#/components/schemas/DatePrecision"
           },
+          "editions": {
+            "items": {
+              "$ref": "#/components/schemas/EditionRead"
+            },
+            "type": "array",
+            "title": "Editions"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -1443,6 +1450,7 @@
           "genres",
           "publication_date",
           "publication_date_precision",
+          "editions",
           "created_at",
           "updated_at"
         ],
@@ -1706,6 +1714,28 @@
             ],
             "title": "Isbn"
           },
+          "publisher": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publisher"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
           "page_count": {
             "anyOf": [
               {
@@ -1756,6 +1786,8 @@
           "book_id",
           "edition_format",
           "isbn",
+          "publisher",
+          "description",
           "page_count",
           "audio_minutes",
           "cover_url",

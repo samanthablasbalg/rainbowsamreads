@@ -16,6 +16,14 @@ export const getEditionsCreateEditionResponseMock = (
   book_id: faker.string.uuid(),
   edition_format: faker.helpers.arrayElement(Object.values(Format)),
   isbn: faker.helpers.arrayElement([faker.string.alpha({ length: { min: 10, max: 20 } }), null]),
+  publisher: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  description: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
   page_count: faker.helpers.arrayElement([faker.number.int(), null]),
   audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
   cover_url: faker.helpers.arrayElement([
@@ -34,6 +42,14 @@ export const getEditionsGetEditionResponseMock = (
   book_id: faker.string.uuid(),
   edition_format: faker.helpers.arrayElement(Object.values(Format)),
   isbn: faker.helpers.arrayElement([faker.string.alpha({ length: { min: 10, max: 20 } }), null]),
+  publisher: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  description: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
   page_count: faker.helpers.arrayElement([faker.number.int(), null]),
   audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
   cover_url: faker.helpers.arrayElement([
@@ -52,6 +68,14 @@ export const getEditionsUpdateEditionResponseMock = (
   book_id: faker.string.uuid(),
   edition_format: faker.helpers.arrayElement(Object.values(Format)),
   isbn: faker.helpers.arrayElement([faker.string.alpha({ length: { min: 10, max: 20 } }), null]),
+  publisher: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  description: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
   page_count: faker.helpers.arrayElement([faker.number.int(), null]),
   audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
   cover_url: faker.helpers.arrayElement([

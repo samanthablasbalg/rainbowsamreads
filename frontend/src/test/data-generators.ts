@@ -3,10 +3,31 @@ import {
   Format,
   ReadingStatus,
   type BookRead,
+  type EditionRead,
   type EngagementRead,
   type MinuteProgressLogRead,
   type PageProgressLogRead,
 } from '@/api/generated/readingTracker.schemas';
+
+export function buildEdition({
+  edition_format = Format.print,
+  ...overrides
+}: Partial<EditionRead> = {}): EditionRead {
+  return {
+    id: `edition-${edition_format}`,
+    book_id: 'book-Piranesi',
+    edition_format,
+    isbn: null,
+    publisher: null,
+    description: null,
+    page_count: 272,
+    audio_minutes: null,
+    cover_url: null,
+    created_at: '2025-01-01T00:00:00Z',
+    updated_at: '2025-01-01T00:00:00Z',
+    ...overrides,
+  };
+}
 
 export function buildBook({
   title = 'Piranesi',
@@ -24,6 +45,7 @@ export function buildBook({
     genres: [],
     publication_date: null,
     publication_date_precision: DatePrecision.year,
+    editions: [],
     created_at: '2025-01-01T00:00:00Z',
     updated_at: '2025-01-01T00:00:00Z',
     ...overrides,

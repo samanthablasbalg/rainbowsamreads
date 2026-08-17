@@ -55,7 +55,7 @@ export function BookDetail({ bookId }: { bookId: string }) {
 
           <div className="col-span-2 flex flex-col gap-4">
             <BookChips book={book} />
-            <BookBlurb />
+            <BookBlurb book={book} />
           </div>
 
           {/* Contents takes the wide column because it can run to thirty rows; the history
