@@ -2,45 +2,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { withPointer } from '@/test/pointer-decorator';
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
-import {
-  DatePrecision,
-  Format,
-  ReadingStatus,
-  type EngagementRead,
-} from '@/api/generated/readingTracker.schemas';
+import { type EngagementRead } from '@/api/generated/readingTracker.schemas';
+import { buildEngagement } from '@/test/data-generators';
 import { Button } from '@/components/ui/button';
 import { ReviewSheet } from './review-sheet';
 
-const baseEngagement: EngagementRead = {
-  id: 'engagement-1',
-  book: {
-    id: 'book-1',
-    title: 'Piranesi',
-    authors: [{ id: 'author-1', name: 'Susanna Clarke' }],
-    google_books_id: null,
-    default_cover_url: null,
-    default_page_count: 272,
-    default_audio_minutes: null,
-    original_language: null,
-    genres: [],
-    publication_date: null,
-    publication_date_precision: DatePrecision.year,
-    created_at: '2025-01-01T00:00:00Z',
-    updated_at: '2025-01-01T00:00:00Z',
-  },
-  formats: [Format.print],
-  cover_url: null,
-  status: ReadingStatus.finished,
-  started_on: '2025-01-01',
-  finished_on: '2025-02-14',
-  abandoned_on: null,
-  resume_from_page: 272,
-  resume_from_minute: 0,
-  completion_pct: 100,
-  review: null,
-  created_at: '2025-01-01T00:00:00Z',
-  updated_at: '2025-01-01T00:00:00Z',
-};
+const baseEngagement = buildEngagement({ id: 'engagement-1', finished_on: '2025-02-14' });
 
 function ControlledSheet({ engagement }: { engagement: EngagementRead }) {
   const [open, setOpen] = useState(false);
