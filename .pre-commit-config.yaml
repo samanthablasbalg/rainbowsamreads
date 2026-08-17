@@ -45,13 +45,18 @@ repos:
         entry: bash -c 'cd frontend && npx lint-staged'
         pass_filenames: false
 
+      # `npm ls orval` exits non-zero when the installed copy no longer satisfies
+      # package.json, which happens whenever node_modules outlives a dependency bump.
+      # Without it this hook silently generates with whatever version is on disk, and a
+      # stale one rewrote the version banner of every client file in 039565c.
       - id: regenerate-api-client
         name: Regenerate OpenAPI schema and client
         language: system
         files: ^backend/app/.*\.py$
         entry:
-          bash -c 'python3 backend/scripts/export_openapi.py && npm --prefix frontend run
-          generate:api && git add backend/openapi.json frontend/src/api/generated'
+          bash -c 'npm --prefix frontend ls orval >/dev/null && python3
+          backend/scripts/export_openapi.py && npm --prefix frontend run generate:api && git add
+          backend/openapi.json frontend/src/api/generated'
         pass_filenames: false
 
       - id: e2e-typecheck
