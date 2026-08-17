@@ -33,16 +33,17 @@ export function BookHeader({ book }: { book: BookRead }) {
       <h1 className="text-3xl leading-tight font-semibold text-pretty lg:text-4xl">{book.title}</h1>
 
       {/* Authors are not routable yet, so the brand pink here is typography rather than an
-          affordance -- no underline, no link. */}
+          affordance -- no underline, no link. The date rides this line rather than taking
+          one of its own; it is an attribute of the book, not a second fact about it. */}
       <p className="text-sm">
         by <span className="font-bold text-brand-pink">{authorNames(book)}</span>
+        {book.publication_date && (
+          <span className="text-muted-foreground">
+            {' · '}
+            {formatDateAtPrecision(book.publication_date, book.publication_date_precision)}
+          </span>
+        )}
       </p>
-
-      {book.publication_date && (
-        <p className="text-xs text-muted-foreground">
-          {formatDateAtPrecision(book.publication_date, book.publication_date_precision)}
-        </p>
-      )}
     </div>
   );
 }
