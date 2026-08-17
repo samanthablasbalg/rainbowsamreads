@@ -48,6 +48,18 @@ function currentEngagement(engagements: EngagementRead[]): EngagementRead {
   );
 }
 
+// A book's rating is every read of it, averaged -- one read being the one-element case.
+// Rounded to a quarter, the resolution the stars are drawn at, so the spoken label and
+// the picture agree. Null when nothing has been rated.
+function averageRating(engagements: EngagementRead[]): string | null {
+  const ratings = engagements.flatMap((e) => (e.review?.rating ? [Number(e.review.rating)] : []));
+  if (ratings.length === 0) {
+    return null;
+  }
+  const mean = ratings.reduce((total, rating) => total + rating, 0) / ratings.length;
+  return String(Math.round(mean * 4) / 4);
+}
+
 // One card of labelled rows, holding what is known about this book beyond the book itself.
 // It keeps its shape whether or not the book has been read, so nothing jumps when the
 // first read is logged.
@@ -60,7 +72,6 @@ export function BookMetadata({
   tracked: boolean;
   engagements: EngagementRead[];
 }) {
-  const latestRated = engagements.find((e) => e.review?.rating);
   const current = tracked ? currentEngagement(engagements) : null;
   const [addOpen, setAddOpen] = useState(false);
 
@@ -136,18 +147,7 @@ export function BookMetadata({
       </Row>
 
       <Row label="Rating">
-        {latestRated?.review?.rating ? (
-          <>
-            <StarRating rating={latestRated.review.rating} />
-            <span className="text-xs font-bold whitespace-nowrap text-muted-foreground">
-              latest of {engagements.length}
-            </span>
-          </>
-        ) : (
-          <span className="text-xs whitespace-nowrap text-muted-foreground">
-            {tracked ? 'not rated yet' : 'after a read'}
-          </span>
-        )}
+        <StarRating rating={averageRating(engagements)} />
       </Row>
 
       {/* Ownership, recommender and acquisition have no store behind them yet. The rows

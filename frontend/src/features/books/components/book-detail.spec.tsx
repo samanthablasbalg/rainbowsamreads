@@ -96,6 +96,32 @@ describe('BookDetail', () => {
     expect(await screen.findByText(/not a tag/)).toBeVisible();
   });
 
+  it('rates the book as the average of every read of it', async () => {
+    server.use(
+      getBooksGetBookMockHandler(buildBook()),
+      getEngagementsListBookEngagementsMockHandler([
+        buildEngagement({ id: 'engagement-1', review: { rating: '5.00', body: null } }),
+        buildEngagement({ id: 'engagement-2', review: { rating: '4.00', body: null } }),
+        buildEngagement({ id: 'engagement-3', review: null }),
+      ])
+    );
+
+    render(<BookDetail bookId="book-Piranesi" />);
+
+    expect(await screen.findByRole('img', { name: 'Rated 4.5 out of 5' })).toBeVisible();
+  });
+
+  it('shows empty stars for a book nothing has rated', async () => {
+    server.use(
+      getBooksGetBookMockHandler(buildBook()),
+      getEngagementsListBookEngagementsMockHandler([])
+    );
+
+    render(<BookDetail bookId="book-Piranesi" />);
+
+    expect(await screen.findByRole('img', { name: 'Not rated' })).toBeVisible();
+  });
+
   // The status menu is built from the generated `EngagementStatusUpdateStatus`, so this
   // pins the thing that matters: it offers what the endpoint accepts and nothing else.
   it('offers only the statuses the endpoint accepts', async () => {
