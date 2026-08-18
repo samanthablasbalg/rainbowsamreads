@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
 import {
@@ -87,11 +88,13 @@ export function BookReadings({
                     <p className="font-serif text-sm leading-relaxed">{engagement.review.body}</p>
                   )}
                   <div className="flex gap-4">
-                    <Button variant="link" size="xs" className="h-auto p-0 font-bold text-ring">
+                    <Button
+                      variant="link"
+                      size="xs"
+                      className="h-auto p-0 font-bold text-ring"
+                      render={<Link to={`/reads/${engagement.id}`} />}
+                    >
                       Progress log
-                    </Button>
-                    <Button variant="link" size="xs" className="h-auto p-0 font-bold text-ring">
-                      Edit read
                     </Button>
                   </div>
                 </div>
