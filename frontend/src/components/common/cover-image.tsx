@@ -5,12 +5,23 @@ import { cn } from '@/lib/utils';
 // list row, and `edge=curl` draws a fake page-curl over the artwork. Both are query
 // parameters on an image host, so a larger, flat cover is a rewrite rather than a
 // re-import -- which also means it fixes every row already in the database.
+//
+// `zoom` picks a pre-rendered tier, and asking for one Google does not hold answers with a
+// gray "image not available" JPEG at HTTP 200 -- so `onError` never fires and the fallback
+// below never shows. `w` instead resizes the tier that always exists, capping at whatever
+// resolution Google really has. 600 covers the largest cover on the site (the detail
+// page's 240px, doubled for retina) and still beats what `zoom=3` returned.
+//
+// The protocol is forced because rows imported before the API served https kept a plain
+// http URL, which Safari and Firefox block outright as mixed content on the deployed site.
 function sharpen(src: string): string {
   if (!src.includes('books.google.com')) {
     return src;
   }
   const url = new URL(src);
-  url.searchParams.set('zoom', '3');
+  url.protocol = 'https:';
+  url.searchParams.set('zoom', '1');
+  url.searchParams.set('w', '600');
   url.searchParams.delete('edge');
   return url.toString();
 }
