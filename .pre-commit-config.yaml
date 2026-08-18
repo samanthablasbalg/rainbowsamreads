@@ -37,6 +37,15 @@ repos:
         files: ^backend/
         require_serial: true
 
+      # Contracts live in backend/pyproject.toml; lint-imports reads them from the cwd
+      # and needs `app` importable, so it runs from backend/.
+      - id: import-linter
+        name: import-linter
+        language: system
+        entry: bash -c 'cd backend && lint-imports'
+        files: ^backend/app/.*\.py$
+        pass_filenames: false
+
       # eslint only. Prettier for these files comes from the repo-wide hook below.
       - id: frontend-lint-staged
         name: Lint staged (frontend)
