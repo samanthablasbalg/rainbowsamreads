@@ -3,7 +3,6 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, status
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.crud import engagement_crud
@@ -60,16 +59,7 @@ def list_progress_logs(
     engagement_id: uuid.UUID,
     db: Session = Depends(get_db),
 ) -> list[ProgressLogRead]:
-    engagement_crud.get_or_raise(db, engagement_id)
-    logs = (
-        db.execute(
-            select(ProgressLog)
-            .where(ProgressLog.engagement_id == engagement_id)
-            .order_by(ProgressLog.logged_on.asc(), ProgressLog.created_at.asc())
-        )
-        .scalars()
-        .all()
-    )
+    logs = progress_log_service.list_for_engagement(db, engagement_id)
     return [progress_log_read(log) for log in logs]
 
 

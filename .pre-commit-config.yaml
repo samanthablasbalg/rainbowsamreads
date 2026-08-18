@@ -37,6 +37,16 @@ repos:
         files: ^backend/
         require_serial: true
 
+      # import-linter enforces which way dependencies point, not what a router does with
+      # them: building a select() in a handler imports nothing illegal. A router parses,
+      # calls a service and shapes the response, so a query there is the layering
+      # breaking in the one way the contracts above cannot see.
+      - id: no-queries-in-routers
+        name: No queries in routers (move it to a service)
+        language: pygrep
+        entry: 'db\.execute\('
+        files: ^backend/app/api/.*\.py$
+
       # Contracts live in backend/pyproject.toml; lint-imports reads them from the cwd
       # and needs `app` importable, so it runs from backend/.
       - id: import-linter

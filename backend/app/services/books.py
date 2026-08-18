@@ -1,16 +1,63 @@
 from __future__ import annotations
 
 import datetime
+import uuid
 
+from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.crud import author_crud, book_author_crud, book_crud, edition_crud
 from app.exceptions import ConflictError, NotFoundError
+from app.models.author import Author
 from app.models.book import Book, BookAuthor
 from app.models.edition import Edition
+from app.models.engagement import Engagement
 from app.models.enums import BookAuthorRole, DatePrecision, Format
 from app.services.google_books import get_volume
+
+
+def search_local(db: Session, q: str) -> list[Book]:
+    """Books already in the catalogue whose title or any author matches. Substring, not
+    prefix, because a search for "clarke" should find Susanna Clarke."""
+    pattern = f"%{q}%"
+    return list(
+        db.execute(
+            select(Book)
+            .distinct()
+            .outerjoin(BookAuthor, BookAuthor.book_id == Book.id)
+            .outerjoin(Author, Author.id == BookAuthor.author_id)
+            .where(or_(Book.title.ilike(pattern), Author.name.ilike(pattern)))
+            .options(
+                selectinload(Book.book_authors).selectinload(BookAuthor.author),
+                selectinload(Book.editions),
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+def engagements_by_book(
+    db: Session, book_ids: list[uuid.UUID], user_id: uuid.UUID
+) -> dict[uuid.UUID, list[Engagement]]:
+    """Which of these books the user has read, so a search result can say so. Filters on
+    user_id explicitly rather than leaning on RLS, since books themselves are shared."""
+    if not book_ids:
+        return {}
+    engagements = (
+        db.execute(
+            select(Engagement).where(
+                Engagement.book_id.in_(book_ids), Engagement.user_id == user_id
+            )
+        )
+        .scalars()
+        .all()
+    )
+    grouped: dict[uuid.UUID, list[Engagement]] = {}
+    for engagement in engagements:
+        grouped.setdefault(engagement.book_id, []).append(engagement)
+    return grouped
 
 
 def create_book(
