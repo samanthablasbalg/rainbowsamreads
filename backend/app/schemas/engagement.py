@@ -16,6 +16,7 @@ class EngagementCreate(BaseModel):
     edition_format: Format
     status: Literal["reading", "finished", "dnf"] = "reading"
     audio_length_minutes: int | None = None
+    length_override: int | None = None
     started_on: datetime.date | None = None
 
 

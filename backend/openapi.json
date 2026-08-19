@@ -1869,6 +1869,17 @@
             ],
             "title": "Audio Length Minutes"
           },
+          "length_override": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Override"
+          },
           "started_on": {
             "anyOf": [
               {

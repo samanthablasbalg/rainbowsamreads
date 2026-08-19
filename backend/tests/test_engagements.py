@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.book import Book
+from app.models.edition import Edition
 from app.models.engagement import Engagement
 from app.models.enums import ReadingStatus
 from app.models.progress_log import ProgressLog
@@ -47,6 +48,51 @@ def test_create_engagement_binds_chosen_non_print_format(client: TestClient) -> 
     )
     assert response.status_code == 201
     assert response.json()["formats"] == ["audio"]
+
+
+def test_create_engagement_length_override_drives_completion(
+    client: TestClient,
+) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=1100)
+    response = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "edition_format": "print",
+            "length_override": 1000,
+        },
+    )
+    assert response.status_code == 201
+    engagement_id = response.json()["id"]
+    _log_progress(client, engagement_id, 500)
+
+    assert (
+        client.get(f"/api/engagements/{engagement_id}").json()["completion_pct"] == 50
+    )
+
+
+def test_create_engagement_length_override_leaves_edition_alone(
+    client: TestClient, db: Session
+) -> None:
+    book = _create_bare_book(client)
+    edition = _create_edition(client, book["id"], page_count=1100)
+    client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "edition_format": "print",
+            "length_override": 1000,
+        },
+    )
+
+    db.expire_all()
+    edition_obj = db.get(Edition, uuid.UUID(edition["id"]))
+    assert edition_obj is not None
+    assert edition_obj.page_count == 1100
+    book_obj = db.get(Book, uuid.UUID(book["id"]))
+    assert book_obj is not None
+    assert book_obj.default_page_count is None
 
 
 def test_create_engagement_missing_edition_format_returns_422(

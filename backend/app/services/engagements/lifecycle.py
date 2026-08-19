@@ -82,6 +82,7 @@ def create_engagement(
     status: ReadingStatus,
     user_id: uuid.UUID,
     audio_length_minutes: int | None = None,
+    length_override: int | None = None,
     started_on: datetime.date | None = None,
 ) -> Engagement:
     book = book_crud.get_or_raise(db, book_id)
@@ -132,6 +133,7 @@ def create_engagement(
             engagement_id=engagement.id,
             edition_id=edition.id,
             user_id=engagement.user_id,
+            length_override=length_override,
         ),
     )
 

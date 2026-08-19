@@ -36,6 +36,7 @@ def create_engagement(
         status=ReadingStatus(payload.status),
         user_id=current_user.id,
         audio_length_minutes=payload.audio_length_minutes,
+        length_override=payload.length_override,
         started_on=payload.started_on,
     )
     db.commit()

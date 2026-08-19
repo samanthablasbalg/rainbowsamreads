@@ -141,6 +141,7 @@ export interface EngagementCreate {
   edition_format: Format;
   status?: EngagementCreateStatus;
   audio_length_minutes?: number | null;
+  length_override?: number | null;
   started_on?: string | null;
 }
 
