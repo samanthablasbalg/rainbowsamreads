@@ -44,7 +44,8 @@ repos:
       - id: no-queries-in-routers
         name: No queries in routers (move it to a service)
         language: pygrep
-        entry: 'db\.execute\('
+        # Every way the Session runs one: execute, scalar, scalars, query.
+        entry: 'db\.(execute|scalars?|query)\('
         files: ^backend/app/api/.*\.py$
 
       # Contracts live in backend/pyproject.toml; lint-imports reads them from the cwd
