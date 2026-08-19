@@ -506,21 +506,22 @@ def test_import_stores_publisher_and_plain_text_description(
     assert response.status_code == 201
     book_id = uuid.UUID(response.json()["id"])
 
+    # The description is about the work, so it lands on the book, stripped to text.
+    book = db.get(Book, book_id)
+    assert book is not None
+    assert book.description == (
+        "A house that is\nthe whole world. & more\n\nA second paragraph."
+    )
+
     editions = (
         db.execute(select(Edition).where(Edition.book_id == book_id)).scalars().all()
     )
     by_format = {e.edition_format: e for e in editions}
 
-    # Both are the volume's own facts, so they land on the real print edition and
+    # Publisher is an edition-level fact, so it lands on the real print edition and
     # nowhere else -- the synthetic siblings make no claim about who published them.
-    print_ed = by_format[Format.print]
-    assert print_ed.publisher == "Bloomsbury"
-    assert print_ed.description == (
-        "A house that is\nthe whole world. & more\n\nA second paragraph."
-    )
-
+    assert by_format[Format.print].publisher == "Bloomsbury"
     assert by_format[Format.digital].publisher is None
-    assert by_format[Format.digital].description is None
     assert by_format[Format.audio].publisher is None
 
 

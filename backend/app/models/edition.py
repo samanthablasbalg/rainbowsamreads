@@ -36,7 +36,6 @@ class Edition(TimestampMixin, Base):
     )
     isbn: Mapped[str | None]
     publisher: Mapped[str | None]
-    description: Mapped[str | None]
     page_count: Mapped[int | None]
     audio_minutes: Mapped[int | None]
     cover_url: Mapped[str | None]

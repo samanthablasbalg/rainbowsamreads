@@ -30,6 +30,10 @@ class Book(TimestampMixin, Base):
     default_page_count: Mapped[int | None]
     default_audio_minutes: Mapped[int | None]
     original_language: Mapped[str | None]
+    # The publisher's blurb, which describes the work rather than any one printing of
+    # it. An edition with its own (a 20th-anniversary reissue, say) can grow a nullable
+    # column that falls back to this one.
+    description: Mapped[str | None]
     genres: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
     series: Mapped[str | None]
     series_position: Mapped[int | None]
@@ -47,8 +51,12 @@ class Book(TimestampMixin, Base):
     def authors(self) -> list[Author]:
         return [ba.author for ba in self.book_authors]
 
+    # `raise_on_sql` rather than the default silent lazy load. A caller that wants
+    # editions says so with `selectinload(Book.editions)`; one that forgot gets an
+    # error instead of a SELECT per book, which is how a book's whole edition list
+    # once ended up riding on every row of every shelf.
     editions: Mapped[list[Edition]] = relationship(
-        back_populates="book", cascade="all, delete-orphan"
+        back_populates="book", cascade="all, delete-orphan", lazy="raise_on_sql"
     )
     standalone_entries: Mapped[list[StandaloneEntry]] = relationship(
         back_populates="book"

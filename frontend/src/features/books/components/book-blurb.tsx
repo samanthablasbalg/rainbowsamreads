@@ -1,16 +1,12 @@
 import { useState } from 'react';
-import { Format, type BookRead } from '@/api/generated/readingTracker.schemas';
+import { type BookRead } from '@/api/generated/readingTracker.schemas';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export function BookBlurb({ book }: { book: BookRead }) {
   const [expanded, setExpanded] = useState(false);
 
-  // The print edition is the one Google actually described (ADR-0022); its synthetic
-  // siblings carry no blurb of their own.
-  const blurb = book.editions.find((e) => e.edition_format === Format.print)?.description;
-
-  if (!blurb) {
+  if (!book.description) {
     return null;
   }
 
@@ -22,7 +18,7 @@ export function BookBlurb({ book }: { book: BookRead }) {
         <p
           className={cn('text-sm leading-relaxed whitespace-pre-line', !expanded && 'line-clamp-4')}
         >
-          {blurb}
+          {book.description}
         </p>
 
         {/* Fades the clamped last line into the page rather than cutting it mid-stroke. */}

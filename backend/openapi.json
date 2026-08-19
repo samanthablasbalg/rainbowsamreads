@@ -1397,6 +1397,17 @@
             ],
             "title": "Original Language"
           },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
           "genres": {
             "items": {
               "type": "string"
@@ -1419,13 +1430,6 @@
           "publication_date_precision": {
             "$ref": "#/components/schemas/DatePrecision"
           },
-          "editions": {
-            "items": {
-              "$ref": "#/components/schemas/EditionRead"
-            },
-            "type": "array",
-            "title": "Editions"
-          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -1447,10 +1451,10 @@
           "default_page_count",
           "default_audio_minutes",
           "original_language",
+          "description",
           "genres",
           "publication_date",
           "publication_date_precision",
-          "editions",
           "created_at",
           "updated_at"
         ],
@@ -1725,17 +1729,6 @@
             ],
             "title": "Publisher"
           },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
           "page_count": {
             "anyOf": [
               {
@@ -1787,7 +1780,6 @@
           "edition_format",
           "isbn",
           "publisher",
-          "description",
           "page_count",
           "audio_minutes",
           "cover_url",

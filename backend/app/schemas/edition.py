@@ -31,7 +31,6 @@ class EditionRead(BaseModel):
     edition_format: Format
     isbn: str | None
     publisher: str | None
-    description: str | None
     page_count: int | None
     audio_minutes: int | None
     cover_url: str | None

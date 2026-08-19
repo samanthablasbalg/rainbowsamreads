@@ -30,6 +30,8 @@ def search_local(db: Session, q: str) -> list[Book]:
             .where(or_(Book.title.ilike(pattern), Author.name.ilike(pattern)))
             .options(
                 selectinload(Book.book_authors).selectinload(BookAuthor.author),
+                # Not for the response -- search dedups Google hits against the ISBNs
+                # already in the catalogue, and those live on the editions.
                 selectinload(Book.editions),
             )
         )
@@ -69,6 +71,7 @@ def create_book(
     google_books_id: str | None = None,
     cover_url: str | None = None,
     language: str | None = None,
+    description: str | None = None,
     genres: list[str] | None = None,
     publication_date: datetime.date | None = None,
     publication_date_precision: DatePrecision | None = None,
@@ -81,6 +84,7 @@ def create_book(
             google_books_id=google_books_id,
             default_cover_url=cover_url,
             original_language=language,
+            description=description,
             genres=genres or [],
             publication_date=publication_date,
             publication_date_precision=publication_date_precision or DatePrecision.day,
@@ -130,13 +134,15 @@ def import_book_from_google(db: Session, *, google_books_id: str) -> tuple[Book,
         page_count=volume.page_count,
         google_books_id=volume.google_books_id,
         cover_url=volume.cover_url,
+        description=volume.description,
         genres=volume.categories,
         publication_date=pub_date,
         publication_date_precision=pub_precision,
     )
 
-    # Print is the real edition (ADR-0022), so the volume's own facts land here rather
-    # than on the two synthetic siblings below.
+    # Print is the real edition (ADR-0022), so the volume's edition-level facts land
+    # here rather than on the two synthetic siblings below. The description is not one
+    # of them -- it describes the work, so it went onto the book above.
     edition_crud.create(
         db,
         Edition(
@@ -144,7 +150,6 @@ def import_book_from_google(db: Session, *, google_books_id: str) -> tuple[Book,
             edition_format=Format.print,
             isbn=volume.isbn,
             publisher=volume.publisher,
-            description=volume.description,
             page_count=volume.page_count,
             cover_url=volume.cover_url,
         ),

@@ -1,4 +1,4 @@
-"""add publisher and description to editions
+"""add publisher to editions and description to books
 
 Revision ID: bc6951bda673
 Revises: 3a55cabfc585
@@ -21,18 +21,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
+    # Publisher is an edition-level fact -- this hardcover is the one Tor printed --
+    # so it sits beside the ISBN. The description is about the work, so it joins the
+    # other book-level defaults; an edition that needs its own can grow one later.
     op.add_column("editions", sa.Column("publisher", sa.String(), nullable=True))
-    op.add_column("editions", sa.Column("description", sa.String(), nullable=True))
-
-    # Every existing value came from `volumeInfo.language`, which is the *edition's*
-    # language, not the work's. It answers the wrong question -- a translated book reads
-    # as English -- so the column is emptied in lockstep with the importer that stopped
-    # writing it. Nothing is recoverable here, which is the point: the data was wrong.
-    op.execute("UPDATE books SET original_language = NULL")
+    op.add_column("books", sa.Column("description", sa.String(), nullable=True))
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    # The cleared languages are not restored -- they were the wrong fact to begin with.
-    op.drop_column("editions", "description")
+    op.drop_column("books", "description")
     op.drop_column("editions", "publisher")

@@ -33,6 +33,10 @@ export const getBooksListBooksResponseMock = (): BookRead[] =>
       faker.string.alpha({ length: { min: 10, max: 20 } }),
       null,
     ]),
+    description: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
     genres: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
       faker.string.alpha({ length: { min: 10, max: 20 } })
     ),
@@ -41,33 +45,6 @@ export const getBooksListBooksResponseMock = (): BookRead[] =>
       null,
     ]),
     publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
-    editions: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
-      () => ({
-        id: faker.string.uuid(),
-        book_id: faker.string.uuid(),
-        edition_format: faker.helpers.arrayElement(Object.values(Format)),
-        isbn: faker.helpers.arrayElement([
-          faker.string.alpha({ length: { min: 10, max: 20 } }),
-          null,
-        ]),
-        publisher: faker.helpers.arrayElement([
-          faker.string.alpha({ length: { min: 10, max: 20 } }),
-          null,
-        ]),
-        description: faker.helpers.arrayElement([
-          faker.string.alpha({ length: { min: 10, max: 20 } }),
-          null,
-        ]),
-        page_count: faker.helpers.arrayElement([faker.number.int(), null]),
-        audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
-        cover_url: faker.helpers.arrayElement([
-          faker.string.alpha({ length: { min: 10, max: 20 } }),
-          null,
-        ]),
-        created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-        updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-      })
-    ),
     created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
     updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
   }));
@@ -94,6 +71,10 @@ export const getBooksCreateBookResponseMock = (
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
+  description: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
   genres: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
     faker.string.alpha({ length: { min: 10, max: 20 } })
   ),
@@ -102,33 +83,6 @@ export const getBooksCreateBookResponseMock = (
     null,
   ]),
   publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
-  editions: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
-    () => ({
-      id: faker.string.uuid(),
-      book_id: faker.string.uuid(),
-      edition_format: faker.helpers.arrayElement(Object.values(Format)),
-      isbn: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      publisher: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      description: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      page_count: faker.helpers.arrayElement([faker.number.int(), null]),
-      audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
-      cover_url: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-      updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-    })
-  ),
   created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
   updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
   ...overrideResponse,
@@ -190,6 +144,10 @@ export const getBooksImportBookResponseMock = (
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
+  description: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
   genres: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
     faker.string.alpha({ length: { min: 10, max: 20 } })
   ),
@@ -198,33 +156,6 @@ export const getBooksImportBookResponseMock = (
     null,
   ]),
   publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
-  editions: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
-    () => ({
-      id: faker.string.uuid(),
-      book_id: faker.string.uuid(),
-      edition_format: faker.helpers.arrayElement(Object.values(Format)),
-      isbn: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      publisher: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      description: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      page_count: faker.helpers.arrayElement([faker.number.int(), null]),
-      audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
-      cover_url: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-      updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-    })
-  ),
   created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
   updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
   ...overrideResponse,
@@ -252,6 +183,10 @@ export const getBooksGetBookResponseMock = (
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
+  description: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
   genres: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
     faker.string.alpha({ length: { min: 10, max: 20 } })
   ),
@@ -260,33 +195,6 @@ export const getBooksGetBookResponseMock = (
     null,
   ]),
   publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
-  editions: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
-    () => ({
-      id: faker.string.uuid(),
-      book_id: faker.string.uuid(),
-      edition_format: faker.helpers.arrayElement(Object.values(Format)),
-      isbn: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      publisher: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      description: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      page_count: faker.helpers.arrayElement([faker.number.int(), null]),
-      audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
-      cover_url: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-      updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-    })
-  ),
   created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
   updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
   ...overrideResponse,
@@ -318,6 +226,10 @@ export const getBooksListBookEngagementsResponseMock = (): EngagementRead[] =>
         faker.string.alpha({ length: { min: 10, max: 20 } }),
         null,
       ]),
+      description: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
       genres: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
         () => faker.string.alpha({ length: { min: 10, max: 20 } })
       ),
@@ -326,33 +238,6 @@ export const getBooksListBookEngagementsResponseMock = (): EngagementRead[] =>
         null,
       ]),
       publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
-      editions: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
-        () => ({
-          id: faker.string.uuid(),
-          book_id: faker.string.uuid(),
-          edition_format: faker.helpers.arrayElement(Object.values(Format)),
-          isbn: faker.helpers.arrayElement([
-            faker.string.alpha({ length: { min: 10, max: 20 } }),
-            null,
-          ]),
-          publisher: faker.helpers.arrayElement([
-            faker.string.alpha({ length: { min: 10, max: 20 } }),
-            null,
-          ]),
-          description: faker.helpers.arrayElement([
-            faker.string.alpha({ length: { min: 10, max: 20 } }),
-            null,
-          ]),
-          page_count: faker.helpers.arrayElement([faker.number.int(), null]),
-          audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
-          cover_url: faker.helpers.arrayElement([
-            faker.string.alpha({ length: { min: 10, max: 20 } }),
-            null,
-          ]),
-          created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-          updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-        })
-      ),
       created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
       updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
     },

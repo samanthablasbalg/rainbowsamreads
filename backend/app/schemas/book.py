@@ -7,7 +7,6 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
 from app.models.enums import DatePrecision
-from app.schemas.edition import EditionRead
 
 NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
@@ -52,12 +51,10 @@ class BookRead(BaseModel):
     default_page_count: int | None
     default_audio_minutes: int | None
     original_language: str | None
+    description: str | None
     genres: list[str]
     publication_date: datetime.date | None
     publication_date_precision: DatePrecision
-    # Publisher and description live on the edition (ADR-0021), so a page that wants
-    # either has to be handed the editions to pick from.
-    editions: list[EditionRead]
     created_at: datetime.datetime
     updated_at: datetime.datetime
 
