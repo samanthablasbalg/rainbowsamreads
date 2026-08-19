@@ -38,6 +38,7 @@ export interface BookRead {
   default_page_count: number | null;
   default_audio_minutes: number | null;
   original_language: string | null;
+  description: string | null;
   genres: string[];
   publication_date: string | null;
   publication_date_precision: DatePrecision;
@@ -111,6 +112,7 @@ export interface EditionRead {
   book_id: string;
   edition_format: Format;
   isbn: string | null;
+  publisher: string | null;
   page_count: number | null;
   audio_minutes: number | null;
   cover_url: string | null;

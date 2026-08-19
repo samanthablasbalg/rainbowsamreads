@@ -289,6 +289,47 @@
       }
     },
     "/api/books/{book_id}": {
+      "get": {
+        "tags": [
+          "books"
+        ],
+        "summary": "Get Book",
+        "operationId": "books-get_book",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "delete": {
         "tags": [
           "books"
@@ -310,6 +351,53 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/books/{book_id}/engagements": {
+      "get": {
+        "tags": [
+          "books"
+        ],
+        "summary": "List Book Engagements",
+        "operationId": "books-list_book_engagements",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EngagementRead"
+                  },
+                  "title": "Response Books-List Book Engagements"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -1309,6 +1397,17 @@
             ],
             "title": "Original Language"
           },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
           "genres": {
             "items": {
               "type": "string"
@@ -1352,6 +1451,7 @@
           "default_page_count",
           "default_audio_minutes",
           "original_language",
+          "description",
           "genres",
           "publication_date",
           "publication_date_precision",
@@ -1618,6 +1718,17 @@
             ],
             "title": "Isbn"
           },
+          "publisher": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publisher"
+          },
           "page_count": {
             "anyOf": [
               {
@@ -1668,6 +1779,7 @@
           "book_id",
           "edition_format",
           "isbn",
+          "publisher",
           "page_count",
           "audio_minutes",
           "cover_url",

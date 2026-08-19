@@ -16,6 +16,30 @@ ignore = [
     "B008",  # FastAPI uses Depends() in argument defaults by design
 ]
 
+[tool.importlinter]
+root_package = "app"
+# Required to name fastapi, which lives outside the root package, as forbidden.
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Layering: api depends on services depends on crud"
+type = "layers"
+layers = ["app.api", "app.services", "app.crud"]
+
+# The property that makes a service worth having: it can be called from a seed script,
+# a data migration or a REPL. Domain errors are plain-Python exceptions in
+# app.exceptions, mapped to HTTP status once in main.py, so nothing below the API layer
+# needs the framework.
+[[tool.importlinter.contracts]]
+name = "Business rules run without a request"
+type = "forbidden"
+source_modules = ["app.services", "app.crud"]
+forbidden_modules = ["fastapi"]
+# Direct imports only. app.exceptions and app.database both import fastapi -- the first
+# because it also registers the handlers, the second for get_db -- so every service
+# reaches it transitively today. Tightening this means splitting those two modules.
+allow_indirect_imports = true
+
 [tool.mypy]
 python_version = "3.14"
 strict = true

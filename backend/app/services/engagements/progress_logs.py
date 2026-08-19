@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import datetime
+import uuid
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.crud import progress_log_crud
+from app.crud import engagement_crud, progress_log_crud
 from app.exceptions import ConflictError, InvalidOperationError
 from app.models.engagement import Engagement
 from app.models.enums import Format, LogUnit, ReadingStatus
@@ -23,6 +25,21 @@ def log_sort_key(log: ProgressLog) -> tuple[datetime.date, datetime.datetime]:
 
 def latest_log(logs: list[ProgressLog]) -> ProgressLog | None:
     return max(logs, key=log_sort_key) if logs else None
+
+
+def list_for_engagement(db: Session, engagement_id: uuid.UUID) -> list[ProgressLog]:
+    """Oldest first, on the same key as log_sort_key -- the two have to agree, since one
+    orders the stored history and the other picks the latest entry in memory."""
+    engagement_crud.get_or_raise(db, engagement_id)
+    return list(
+        db.execute(
+            select(ProgressLog)
+            .where(ProgressLog.engagement_id == engagement_id)
+            .order_by(ProgressLog.logged_on.asc(), ProgressLog.created_at.asc())
+        )
+        .scalars()
+        .all()
+    )
 
 
 def log_progress(

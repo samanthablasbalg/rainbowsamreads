@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
+import { Link } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { MoreVerticalIcon } from '@hugeicons/core-free-icons';
 import { CoverImage } from '@/components/common/cover-image';
@@ -31,6 +32,7 @@ const SHAPES = {
 
 type BookRowProps = {
   title: string;
+  to: string;
   author: string;
   cover: string | null;
   details?: ReactNode;
@@ -42,7 +44,16 @@ type BookRowProps = {
 // Slots carry their own `col-span-2 @xl:col-span-1` rather than getting a wrapper here:
 // the grid would stretch the wrapper and leave the inline-flex button inside it at its
 // natural width.
-export function BookRow({ title, author, cover, details, slots, menu, children }: BookRowProps) {
+export function BookRow({
+  title,
+  to,
+  author,
+  cover,
+  details,
+  slots,
+  menu,
+  children,
+}: BookRowProps) {
   const shape = SHAPES[slots.length];
 
   return (
@@ -64,7 +75,11 @@ export function BookRow({ title, author, cover, details, slots, menu, children }
             can inflate. `min-w-0` because a grid item defaults to `min-width: auto` and a
             long title would push the track wider than its share. */}
         <div className="flex min-w-0 flex-col gap-1">
-          <CardTitle className="leading-tight">{title}</CardTitle>
+          <CardTitle className="leading-tight">
+            <Link to={to} className="hover:underline">
+              {title}
+            </Link>
+          </CardTitle>
           <p className="text-sm text-muted-foreground">{author}</p>
           {details}
         </div>

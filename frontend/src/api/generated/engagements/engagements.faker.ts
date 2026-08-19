@@ -41,6 +41,10 @@ export const getEngagementsCreateEngagementResponseMock = (
       faker.string.alpha({ length: { min: 10, max: 20 } }),
       null,
     ]),
+    description: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
     genres: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
       faker.string.alpha({ length: { min: 10, max: 20 } })
     ),
@@ -108,6 +112,10 @@ export const getEngagementsListEngagementsResponseMock = (): EngagementRead[] =>
         faker.string.alpha({ length: { min: 10, max: 20 } }),
         null,
       ]),
+      description: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
       genres: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
         () => faker.string.alpha({ length: { min: 10, max: 20 } })
       ),
@@ -172,6 +180,10 @@ export const getEngagementsUpdateEngagementStatusResponseMock = (
     default_page_count: faker.helpers.arrayElement([faker.number.int(), null]),
     default_audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
     original_language: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    description: faker.helpers.arrayElement([
       faker.string.alpha({ length: { min: 10, max: 20 } }),
       null,
     ]),
@@ -243,6 +255,10 @@ export const getEngagementsGetEngagementResponseMock = (
       faker.string.alpha({ length: { min: 10, max: 20 } }),
       null,
     ]),
+    description: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
     genres: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
       faker.string.alpha({ length: { min: 10, max: 20 } })
     ),
@@ -308,6 +324,10 @@ export const getEngagementsUpdateEngagementDatesResponseMock = (
     default_page_count: faker.helpers.arrayElement([faker.number.int(), null]),
     default_audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
     original_language: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    description: faker.helpers.arrayElement([
       faker.string.alpha({ length: { min: 10, max: 20 } }),
       null,
     ]),
@@ -474,6 +494,10 @@ export const getEngagementsCreateBindingResponseMock = (
     book_id: faker.string.uuid(),
     edition_format: faker.helpers.arrayElement(Object.values(Format)),
     isbn: faker.helpers.arrayElement([faker.string.alpha({ length: { min: 10, max: 20 } }), null]),
+    publisher: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
     page_count: faker.helpers.arrayElement([faker.number.int(), null]),
     audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
     cover_url: faker.helpers.arrayElement([
@@ -495,6 +519,10 @@ export const getEngagementsListBindingsResponseMock = (): EngagementEditionRead[
       book_id: faker.string.uuid(),
       edition_format: faker.helpers.arrayElement(Object.values(Format)),
       isbn: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      publisher: faker.helpers.arrayElement([
         faker.string.alpha({ length: { min: 10, max: 20 } }),
         null,
       ]),
@@ -535,6 +563,10 @@ export const getEngagementsUpsertReviewResponseMock = (
     default_page_count: faker.helpers.arrayElement([faker.number.int(), null]),
     default_audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
     original_language: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    description: faker.helpers.arrayElement([
       faker.string.alpha({ length: { min: 10, max: 20 } }),
       null,
     ]),

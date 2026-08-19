@@ -6,8 +6,8 @@
  */
 import { faker } from '@faker-js/faker';
 
-import { DatePrecision } from '../readingTracker.schemas';
-import type { BookRead, BookSearchResult } from '../readingTracker.schemas';
+import { DatePrecision, Format, ReadingStatus } from '../readingTracker.schemas';
+import type { BookRead, BookSearchResult, EngagementRead } from '../readingTracker.schemas';
 
 export const getBooksListBooksResponseMock = (): BookRead[] =>
   Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({
@@ -30,6 +30,10 @@ export const getBooksListBooksResponseMock = (): BookRead[] =>
     default_page_count: faker.helpers.arrayElement([faker.number.int(), null]),
     default_audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
     original_language: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    description: faker.helpers.arrayElement([
       faker.string.alpha({ length: { min: 10, max: 20 } }),
       null,
     ]),
@@ -64,6 +68,10 @@ export const getBooksCreateBookResponseMock = (
   default_page_count: faker.helpers.arrayElement([faker.number.int(), null]),
   default_audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
   original_language: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  description: faker.helpers.arrayElement([
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
@@ -136,6 +144,10 @@ export const getBooksImportBookResponseMock = (
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
+  description: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
   genres: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
     faker.string.alpha({ length: { min: 10, max: 20 } })
   ),
@@ -148,3 +160,112 @@ export const getBooksImportBookResponseMock = (
   updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
   ...overrideResponse,
 });
+
+export const getBooksGetBookResponseMock = (
+  overrideResponse: Partial<Extract<BookRead, object>> = {}
+): BookRead => ({
+  id: faker.string.uuid(),
+  title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  authors: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+    () => ({ id: faker.string.uuid(), name: faker.string.alpha({ length: { min: 10, max: 20 } }) })
+  ),
+  google_books_id: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  default_cover_url: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  default_page_count: faker.helpers.arrayElement([faker.number.int(), null]),
+  default_audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
+  original_language: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  description: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  genres: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
+    faker.string.alpha({ length: { min: 10, max: 20 } })
+  ),
+  publication_date: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 10),
+    null,
+  ]),
+  publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
+  created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+  updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+  ...overrideResponse,
+});
+
+export const getBooksListBookEngagementsResponseMock = (): EngagementRead[] =>
+  Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({
+    id: faker.string.uuid(),
+    book: {
+      id: faker.string.uuid(),
+      title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      authors: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+        () => ({
+          id: faker.string.uuid(),
+          name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        })
+      ),
+      google_books_id: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      default_cover_url: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      default_page_count: faker.helpers.arrayElement([faker.number.int(), null]),
+      default_audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
+      original_language: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      description: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      genres: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+        () => faker.string.alpha({ length: { min: 10, max: 20 } })
+      ),
+      publication_date: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 10),
+        null,
+      ]),
+      publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
+      created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+      updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+    },
+    formats: faker.helpers.arrayElements(Object.values(Format)),
+    cover_url: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    status: faker.helpers.arrayElement(Object.values(ReadingStatus)),
+    started_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
+    finished_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
+    abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
+    resume_from_page: faker.number.int(),
+    resume_from_minute: faker.number.int(),
+    completion_pct: faker.helpers.arrayElement([faker.number.int(), null]),
+    review: faker.helpers.arrayElement([
+      {
+        rating: faker.helpers.arrayElement([
+          faker.helpers.fromRegExp('^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'),
+          null,
+        ]),
+        body: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+      },
+      null,
+    ]),
+    created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+    updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+  }));

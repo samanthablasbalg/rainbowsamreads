@@ -1,7 +1,7 @@
 import { HugeiconsIcon } from '@hugeicons/react';
 import { StarIcon } from '@hugeicons/core-free-icons';
 
-import { STARS, starFillPercent } from '../utils/star-fill';
+import { STARS, starFillPercent } from '@/utils/star-fill';
 
 // `overflow-hidden` on a width-constrained overlay is what makes a partial star possible,
 // and `shrink-0` is what stops flex compressing the glyphs and detuning the fill maths.

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Search01Icon } from '@hugeicons/core-free-icons';
@@ -135,6 +136,7 @@ function SearchPanel({
   // The popup anchors to this, not the input: the input sits inside an InputGroup and so
   // starts after the leading icon.
   const barRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query.trim(), DEBOUNCE_MS);
   // Both, not just the debounced one: the debounce still holds the old query for
@@ -168,6 +170,13 @@ function SearchPanel({
           items={results}
           filter={null}
           value={null}
+          // A not_in_app result has no book_id -- there is no page to open until it is
+          // imported, which is what its own button is for.
+          onValueChange={(result: BookSearchResult | null) => {
+            if (!result?.book_id) return;
+            onCollapse();
+            navigate(`/books/${result.book_id}`);
+          }}
           inputValue={query}
           onInputValueChange={setQuery}
           open={enabled}

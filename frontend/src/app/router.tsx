@@ -66,6 +66,11 @@ export const routes = [
                 ],
               },
               {
+                path: '/books/:bookId',
+                lazy: async () => ({ Component: (await import('./routes/book')).Book }),
+                HydrateFallback: Pending,
+              },
+              {
                 // One read, reached from a book's row rather than from the nav -- so it
                 // is a top-level leaf, not a child of /library, whose layout would put
                 // the shelf nav above it.

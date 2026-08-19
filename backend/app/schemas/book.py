@@ -51,6 +51,7 @@ class BookRead(BaseModel):
     default_page_count: int | None
     default_audio_minutes: int | None
     original_language: str | None
+    description: str | None
     genres: list[str]
     publication_date: datetime.date | None
     publication_date_precision: DatePrecision

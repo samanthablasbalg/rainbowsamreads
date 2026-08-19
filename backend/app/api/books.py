@@ -5,13 +5,11 @@ from collections.abc import Sequence
 from typing import Literal, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
-from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.crud import book_crud
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.author import Author
 from app.models.book import Book, BookAuthor
 from app.models.engagement import Engagement
 from app.models.enums import DatePrecision, ReadingStatus
@@ -21,13 +19,18 @@ from app.schemas import (
     BookImportRequest,
     BookRead,
     BookSearchResult,
+    EngagementRead,
 )
 from app.services import books as book_service
+from app.services.engagements import lifecycle as engagement_service
 from app.services.google_books import GoogleBooksError, search_volumes
 
 router = APIRouter(prefix="/books", tags=["books"])
 
-_BOOK_READ_OPTIONS = (selectinload(Book.book_authors).selectinload(BookAuthor.author),)
+_BOOK_READ_OPTIONS = (
+    selectinload(Book.book_authors).selectinload(BookAuthor.author),
+    selectinload(Book.editions),
+)
 
 
 def _reload(db: Session, book_id: uuid.UUID) -> Book:
@@ -67,26 +70,6 @@ def create_book(payload: BookCreate, db: Session = Depends(get_db)) -> BookRead:
     )
     db.commit()
     return _to_book_read(_reload(db, book.id))
-
-
-def _engagements_by_book(
-    db: Session, book_ids: list[uuid.UUID], user_id: uuid.UUID
-) -> dict[uuid.UUID, list[Engagement]]:
-    if not book_ids:
-        return {}
-    engagements = (
-        db.execute(
-            select(Engagement).where(
-                Engagement.book_id.in_(book_ids), Engagement.user_id == user_id
-            )
-        )
-        .scalars()
-        .all()
-    )
-    grouped: dict[uuid.UUID, list[Engagement]] = {}
-    for engagement in engagements:
-        grouped.setdefault(engagement.book_id, []).append(engagement)
-    return grouped
 
 
 def _local_search_results(
@@ -167,24 +150,8 @@ def search_books(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[BookSearchResult]:
-    pattern = f"%{q}%"
-    local_books = (
-        db.execute(
-            select(Book)
-            .distinct()
-            .outerjoin(BookAuthor, BookAuthor.book_id == Book.id)
-            .outerjoin(Author, Author.id == BookAuthor.author_id)
-            .where(or_(Book.title.ilike(pattern), Author.name.ilike(pattern)))
-            .options(
-                selectinload(Book.book_authors).selectinload(BookAuthor.author),
-                selectinload(Book.editions),
-            )
-        )
-        .scalars()
-        .all()
-    )
-
-    engagements_by_book = _engagements_by_book(
+    local_books = book_service.search_local(db, q)
+    engagements_by_book = book_service.engagements_by_book(
         db, [book.id for book in local_books], current_user.id
     )
     results, seen_google_ids, seen_isbns = _local_search_results(
@@ -219,6 +186,20 @@ def import_book(
 def list_books(db: Session = Depends(get_db)) -> list[BookRead]:
     books = book_crud.list(db, options=_BOOK_READ_OPTIONS)
     return [_to_book_read(book) for book in books]
+
+
+@router.get("/{book_id}", response_model=BookRead)
+def get_book(book_id: uuid.UUID, db: Session = Depends(get_db)) -> BookRead:
+    book = book_crud.get_or_raise(db, book_id, options=_BOOK_READ_OPTIONS)
+    return _to_book_read(book)
+
+
+@router.get("/{book_id}/engagements", response_model=list[EngagementRead])
+def list_book_engagements(
+    book_id: uuid.UUID, db: Session = Depends(get_db)
+) -> list[EngagementRead]:
+    engagements = engagement_service.list_for_book(db, book_id)
+    return [EngagementRead.model_validate(e) for e in engagements]
 
 
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -37,6 +37,26 @@ repos:
         files: ^backend/
         require_serial: true
 
+      # import-linter enforces which way dependencies point, not what a router does with
+      # them: building a select() in a handler imports nothing illegal. A router parses,
+      # calls a service and shapes the response, so a query there is the layering
+      # breaking in the one way the contracts above cannot see.
+      - id: no-queries-in-routers
+        name: No queries in routers (move it to a service)
+        language: pygrep
+        # Every way the Session runs one: execute, scalar, scalars, query.
+        entry: 'db\.(execute|scalars?|query)\('
+        files: ^backend/app/api/.*\.py$
+
+      # Contracts live in backend/pyproject.toml; lint-imports reads them from the cwd
+      # and needs `app` importable, so it runs from backend/.
+      - id: import-linter
+        name: import-linter
+        language: system
+        entry: bash -c 'cd backend && lint-imports'
+        files: ^backend/app/.*\.py$
+        pass_filenames: false
+
       # eslint only. Prettier for these files comes from the repo-wide hook below.
       - id: frontend-lint-staged
         name: Lint staged (frontend)
@@ -45,13 +65,18 @@ repos:
         entry: bash -c 'cd frontend && npx lint-staged'
         pass_filenames: false
 
+      # `npm ls orval` exits non-zero when the installed copy no longer satisfies
+      # package.json, which happens whenever node_modules outlives a dependency bump.
+      # Without it this hook silently generates with whatever version is on disk, and a
+      # stale one rewrote the version banner of every client file in 039565c.
       - id: regenerate-api-client
         name: Regenerate OpenAPI schema and client
         language: system
         files: ^backend/app/.*\.py$
         entry:
-          bash -c 'python3 backend/scripts/export_openapi.py && npm --prefix frontend run
-          generate:api && git add backend/openapi.json frontend/src/api/generated'
+          bash -c 'npm --prefix frontend ls orval >/dev/null && python3
+          backend/scripts/export_openapi.py && npm --prefix frontend run generate:api && git add
+          backend/openapi.json frontend/src/api/generated'
         pass_filenames: false
 
       - id: e2e-typecheck

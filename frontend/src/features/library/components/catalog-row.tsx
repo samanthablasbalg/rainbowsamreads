@@ -11,17 +11,11 @@ import { ErrorText } from '@/components/common/error-text';
 import { FormatPickSheet } from '@/components/common/format-pick-sheet';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { authorNames } from '@/utils/book';
-
-function formatAudioLength(totalMinutes: number): string {
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return [hours && `${hours}h`, minutes && `${minutes}m`].filter(Boolean).join(' ');
-}
+import { authorNames, formatAudioLength, formatPageCount } from '@/utils/book';
 
 function formatLengths({ default_page_count, default_audio_minutes }: BookRead): string | null {
   const lengths = [
-    default_page_count && `${default_page_count} ${default_page_count === 1 ? 'page' : 'pages'}`,
+    default_page_count && formatPageCount(default_page_count),
     default_audio_minutes && formatAudioLength(default_audio_minutes),
   ].filter(Boolean);
 
@@ -48,6 +42,7 @@ export function CatalogRow({ book }: { book: BookRead }) {
   return (
     <BookRow
       title={book.title}
+      to={`/books/${book.id}`}
       author={authorNames(book)}
       cover={book.default_cover_url}
       details={

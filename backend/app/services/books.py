@@ -1,16 +1,65 @@
 from __future__ import annotations
 
 import datetime
+import uuid
 
+from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.crud import author_crud, book_author_crud, book_crud, edition_crud
 from app.exceptions import ConflictError, NotFoundError
+from app.models.author import Author
 from app.models.book import Book, BookAuthor
 from app.models.edition import Edition
+from app.models.engagement import Engagement
 from app.models.enums import BookAuthorRole, DatePrecision, Format
 from app.services.google_books import get_volume
+
+
+def search_local(db: Session, q: str) -> list[Book]:
+    """Books already in the catalogue whose title or any author matches. Substring, not
+    prefix, because a search for "clarke" should find Susanna Clarke."""
+    pattern = f"%{q}%"
+    return list(
+        db.execute(
+            select(Book)
+            .distinct()
+            .outerjoin(BookAuthor, BookAuthor.book_id == Book.id)
+            .outerjoin(Author, Author.id == BookAuthor.author_id)
+            .where(or_(Book.title.ilike(pattern), Author.name.ilike(pattern)))
+            .options(
+                selectinload(Book.book_authors).selectinload(BookAuthor.author),
+                # Not for the response -- search dedups Google hits against the ISBNs
+                # already in the catalogue, and those live on the editions.
+                selectinload(Book.editions),
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+def engagements_by_book(
+    db: Session, book_ids: list[uuid.UUID], user_id: uuid.UUID
+) -> dict[uuid.UUID, list[Engagement]]:
+    """Which of these books the user has read, so a search result can say so. Filters on
+    user_id explicitly rather than leaning on RLS, since books themselves are shared."""
+    if not book_ids:
+        return {}
+    engagements = (
+        db.execute(
+            select(Engagement).where(
+                Engagement.book_id.in_(book_ids), Engagement.user_id == user_id
+            )
+        )
+        .scalars()
+        .all()
+    )
+    grouped: dict[uuid.UUID, list[Engagement]] = {}
+    for engagement in engagements:
+        grouped.setdefault(engagement.book_id, []).append(engagement)
+    return grouped
 
 
 def create_book(
@@ -22,6 +71,7 @@ def create_book(
     google_books_id: str | None = None,
     cover_url: str | None = None,
     language: str | None = None,
+    description: str | None = None,
     genres: list[str] | None = None,
     publication_date: datetime.date | None = None,
     publication_date_precision: DatePrecision | None = None,
@@ -34,6 +84,7 @@ def create_book(
             google_books_id=google_books_id,
             default_cover_url=cover_url,
             original_language=language,
+            description=description,
             genres=genres or [],
             publication_date=publication_date,
             publication_date_precision=publication_date_precision or DatePrecision.day,
@@ -74,6 +125,8 @@ def import_book_from_google(db: Session, *, google_books_id: str) -> tuple[Book,
 
     pub_date, pub_precision = _parse_published_date(volume.published_date)
 
+    # `volume.language` is deliberately not passed: it is the *edition's* language, and
+    # `original_language` answers "is this a translation?", which Google Books cannot.
     book = create_book(
         db,
         title=volume.title,
@@ -81,18 +134,22 @@ def import_book_from_google(db: Session, *, google_books_id: str) -> tuple[Book,
         page_count=volume.page_count,
         google_books_id=volume.google_books_id,
         cover_url=volume.cover_url,
-        language=volume.language,
+        description=volume.description,
         genres=volume.categories,
         publication_date=pub_date,
         publication_date_precision=pub_precision,
     )
 
+    # Print is the real edition (ADR-0022), so the volume's edition-level facts land
+    # here rather than on the two synthetic siblings below. The description is not one
+    # of them -- it describes the work, so it went onto the book above.
     edition_crud.create(
         db,
         Edition(
             book_id=book.id,
             edition_format=Format.print,
             isbn=volume.isbn,
+            publisher=volume.publisher,
             page_count=volume.page_count,
             cover_url=volume.cover_url,
         ),

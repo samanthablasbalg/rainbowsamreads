@@ -1,22 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { DatePrecision, type BookRead } from '@/api/generated/readingTracker.schemas';
+import { buildBook } from '@/test/data-generators';
 import { CatalogRow } from './catalog-row';
 
-const book: BookRead = {
-  id: 'book-1',
-  title: 'Piranesi',
-  authors: [{ id: 'author-1', name: 'Susanna Clarke' }],
-  google_books_id: null,
-  default_cover_url: null,
-  default_page_count: 272,
-  default_audio_minutes: null,
-  original_language: null,
-  genres: [],
-  publication_date: null,
-  publication_date_precision: DatePrecision.year,
-  created_at: '2025-01-01T00:00:00Z',
-  updated_at: '2025-01-01T00:00:00Z',
-};
+const book = buildBook();
 
 const meta = {
   component: CatalogRow,

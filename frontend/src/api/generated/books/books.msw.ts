@@ -7,11 +7,13 @@
 import { HttpResponse, http } from 'msw';
 import type { RequestHandlerOptions } from 'msw';
 
-import type { BookRead, BookSearchResult } from '../readingTracker.schemas';
+import type { BookRead, BookSearchResult, EngagementRead } from '../readingTracker.schemas';
 
 import {
   getBooksCreateBookResponseMock,
+  getBooksGetBookResponseMock,
   getBooksImportBookResponseMock,
+  getBooksListBookEngagementsResponseMock,
   getBooksListBooksResponseMock,
   getBooksSearchBooksResponseMock,
 } from './books.faker';
@@ -21,6 +23,8 @@ export {
   getBooksCreateBookResponseMock,
   getBooksSearchBooksResponseMock,
   getBooksImportBookResponseMock,
+  getBooksGetBookResponseMock,
+  getBooksListBookEngagementsResponseMock,
 } from './books.faker';
 
 export const getBooksListBooksMockHandler = (
@@ -113,6 +117,28 @@ export const getBooksImportBookMockHandler = (
   );
 };
 
+export const getBooksGetBookMockHandler = (
+  overrideResponse?:
+    | BookRead
+    | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<BookRead> | BookRead),
+  options?: RequestHandlerOptions
+) => {
+  return http.get(
+    '*/api/books/:bookId',
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === 'function'
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getBooksGetBookResponseMock(),
+        { status: 200 }
+      );
+    },
+    options
+  );
+};
+
 export const getBooksDeleteBookMockHandler = (
   overrideResponse?:
     void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void),
@@ -130,10 +156,36 @@ export const getBooksDeleteBookMockHandler = (
     options
   );
 };
+
+export const getBooksListBookEngagementsMockHandler = (
+  overrideResponse?:
+    | EngagementRead[]
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0]
+      ) => Promise<EngagementRead[]> | EngagementRead[]),
+  options?: RequestHandlerOptions
+) => {
+  return http.get(
+    '*/api/books/:bookId/engagements',
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === 'function'
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getBooksListBookEngagementsResponseMock(),
+        { status: 200 }
+      );
+    },
+    options
+  );
+};
 export const getBooksMock = () => [
   getBooksListBooksMockHandler(),
   getBooksCreateBookMockHandler(),
   getBooksSearchBooksMockHandler(),
   getBooksImportBookMockHandler(),
+  getBooksGetBookMockHandler(),
   getBooksDeleteBookMockHandler(),
+  getBooksListBookEngagementsMockHandler(),
 ];

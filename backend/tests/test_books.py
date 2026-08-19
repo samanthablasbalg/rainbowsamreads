@@ -38,6 +38,8 @@ def _fake_volume(
     categories: list[str] | None = None,
     cover_url: str | None = "https://example.com/cover.jpg",
     language: str | None = "en",
+    publisher: str | None = None,
+    description: str | None = None,
 ) -> dict[str, Any]:
     info: dict[str, Any] = {"title": title}
     if authors is not None:
@@ -52,6 +54,10 @@ def _fake_volume(
         info["imageLinks"] = {"thumbnail": cover_url}
     if language is not None:
         info["language"] = language
+    if publisher is not None:
+        info["publisher"] = publisher
+    if description is not None:
+        info["description"] = description
     return {"id": id, "volumeInfo": info}
 
 
@@ -332,7 +338,8 @@ def test_import_book_returns_201(
     assert data["google_books_id"] == "abc123"
     assert data["default_cover_url"] == "https://example.com/cover.jpg"
     assert data["default_page_count"] == 272
-    assert data["original_language"] == "en"
+    # Google only reports the edition's language, so nothing is claimed about the work.
+    assert data["original_language"] is None
     assert data["genres"] == ["Fantasy"]
     assert data["publication_date"] == "2020-09-15"
     assert len(data["authors"]) == 1
@@ -479,6 +486,45 @@ def test_import_seeds_three_editions(
     assert audio_ed.isbn is None
 
 
+def test_import_stores_publisher_and_plain_text_description(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, db: Session
+) -> None:
+    volume = _fake_volume(
+        publisher="Bloomsbury",
+        description=(
+            "<p>A <b>house</b> that is<br>the whole world. &amp; more</p>"
+            "<p>A second paragraph.</p>"
+        ),
+    )
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json=volume)
+
+    _patch_google(monkeypatch, handler)
+
+    response = client.post("/api/books/import", json={"google_books_id": "abc123"})
+    assert response.status_code == 201
+    book_id = uuid.UUID(response.json()["id"])
+
+    # The description is about the work, so it lands on the book, stripped to text.
+    book = db.get(Book, book_id)
+    assert book is not None
+    assert book.description == (
+        "A house that is\nthe whole world. & more\n\nA second paragraph."
+    )
+
+    editions = (
+        db.execute(select(Edition).where(Edition.book_id == book_id)).scalars().all()
+    )
+    by_format = {e.edition_format: e for e in editions}
+
+    # Publisher is an edition-level fact, so it lands on the real print edition and
+    # nowhere else -- the synthetic siblings make no claim about who published them.
+    assert by_format[Format.print].publisher == "Bloomsbury"
+    assert by_format[Format.digital].publisher is None
+    assert by_format[Format.audio].publisher is None
+
+
 def test_import_upstream_failure_returns_502(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -586,6 +632,39 @@ def test_list_books_empty(client: TestClient) -> None:
     response = client.get("/api/books")
     assert response.status_code == 200
     assert response.json() == []
+
+
+# --- Get book ---
+
+
+def test_get_book_returns_detail(client: TestClient) -> None:
+    book = _create_book(client, title="Piranesi", author="Susanna Clarke")
+
+    response = client.get(f"/api/books/{book['id']}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == book["id"]
+    assert data["title"] == "Piranesi"
+    assert [author["name"] for author in data["authors"]] == ["Susanna Clarke"]
+
+
+def test_get_book_returns_stored_date_precision(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json=_fake_volume(published_date="2020-09"))
+
+    _patch_google(monkeypatch, handler)
+    book = client.post("/api/books/import", json={"google_books_id": "abc123"}).json()
+
+    data = client.get(f"/api/books/{book['id']}").json()
+    assert data["publication_date"] == "2020-09-01"
+    assert data["publication_date_precision"] == "month"
+
+
+def test_get_book_unknown_id_returns_404(client: TestClient) -> None:
+    response = client.get(f"/api/books/{uuid.uuid4()}")
+    assert response.status_code == 404
 
 
 # --- Delete book ---

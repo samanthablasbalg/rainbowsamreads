@@ -21,6 +21,7 @@ export function buildBook({
     default_page_count: 272,
     default_audio_minutes: null,
     original_language: null,
+    description: null,
     genres: [],
     publication_date: null,
     publication_date_precision: DatePrecision.year,

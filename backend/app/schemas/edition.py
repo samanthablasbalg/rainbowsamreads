@@ -30,6 +30,7 @@ class EditionRead(BaseModel):
     book_id: uuid.UUID
     edition_format: Format
     isbn: str | None
+    publisher: str | None
     page_count: int | None
     audio_minutes: int | None
     cover_url: str | None

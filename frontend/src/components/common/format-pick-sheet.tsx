@@ -4,6 +4,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { errorDetail, type DetailError } from '@/api/error-detail';
+import { getBooksListBookEngagementsQueryKey } from '@/api/generated/books/books';
 import {
   getEngagementsListEngagementsQueryKey,
   useEngagementsCreateEngagement,
@@ -38,6 +39,9 @@ export type FormatPickSheetProps = {
   audioMinutes: number | null;
   statuses?: EngagementCreateStatus[];
   cancelLabel?: string;
+  // Search and the catalog send you to the shelf the new read landed on. The book page is
+  // already showing that book, so it stays put and lets the card refresh in place.
+  redirectOnCreate?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
@@ -158,7 +162,7 @@ function AudioLengthField({ form }: { form: ReturnType<typeof useFormatPickForm>
 }
 
 function useFormatPickForm(
-  { bookId, audioMinutes, statuses }: Omit<FormatPickFormProps, 'onDone'>,
+  { bookId, audioMinutes, statuses, redirectOnCreate = true }: Omit<FormatPickFormProps, 'onDone'>,
   onClose: () => void
 ) {
   const [status, setStatus] = useState<EngagementCreateStatus>(
@@ -177,11 +181,16 @@ function useFormatPickForm(
   const createEngagement = useEngagementsCreateEngagement<DetailError>({
     mutation: {
       onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: getEngagementsListEngagementsQueryKey(),
-        });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: getEngagementsListEngagementsQueryKey() }),
+          queryClient.invalidateQueries({
+            queryKey: getBooksListBookEngagementsQueryKey(bookId),
+          }),
+        ]);
         onClose();
-        navigate(STATUSES[status].to);
+        if (redirectOnCreate) {
+          navigate(STATUSES[status].to);
+        }
       },
       onError: (err) => {
         setError(errorDetail(err, 'Failed to start this read. Please try again.'));

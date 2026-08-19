@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.crud import (
@@ -19,7 +19,59 @@ from app.models.engagement import Engagement
 from app.models.enums import Format, LogUnit, ReadingStatus
 from app.models.progress_log import ProgressLog
 from app.services.books import capture_audio_length
+from app.services.engagements._shared import ENGAGEMENT_READ_OPTIONS
 from app.services.engagements.progress_logs import latest_log, reject_future_date
+
+
+def list_for_book(db: Session, book_id: uuid.UUID) -> list[Engagement]:
+    """A book's read history, newest first. Raises NotFoundError for an unknown book, so
+    a bad id doesn't read as "no reads yet"."""
+    book_crud.get_or_raise(db, book_id)
+    return list(
+        db.execute(
+            select(Engagement)
+            .where(Engagement.book_id == book_id)
+            # Postgres sorts NULLs first under DESC, which would put an undated read at
+            # the top and make it the "latest". Ordering by start rather than end keeps
+            # a row in place when it finishes.
+            .order_by(Engagement.started_on.desc().nulls_last(), Engagement.id.asc())
+            .options(*ENGAGEMENT_READ_OPTIONS)
+        )
+        .scalars()
+        .all()
+    )
+
+
+def list_by_status(db: Session, status: ReadingStatus) -> list[Engagement]:
+    """A shelf, most recent first. Each status has its own notion of recency: a read in
+    progress is ranked by its last sign of life, which includes logging progress without
+    touching the engagement itself; a finished or abandoned one by the date it ended."""
+    latest_log_sq = (
+        select(
+            ProgressLog.engagement_id,
+            func.max(ProgressLog.created_at).label("max_created_at"),
+        )
+        .group_by(ProgressLog.engagement_id)
+        .subquery()
+    )
+    order_key = {
+        ReadingStatus.reading: func.greatest(
+            Engagement.updated_at, latest_log_sq.c.max_created_at
+        ),
+        ReadingStatus.finished: Engagement.finished_on,
+        ReadingStatus.dnf: Engagement.abandoned_on,
+    }[status]
+    return list(
+        db.execute(
+            select(Engagement)
+            .where(Engagement.status == status)
+            .outerjoin(latest_log_sq, Engagement.id == latest_log_sq.c.engagement_id)
+            .order_by(order_key.desc(), Engagement.id.asc())
+            .options(*ENGAGEMENT_READ_OPTIONS)
+        )
+        .scalars()
+        .all()
+    )
 
 
 def create_engagement(

@@ -3,15 +3,12 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.crud import engagement_crud
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.engagement import Engagement
 from app.models.enums import ReadingStatus
-from app.models.progress_log import ProgressLog
 from app.models.user import User
 from app.schemas import (
     EngagementCreate,
@@ -21,7 +18,7 @@ from app.schemas import (
 )
 from app.services.engagements import lifecycle as lifecycle_service
 
-from ._shared import ENGAGEMENT_READ_OPTIONS, reload
+from ._shared import reload
 
 router = APIRouter()
 
@@ -99,30 +96,5 @@ def list_engagements(
     status: ReadingStatus = Query(..., alias="status"),
     db: Session = Depends(get_db),
 ) -> list[EngagementRead]:
-    latest_log_sq = (
-        select(
-            ProgressLog.engagement_id,
-            func.max(ProgressLog.created_at).label("max_created_at"),
-        )
-        .group_by(ProgressLog.engagement_id)
-        .subquery()
-    )
-    order_key = {
-        ReadingStatus.reading: func.greatest(
-            Engagement.updated_at, latest_log_sq.c.max_created_at
-        ),
-        ReadingStatus.finished: Engagement.finished_on,
-        ReadingStatus.dnf: Engagement.abandoned_on,
-    }[status]
-    engagements = (
-        db.execute(
-            select(Engagement)
-            .where(Engagement.status == status)
-            .outerjoin(latest_log_sq, Engagement.id == latest_log_sq.c.engagement_id)
-            .order_by(order_key.desc(), Engagement.id.asc())
-            .options(*ENGAGEMENT_READ_OPTIONS)
-        )
-        .scalars()
-        .all()
-    )
+    engagements = lifecycle_service.list_by_status(db, status)
     return [EngagementRead.model_validate(e) for e in engagements]
