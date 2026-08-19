@@ -72,15 +72,13 @@ describe('CatalogRow', () => {
     expect(card).not.toHaveTextContent('page');
   });
 
-  it('opens the format picker from Mark as reading', async () => {
+  it('opens the start-reading sheet from Mark as reading', async () => {
     const user = userEvent.setup();
     renderInList(buildBook());
 
     await user.click(screen.getByRole('button', { name: 'Mark Piranesi as reading' }));
 
-    expect(
-      await screen.findByRole('button', { name: 'Start reading Piranesi as Print' })
-    ).toBeVisible();
+    expect(await screen.findByRole('button', { name: 'Start reading Piranesi' })).toBeVisible();
   });
 
   it('deletes the book, after confirming, when Delete is chosen', async () => {
