@@ -41,6 +41,8 @@ class EngagementRead(BaseModel):
     abandoned_on: datetime.date | None
     resume_from_page: int
     resume_from_minute: int
+    length_pages: int | None
+    length_minutes: int | None
     completion_pct: int | None
     review: ReviewRead | None
     created_at: datetime.datetime

@@ -283,9 +283,7 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
 
   const parsedPosition = parsePosition(position, isAudio);
 
-  const maxPosition = isAudio
-    ? engagement.book.default_audio_minutes
-    : engagement.book.default_page_count;
+  const maxPosition = isAudio ? engagement.length_minutes : engagement.length_pages;
   const maxDisplay = maxPosition == null ? null : formatPosition(maxPosition, isAudio);
   const canSave =
     parsedPosition !== null &&

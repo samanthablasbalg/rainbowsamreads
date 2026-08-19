@@ -46,6 +46,8 @@ export function buildEngagement({
     abandoned_on: null,
     resume_from_page: 272,
     resume_from_minute: 0,
+    length_pages: 272,
+    length_minutes: null,
     completion_pct: 100,
     review: null,
     created_at: '2025-01-01T00:00:00Z',
@@ -62,6 +64,8 @@ export function buildAudioEngagement({
     title,
     formats: [Format.audio],
     book: buildBook({ title, default_page_count: null, default_audio_minutes: 600 }),
+    length_pages: null,
+    length_minutes: 600,
     ...overrides,
   });
 }

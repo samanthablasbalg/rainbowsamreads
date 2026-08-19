@@ -190,6 +190,8 @@ export interface EngagementRead {
   abandoned_on: string | null;
   resume_from_page: number;
   resume_from_minute: number;
+  length_pages: number | null;
+  length_minutes: number | null;
   completion_pct: number | null;
   review: ReviewRead | null;
   created_at: string;

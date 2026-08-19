@@ -72,6 +72,23 @@ def test_create_engagement_length_override_drives_completion(
     )
 
 
+def test_engagement_read_reports_the_overridden_length(client: TestClient) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=1100)
+    engagement_id = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "edition_format": "print",
+            "length_override": 1000,
+        },
+    ).json()["id"]
+
+    data = client.get(f"/api/engagements/{engagement_id}").json()
+    assert data["length_pages"] == 1000
+    assert data["length_minutes"] is None
+
+
 def test_create_engagement_length_override_leaves_edition_alone(
     client: TestClient, db: Session
 ) -> None:

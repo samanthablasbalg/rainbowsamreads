@@ -125,6 +125,17 @@ class Engagement(TimestampMixin, Base):
         return self.book.default_page_count
 
     @property
+    def length_minutes(self) -> int | None:
+        return self.resolve_length(Format.audio)
+
+    # ADR-0021 accepts that two page-measured bindings in one read can't be told apart
+    # by unit alone, so the page length is the first non-audio binding's.
+    @property
+    def length_pages(self) -> int | None:
+        fmt = next((f for f in self.formats if f != Format.audio), Format.print)
+        return self.resolve_length(fmt)
+
+    @property
     def completion_pct(self) -> int | None:
         if not self.progress_logs:
             return None
@@ -132,13 +143,12 @@ class Engagement(TimestampMixin, Base):
             position = self._latest_minute_end()
             if position is None:
                 return None
-            denominator = self.resolve_length(Format.audio)
+            denominator = self.length_minutes
         else:
             position = self._latest_page_end()
             if position is None:
                 return None
-            fmt = next((f for f in self.formats if f != Format.audio), Format.print)
-            denominator = self.resolve_length(fmt)
+            denominator = self.length_pages
         if not denominator:
             return None
         return max(0, min(100, round(position / denominator * 100)))

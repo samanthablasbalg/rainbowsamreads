@@ -375,6 +375,18 @@ describe('ProgressLogSheet', () => {
     expect(screen.getByText('Cannot exceed 272 pages')).toBeVisible();
   });
 
+  // The book default is the last link of the ADR-0021 length chain. A read that
+  // overrode it caps against its own length, not the book's.
+  it('caps against the read’s own length rather than the book default', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement({ length_pages: 1000 }));
+
+    await user.type(await screen.findByPlaceholderText('---'), '1050');
+    await user.tab();
+
+    expect(screen.getByText('Cannot exceed 1000 pages')).toBeVisible();
+  });
+
   it('holds the error back until the field is left', async () => {
     const user = userEvent.setup();
     renderSheet(buildEngagement({ resume_from_page: 100 }));
