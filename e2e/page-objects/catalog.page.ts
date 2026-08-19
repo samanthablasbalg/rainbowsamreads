@@ -1,6 +1,6 @@
 import { Locator, Page } from '@playwright/test';
 import { ConfirmSheetPage } from './confirm-sheet.page';
-import { FormatPickSheetPage, PickableFormat } from './format-pick-sheet.page';
+import { StartReadingSheetPage, StartableFormat } from './start-reading-sheet.page';
 
 export class CatalogPage {
   /** @param page - The Playwright page to drive the catalog through. */
@@ -31,18 +31,19 @@ export class CatalogPage {
 
   /**
    * Marks a library book as currently reading in the given format.
-   * Clicks the button to open the format picker, then picks the format.
+   * Opens the start-reading sheet, then fills and submits it.
    * @param title - The library book's title.
    * @param format - The format to start reading in (defaults to Print).
-   * @param audioLengthHhmm - Required for Audio when the book has no stored length.
+   * @param length - A length for this read: pages as digits, or HH:MM for audio.
+   *   Omit to use the length already on record; required when there is none.
    */
   async markAsReading(
     title: string,
-    format: PickableFormat = 'Print',
-    audioLengthHhmm?: string
+    format: StartableFormat = 'Print',
+    length?: string
   ): Promise<void> {
     await this.getMarkAsReadingButton(title).click();
-    await new FormatPickSheetPage(this.page).pick(title, format, { audioLengthHhmm });
+    await new StartReadingSheetPage(this.page).startAs(title, format, length);
   }
 
   /**

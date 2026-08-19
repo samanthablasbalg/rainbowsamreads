@@ -47,6 +47,16 @@ export class ProgressLogSheetPage {
   }
 
   /**
+   * Locates the "of N" cap beside the position field, which reads the read's own
+   * length -- a length override, where one was set, rather than the book default.
+   * @param value - The expected displayed length, e.g. '500' or '10:00'.
+   * @returns The cap locator.
+   */
+  getMaxDisplay(value: string): Locator {
+    return this.page.getByText(`of ${value}`, { exact: true });
+  }
+
+  /**
    * Types a page number into the current-page field.
    * @param page - The page reached.
    */
