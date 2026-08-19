@@ -64,7 +64,7 @@ export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
       slots={[
         review?.rating ? (
           <div className="col-span-2 @xl:col-span-1">
-            <StarRating rating={review.rating} />
+            <StarRating rating={Number(review.rating)} />
           </div>
         ) : (
           <Button

@@ -2,18 +2,15 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
-import {
-  EngagementCreateStatus,
-  type BookRead,
-  type EngagementRead,
-} from '@/api/generated/readingTracker.schemas';
+import { type BookRead, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { EmptyState } from '@/components/common/empty-state';
-import { FormatPickSheet } from '@/components/common/format-pick-sheet';
 import { StarRating } from '@/components/common/star-rating';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FORMATS } from '@/utils/format';
 import { formatDaysBetween, formatIsoDate } from '@/utils/format-date';
+import { LogReadingSheet } from './log-reading-sheet';
 
 // The row's date: when it finished, when it was abandoned, or when it started, in that
 // order -- whichever of those actually happened last for this engagement.
@@ -35,14 +32,13 @@ function readingDescriptor(engagement: EngagementRead): string {
 // the whole reason this page has a list here instead of a single rating at the top.
 export function BookReadings({
   book,
-  tracked,
   engagements,
 }: {
   book: BookRead;
-  tracked: boolean;
   engagements: EngagementRead[];
 }) {
   const [logOpen, setLogOpen] = useState(false);
+  const hasReadings = engagements.length > 0;
 
   return (
     <section className="flex flex-col gap-3">
@@ -51,7 +47,7 @@ export function BookReadings({
 
         {/* Only alongside a list -- the empty state below carries its own call to action,
             and two of them on one screen is one too many. */}
-        {tracked && (
+        {hasReadings && (
           <Button
             variant="link"
             size="xs"
@@ -63,42 +59,46 @@ export function BookReadings({
         )}
       </div>
 
-      {tracked ? (
+      {hasReadings ? (
         <Card className="gap-0 divide-y divide-accent py-0">
           {engagements.map((engagement) => {
             const date = readingDate(engagement);
             return (
-              <details key={engagement.id} className="group">
-                <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5">
+              <Collapsible key={engagement.id}>
+                <CollapsibleTrigger className="group flex w-full cursor-pointer items-center gap-3 px-4 py-3.5 text-left">
                   <span className="w-24 shrink-0 text-sm font-bold whitespace-nowrap">
                     {date && formatIsoDate(date)}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
                     {readingDescriptor(engagement)}
                   </span>
-                  {engagement.review?.rating && <StarRating rating={engagement.review.rating} />}
+                  {engagement.review?.rating && (
+                    <StarRating rating={Number(engagement.review.rating)} />
+                  )}
                   <HugeiconsIcon
                     icon={ArrowRight01Icon}
-                    className="shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
+                    className="shrink-0 text-muted-foreground transition-transform group-data-[panel-open]:rotate-90"
                   />
-                </summary>
+                </CollapsibleTrigger>
 
-                <div className="flex flex-col items-start gap-2 px-4 pb-4 sm:pl-27">
-                  {engagement.review?.body && (
-                    <p className="font-serif text-sm leading-relaxed">{engagement.review.body}</p>
-                  )}
-                  <div className="flex gap-4">
-                    <Button
-                      variant="link"
-                      size="xs"
-                      className="h-auto p-0 font-bold text-ring"
-                      render={<Link to={`/reads/${engagement.id}`} />}
-                    >
-                      Progress log
-                    </Button>
+                <CollapsibleContent>
+                  <div className="flex flex-col items-start gap-2 px-4 pb-4 sm:pl-27">
+                    {engagement.review?.body && (
+                      <p className="font-serif text-sm leading-relaxed">{engagement.review.body}</p>
+                    )}
+                    <div className="flex gap-4">
+                      <Button
+                        variant="link"
+                        size="xs"
+                        className="h-auto p-0 font-bold text-ring"
+                        render={<Link to={`/reads/${engagement.id}`} />}
+                      >
+                        Progress log
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </details>
+                </CollapsibleContent>
+              </Collapsible>
             );
           })}
         </Card>
@@ -114,17 +114,7 @@ export function BookReadings({
         />
       )}
 
-      {/* Every status the endpoint will create, since this logs a read that may already be
-          over. It stays on the page: the new row belongs in the list above. */}
-      <FormatPickSheet
-        bookId={book.id}
-        title={book.title}
-        audioMinutes={book.default_audio_minutes}
-        statuses={Object.values(EngagementCreateStatus)}
-        redirectOnCreate={false}
-        open={logOpen}
-        onOpenChange={setLogOpen}
-      />
+      <LogReadingSheet book={book} open={logOpen} onOpenChange={setLogOpen} />
     </section>
   );
 }

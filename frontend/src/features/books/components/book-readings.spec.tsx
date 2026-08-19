@@ -9,13 +9,12 @@ describe('BookReadings', () => {
     render(
       <BookReadings
         book={buildBook()}
-        tracked
         engagements={[buildEngagement({ id: 'engagement-Piranesi' })]}
       />
     );
 
-    // The row is a `details`, so its actions only exist once the summary is expanded.
-    await user.click(screen.getByRole('group'));
+    // The row is a collapsible, so its actions only exist once the trigger is expanded.
+    await user.click(screen.getByRole('button', { name: /Print/ }));
 
     expect(screen.getByRole('link', { name: 'Progress log' })).toHaveAttribute(
       'href',

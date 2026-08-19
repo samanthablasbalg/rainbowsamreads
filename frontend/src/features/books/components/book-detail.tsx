@@ -1,10 +1,13 @@
 import { Link } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import {
-  useBooksGetBookSuspense,
-  useBooksListBookEngagementsSuspense,
+  getBooksGetBookSuspenseQueryOptions,
+  getBooksListBookEngagementsSuspenseQueryOptions,
 } from '@/api/generated/books/books';
+import type { BookRead, EngagementRead } from '@/api/generated/readingTracker.schemas';
+import type { DetailError } from '@/api/error-detail';
 import { CoverImage } from '@/components/common/cover-image';
 import { Button } from '@/components/ui/button';
 import { BookBlurb } from './book-blurb';
@@ -14,10 +17,21 @@ import { BookChips, BookHeader } from './book-header';
 import { BookReadings } from './book-readings';
 
 export function BookDetail({ bookId }: { bookId: string }) {
-  const { data: book } = useBooksGetBookSuspense(bookId);
-  const { data: engagements } = useBooksListBookEngagementsSuspense(bookId);
-
-  const tracked = engagements.length > 0;
+  // One hook, so both requests go out together. Called as two suspense hooks in a row,
+  // the first suspends this component before the second is ever issued.
+  //
+  // The result types are spelled out because useSuspenseQueries infers each entry's
+  // error from `throwOnError`, and that inference gives up on the options orval
+  // returns -- leaving `unknown`, which then will not accept the narrower error type
+  // they actually carry.
+  const [{ data: book }, { data: engagements }] = useSuspenseQueries<
+    [[BookRead, DetailError], [EngagementRead[], DetailError]]
+  >({
+    queries: [
+      getBooksGetBookSuspenseQueryOptions(bookId),
+      getBooksListBookEngagementsSuspenseQueryOptions(bookId),
+    ],
+  });
 
   return (
     <section>
@@ -46,7 +60,7 @@ export function BookDetail({ bookId }: { bookId: string }) {
           {/* Sits under the blurb on a phone, where the book itself comes first and this
               earns its place after it; back up into the rail once there is one. */}
           <div className="order-1 col-span-2 lg:order-none">
-            <BookMetadata book={book} tracked={tracked} engagements={engagements} />
+            <BookMetadata book={book} engagements={engagements} />
           </div>
         </aside>
 
@@ -64,7 +78,7 @@ export function BookDetail({ bookId }: { bookId: string }) {
               under it caps its own width so a single entry still looks deliberate. */}
           <div className="order-2 col-span-2 flex flex-col gap-6 lg:order-none">
             <BookContents />
-            <BookReadings book={book} tracked={tracked} engagements={engagements} />
+            <BookReadings book={book} engagements={engagements} />
           </div>
         </div>
       </div>

@@ -25,7 +25,7 @@ const engagements = [
 
 const meta = {
   component: BookReadings,
-  args: { book: buildBook(), tracked: true, engagements },
+  args: { book: buildBook(), engagements },
   decorators: [
     (Story) => (
       <div className="max-w-2xl">
@@ -41,5 +41,5 @@ type Story = StoryObj<typeof meta>;
 export const Tracked: Story = {};
 
 export const Untracked: Story = {
-  args: { tracked: false, engagements: [] },
+  args: { engagements: [] },
 };

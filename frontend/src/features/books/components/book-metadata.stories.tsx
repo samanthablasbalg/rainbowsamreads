@@ -23,7 +23,7 @@ const engagements = [
 // than push a caption off the side -- so the story constrains itself to the same measure.
 const meta = {
   component: BookMetadata,
-  args: { book, tracked: true, engagements },
+  args: { book, engagements },
   decorators: [
     (Story) => (
       <div className="w-60">
@@ -39,5 +39,5 @@ type Story = StoryObj<typeof meta>;
 export const Tracked: Story = {};
 
 export const Untracked: Story = {
-  args: { tracked: false, engagements: [] },
+  args: { engagements: [] },
 };

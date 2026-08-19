@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowDown01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
 import {
-  EngagementCreateStatus,
   EngagementStatusUpdateStatus,
   ReadingStatus,
   type BookRead,
@@ -14,7 +13,6 @@ import {
   getEngagementsListEngagementsQueryKey,
   useEngagementsUpdateEngagementStatus,
 } from '@/api/generated/engagements/engagements';
-import { FormatPickSheet } from '@/components/common/format-pick-sheet';
 import { StarRating } from '@/components/common/star-rating';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -25,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { localIsoDate } from '@/utils/local-date';
+import { LogReadingSheet } from './log-reading-sheet';
 
 // Labels every status a read can come back as. The menu offers only the subset the PATCH
 // endpoint accepts, which is the narrower question -- hence a table here and a separate
@@ -40,8 +39,12 @@ const STATUS_LABELS: Record<ReadingStatus, string> = {
 
 // Same rule the search endpoint uses server-side (`_pick_status` in app/api/books.py): an
 // active read wins regardless of recency, otherwise it's whichever engagement moved last.
-// `engagements` is never empty here -- callers only reach this once `tracked` is true.
-function currentEngagement(engagements: EngagementRead[]): EngagementRead {
+// Null for a book nobody has opened, which is what makes the untracked card a state of
+// this component rather than a separate one.
+function currentEngagement(engagements: EngagementRead[]): EngagementRead | null {
+  if (engagements.length === 0) {
+    return null;
+  }
   const reading = engagements.find((e) => e.status === ReadingStatus.reading);
   return (
     reading ?? engagements.reduce((latest, e) => (e.updated_at > latest.updated_at ? e : latest))
@@ -51,13 +54,13 @@ function currentEngagement(engagements: EngagementRead[]): EngagementRead {
 // A book's rating is every read of it, averaged -- one read being the one-element case.
 // Rounded to a quarter, the resolution the stars are drawn at, so the spoken label and
 // the picture agree. Null when nothing has been rated.
-function averageRating(engagements: EngagementRead[]): string | null {
+function averageRating(engagements: EngagementRead[]): number | null {
   const ratings = engagements.flatMap((e) => (e.review?.rating ? [Number(e.review.rating)] : []));
   if (ratings.length === 0) {
     return null;
   }
   const mean = ratings.reduce((total, rating) => total + rating, 0) / ratings.length;
-  return String(Math.round(mean * 4) / 4);
+  return Math.round(mean * 4) / 4;
 }
 
 // One card of labelled rows, holding what is known about this book beyond the book itself.
@@ -65,14 +68,12 @@ function averageRating(engagements: EngagementRead[]): string | null {
 // first read is logged.
 export function BookMetadata({
   book,
-  tracked,
   engagements,
 }: {
   book: BookRead;
-  tracked: boolean;
   engagements: EngagementRead[];
 }) {
-  const current = tracked ? currentEngagement(engagements) : null;
+  const current = currentEngagement(engagements);
   const [addOpen, setAddOpen] = useState(false);
 
   const queryClient = useQueryClient();
@@ -133,15 +134,7 @@ export function BookMetadata({
               Not tracked
               <HugeiconsIcon icon={ArrowDown01Icon} data-icon="inline-end" />
             </Button>
-            <FormatPickSheet
-              bookId={book.id}
-              title={book.title}
-              audioMinutes={book.default_audio_minutes}
-              statuses={Object.values(EngagementCreateStatus)}
-              redirectOnCreate={false}
-              open={addOpen}
-              onOpenChange={setAddOpen}
-            />
+            <LogReadingSheet book={book} open={addOpen} onOpenChange={setAddOpen} />
           </>
         )}
       </Row>
