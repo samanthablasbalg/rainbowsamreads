@@ -82,6 +82,22 @@ describe('InlineDateEdit', () => {
     expect(screen.getByRole('button', { name: 'Edit start date' })).toBeInTheDocument();
   });
 
+  // The read renders the server's reason; this only has to keep the value alive so the
+  // correction can be adjusted rather than retyped from the old one.
+  it('stays open holding the typed date when the save is refused', async () => {
+    const onSave = vi.fn().mockRejectedValue(new Error('before the latest entry'));
+    render(<InlineDateEdit value="2025-06-15" label="start date" onSave={onSave} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Edit start date' }));
+    await userEvent.clear(screen.getByLabelText('start date'));
+    await userEvent.type(screen.getByLabelText('start date'), '2025-01-01');
+    await userEvent.click(screen.getByRole('button', { name: 'Save start date' }));
+
+    expect(onSave).toHaveBeenCalledWith('2025-01-01');
+    expect(await screen.findByLabelText('start date')).toHaveValue('2025-01-01');
+    expect(screen.queryByRole('button', { name: 'Edit start date' })).not.toBeInTheDocument();
+  });
+
   // The API has no PATCH for abandoned_on, so that date shows but does not open.
   it('does not open when disabled', async () => {
     renderEdit({ disabled: true });

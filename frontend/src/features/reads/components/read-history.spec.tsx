@@ -165,7 +165,10 @@ describe('ReadHistory', () => {
       getEngagementsGetEngagementMockHandler(buildEngagement()),
       http.patch('*/api/engagements/*/length', () =>
         HttpResponse.json(
-          { detail: 'That is shorter than the furthest point logged (page 500).' },
+          {
+            detail:
+              'That is shorter than the furthest point logged (page 500). Edit those entries first.',
+          },
           { status: 409 }
         )
       )
@@ -179,7 +182,7 @@ describe('ReadHistory', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save length' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'That is shorter than the furthest point logged (page 500).'
+      'That is shorter than the furthest point logged (page 500). Edit those entries first.'
     );
   });
 
