@@ -9,6 +9,7 @@ from app.exceptions import ConflictError, NotFoundError
 from app.models.edition import EngagementEdition
 from app.models.engagement import Engagement
 from app.models.enums import Format
+from app.models.progress_log import ProgressLog
 
 
 def create_binding(
@@ -78,16 +79,46 @@ def _correct_length(engagement: Engagement, fmt: Format, length: int) -> None:
         raise NotFoundError("This read has no binding in that format.")
 
     is_audio = fmt == Format.audio
-    ends = (
-        log.minute_end if is_audio else log.page_end for log in engagement.progress_logs
-    )
-    furthest = max((end for end in ends if end is not None), default=None)
-    # The mirror of update_progress_log's refusal to log past the end. Without it the
-    # read keeps a log beyond its own length and only ever shows a clamped 100%.
-    if furthest is not None and length < furthest:
+    _pull_back_the_final_entry(engagement, is_audio, length)
+    binding.length_override = length
+
+
+def _pull_back_the_final_entry(
+    engagement: Engagement, is_audio: bool, length: int
+) -> None:
+    """Make room for a shorter length by shortening the one entry that ran to the old
+    end, or refuse the correction outright when more than one entry is in the way."""
+    stranded = [
+        (log, end)
+        for log in engagement.progress_logs
+        if (end := _end_of(log, is_audio)) is not None and end > length
+    ]
+    if not stranded:
+        return
+
+    # A single entry that starts before the new end is the one that meant "to the end"
+    # -- most often the catch-up log finishing a read writes -- so it moves with the
+    # length. Anything else (several entries past the end, or one starting past it too)
+    # can't be fixed by moving one number, and update_progress_log's refusal to log
+    # past the end stands: leaving them would show a permanently clamped 100%.
+    log, _ = stranded[0]
+    if len(stranded) > 1 or _start_of(log, is_audio) >= length:
+        furthest = max(end for _, end in stranded)
         reached = f"{furthest} minutes" if is_audio else f"page {furthest}"
         raise ConflictError(
-            f"That is shorter than the furthest point logged ({reached})."
+            f"That is shorter than the furthest point logged ({reached}). "
+            "Edit those entries first."
         )
 
-    binding.length_override = length
+    if is_audio:
+        log.minute_end = length
+    else:
+        log.page_end = length
+
+
+def _end_of(log: ProgressLog, is_audio: bool) -> int | None:
+    return log.minute_end if is_audio else log.page_end
+
+
+def _start_of(log: ProgressLog, is_audio: bool) -> int:
+    return (log.minute_start if is_audio else log.page_start) or 0

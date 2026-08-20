@@ -852,7 +852,9 @@ def test_update_length_leaves_the_shared_edition_alone(
     assert edition_obj.page_count == 1100
 
 
-def test_update_length_below_the_furthest_log_returns_409(client: TestClient) -> None:
+def test_update_length_pulls_back_the_only_entry_past_the_new_end(
+    client: TestClient,
+) -> None:
     _, engagement_id = _print_read_of_1100_pages(client)
     _log_progress(client, engagement_id, 500)
 
@@ -860,11 +862,82 @@ def test_update_length_below_the_furthest_log_returns_409(client: TestClient) ->
         f"/api/engagements/{engagement_id}/length", json={"length_pages": 400}
     )
 
+    assert response.status_code == 200
+    data = response.json()
+    assert data["length_pages"] == 400
+    # The entry that ran past the new end came back with it rather than being stranded.
+    assert data["resume_from_page"] == 400
+    assert data["completion_pct"] == 100
+
+
+def test_update_length_pulls_back_the_only_audio_entry_past_the_new_end(
+    client: TestClient,
+) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], edition_format="audio", audio_minutes=600)
+    engagement_id = _create_audio_engagement(client, book["id"])["id"]
+    _log_audio_progress(client, engagement_id, 300)
+
+    response = client.patch(
+        f"/api/engagements/{engagement_id}/length", json={"length_minutes": 250}
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["length_minutes"] == 250
+    assert data["resume_from_minute"] == 250
+    assert data["completion_pct"] == 100
+
+
+def test_update_length_below_a_finished_reads_catch_up_entry_succeeds(
+    client: TestClient,
+) -> None:
+    _, engagement_id = _print_read_of_1100_pages(client)
+    _log_progress(client, engagement_id, 500)
+    client.patch(f"/api/engagements/{engagement_id}", json={"status": "finished"})
+
+    response = client.patch(
+        f"/api/engagements/{engagement_id}/length", json={"length_pages": 1000}
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["length_pages"] == 1000
+    assert data["resume_from_page"] == 1000
+    assert data["completion_pct"] == 100
+
+
+def test_update_length_past_several_entries_returns_409(client: TestClient) -> None:
+    _, engagement_id = _print_read_of_1100_pages(client)
+    for page in (260, 280, 300):
+        _log_progress(client, engagement_id, page)
+
+    response = client.patch(
+        f"/api/engagements/{engagement_id}/length", json={"length_pages": 250}
+    )
+
     assert response.status_code == 409
-    assert "page 500" in response.json()["detail"]
+    assert "page 300" in response.json()["detail"]
     assert (
         client.get(f"/api/engagements/{engagement_id}").json()["length_pages"] == 1100
     )
+
+
+def test_update_length_down_to_an_entrys_own_start_returns_409(
+    client: TestClient,
+) -> None:
+    _, engagement_id = _print_read_of_1100_pages(client)
+    _log_progress(client, engagement_id, 200)
+    _log_progress(client, engagement_id, 500)
+
+    # Pulling the 200-500 entry back to 200 would leave it ending where it starts,
+    # which update_progress_log refuses too.
+    response = client.patch(
+        f"/api/engagements/{engagement_id}/length", json={"length_pages": 200}
+    )
+
+    assert response.status_code == 409
+    assert "page 500" in response.json()["detail"]
 
 
 def test_update_length_equal_to_the_furthest_log_is_allowed(
