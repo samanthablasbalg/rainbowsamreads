@@ -72,9 +72,16 @@ def test_create_engagement_length_override_drives_completion(
     )
 
 
-def test_engagement_read_reports_the_overridden_length(client: TestClient) -> None:
+def test_engagement_read_reports_the_overridden_length(
+    client: TestClient, db: Session
+) -> None:
     book = _create_bare_book(client)
     _create_edition(client, book["id"], page_count=1100)
+    # A book default for the format this read isn't in must not leak into the response.
+    book_obj = db.get(Book, uuid.UUID(book["id"]))
+    assert book_obj is not None
+    book_obj.default_audio_minutes = 600
+    db.commit()
     engagement_id = client.post(
         "/api/engagements",
         json={
