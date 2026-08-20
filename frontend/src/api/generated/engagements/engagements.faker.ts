@@ -67,6 +67,8 @@ export const getEngagementsCreateEngagementResponseMock = (
   abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   resume_from_page: faker.number.int(),
   resume_from_minute: faker.number.int(),
+  length_pages: faker.helpers.arrayElement([faker.number.int(), null]),
+  length_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
   completion_pct: faker.helpers.arrayElement([faker.number.int(), null]),
   review: faker.helpers.arrayElement([
     {
@@ -138,6 +140,8 @@ export const getEngagementsListEngagementsResponseMock = (): EngagementRead[] =>
     abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
     resume_from_page: faker.number.int(),
     resume_from_minute: faker.number.int(),
+    length_pages: faker.helpers.arrayElement([faker.number.int(), null]),
+    length_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
     completion_pct: faker.helpers.arrayElement([faker.number.int(), null]),
     review: faker.helpers.arrayElement([
       {
@@ -209,6 +213,8 @@ export const getEngagementsUpdateEngagementStatusResponseMock = (
   abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   resume_from_page: faker.number.int(),
   resume_from_minute: faker.number.int(),
+  length_pages: faker.helpers.arrayElement([faker.number.int(), null]),
+  length_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
   completion_pct: faker.helpers.arrayElement([faker.number.int(), null]),
   review: faker.helpers.arrayElement([
     {
@@ -281,6 +287,8 @@ export const getEngagementsGetEngagementResponseMock = (
   abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   resume_from_page: faker.number.int(),
   resume_from_minute: faker.number.int(),
+  length_pages: faker.helpers.arrayElement([faker.number.int(), null]),
+  length_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
   completion_pct: faker.helpers.arrayElement([faker.number.int(), null]),
   review: faker.helpers.arrayElement([
     {
@@ -353,6 +361,8 @@ export const getEngagementsUpdateEngagementDatesResponseMock = (
   abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   resume_from_page: faker.number.int(),
   resume_from_minute: faker.number.int(),
+  length_pages: faker.helpers.arrayElement([faker.number.int(), null]),
+  length_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
   completion_pct: faker.helpers.arrayElement([faker.number.int(), null]),
   review: faker.helpers.arrayElement([
     {
@@ -592,6 +602,8 @@ export const getEngagementsUpsertReviewResponseMock = (
   abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   resume_from_page: faker.number.int(),
   resume_from_minute: faker.number.int(),
+  length_pages: faker.helpers.arrayElement([faker.number.int(), null]),
+  length_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
   completion_pct: faker.helpers.arrayElement([faker.number.int(), null]),
   review: faker.helpers.arrayElement([
     {

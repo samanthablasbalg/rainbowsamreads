@@ -141,6 +141,7 @@ export interface EngagementCreate {
   edition_format: Format;
   status?: EngagementCreateStatus;
   audio_length_minutes?: number | null;
+  length_override?: number | null;
   started_on?: string | null;
 }
 
@@ -189,6 +190,8 @@ export interface EngagementRead {
   abandoned_on: string | null;
   resume_from_page: number;
   resume_from_minute: number;
+  length_pages: number | null;
+  length_minutes: number | null;
   completion_pct: number | null;
   review: ReviewRead | null;
   created_at: string;

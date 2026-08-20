@@ -8,10 +8,10 @@ import { errorDetail, type DetailError } from '@/api/error-detail';
 import { BookRow } from '@/components/common/book-row';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { ErrorText } from '@/components/common/error-text';
-import { FormatPickSheet } from '@/components/common/format-pick-sheet';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { authorNames, formatAudioLength, formatPageCount } from '@/utils/book';
+import { StartReadingSheet } from './start-reading-sheet';
 
 function formatLengths({ default_page_count, default_audio_minutes }: BookRead): string | null {
   const lengths = [
@@ -78,13 +78,7 @@ export function CatalogRow({ book }: { book: BookRead }) {
         </DropdownMenuItem>
       }
     >
-      <FormatPickSheet
-        bookId={book.id}
-        title={book.title}
-        audioMinutes={book.default_audio_minutes}
-        open={pickOpen}
-        onOpenChange={setPickOpen}
-      />
+      <StartReadingSheet book={book} open={pickOpen} onOpenChange={setPickOpen} />
 
       <ConfirmDialog
         open={confirmOpen}

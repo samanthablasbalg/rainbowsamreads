@@ -1861,13 +1861,26 @@
           "audio_length_minutes": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "exclusiveMinimum": 0.0
               },
               {
                 "type": "null"
               }
             ],
             "title": "Audio Length Minutes"
+          },
+          "length_override": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Override"
           },
           "started_on": {
             "anyOf": [
@@ -2082,6 +2095,28 @@
             "type": "integer",
             "title": "Resume From Minute"
           },
+          "length_pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Pages"
+          },
+          "length_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Minutes"
+          },
           "completion_pct": {
             "anyOf": [
               {
@@ -2126,6 +2161,8 @@
           "abandoned_on",
           "resume_from_page",
           "resume_from_minute",
+          "length_pages",
+          "length_minutes",
           "completion_pct",
           "review",
           "created_at",
