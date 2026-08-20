@@ -170,7 +170,7 @@ def _transition_to_finished(
 
     engagement.finished_on = effective_on
     if Format.audio not in engagement.formats:
-        page_count = engagement.book.default_page_count
+        page_count = engagement.resolve_length(engagement.page_format or Format.print)
         if page_count is not None and engagement.resume_from_page != page_count:
             progress_log_crud.create(
                 db,

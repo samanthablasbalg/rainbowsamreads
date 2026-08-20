@@ -267,6 +267,32 @@ def test_patch_to_finished_stamps_finished_on(client: TestClient) -> None:
     assert data["started_on"] == engagement["started_on"]
 
 
+def test_patch_to_finished_catches_up_to_the_corrected_length(
+    client: TestClient,
+) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=1100)
+    engagement = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "edition_format": "print",
+            "length_override": 1000,
+        },
+    ).json()
+    _log_progress(client, engagement["id"], 500)
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}", json={"status": "finished"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    # The catch-up log ends at this read's length, not the edition's: finishing at 1100
+    # would leave a log past the end of the book the reader says they read.
+    assert data["resume_from_page"] == 1000
+    assert data["completion_pct"] == 100
+
+
 def test_patch_status_with_future_effective_on_returns_422(
     client: TestClient,
 ) -> None:
