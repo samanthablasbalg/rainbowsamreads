@@ -3,8 +3,10 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { Cancel01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import { formatIsoDate } from '@/utils/format-date';
 import { localIsoDate } from '@/utils/local-date';
+import { EDITABLE_VALUE_CLASS } from './editable-value';
 
 type InlineDateEditProps = {
   value: string | null;
@@ -34,7 +36,9 @@ export function InlineDateEdit({ value, label, disabled = false, onSave }: Inlin
   return (
     <Button
       variant="link"
-      className="h-auto p-0 font-normal text-inherit"
+      // Dotted-underlined so the value reads as editable at rest; a disabled one carries
+      // no underline, because there is nothing to open.
+      className={cn(EDITABLE_VALUE_CLASS, disabled && 'no-underline')}
       disabled={disabled}
       aria-label={`Edit ${label}`}
       onClick={() => setEditing(true)}
