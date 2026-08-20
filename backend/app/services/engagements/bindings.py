@@ -60,24 +60,20 @@ def apply_length_change(
     """Correct this read's length. The unit picks the binding, on the same rule
     Engagement.length_minutes and .length_pages read it back on."""
     if length_minutes is not None:
-        _set_length_override(engagement, Format.audio, length_minutes)
+        _correct_length(engagement, Format.audio, length_minutes)
     elif length_pages is not None:
-        _set_length_override(engagement, engagement.page_format, length_pages)
+        # A read with no page binding resolves to print, which it has no binding in
+        # either, so the lookup below is what turns that into the 404.
+        page_format = engagement.page_format or Format.print
+        _correct_length(engagement, page_format, length_pages)
 
 
-def _set_length_override(
-    engagement: Engagement, fmt: Format | None, length: int
-) -> None:
+def _correct_length(engagement: Engagement, fmt: Format, length: int) -> None:
+    """Move the binding's length override, refusing a read that isn't bound in this
+    format and a length that would strand a progress log past the end."""
     # The correction lands on the binding, never on the edition: the edition is shared
     # across users, so its length is not this reader's to move (ADR-0021).
-    binding = next(
-        (
-            ee
-            for ee in engagement.engagement_editions
-            if ee.edition.edition_format == fmt
-        ),
-        None,
-    )
+    binding = engagement.binding_for(fmt)
     if binding is None:
         raise NotFoundError("This read has no binding in that format.")
 
