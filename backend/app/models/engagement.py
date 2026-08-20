@@ -108,6 +108,20 @@ class Engagement(TimestampMixin, Base):
         end = self._latest_minute_end()
         return end if end is not None else 0
 
+    def binding_for(self, fmt: Format) -> EngagementEdition | None:
+        return next(
+            (ee for ee in self.engagement_editions if ee.edition.edition_format == fmt),
+            None,
+        )
+
+    # ADR-0021 accepts that two page-measured bindings in one read can't be told apart
+    # by unit alone, so anything measured in pages answers on the first non-audio one.
+    @property
+    def page_format(self) -> Format | None:
+        return next((f for f in self.formats if f != Format.audio), None)
+
+    # Not binding_for: this keeps scanning past a matching binding that carries no
+    # length, so a second binding in the same format can still answer.
     def resolve_length(self, fmt: Format) -> int | None:
         for ee in self.engagement_editions:
             if ee.edition.edition_format == fmt:
@@ -132,11 +146,9 @@ class Engagement(TimestampMixin, Base):
             return None
         return self.resolve_length(Format.audio)
 
-    # ADR-0021 accepts that two page-measured bindings in one read can't be told apart
-    # by unit alone, so the page length is the first non-audio binding's.
     @property
     def length_pages(self) -> int | None:
-        fmt = next((f for f in self.formats if f != Format.audio), None)
+        fmt = self.page_format
         return None if fmt is None else self.resolve_length(fmt)
 
     @property

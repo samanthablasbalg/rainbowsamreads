@@ -92,14 +92,7 @@ def log_progress(
     )
 
     if is_audio and audio_length_minutes is not None:
-        audio_ee = next(
-            (
-                ee
-                for ee in engagement.engagement_editions
-                if ee.edition.edition_format == Format.audio
-            ),
-            None,
-        )
+        audio_ee = engagement.binding_for(Format.audio)
         if audio_ee is not None:
             capture_audio_length(
                 engagement.book, audio_ee.edition, audio_length_minutes
@@ -139,8 +132,7 @@ def update_progress_log(
             raise ConflictError(
                 "Page must be higher than this session's starting page."
             )
-        fmt = next((f for f in engagement.formats if f != Format.audio), Format.print)
-        book_length = engagement.resolve_length(fmt)
+        book_length = engagement.resolve_length(engagement.page_format or Format.print)
         if book_length is not None and page_end > book_length:
             raise ConflictError("Page cannot exceed the book's length.")
         log.page_end = page_end

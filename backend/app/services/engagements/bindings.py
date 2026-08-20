@@ -62,8 +62,7 @@ def apply_length_change(
     if length_minutes is not None:
         _set_length_override(engagement, Format.audio, length_minutes)
     elif length_pages is not None:
-        page_format = next((f for f in engagement.formats if f != Format.audio), None)
-        _set_length_override(engagement, page_format, length_pages)
+        _set_length_override(engagement, engagement.page_format, length_pages)
 
 
 def _set_length_override(
