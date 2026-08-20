@@ -7,14 +7,16 @@ import { Button } from '@/components/ui/button';
 import { buildBook } from '@/test/data-generators';
 import { StartReadingSheet } from './start-reading-sheet';
 
-function ControlledSheet(overrides: Partial<BookRead>) {
+const baseBook = buildBook();
+
+function ControlledSheet({ book }: { book: BookRead }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <Button variant="outline" onClick={() => setOpen(true)}>
         Open
       </Button>
-      <StartReadingSheet book={buildBook(overrides)} open={open} onOpenChange={setOpen} />
+      <StartReadingSheet book={book} open={open} onOpenChange={setOpen} />
     </>
   );
 }
@@ -32,18 +34,18 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const KnownPageCount: Story = {
-  render: () => <ControlledSheet />,
+  render: () => <ControlledSheet book={baseBook} />,
 };
 
 export const MobileSheet: Story = {
   decorators: [withPointer(true)],
-  render: () => <ControlledSheet />,
+  render: () => <ControlledSheet book={baseBook} />,
 };
 
 // Audio has no length until the first read captures one, so the field is required and
 // shows no placeholder to accept.
 export const AudioLengthRequired: Story = {
-  render: () => <ControlledSheet />,
+  render: () => <ControlledSheet book={baseBook} />,
   play: async (context) => {
     await openSheet(context);
     await userEvent.click(await screen.findByRole('button', { name: 'Audio' }));
@@ -52,5 +54,5 @@ export const AudioLengthRequired: Story = {
 };
 
 export const NoLengthKnownAtAll: Story = {
-  render: () => <ControlledSheet default_page_count={null} />,
+  render: () => <ControlledSheet book={buildBook({ default_page_count: null })} />,
 };
