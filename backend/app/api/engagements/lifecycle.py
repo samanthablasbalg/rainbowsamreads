@@ -13,9 +13,11 @@ from app.models.user import User
 from app.schemas import (
     EngagementCreate,
     EngagementDatesUpdate,
+    EngagementLengthUpdate,
     EngagementRead,
     EngagementStatusUpdate,
 )
+from app.services.engagements import bindings as bindings_service
 from app.services.engagements import lifecycle as lifecycle_service
 
 from ._shared import reload
@@ -69,6 +71,22 @@ def update_engagement_dates(
     engagement = engagement_crud.get_or_raise(db, engagement_id)
     lifecycle_service.apply_date_change(
         engagement, payload.started_on, payload.finished_on
+    )
+    db.commit()
+    return EngagementRead.model_validate(reload(db, engagement_id))
+
+
+@router.patch("/{engagement_id}/length", response_model=EngagementRead)
+def update_engagement_length(
+    engagement_id: uuid.UUID,
+    payload: EngagementLengthUpdate,
+    db: Session = Depends(get_db),
+) -> EngagementRead:
+    engagement = engagement_crud.get_or_raise(db, engagement_id)
+    bindings_service.apply_length_change(
+        engagement,
+        length_pages=payload.length_pages,
+        length_minutes=payload.length_minutes,
     )
     db.commit()
     return EngagementRead.model_validate(reload(db, engagement_id))

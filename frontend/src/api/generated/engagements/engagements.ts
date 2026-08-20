@@ -27,6 +27,7 @@ import type {
   EngagementDatesUpdate,
   EngagementEditionCreate,
   EngagementEditionRead,
+  EngagementLengthUpdate,
   EngagementRead,
   EngagementStatusUpdate,
   EngagementsListEngagementsParams,
@@ -864,6 +865,94 @@ export const useEngagementsUpdateEngagementDates = <
   TContext
 > => {
   return useMutation(getEngagementsUpdateEngagementDatesMutationOptions(options), queryClient);
+};
+/**
+ * @summary Update Engagement Length
+ */
+export const engagementsUpdateEngagementLength = (
+  engagementId: string,
+  engagementLengthUpdate: EngagementLengthUpdate,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<EngagementRead>(
+    {
+      url: `/api/engagements/${engagementId}/length`,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      data: engagementLengthUpdate,
+      signal,
+    },
+    options
+  );
+};
+
+export const getEngagementsUpdateEngagementLengthMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof engagementsUpdateEngagementLength>>,
+    TError,
+    { engagementId: string; data: EngagementLengthUpdate },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof engagementsUpdateEngagementLength>>,
+  TError,
+  { engagementId: string; data: EngagementLengthUpdate },
+  TContext
+> => {
+  const mutationKey = ['engagementsUpdateEngagementLength'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof engagementsUpdateEngagementLength>>,
+    { engagementId: string; data: EngagementLengthUpdate }
+  > = (props) => {
+    const { engagementId, data } = props ?? {};
+
+    return engagementsUpdateEngagementLength(engagementId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EngagementsUpdateEngagementLengthMutationResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsUpdateEngagementLength>>
+>;
+export type EngagementsUpdateEngagementLengthMutationBody = EngagementLengthUpdate;
+export type EngagementsUpdateEngagementLengthMutationError = ErrorType<HTTPValidationError>;
+
+/**
+ * @summary Update Engagement Length
+ */
+export const useEngagementsUpdateEngagementLength = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof engagementsUpdateEngagementLength>>,
+      TError,
+      { engagementId: string; data: EngagementLengthUpdate },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof engagementsUpdateEngagementLength>>,
+  TError,
+  { engagementId: string; data: EngagementLengthUpdate },
+  TContext
+> => {
+  return useMutation(getEngagementsUpdateEngagementLengthMutationOptions(options), queryClient);
 };
 /**
  * @summary Log Progress

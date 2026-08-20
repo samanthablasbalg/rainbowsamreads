@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import uuid
+from typing import Any
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
@@ -16,10 +17,12 @@ from app.models.review import Review
 from app.models.user import User
 from tests.helpers import (
     _bind_edition,
+    _create_audio_engagement,
     _create_bare_book,
     _create_book,
     _create_edition,
     _create_engagement,
+    _log_audio_progress,
     _log_progress,
 )
 
@@ -764,6 +767,129 @@ def test_formats_derived_from_bound_editions(client: TestClient) -> None:
 
     data = client.get("/api/engagements?status=reading").json()
     assert set(data[0]["formats"]) == {"print", "digital"}
+
+
+# --- Length correction ---
+
+
+def _print_read_of_1100_pages(client: TestClient) -> tuple[dict[str, Any], str]:
+    book = _create_bare_book(client)
+    edition = _create_edition(client, book["id"], page_count=1100)
+    engagement = _create_engagement(client, book["id"])
+    return edition, engagement["id"]
+
+
+def test_update_length_recomputes_completion(client: TestClient) -> None:
+    _, engagement_id = _print_read_of_1100_pages(client)
+    _log_progress(client, engagement_id, 500)
+    assert (
+        client.get(f"/api/engagements/{engagement_id}").json()["completion_pct"] == 45
+    )
+
+    response = client.patch(
+        f"/api/engagements/{engagement_id}/length", json={"length_pages": 1000}
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["length_pages"] == 1000
+    assert data["completion_pct"] == 50
+
+
+def test_update_length_recomputes_audio_completion(client: TestClient) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], edition_format="audio", audio_minutes=600)
+    engagement_id = _create_audio_engagement(client, book["id"])["id"]
+    _log_audio_progress(client, engagement_id, 300)
+
+    response = client.patch(
+        f"/api/engagements/{engagement_id}/length", json={"length_minutes": 500}
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["length_minutes"] == 500
+    assert data["completion_pct"] == 60
+
+
+def test_update_length_leaves_the_shared_edition_alone(
+    client: TestClient, db: Session
+) -> None:
+    edition, engagement_id = _print_read_of_1100_pages(client)
+    client.patch(
+        f"/api/engagements/{engagement_id}/length", json={"length_pages": 1000}
+    )
+
+    db.expire_all()
+    edition_obj = db.get(Edition, uuid.UUID(edition["id"]))
+    assert edition_obj is not None
+    assert edition_obj.page_count == 1100
+
+
+def test_update_length_below_the_furthest_log_returns_409(client: TestClient) -> None:
+    _, engagement_id = _print_read_of_1100_pages(client)
+    _log_progress(client, engagement_id, 500)
+
+    response = client.patch(
+        f"/api/engagements/{engagement_id}/length", json={"length_pages": 400}
+    )
+
+    assert response.status_code == 409
+    assert "page 500" in response.json()["detail"]
+    assert (
+        client.get(f"/api/engagements/{engagement_id}").json()["length_pages"] == 1100
+    )
+
+
+def test_update_length_equal_to_the_furthest_log_is_allowed(
+    client: TestClient,
+) -> None:
+    _, engagement_id = _print_read_of_1100_pages(client)
+    _log_progress(client, engagement_id, 500)
+
+    response = client.patch(
+        f"/api/engagements/{engagement_id}/length", json={"length_pages": 500}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["completion_pct"] == 100
+
+
+def test_update_length_in_a_format_the_read_is_not_bound_in_returns_404(
+    client: TestClient,
+) -> None:
+    _, engagement_id = _print_read_of_1100_pages(client)
+
+    response = client.patch(
+        f"/api/engagements/{engagement_id}/length", json={"length_minutes": 500}
+    )
+
+    assert response.status_code == 404
+
+
+def test_update_length_needs_exactly_one_unit(client: TestClient) -> None:
+    _, engagement_id = _print_read_of_1100_pages(client)
+
+    for body in ({}, {"length_pages": 300, "length_minutes": 500}):
+        response = client.patch(f"/api/engagements/{engagement_id}/length", json=body)
+        assert response.status_code == 422
+
+
+def test_update_length_rejects_a_non_positive_length(client: TestClient) -> None:
+    _, engagement_id = _print_read_of_1100_pages(client)
+
+    response = client.patch(
+        f"/api/engagements/{engagement_id}/length", json={"length_pages": 0}
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_length_unknown_engagement_returns_404(client: TestClient) -> None:
+    response = client.patch(
+        f"/api/engagements/{uuid.uuid4()}/length", json={"length_pages": 300}
+    )
+    assert response.status_code == 404
 
 
 # --- Get single engagement ---
