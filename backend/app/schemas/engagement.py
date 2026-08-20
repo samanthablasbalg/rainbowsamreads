@@ -4,7 +4,7 @@ import datetime
 import uuid
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import Format, ReadingStatus
 from app.schemas.book import BookRead
@@ -15,8 +15,8 @@ class EngagementCreate(BaseModel):
     book_id: uuid.UUID
     edition_format: Format
     status: Literal["reading", "finished", "dnf"] = "reading"
-    audio_length_minutes: int | None = None
-    length_override: int | None = None
+    audio_length_minutes: int | None = Field(default=None, gt=0)
+    length_override: int | None = Field(default=None, gt=0)
     started_on: datetime.date | None = None
 
 
