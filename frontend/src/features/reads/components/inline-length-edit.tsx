@@ -7,7 +7,7 @@ type InlineLengthEditProps = {
   value: number | null;
   // Pages against minutes, the same split the log sheet reads its denominator on.
   isAudio: boolean;
-  onSave: (value: number) => void;
+  onSave: (value: number) => Promise<unknown>;
 };
 
 export function InlineLengthEdit({ value, isAudio, onSave }: InlineLengthEditProps) {
@@ -18,9 +18,14 @@ export function InlineLengthEdit({ value, isAudio, onSave }: InlineLengthEditPro
       <LengthEditor
         value={value}
         isAudio={isAudio}
-        onSave={(next) => {
-          setEditing(false);
-          onSave(next);
+        onSave={async (next) => {
+          try {
+            await onSave(next);
+            setEditing(false);
+          } catch {
+            // The read shows the reason; the editor keeps what was typed so a length the
+            // server refused can be adjusted rather than retyped from the old one.
+          }
         }}
         onCancel={() => setEditing(false)}
       />
@@ -53,23 +58,31 @@ function LengthEditor({
   onCancel: () => void;
 }) {
   const [draft, setDraft] = useState(value === null ? '' : formatPosition(value, isAudio));
+  const [attempted, setAttempted] = useState(false);
+
+  const parsed = parsePosition(draft, isAudio);
+  // Only after a save attempt: the editor opens focused, so validating as it is typed
+  // would flag every half-finished number.
+  let error: string | null = null;
+  if (attempted) {
+    if (parsed === null) error = isAudio ? 'Enter a time in HH:MM format' : 'Enter a number';
+    else if (parsed <= 0) error = 'Must be more than zero';
+  }
 
   function save() {
     if (draft.trim() === '') return onCancel();
-    const parsed = parsePosition(draft, isAudio);
-    // Nothing to save and nothing to correct on the server's behalf, so the editor stays
-    // open with the bad value in it rather than discarding what was typed.
-    if (parsed === null || parsed <= 0) return;
+    if (parsed === null || parsed <= 0) return setAttempted(true);
     onSave(parsed);
   }
 
   return (
-    <InlineEditor label="length" onSave={save} onCancel={onCancel}>
+    <InlineEditor label="length" error={error} onSave={save} onCancel={onCancel}>
       <PositionInput
         autoFocus
         className="h-8 w-20"
         isAudio={isAudio}
         aria-label="length"
+        aria-invalid={!!error}
         value={draft}
         onValueChange={setDraft}
       />

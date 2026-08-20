@@ -131,7 +131,7 @@ function ReadHeader({ engagement }: { engagement: EngagementRead }) {
               value={isAudio ? engagement.length_minutes : engagement.length_pages}
               isAudio={isAudio}
               onSave={(next) =>
-                updateLength.mutate({
+                updateLength.mutateAsync({
                   engagementId: engagement.id,
                   data: isAudio ? { length_minutes: next } : { length_pages: next },
                 })
@@ -150,17 +150,20 @@ function ReadHeader({ engagement }: { engagement: EngagementRead }) {
                 value={value}
                 label={label}
                 disabled={field === null}
-                onSave={(next) =>
-                  field &&
-                  updateDates.mutate({ engagementId: engagement.id, data: { [field]: next } })
-                }
+                onSave={async (next) => {
+                  if (field)
+                    await updateDates.mutateAsync({
+                      engagementId: engagement.id,
+                      data: { [field]: next },
+                    });
+                }}
               />
             </span>
           ))}
         </div>
 
-        {/* The editor has already closed by the time a rejection lands, so the message
-            goes here rather than inside the control that caused it. */}
+        {/* The editor stays open holding the refused value, so the reason goes here
+            rather than crowding the line of metadata it sits in. */}
         {updateDates.isError && (
           <ErrorText>
             {errorDetail(updateDates.error, "Couldn't save that date. Please try again.")}

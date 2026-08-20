@@ -33,6 +33,9 @@ export function EditableValue({ label, disabled = false, onEdit, children }: Edi
 
 type InlineEditorProps = {
   label: string;
+  // Shown beside the controls rather than as a block: the whole editor sits inline in a
+  // line of metadata, so ErrorText's paragraph can't nest here.
+  error?: string | null;
   onSave: () => void;
   onCancel: () => void;
   children: ReactNode;
@@ -40,7 +43,7 @@ type InlineEditorProps = {
 
 // Enter and Escape are handled here rather than on each input, since they bubble out of
 // whichever control the caller puts in.
-export function InlineEditor({ label, onSave, onCancel, children }: InlineEditorProps) {
+export function InlineEditor({ label, error, onSave, onCancel, children }: InlineEditorProps) {
   return (
     <span
       className="inline-flex items-center gap-1"
@@ -56,6 +59,11 @@ export function InlineEditor({ label, onSave, onCancel, children }: InlineEditor
       <Button variant="ghost" size="icon-sm" aria-label={`Cancel ${label} edit`} onClick={onCancel}>
         <HugeiconsIcon icon={Cancel01Icon} />
       </Button>
+      {error && (
+        <span role="alert" className="text-sm text-destructive">
+          {error}
+        </span>
+      )}
     </span>
   );
 }

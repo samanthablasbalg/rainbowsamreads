@@ -8,7 +8,7 @@ type InlineDateEditProps = {
   value: string | null;
   label: string;
   disabled?: boolean;
-  onSave: (value: string) => void;
+  onSave: (value: string) => Promise<unknown>;
 };
 
 export function InlineDateEdit({ value, label, disabled = false, onSave }: InlineDateEditProps) {
@@ -19,9 +19,14 @@ export function InlineDateEdit({ value, label, disabled = false, onSave }: Inlin
       <DateEditor
         value={value}
         label={label}
-        onSave={(next) => {
-          setEditing(false);
-          onSave(next);
+        onSave={async (next) => {
+          try {
+            await onSave(next);
+            setEditing(false);
+          } catch {
+            // The read shows the reason; the editor keeps what was typed so a date the
+            // server refused can be adjusted rather than retyped from the old one.
+          }
         }}
         onCancel={() => setEditing(false)}
       />
