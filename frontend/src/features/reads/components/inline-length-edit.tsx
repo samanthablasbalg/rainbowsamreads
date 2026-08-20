@@ -1,10 +1,7 @@
 import { useState } from 'react';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { Cancel01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { PositionInput } from '@/components/common/position-input';
-import { Button } from '@/components/ui/button';
 import { formatPosition, parsePosition } from '@/utils/position';
-import { EDITABLE_VALUE_CLASS } from './editable-value';
+import { EditableValue, InlineEditor } from './inline-edit';
 
 type InlineLengthEditProps = {
   value: number | null;
@@ -31,14 +28,9 @@ export function InlineLengthEdit({ value, isAudio, onSave }: InlineLengthEditPro
   }
 
   return (
-    <Button
-      variant="link"
-      className={EDITABLE_VALUE_CLASS}
-      aria-label="Edit length"
-      onClick={() => setEditing(true)}
-    >
+    <EditableValue label="length" onEdit={() => setEditing(true)}>
       {lengthLabel(value, isAudio)}
-    </Button>
+    </EditableValue>
   );
 }
 
@@ -72,7 +64,7 @@ function LengthEditor({
   }
 
   return (
-    <span className="inline-flex items-center gap-1">
+    <InlineEditor label="length" onSave={save} onCancel={onCancel}>
       <PositionInput
         autoFocus
         className="h-8 w-20"
@@ -80,17 +72,7 @@ function LengthEditor({
         aria-label="length"
         value={draft}
         onValueChange={setDraft}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') save();
-          if (event.key === 'Escape') onCancel();
-        }}
       />
-      <Button variant="ghost" size="icon-sm" aria-label="Save length" onClick={save}>
-        <HugeiconsIcon icon={Tick02Icon} />
-      </Button>
-      <Button variant="ghost" size="icon-sm" aria-label="Cancel length edit" onClick={onCancel}>
-        <HugeiconsIcon icon={Cancel01Icon} />
-      </Button>
-    </span>
+    </InlineEditor>
   );
 }

@@ -1,16 +1,11 @@
 import { useState } from 'react';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { Cancel01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
 import { formatIsoDate } from '@/utils/format-date';
 import { localIsoDate } from '@/utils/local-date';
-import { EDITABLE_VALUE_CLASS } from './editable-value';
+import { EditableValue, InlineEditor } from './inline-edit';
 
 type InlineDateEditProps = {
   value: string | null;
-  // Lowercase: "start date" gives "Edit start date" / "Save start date".
   label: string;
   disabled?: boolean;
   onSave: (value: string) => void;
@@ -34,17 +29,9 @@ export function InlineDateEdit({ value, label, disabled = false, onSave }: Inlin
   }
 
   return (
-    <Button
-      variant="link"
-      // Dotted-underlined so the value reads as editable at rest; a disabled one carries
-      // no underline, because there is nothing to open.
-      className={cn(EDITABLE_VALUE_CLASS, disabled && 'no-underline')}
-      disabled={disabled}
-      aria-label={`Edit ${label}`}
-      onClick={() => setEditing(true)}
-    >
+    <EditableValue label={label} disabled={disabled} onEdit={() => setEditing(true)}>
       {value ? formatIsoDate(value) : '—'}
-    </Button>
+    </EditableValue>
   );
 }
 
@@ -67,7 +54,7 @@ function DateEditor({
   }
 
   return (
-    <span className="inline-flex items-center gap-1">
+    <InlineEditor label={label} onSave={save} onCancel={onCancel}>
       <Input
         type="date"
         autoFocus
@@ -76,17 +63,7 @@ function DateEditor({
         aria-label={label}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') save();
-          if (event.key === 'Escape') onCancel();
-        }}
       />
-      <Button variant="ghost" size="icon-sm" aria-label={`Save ${label}`} onClick={save}>
-        <HugeiconsIcon icon={Tick02Icon} />
-      </Button>
-      <Button variant="ghost" size="icon-sm" aria-label={`Cancel ${label} edit`} onClick={onCancel}>
-        <HugeiconsIcon icon={Cancel01Icon} />
-      </Button>
-    </span>
+    </InlineEditor>
   );
 }
