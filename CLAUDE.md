@@ -131,8 +131,10 @@ itself a query in `src/lib/auth.ts`). Specs and stories sit beside their compone
 render through `src/test/render.tsx` against MSW, and a promoted component is expected to have a
 story, which the storybook project runs in a real browser, failing on a11y violations.
 
-`.claude/rules/playwright-e2e.md` is the standard for anything under `e2e/` and outranks Playwright
-docs defaults — read it before writing or editing a spec.
+`.claude/rules/frontend-testing.md` is the standard for specs under `frontend/src/` — which files
+get one, and how a spec drives, asserts and waits. `.claude/rules/playwright-e2e.md` is the standard
+for anything under `e2e/` and outranks Playwright docs defaults. Read the relevant one before
+writing or editing a spec.
 
 ## Branching, commits, and issues
 
