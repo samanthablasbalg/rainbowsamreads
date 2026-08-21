@@ -15,12 +15,14 @@ class ProgressLogCreate(BaseModel):
     current_minute: int | None = Field(default=None, gt=0)
     audio_length_minutes: int | None = Field(default=None, gt=0)
     logged_on: datetime.date | None = None
+    note: str | None = None
 
 
 class ProgressLogUpdate(BaseModel):
     logged_on: datetime.date | None = None
     page_end: int | None = Field(default=None, gt=0)
     minute_end: int | None = Field(default=None, gt=0)
+    note: str | None = None
 
 
 class _ProgressLogReadBase(BaseModel):
@@ -28,6 +30,7 @@ class _ProgressLogReadBase(BaseModel):
     engagement_id: uuid.UUID
     logged_on: datetime.date
     new_ground: bool
+    note: str | None
 
 
 class PageProgressLogRead(_ProgressLogReadBase):
@@ -69,6 +72,7 @@ def progress_log_read(
             engagement_id=log.engagement_id,
             logged_on=log.logged_on,
             new_ground=log.new_ground,
+            note=log.note,
             page_start=log.page_start,
             page_end=log.page_end,
         )
@@ -79,6 +83,7 @@ def progress_log_read(
         engagement_id=log.engagement_id,
         logged_on=log.logged_on,
         new_ground=log.new_ground,
+        note=log.note,
         minute_start=log.minute_start,
         minute_end=log.minute_end,
     )

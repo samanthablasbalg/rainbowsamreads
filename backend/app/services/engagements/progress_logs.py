@@ -50,6 +50,7 @@ def log_progress(
     current_minute: int | None,
     logged_on: datetime.date | None,
     audio_length_minutes: int | None,
+    note: str | None,
 ) -> ProgressLog:
     if engagement.status != ReadingStatus.reading:
         raise ConflictError("Can only log progress on an engagement being read.")
@@ -63,7 +64,9 @@ def log_progress(
         raise InvalidOperationError(
             "current_minute is required for audio, current_page otherwise."
         )
-    if position <= resume:
+    if position < resume:
+        raise ConflictError("Progress can't go backwards.")
+    if position == resume and note is None:
         raise ConflictError("Progress must advance beyond the current position.")
 
     resolved_on = logged_on or datetime.date.today()
@@ -88,6 +91,7 @@ def log_progress(
             page_start=None if is_audio else resume,
             page_end=None if is_audio else position,
             new_ground=True,
+            note=note,
         ),
     )
 
@@ -108,6 +112,7 @@ def update_progress_log(
     logged_on: datetime.date | None,
     page_end: int | None,
     minute_end: int | None,
+    note: str | None,
 ) -> None:
     if logged_on is not None:
         reject_future_date(logged_on)
@@ -146,6 +151,9 @@ def update_progress_log(
         if audio_length is not None and minute_end > audio_length:
             raise ConflictError("Minute cannot exceed the audio length.")
         log.minute_end = minute_end
+
+    if note is not None:
+        log.note = note or None
 
 
 def delete_progress_log(db: Session, engagement: Engagement, log: ProgressLog) -> None:

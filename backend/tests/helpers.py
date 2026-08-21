@@ -51,10 +51,13 @@ def _log_progress(
     engagement_id: str,
     current_page: int,
     logged_on: str | None = None,
+    note: str | None = None,
 ) -> dict[str, Any]:
     body: dict[str, Any] = {"current_page": current_page}
     if logged_on is not None:
         body["logged_on"] = logged_on
+    if note is not None:
+        body["note"] = note
     response = client.post(f"/api/engagements/{engagement_id}/progress-logs", json=body)
     assert response.status_code == 201
     return cast(dict[str, Any], response.json())

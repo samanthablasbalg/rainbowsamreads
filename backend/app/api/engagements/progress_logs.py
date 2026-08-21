@@ -48,6 +48,7 @@ def log_progress(
         current_minute=payload.current_minute,
         logged_on=payload.logged_on,
         audio_length_minutes=payload.audio_length_minutes,
+        note=payload.note,
     )
     db.commit()
     db.refresh(log)
@@ -81,6 +82,7 @@ def update_progress_log(
         logged_on=payload.logged_on,
         page_end=payload.page_end,
         minute_end=payload.minute_end,
+        note=payload.note,
     )
     db.commit()
     db.refresh(log)

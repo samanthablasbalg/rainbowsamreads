@@ -114,6 +114,69 @@ def test_log_progress_negative_page_returns_422(client: TestClient) -> None:
     assert response.status_code == 422
 
 
+# --- Notes ---
+
+
+def test_log_progress_with_note_returns_it(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+
+    log = _log_progress(client, engagement["id"], 100, note="A striking quote.")
+
+    assert log["note"] == "A striking quote."
+
+
+def test_log_progress_page_less_than_last_still_rejected_with_note(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 100)
+
+    response = client.post(
+        f"/api/engagements/{engagement['id']}/progress-logs",
+        json={"current_page": 50, "note": "A note"},
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Progress can't go backwards."
+
+
+def test_log_progress_page_equal_to_last_with_note_returns_201(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 100)
+
+    log = _log_progress(client, engagement["id"], 100, note="Still on this page.")
+
+    assert log["page_start"] == 100
+    assert log["page_end"] == 100
+    assert log["new_ground"] is True
+    assert log["note"] == "Still on this page."
+
+
+def test_log_progress_two_zero_length_notes_on_same_page(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 100)
+
+    first = _log_progress(client, engagement["id"], 100, note="First quote.")
+    second = _log_progress(client, engagement["id"], 100, note="Second quote.")
+
+    assert first["note"] == "First quote."
+    assert second["note"] == "Second quote."
+
+
+def test_log_progress_without_note_has_null_note(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+
+    log = _log_progress(client, engagement["id"], 100)
+
+    assert log["note"] is None
+
+
 # --- Derived engagement fields ---
 
 

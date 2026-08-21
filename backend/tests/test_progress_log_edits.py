@@ -274,6 +274,72 @@ def test_patch_log_date_and_progress_together_when_date_makes_it_latest(
     assert response.status_code == 200
 
 
+def test_patch_log_note_sets_it(client: TestClient, db: Session) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    log = _log_progress(client, engagement["id"], 100)
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}/progress-logs/{log['id']}",
+        json={"note": "A striking quote."},
+    )
+
+    assert response.status_code == 200
+    updated = db.get(ProgressLog, uuid.UUID(log["id"]))
+    assert updated is not None
+    assert updated.note == "A striking quote."
+
+
+def test_patch_log_note_changes_it(client: TestClient, db: Session) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    log = _log_progress(client, engagement["id"], 100, note="First draft.")
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}/progress-logs/{log['id']}",
+        json={"note": "Revised."},
+    )
+
+    assert response.status_code == 200
+    updated = db.get(ProgressLog, uuid.UUID(log["id"]))
+    assert updated is not None
+    assert updated.note == "Revised."
+
+
+def test_patch_log_note_empty_string_clears_it(client: TestClient, db: Session) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    log = _log_progress(client, engagement["id"], 100, note="A striking quote.")
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}/progress-logs/{log['id']}",
+        json={"note": ""},
+    )
+
+    assert response.status_code == 200
+    updated = db.get(ProgressLog, uuid.UUID(log["id"]))
+    assert updated is not None
+    assert updated.note is None
+
+
+def test_patch_log_omitting_note_leaves_it_unchanged(
+    client: TestClient, db: Session
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    log = _log_progress(client, engagement["id"], 100, note="A striking quote.")
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}/progress-logs/{log['id']}",
+        json={"page_end": 150},
+    )
+
+    assert response.status_code == 200
+    updated = db.get(ProgressLog, uuid.UUID(log["id"]))
+    assert updated is not None
+    assert updated.note == "A striking quote."
+
+
 def test_patch_log_date_in_future_returns_422(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
