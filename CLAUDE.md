@@ -103,8 +103,8 @@ Development happens **inside the dev container** (ADR-0028), and so does this se
 ## Architecture
 
 Full picture in `docs/architecture.md`; the **why** for everything below lives in `docs/decisions/`,
-which is where significant decisions get recorded (template and index in its README) rather than
-restated in other docs or PR summaries.
+which is where significant decisions get recorded (index in its README) rather than restated in
+other docs or PR summaries.
 
 Three pieces, one deploy: React SPA → FastAPI (JSON API under `/api`, also serving the built SPA) →
 PostgreSQL 18. Locally a Caddy proxy puts them on one origin at `localhost:8080`, the shape
@@ -131,8 +131,10 @@ itself a query in `src/lib/auth.ts`). Specs and stories sit beside their compone
 render through `src/test/render.tsx` against MSW, and a promoted component is expected to have a
 story, which the storybook project runs in a real browser, failing on a11y violations.
 
-`.claude/rules/playwright-e2e.md` is the standard for anything under `e2e/` and outranks Playwright
-docs defaults — read it before writing or editing a spec.
+`.claude/rules/frontend-testing.md` is the standard for specs under `frontend/src/` — which files
+get one, and how a spec drives, asserts and waits. `.claude/rules/playwright-e2e.md` is the standard
+for anything under `e2e/` and outranks Playwright docs defaults. Read the relevant one before
+writing or editing a spec.
 
 ## Branching, commits, and issues
 

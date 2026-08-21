@@ -31,19 +31,17 @@ The foundations are real and running in the deployed app:
 - **Fix mistakes.** Correct or delete entries made in error, and edit the dates on reads and
   progress logs after the fact.
 - **Deployed**, with a production build and a logged-out landing page.
-
-## In progress
-
-The current focus is the UI foundation — making the app feel like a real product, and building out
-the pages the data model already supports:
-
-- **Design system** — a custom color theme, typography, and an adaptive navigation shell (done);
-  desktop responsive layout patterns (in flight).
-- **Redesigned core flows** — reworking progress logging and book search/adding to match the new
-  designs, so the everyday actions are easier to use.
-- **Book detail page** — pulling together everything the app already knows about a book.
-- **TBR and Interested pages** — adding and viewing books at the earlier lifecycle stages, including
-  declaring an intended reading format before a read begins.
+- **A React frontend**, rebuilt from Angular two months in and on a live app
+  ([ADR-0032](decisions/0032-migrate-the-frontend-to-react.md)) — with a layer structure the linter
+  enforces, so the tech debt that prompted it can't quietly rebuild itself
+  ([ADR-0033](decisions/0033-frontend-layering-and-import-direction.md)).
+- **The everyday flows, redesigned.** Progress logging in a focused sheet
+  ([ADR-0019](decisions/0019-progress-logging-in-a-focused-sheet.md)), and finding a book, adding
+  it, and starting a read reworked to match the new designs.
+- **A book detail page** — everything the app already knows about a book, in one place.
+- **A design system.** A custom color theme, typography, an adaptive navigation shell, and desktop
+  layout patterns — with every promoted component rendered in its states in Storybook, where an
+  accessibility violation fails the run.
 
 ## Planned
 
@@ -56,6 +54,8 @@ is mostly ready for them.
 - **Multi-format and non-linear progress** — one read spanning audio, print, and ebook with a single
   combined completion; anthologies and omnibuses tracked story-by-story without wrecking the
   percentage.
+- **TBR and Interested pages** — adding and viewing books at the earlier lifecycle stages, including
+  declaring an intended reading format before a read begins.
 - **Fuzzy dates in the UI** — recording and displaying month- or year-precision dates ("I read this
   in 1994") for backfilling older reads.
 - **Ownership** — tracking owned copies of a book independently of whether it's been read, with an
