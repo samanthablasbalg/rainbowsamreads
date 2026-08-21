@@ -103,8 +103,8 @@ Development happens **inside the dev container** (ADR-0028), and so does this se
 ## Architecture
 
 Full picture in `docs/architecture.md`; the **why** for everything below lives in `docs/decisions/`,
-which is where significant decisions get recorded (template and index in its README) rather than
-restated in other docs or PR summaries.
+which is where significant decisions get recorded (index in its README) rather than restated in
+other docs or PR summaries.
 
 Three pieces, one deploy: React SPA → FastAPI (JSON API under `/api`, also serving the built SPA) →
 PostgreSQL 18. Locally a Caddy proxy puts them on one origin at `localhost:8080`, the shape

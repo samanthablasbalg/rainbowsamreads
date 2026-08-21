@@ -88,8 +88,7 @@ React 19 built with Vite, with no hand-written service layer between the screens
   over a hand-written axios mutator, plus the MSW handlers the specs and stories run against.
 - **shadcn/ui on Base UI primitives, styled with Tailwind v4.** shadcn copies source into
   `src/components/ui/`, so those files are ours to edit. Storybook renders every promoted component
-  in its states and is the counterpart to [the design system doc](design/design-system.md): rendered
-  truth there, intent in the doc.
+  in its states, and is where the component library is read as rendered truth rather than described.
 
 ---
 
