@@ -22,6 +22,7 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
   ResponsiveDialog,
+  ResponsiveDialogBody,
   ResponsiveDialogContent,
   ResponsiveDialogFooter,
   ResponsiveDialogHeader,
@@ -70,9 +71,11 @@ function ProgressLogForm({
         <ProgressLogIdentity engagement={engagement} />
       </ResponsiveDialogHeader>
 
-      <ProgressLogFields form={form} />
+      <ResponsiveDialogBody>
+        <ProgressLogFields form={form} />
 
-      {form.error && <ErrorText>{form.error}</ErrorText>}
+        {form.error && <ErrorText>{form.error}</ErrorText>}
+      </ResponsiveDialogBody>
 
       <ResponsiveDialogFooter>
         <Button variant="outline" disabled={form.savePending} onClick={onDone}>

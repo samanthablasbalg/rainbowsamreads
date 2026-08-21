@@ -11,6 +11,7 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
   ResponsiveDialog,
+  ResponsiveDialogBody,
   ResponsiveDialogContent,
   ResponsiveDialogFooter,
   ResponsiveDialogHeader,
@@ -70,7 +71,7 @@ function EntryEditForm({
         <ResponsiveDialogTitle>{entry.dateLabel}</ResponsiveDialogTitle>
       </ResponsiveDialogHeader>
 
-      <div className="flex flex-col gap-4">
+      <ResponsiveDialogBody>
         <Field>
           <FieldLabel htmlFor="entry-date">Log date</FieldLabel>
           <Input
@@ -108,9 +109,9 @@ function EntryEditForm({
             Only the most recent session&apos;s {entry.isAudio ? 'time' : 'pages'} can be changed.
           </p>
         )}
-      </div>
 
-      {form.error && <ErrorText>{form.error}</ErrorText>}
+        {form.error && <ErrorText>{form.error}</ErrorText>}
+      </ResponsiveDialogBody>
 
       <ResponsiveDialogFooter>
         {entry.isNewest && (

@@ -16,6 +16,7 @@ import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui
 import { Input } from '@/components/ui/input';
 import {
   ResponsiveDialog,
+  ResponsiveDialogBody,
   ResponsiveDialogContent,
   ResponsiveDialogDescription,
   ResponsiveDialogFooter,
@@ -53,54 +54,56 @@ function StartReadingForm({ book, onDone }: { book: BookRead; onDone: () => void
         <ResponsiveDialogDescription>How are you reading it?</ResponsiveDialogDescription>
       </ResponsiveDialogHeader>
 
-      <div role="group" aria-label="Format" className="flex flex-col gap-2">
-        {Object.values(Format).map((format) => (
-          <Button
-            key={format}
-            variant={form.format === format ? 'default' : 'outline'}
-            className="justify-start"
-            aria-pressed={form.format === format}
-            disabled={form.startPending}
-            onClick={() => form.pickFormat(format)}
-          >
-            <HugeiconsIcon icon={FORMATS[format].icon} data-icon="inline-start" />
-            {FORMATS[format].label}
-          </Button>
-        ))}
-      </div>
+      <ResponsiveDialogBody>
+        <div role="group" aria-label="Format" className="flex flex-col gap-2">
+          {Object.values(Format).map((format) => (
+            <Button
+              key={format}
+              variant={form.format === format ? 'default' : 'outline'}
+              className="justify-start"
+              aria-pressed={form.format === format}
+              disabled={form.startPending}
+              onClick={() => form.pickFormat(format)}
+            >
+              <HugeiconsIcon icon={FORMATS[format].icon} data-icon="inline-start" />
+              {FORMATS[format].label}
+            </Button>
+          ))}
+        </div>
 
-      <Field data-invalid={!!form.lengthError}>
-        <FieldLabel htmlFor="start-reading-length">{form.lengthLabel}</FieldLabel>
-        <PositionInput
-          id="start-reading-length"
-          isAudio={form.isAudio}
-          value={form.length}
-          onValueChange={form.setLength}
-          onFocus={() => form.setLengthFocused(true)}
-          onBlur={() => form.setLengthFocused(false)}
-          aria-invalid={!!form.lengthError}
-          {...(form.lengthPlaceholder && { placeholder: form.lengthPlaceholder })}
-        />
-        <FieldDescription>
-          {form.lengthRequired
-            ? "We don't have a length for this one yet, so it needs one."
-            : "If your edition doesn't match, enter its length."}
-        </FieldDescription>
-        <FieldError>{form.lengthError}</FieldError>
-      </Field>
+        <Field data-invalid={!!form.lengthError}>
+          <FieldLabel htmlFor="start-reading-length">{form.lengthLabel}</FieldLabel>
+          <PositionInput
+            id="start-reading-length"
+            isAudio={form.isAudio}
+            value={form.length}
+            onValueChange={form.setLength}
+            onFocus={() => form.setLengthFocused(true)}
+            onBlur={() => form.setLengthFocused(false)}
+            aria-invalid={!!form.lengthError}
+            {...(form.lengthPlaceholder && { placeholder: form.lengthPlaceholder })}
+          />
+          <FieldDescription>
+            {form.lengthRequired
+              ? "We don't have a length for this one yet, so it needs one."
+              : "If your edition doesn't match, enter its length."}
+          </FieldDescription>
+          <FieldError>{form.lengthError}</FieldError>
+        </Field>
 
-      <Field>
-        <FieldLabel htmlFor="start-reading-date">Start date</FieldLabel>
-        <Input
-          id="start-reading-date"
-          type="date"
-          max={localIsoDate()}
-          value={form.startedOn}
-          onChange={(event) => form.setStartedOn(event.target.value)}
-        />
-      </Field>
+        <Field>
+          <FieldLabel htmlFor="start-reading-date">Start date</FieldLabel>
+          <Input
+            id="start-reading-date"
+            type="date"
+            max={localIsoDate()}
+            value={form.startedOn}
+            onChange={(event) => form.setStartedOn(event.target.value)}
+          />
+        </Field>
 
-      {form.error && <ErrorText>{form.error}</ErrorText>}
+        {form.error && <ErrorText>{form.error}</ErrorText>}
+      </ResponsiveDialogBody>
 
       <ResponsiveDialogFooter>
         <Button variant="outline" disabled={form.startPending} onClick={onDone}>

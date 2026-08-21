@@ -3,6 +3,7 @@ import * as React from 'react';
 import { useIsCoarsePointer } from '@/hooks/use-is-coarse-pointer';
 import {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -13,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import {
   Drawer,
+  DrawerBody,
   DrawerClose,
   DrawerContent,
   DrawerDescription,
@@ -75,6 +77,10 @@ function ResponsiveDialogHeader(props: React.ComponentProps<'div'>) {
   return useCoarse() ? <DrawerHeader {...props} /> : <DialogHeader {...props} />;
 }
 
+function ResponsiveDialogBody(props: React.ComponentProps<'div'>) {
+  return useCoarse() ? <DrawerBody {...props} /> : <DialogBody {...props} />;
+}
+
 function ResponsiveDialogFooter(props: React.ComponentProps<'div'>) {
   return useCoarse() ? <DrawerFooter {...props} /> : <DialogFooter {...props} />;
 }
@@ -93,6 +99,7 @@ function ResponsiveDialogClose(props: React.ComponentProps<typeof DrawerClose>) 
 
 export {
   ResponsiveDialog,
+  ResponsiveDialogBody,
   ResponsiveDialogClose,
   ResponsiveDialogContent,
   ResponsiveDialogDescription,

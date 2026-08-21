@@ -16,6 +16,7 @@ import { Field, FieldDescription, FieldGroup, FieldLabel, FieldTitle } from '@/c
 import { Textarea } from '@/components/ui/textarea';
 import {
   ResponsiveDialog,
+  ResponsiveDialogBody,
   ResponsiveDialogContent,
   ResponsiveDialogFooter,
   ResponsiveDialogHeader,
@@ -53,16 +54,7 @@ function ReviewForm({ engagement, onDone }: { engagement: EngagementRead; onDone
         </div>
       </ResponsiveDialogHeader>
 
-      {/* The fields scroll, the header and footer do not, so Save stays reachable however
-          long the review is. Both branches need this and for different reasons:
-          DialogContent sets no max height at all, so a tall body grows the popup past the
-          viewport and centring carries the footer off the bottom of the screen;
-          DrawerContent is capped but clips, so the text would be cut off with no way to
-          reach the rest. min-h-0 is what lets a flex child shrink below its content --
-          without it the drawer's column refuses to compress and nothing scrolls. flex-1
-          does the work in the drawer, max-h in the dialog's grid, and each is inert in the
-          other. */}
-      <div className="max-h-[60dvh] min-h-0 flex-1 overflow-y-auto">
+      <ResponsiveDialogBody>
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="review-rating">Rating</FieldLabel>
@@ -114,9 +106,9 @@ function ReviewForm({ engagement, onDone }: { engagement: EngagementRead; onDone
             )}
           </Field>
         </FieldGroup>
-      </div>
 
-      {form.error && <ErrorText>{form.error}</ErrorText>}
+        {form.error && <ErrorText>{form.error}</ErrorText>}
+      </ResponsiveDialogBody>
 
       <ResponsiveDialogFooter>
         <Button variant="outline" disabled={form.savePending} onClick={onDone}>
