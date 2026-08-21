@@ -812,6 +812,59 @@
         }
       }
     },
+    "/api/engagements/{engagement_id}/length": {
+      "patch": {
+        "tags": [
+          "engagements"
+        ],
+        "summary": "Update Engagement Length",
+        "operationId": "engagements-update_engagement_length",
+        "parameters": [
+          {
+            "name": "engagement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Engagement Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EngagementLengthUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/engagements/{engagement_id}/progress-logs": {
       "post": {
         "tags": [
@@ -2019,6 +2072,37 @@
           "length_override"
         ],
         "title": "EngagementEditionRead"
+      },
+      "EngagementLengthUpdate": {
+        "properties": {
+          "length_pages": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Pages"
+          },
+          "length_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Minutes"
+          }
+        },
+        "type": "object",
+        "title": "EngagementLengthUpdate",
+        "description": "Mirrors the read side's length_pages / length_minutes pair. Exactly one, because\nthe unit is what tells the service which binding to correct."
       },
       "EngagementRead": {
         "properties": {

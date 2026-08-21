@@ -9,6 +9,7 @@ from app.exceptions import ConflictError, NotFoundError
 from app.models.edition import EngagementEdition
 from app.models.engagement import Engagement
 from app.models.enums import Format
+from app.models.progress_log import ProgressLog
 
 
 def create_binding(
@@ -49,3 +50,75 @@ def create_binding(
             length_override=length_override,
         ),
     )
+
+
+def apply_length_change(
+    engagement: Engagement,
+    *,
+    length_pages: int | None,
+    length_minutes: int | None,
+) -> None:
+    """Correct this read's length. The unit picks the binding, on the same rule
+    Engagement.length_minutes and .length_pages read it back on."""
+    if length_minutes is not None:
+        _correct_length(engagement, Format.audio, length_minutes)
+    elif length_pages is not None:
+        # A read with no page binding resolves to print, which it has no binding in
+        # either, so the lookup below is what turns that into the 404.
+        page_format = engagement.page_format or Format.print
+        _correct_length(engagement, page_format, length_pages)
+
+
+def _correct_length(engagement: Engagement, fmt: Format, length: int) -> None:
+    """Move the binding's length override, refusing a read that isn't bound in this
+    format and a length that would strand a progress log past the end."""
+    # The correction lands on the binding, never on the edition: the edition is shared
+    # across users, so its length is not this reader's to move (ADR-0021).
+    binding = engagement.binding_for(fmt)
+    if binding is None:
+        raise NotFoundError("This read has no binding in that format.")
+
+    is_audio = fmt == Format.audio
+    _pull_back_the_final_entry(engagement, is_audio, length)
+    binding.length_override = length
+
+
+def _pull_back_the_final_entry(
+    engagement: Engagement, is_audio: bool, length: int
+) -> None:
+    """Make room for a shorter length by shortening the one entry that ran to the old
+    end, or refuse the correction outright when more than one entry is in the way."""
+    stranded = [
+        (log, end)
+        for log in engagement.progress_logs
+        if (end := _end_of(log, is_audio)) is not None and end > length
+    ]
+    if not stranded:
+        return
+
+    # A single entry that starts before the new end is the one that meant "to the end"
+    # -- most often the catch-up log finishing a read writes -- so it moves with the
+    # length. Anything else (several entries past the end, or one starting past it too)
+    # can't be fixed by moving one number, and update_progress_log's refusal to log
+    # past the end stands: leaving them would show a permanently clamped 100%.
+    log, _ = stranded[0]
+    if len(stranded) > 1 or _start_of(log, is_audio) >= length:
+        furthest = max(end for _, end in stranded)
+        reached = f"{furthest} minutes" if is_audio else f"page {furthest}"
+        raise ConflictError(
+            f"That is shorter than the furthest point logged ({reached}). "
+            "Edit those entries first."
+        )
+
+    if is_audio:
+        log.minute_end = length
+    else:
+        log.page_end = length
+
+
+def _end_of(log: ProgressLog, is_audio: bool) -> int | None:
+    return log.minute_end if is_audio else log.page_end
+
+
+def _start_of(log: ProgressLog, is_audio: bool) -> int:
+    return (log.minute_start if is_audio else log.page_start) or 0

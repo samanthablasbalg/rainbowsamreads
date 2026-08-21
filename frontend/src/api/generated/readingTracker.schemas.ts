@@ -163,6 +163,15 @@ export interface EngagementEditionRead {
   length_override: number | null;
 }
 
+/**
+ * Mirrors the read side's length_pages / length_minutes pair. Exactly one, because
+ * the unit is what tells the service which binding to correct.
+ */
+export interface EngagementLengthUpdate {
+  length_pages?: number | null;
+  length_minutes?: number | null;
+}
+
 export type ReadingStatus = (typeof ReadingStatus)[keyof typeof ReadingStatus];
 
 export const ReadingStatus = {

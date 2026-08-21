@@ -1,17 +1,14 @@
 import { useState } from 'react';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { Cancel01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatIsoDate } from '@/utils/format-date';
 import { localIsoDate } from '@/utils/local-date';
+import { EditableValue, InlineEditor } from './inline-edit';
 
 type InlineDateEditProps = {
   value: string | null;
-  // Lowercase: "start date" gives "Edit start date" / "Save start date".
   label: string;
   disabled?: boolean;
-  onSave: (value: string) => void;
+  onSave: (value: string) => Promise<unknown>;
 };
 
 export function InlineDateEdit({ value, label, disabled = false, onSave }: InlineDateEditProps) {
@@ -22,9 +19,14 @@ export function InlineDateEdit({ value, label, disabled = false, onSave }: Inlin
       <DateEditor
         value={value}
         label={label}
-        onSave={(next) => {
-          setEditing(false);
-          onSave(next);
+        onSave={async (next) => {
+          try {
+            await onSave(next);
+            setEditing(false);
+          } catch {
+            // The read shows the reason; the editor keeps what was typed so a date the
+            // server refused can be adjusted rather than retyped from the old one.
+          }
         }}
         onCancel={() => setEditing(false)}
       />
@@ -32,15 +34,9 @@ export function InlineDateEdit({ value, label, disabled = false, onSave }: Inlin
   }
 
   return (
-    <Button
-      variant="link"
-      className="h-auto p-0 font-normal text-inherit"
-      disabled={disabled}
-      aria-label={`Edit ${label}`}
-      onClick={() => setEditing(true)}
-    >
+    <EditableValue label={label} disabled={disabled} onEdit={() => setEditing(true)}>
       {value ? formatIsoDate(value) : '—'}
-    </Button>
+    </EditableValue>
   );
 }
 
@@ -63,7 +59,7 @@ function DateEditor({
   }
 
   return (
-    <span className="inline-flex items-center gap-1">
+    <InlineEditor label={label} onSave={save} onCancel={onCancel}>
       <Input
         type="date"
         autoFocus
@@ -72,17 +68,7 @@ function DateEditor({
         aria-label={label}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') save();
-          if (event.key === 'Escape') onCancel();
-        }}
       />
-      <Button variant="ghost" size="icon-sm" aria-label={`Save ${label}`} onClick={save}>
-        <HugeiconsIcon icon={Tick02Icon} />
-      </Button>
-      <Button variant="ghost" size="icon-sm" aria-label={`Cancel ${label} edit`} onClick={onCancel}>
-        <HugeiconsIcon icon={Cancel01Icon} />
-      </Button>
-    </span>
+    </InlineEditor>
   );
 }

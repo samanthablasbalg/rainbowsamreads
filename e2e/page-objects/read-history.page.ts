@@ -4,9 +4,9 @@ import { Locator, Page } from '@playwright/test';
  * One read's page at /reads/:engagementId: identity, the dates that bound the read, and
  * every session logged against it, newest first.
  *
- * The engagement's own dates edit in place here -- the text swaps for a date input and
- * back. Everything about an individual entry lives in the sheet its row opens, which is
- * EntryEditSheetPage.
+ * The engagement's own dates and its length edit in place here -- the text swaps for an
+ * input and back. Everything about an individual entry lives in the sheet its row opens,
+ * which is EntryEditSheetPage.
  */
 export class ReadHistoryPage {
   readonly backLink: Locator;
@@ -20,6 +20,11 @@ export class ReadHistoryPage {
   readonly finishDateInput: Locator;
   readonly saveFinishDateButton: Locator;
   readonly cancelFinishDateButton: Locator;
+  readonly lengthButton: Locator;
+  readonly lengthInput: Locator;
+  readonly saveLengthButton: Locator;
+  readonly cancelLengthButton: Locator;
+  readonly progressBar: Locator;
   readonly errorAlert: Locator;
 
   /** @param page - The Playwright page to drive the read's page through. */
@@ -37,6 +42,13 @@ export class ReadHistoryPage {
     this.finishDateInput = page.getByLabel('finish date', { exact: true });
     this.saveFinishDateButton = page.getByRole('button', { name: 'Save finish date' });
     this.cancelFinishDateButton = page.getByRole('button', { name: 'Cancel finish date edit' });
+    this.lengthButton = page.getByRole('button', { name: 'Edit length' });
+    // Unlike the dates, the length editor is a text input, so it does carry a textbox
+    // role. Pages take a number, audio takes HH:MM.
+    this.lengthInput = page.getByRole('textbox', { name: 'length' });
+    this.saveLengthButton = page.getByRole('button', { name: 'Save length' });
+    this.cancelLengthButton = page.getByRole('button', { name: 'Cancel length edit' });
+    this.progressBar = page.getByRole('progressbar');
     this.errorAlert = page.getByRole('alert');
   }
 
@@ -84,5 +96,15 @@ export class ReadHistoryPage {
     await this.startDateButton.click();
     await this.startDateInput.fill(date);
     await this.saveStartDateButton.click();
+  }
+
+  /**
+   * Corrects the read's length through the inline editor.
+   * @param length - Pages as a number, or HH:MM for an audio read.
+   */
+  async setLength(length: string): Promise<void> {
+    await this.lengthButton.click();
+    await this.lengthInput.fill(length);
+    await this.saveLengthButton.click();
   }
 }

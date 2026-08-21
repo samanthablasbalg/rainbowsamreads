@@ -8,7 +8,7 @@ import {
 import { Format, ReadingStatus } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { render, screen } from '@/test/render';
-import { buildEngagement, buildPageLog } from '@/test/data-generators';
+import { buildAudioEngagement, buildEngagement, buildPageLog } from '@/test/data-generators';
 import { ReadHistory } from './read-history';
 
 describe('ReadHistory', () => {
@@ -103,6 +103,87 @@ describe('ReadHistory', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save finish date' }));
 
     await waitFor(() => expect(sent).toEqual([{ finished_on: '2025-03-14' }]));
+  });
+
+  it('shows the length of a page-measured read', async () => {
+    server.use(getEngagementsGetEngagementMockHandler(buildEngagement({ length_pages: 272 })));
+
+    render(<ReadHistory engagementId="engagement-Piranesi" />);
+
+    expect(await screen.findByRole('button', { name: 'Edit length' })).toHaveTextContent('272');
+  });
+
+  it('shows the length of an audio read as a duration', async () => {
+    server.use(getEngagementsGetEngagementMockHandler(buildAudioEngagement()));
+
+    render(<ReadHistory engagementId="engagement-Piranesi" />);
+
+    expect(await screen.findByRole('button', { name: 'Edit length' })).toHaveTextContent('10:00');
+  });
+
+  it('patches the length in pages for a page-measured read', async () => {
+    const sent: Record<string, unknown>[] = [];
+    server.use(
+      getEngagementsGetEngagementMockHandler(buildEngagement()),
+      http.patch('*/api/engagements/*/length', async ({ request }) => {
+        sent.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({});
+      })
+    );
+
+    render(<ReadHistory engagementId="engagement-Piranesi" />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit length' }));
+    await userEvent.clear(screen.getByLabelText('length'));
+    await userEvent.type(screen.getByLabelText('length'), '300');
+    await userEvent.click(screen.getByRole('button', { name: 'Save length' }));
+
+    await waitFor(() => expect(sent).toEqual([{ length_pages: 300 }]));
+  });
+
+  it('patches the length in minutes for an audio read', async () => {
+    const sent: Record<string, unknown>[] = [];
+    server.use(
+      getEngagementsGetEngagementMockHandler(buildAudioEngagement()),
+      http.patch('*/api/engagements/*/length', async ({ request }) => {
+        sent.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({});
+      })
+    );
+
+    render(<ReadHistory engagementId="engagement-Piranesi" />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit length' }));
+    await userEvent.type(screen.getByLabelText('length'), '0930');
+    await userEvent.click(screen.getByRole('button', { name: 'Save length' }));
+
+    await waitFor(() => expect(sent).toEqual([{ length_minutes: 570 }]));
+  });
+
+  it('surfaces a length the server refuses', async () => {
+    server.use(
+      getEngagementsGetEngagementMockHandler(buildEngagement()),
+      http.patch('*/api/engagements/*/length', () =>
+        HttpResponse.json(
+          {
+            detail:
+              'That is shorter than the furthest point logged (page 500). Edit those entries first.',
+          },
+          { status: 409 }
+        )
+      )
+    );
+
+    render(<ReadHistory engagementId="engagement-Piranesi" />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit length' }));
+    await userEvent.clear(screen.getByLabelText('length'));
+    await userEvent.type(screen.getByLabelText('length'), '100');
+    await userEvent.click(screen.getByRole('button', { name: 'Save length' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'That is shorter than the furthest point logged (page 500). Edit those entries first.'
+    );
   });
 
   it('offers logging on a read that is in progress', async () => {

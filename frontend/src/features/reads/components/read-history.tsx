@@ -6,8 +6,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   useEngagementsGetEngagementSuspense,
   useEngagementsUpdateEngagementDates,
+  useEngagementsUpdateEngagementLength,
 } from '@/api/generated/engagements/engagements';
-import { ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
+import { Format, ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { errorDetail, type DetailError } from '@/api/error-detail';
 import { CoverImage } from '@/components/common/cover-image';
 import { ErrorText } from '@/components/common/error-text';
@@ -20,6 +21,7 @@ import { STATUSES } from '@/utils/status';
 import { invalidateRead } from '../utils/invalidate-read';
 import { EntryList } from './entry-list';
 import { InlineDateEdit } from './inline-date-edit';
+import { InlineLengthEdit } from './inline-length-edit';
 
 // One read's page. Its history is all it holds today, which is why the route is
 // /reads/:id rather than /reads/:id/history -- stats or editions can land here later
@@ -98,23 +100,45 @@ function ReadHeader({ engagement }: { engagement: EngagementRead }) {
   const { book, formats, completion_pct } = engagement;
 
   const queryClient = useQueryClient();
+  const onSuccess = () => invalidateRead(queryClient, engagement.id);
   const updateDates = useEngagementsUpdateEngagementDates<DetailError>({
-    mutation: {
-      onSuccess: () => invalidateRead(queryClient, engagement.id),
-    },
+    mutation: { onSuccess },
   });
+  // Every percentage on the read is derived from this length, so invalidating is all it
+  // takes to reflow them -- no log row stores a percentage of its own.
+  const updateLength = useEngagementsUpdateEngagementLength<DetailError>({
+    mutation: { onSuccess },
+  });
+
+  const isAudio = formats.includes(Format.audio);
 
   return (
     <header className="mb-6 flex items-start gap-4">
       <CoverImage src={coverSrc(engagement)} title={book.title} />
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex items-baseline gap-1.5">
-          <h1 className="text-xl leading-tight font-semibold">{book.title}</h1>
-          <FormatIcons formats={formats} />
-        </div>
+        <h1 className="text-xl leading-tight font-semibold">{book.title}</h1>
 
         <p className="truncate text-sm text-muted-foreground">{authorNames(book)}</p>
+
+        {/* Facts about the copy being read, which is where its length belongs -- the row
+            below is the read's lifecycle, and a length is not an event in it. */}
+        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <FormatIcons formats={formats} />
+          <span className="inline-flex items-center gap-1.5">
+            Length
+            <InlineLengthEdit
+              value={isAudio ? engagement.length_minutes : engagement.length_pages}
+              isAudio={isAudio}
+              onSave={(next) =>
+                updateLength.mutateAsync({
+                  engagementId: engagement.id,
+                  data: isAudio ? { length_minutes: next } : { length_pages: next },
+                })
+              }
+            />
+          </span>
+        </div>
 
         <ReadingProgress title={book.title} pct={completion_pct} />
 
@@ -126,20 +150,28 @@ function ReadHeader({ engagement }: { engagement: EngagementRead }) {
                 value={value}
                 label={label}
                 disabled={field === null}
-                onSave={(next) =>
-                  field &&
-                  updateDates.mutate({ engagementId: engagement.id, data: { [field]: next } })
-                }
+                onSave={async (next) => {
+                  if (field)
+                    await updateDates.mutateAsync({
+                      engagementId: engagement.id,
+                      data: { [field]: next },
+                    });
+                }}
               />
             </span>
           ))}
         </div>
 
-        {/* The editor has already closed by the time a rejection lands, so the message
-            goes here rather than inside the control that caused it. */}
+        {/* The editor stays open holding the refused value, so the reason goes here
+            rather than crowding the line of metadata it sits in. */}
         {updateDates.isError && (
           <ErrorText>
             {errorDetail(updateDates.error, "Couldn't save that date. Please try again.")}
+          </ErrorText>
+        )}
+        {updateLength.isError && (
+          <ErrorText>
+            {errorDetail(updateLength.error, "Couldn't save that length. Please try again.")}
           </ErrorText>
         )}
       </div>
