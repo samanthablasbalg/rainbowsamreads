@@ -7,6 +7,7 @@ import {
   type MinuteProgressLogRead,
   type PageProgressLogRead,
 } from '@/api/generated/readingTracker.schemas';
+import type { EntryView } from '@/features/reads/utils/entry-view';
 
 export function buildBook({
   title = 'Piranesi',
@@ -96,6 +97,31 @@ export function buildMinuteLog(
     type: 'minute',
     minute_start: 80,
     minute_end: 125,
+    ...overrides,
+  };
+}
+
+// The view model the history builds out of a log, not an API type -- but it is what the
+// entry card and the edit sheet both take as their prop, so it is a fixture like any
+// other. Matches buildPageLog's defaults: pp. 50-100 of a 200-page read.
+export function buildEntryView(overrides: Partial<EntryView> = {}): EntryView {
+  return {
+    id: 'log-1',
+    dateLabel: 'Sun, Jun 15, 2025',
+    dayLabel: 'Jun 15',
+    weekdayLabel: 'Sun',
+    rangeLabel: 'pp. 50–100',
+    fromLabel: 'p. 50',
+    toLabel: 'p. 100',
+    amountLabel: '+50 pp',
+    isNewest: true,
+    loggedOn: '2025-06-15',
+    isAudio: false,
+    start: 50,
+    end: 100,
+    startPct: 25,
+    endPct: 50,
+    note: null,
     ...overrides,
   };
 }

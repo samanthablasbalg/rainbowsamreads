@@ -3,21 +3,11 @@ import { useState } from 'react';
 import { withPointer } from '@/test/pointer-decorator';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { Button } from '@/components/ui/button';
+import { buildEntryView } from '@/test/data-generators';
 import type { EntryView } from '../utils/entry-view';
 import { EntryEditSheet } from './entry-edit-sheet';
 
-const newestPageEntry: EntryView = {
-  id: 'log-1',
-  dateLabel: 'Sun, Jun 15, 2025',
-  rangeLabel: 'pp. 50–100',
-  amountLabel: '+50 pp',
-  isNewest: true,
-  loggedOn: '2025-06-15',
-  isAudio: false,
-  start: 50,
-  end: 100,
-  note: null,
-};
+const newestPageEntry = buildEntryView();
 
 function ControlledSheet({ entry }: { entry: EntryView }) {
   const [open, setOpen] = useState(false);

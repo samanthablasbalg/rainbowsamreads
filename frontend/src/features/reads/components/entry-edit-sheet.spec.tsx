@@ -1,23 +1,13 @@
 import { fireEvent } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
+import { buildEntryView } from '@/test/data-generators';
 import { server } from '@/test/msw-server';
 import { render, screen } from '@/test/render';
 import type { EntryView } from '../utils/entry-view';
 import { EntryEditSheet } from './entry-edit-sheet';
 
-const newest: EntryView = {
-  id: 'log-1',
-  dateLabel: 'Sun, Jun 15, 2025',
-  rangeLabel: 'pp. 50–100',
-  amountLabel: '+50 pp',
-  isNewest: true,
-  loggedOn: '2025-06-15',
-  isAudio: false,
-  start: 50,
-  end: 100,
-  note: null,
-};
+const newest = buildEntryView();
 
 function renderSheet(entry: EntryView, onRequestDelete = () => {}) {
   return render(

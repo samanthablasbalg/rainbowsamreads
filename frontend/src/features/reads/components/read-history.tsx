@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { authorNames, coverSrc } from '@/utils/book';
 import { STATUSES } from '@/utils/status';
 import { invalidateRead } from '../utils/invalidate-read';
-import { EntryList } from './entry-list';
+import { EntryTimeline } from './entry-timeline';
 import { InlineDateEdit } from './inline-date-edit';
 import { InlineLengthEdit } from './inline-length-edit';
 
@@ -45,8 +45,8 @@ export function ReadHistory({ engagementId }: { engagementId: string }) {
         </Button>
       )}
 
-      <EntryList
-        engagementId={engagementId}
+      <EntryTimeline
+        engagement={engagement}
         onLogProgress={canLog ? () => setLogging(true) : undefined}
       />
 
