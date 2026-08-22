@@ -40,14 +40,22 @@ export const RevealsAndFocusesOnClick: Story = {
   },
 };
 
-export const OpenWithExistingText: Story = {
-  args: { value: 'A striking quote.', defaultOpen: true },
+export const ExistingText: Story = {
+  args: { value: 'A *striking* quote.' },
   play: async () => {
+    expect(await screen.findByText('striking')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  },
+};
+
+export const EditsExistingText: Story = {
+  args: { value: 'A striking quote.' },
+  play: async () => {
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit note' }));
     expect(await screen.findByLabelText('Note')).toHaveValue('A striking quote.');
-    expect(screen.queryByRole('button', { name: '+ Add a note' })).not.toBeInTheDocument();
   },
 };
 
 export const Disabled: Story = {
-  args: { value: 'A striking quote.', defaultOpen: true, disabled: true },
+  args: { value: 'A striking quote.', disabled: true },
 };

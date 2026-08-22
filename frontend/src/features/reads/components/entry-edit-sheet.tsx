@@ -116,7 +116,6 @@ function EntryEditForm({
           value={form.note}
           onValueChange={form.setNote}
           disabled={form.savePending}
-          defaultOpen={!!entry.note}
         />
 
         {form.error && <ErrorText>{form.error}</ErrorText>}

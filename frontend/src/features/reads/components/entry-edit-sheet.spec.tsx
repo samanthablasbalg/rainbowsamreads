@@ -147,11 +147,16 @@ describe('EntryEditSheet', () => {
     expect(screen.queryByLabelText('Note')).not.toBeInTheDocument();
   });
 
-  it('starts the note open with its existing text when the entry has one', async () => {
+  it('shows an existing note as static text until Edit is clicked', async () => {
     renderSheet({ ...newest, note: 'A striking quote.' });
 
-    expect(await screen.findByLabelText('Note')).toHaveValue('A striking quote.');
-    expect(screen.queryByRole('button', { name: '+ Add a note' })).not.toBeInTheDocument();
+    expect(await screen.findByText('A striking quote.')).toBeVisible();
+    expect(screen.queryByLabelText('Note')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Edit note' }));
+
+    expect(screen.getByLabelText('Note')).toHaveValue('A striking quote.');
+    expect(screen.queryByRole('button', { name: 'Edit note' })).not.toBeInTheDocument();
   });
 
   it('sends a typed note alongside the date', async () => {
@@ -171,7 +176,8 @@ describe('EntryEditSheet', () => {
     const sent = capturePatch();
     renderSheet({ ...newest, note: 'A striking quote.' });
 
-    await userEvent.clear(await screen.findByLabelText('Note'));
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit note' }));
+    await userEvent.clear(screen.getByLabelText('Note'));
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await vi.waitFor(() => expect(sent).toHaveLength(1));

@@ -82,10 +82,23 @@ export const MobileSheet: Story = {
   render: () => <ControlledSheet entry={newestPageEntry} />,
 };
 
-// The note starts open (decision 5), so its textarea and typed text are part of the a11y
-// gate here rather than only behind an unopened "+ Add a note" trigger.
+// An existing note shows as static markdown behind an Edit button, same as ReviewSheet's
+// existing body -- not an open textarea, since the sheet has other fields to edit first.
 export const EntryWithNote: Story = {
   render: () => (
     <ControlledSheet entry={{ ...newestPageEntry, note: 'A striking quote from this page.' }} />
   ),
+};
+
+// The textarea and typed text only exist once Edit is clicked, so that state needs its own
+// story to land in the a11y gate.
+export const EditingExistingNote: Story = {
+  render: () => (
+    <ControlledSheet entry={{ ...newestPageEntry, note: 'A striking quote from this page.' }} />
+  ),
+  play: async (context) => {
+    await openSheet(context);
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit note' }));
+    expect(await screen.findByLabelText('Note')).toHaveValue('A striking quote from this page.');
+  },
 };
