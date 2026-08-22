@@ -159,7 +159,10 @@ function DrawerBody({ className, ...props }: DrawerPrimitive.Content.Props) {
     <DrawerPrimitive.Content
       data-slot="drawer-body"
       className={cn(
-        'flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain',
+        // -mx-4 px-4, -my-1 py-1: see DialogBody -- overflow-y-auto clips on both axes, so
+        // focus rings and outdented children need a gutter. The wrapper's px-4 absorbs the
+        // negative margin exactly, so the body spans the popup's full inner width.
+        '-mx-4 -my-1 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-1',
         className
       )}
       {...props}

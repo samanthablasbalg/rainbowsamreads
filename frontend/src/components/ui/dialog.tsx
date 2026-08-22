@@ -77,9 +77,18 @@ function DialogContent({
 
 function DialogBody({ className, ...props }: React.ComponentProps<'div'>) {
   return (
+    // -mx-4 px-4: overflow-y-auto makes overflow-x compute to auto as well, so the box
+    // clips horizontally at its content edge -- eating focus rings and any child that
+    // outdents to optically align its text (NoteField's -ml-3 trigger). The gutter has to
+    // clear the widest of those; the negative margin puts the content back where it was.
+    // -my-1 py-1: same clip, vertical axis -- a focused child's ring (ring-[3px]) at the
+    // top or bottom edge of the scroll needs the same clearance the border does.
     <div
       data-slot="dialog-body"
-      className={cn('flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto', className)}
+      className={cn(
+        '-mx-4 -my-1 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-1',
+        className
+      )}
       {...props}
     />
   );
