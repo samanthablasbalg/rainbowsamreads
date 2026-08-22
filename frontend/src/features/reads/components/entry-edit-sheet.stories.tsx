@@ -16,6 +16,7 @@ const newestPageEntry: EntryView = {
   isAudio: false,
   start: 50,
   end: 100,
+  note: null,
 };
 
 function ControlledSheet({ entry }: { entry: EntryView }) {
@@ -79,4 +80,12 @@ export const OlderEntry: Story = {
 export const MobileSheet: Story = {
   decorators: [withPointer(true)],
   render: () => <ControlledSheet entry={newestPageEntry} />,
+};
+
+// The note starts open (decision 5), so its textarea and typed text are part of the a11y
+// gate here rather than only behind an unopened "+ Add a note" trigger.
+export const EntryWithNote: Story = {
+  render: () => (
+    <ControlledSheet entry={{ ...newestPageEntry, note: 'A striking quote from this page.' }} />
+  ),
 };

@@ -18,6 +18,7 @@ export type EntryView = {
   isAudio: boolean;
   start: number;
   end: number;
+  note: string | null;
 };
 
 export function toEntryViews(logs: ProgressLog[]): EntryView[] {
@@ -46,5 +47,6 @@ function toEntryView(log: ProgressLog, isNewest: boolean): EntryView {
     isAudio,
     start,
     end,
+    note: log.note,
   };
 }

@@ -12,6 +12,7 @@ const pageEntry = {
   isAudio: false,
   start: 50,
   end: 100,
+  note: null,
 };
 
 const meta = {

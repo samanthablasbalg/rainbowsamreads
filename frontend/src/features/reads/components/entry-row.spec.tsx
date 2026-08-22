@@ -12,6 +12,7 @@ const entry = {
   isAudio: false,
   start: 50,
   end: 100,
+  note: null,
 };
 
 describe('EntryRow', () => {

@@ -5,6 +5,7 @@ import type { ProgressLogUpdate } from '@/api/generated/readingTracker.schemas';
 import { errorDetail, type DetailError } from '@/api/error-detail';
 import { ButtonLabel } from '@/components/common/button-label';
 import { ErrorText } from '@/components/common/error-text';
+import { NoteField } from '@/components/common/note-field';
 import { PositionInput } from '@/components/common/position-input';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
@@ -110,6 +111,14 @@ function EntryEditForm({
           </p>
         )}
 
+        <NoteField
+          id="entry-note"
+          value={form.note}
+          onValueChange={form.setNote}
+          disabled={form.savePending}
+          defaultOpen={!!entry.note}
+        />
+
         {form.error && <ErrorText>{form.error}</ErrorText>}
       </ResponsiveDialogBody>
 
@@ -142,6 +151,7 @@ function useEntryEditForm(engagementId: string, entry: EntryView, onDone: () => 
   const [date, setDateRaw] = useState(entry.loggedOn);
   const [position, setPositionRaw] = useState(() => formatPosition(entry.end, entry.isAudio));
   const [positionFocused, setPositionFocused] = useState(false);
+  const [note, setNoteRaw] = useState(entry.note ?? '');
   const [error, setError] = useState<string | null>(null);
 
   function setDate(value: string) {
@@ -151,6 +161,11 @@ function useEntryEditForm(engagementId: string, entry: EntryView, onDone: () => 
 
   function setPosition(value: string) {
     setPositionRaw(value);
+    setError(null);
+  }
+
+  function setNote(value: string) {
+    setNoteRaw(value);
     setError(null);
   }
 
@@ -170,8 +185,16 @@ function useEntryEditForm(engagementId: string, entry: EntryView, onDone: () => 
 
   const parsedPosition = parsePosition(position, entry.isAudio);
 
+  // A zero-length entry has start === end, so the field opens pre-filled with a value
+  // that already fails `> start` -- excluded here so an untouched (or reverted) field
+  // never errors on a position nothing is actually proposing to change.
   let positionError: string | null = null;
-  if (entry.isNewest && !positionFocused && position.trim() !== '') {
+  if (
+    entry.isNewest &&
+    !positionFocused &&
+    position.trim() !== '' &&
+    parsedPosition !== entry.end
+  ) {
     if (parsedPosition === null) {
       positionError = entry.isAudio ? 'Enter a time in HH:MM format' : 'Enter a number';
     } else if (parsedPosition <= entry.start) {
@@ -185,8 +208,10 @@ function useEntryEditForm(engagementId: string, entry: EntryView, onDone: () => 
   const positionChanged = entry.isNewest && parsedPosition !== null && parsedPosition !== entry.end;
   const positionValid =
     !entry.isNewest || (parsedPosition !== null && parsedPosition > entry.start);
+  const trimmedNote = note.trim();
+  const noteChanged = trimmedNote !== (entry.note ?? '');
 
-  const canSave = date !== '' && positionValid && (dateChanged || positionChanged);
+  const canSave = date !== '' && positionValid && (dateChanged || positionChanged || noteChanged);
 
   function handleSave() {
     const data: ProgressLogUpdate = {};
@@ -195,6 +220,7 @@ function useEntryEditForm(engagementId: string, entry: EntryView, onDone: () => 
       if (entry.isAudio) data.minute_end = parsedPosition;
       else data.page_end = parsedPosition;
     }
+    if (noteChanged) data.note = trimmedNote;
 
     setError(null);
     updateLog.mutate({ engagementId, logId: entry.id, data });
@@ -207,6 +233,8 @@ function useEntryEditForm(engagementId: string, entry: EntryView, onDone: () => 
     setPosition,
     setPositionFocused,
     positionError,
+    note,
+    setNote,
     canSave,
     handleSave,
     error,

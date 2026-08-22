@@ -16,6 +16,7 @@ const newest: EntryView = {
   isAudio: false,
   start: 50,
   end: 100,
+  note: null,
 };
 
 function renderSheet(entry: EntryView, onRequestDelete = () => {}) {
@@ -109,6 +110,14 @@ describe('EntryEditSheet', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 
+  it('opens a zero-length entry without a position error already showing', async () => {
+    renderSheet({ ...newest, rangeLabel: 'p. 100', amountLabel: '', start: 100, end: 100 });
+
+    expect(await screen.findByLabelText('Ended at page')).toHaveValue('100');
+    expect(screen.queryByText('Must be past page 100')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+  });
+
   it('offers neither a position field nor delete on an older entry', async () => {
     renderSheet({ ...newest, isNewest: false });
 
@@ -129,6 +138,53 @@ describe('EntryEditSheet', () => {
     );
 
     expect(onRequestDelete).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the note collapsed behind an affordance when the entry has none', async () => {
+    renderSheet(newest);
+
+    expect(await screen.findByRole('button', { name: '+ Add a note' })).toBeVisible();
+    expect(screen.queryByLabelText('Note')).not.toBeInTheDocument();
+  });
+
+  it('starts the note open with its existing text when the entry has one', async () => {
+    renderSheet({ ...newest, note: 'A striking quote.' });
+
+    expect(await screen.findByLabelText('Note')).toHaveValue('A striking quote.');
+    expect(screen.queryByRole('button', { name: '+ Add a note' })).not.toBeInTheDocument();
+  });
+
+  it('sends a typed note alongside the date', async () => {
+    const sent = capturePatch();
+    renderSheet(newest);
+
+    await userEvent.click(await screen.findByRole('button', { name: '+ Add a note' }));
+    await userEvent.type(screen.getByLabelText('Note'), 'A striking quote.');
+    fireEvent.change(screen.getByLabelText('Log date'), { target: { value: '2025-06-10' } });
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await vi.waitFor(() => expect(sent).toHaveLength(1));
+    expect(sent[0]).toEqual({ logged_on: '2025-06-10', note: 'A striking quote.' });
+  });
+
+  it('sends an empty note to clear an existing one', async () => {
+    const sent = capturePatch();
+    renderSheet({ ...newest, note: 'A striking quote.' });
+
+    await userEvent.clear(await screen.findByLabelText('Note'));
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await vi.waitFor(() => expect(sent).toHaveLength(1));
+    expect(sent[0]).toEqual({ note: '' });
+  });
+
+  it('enables Save from a note change alone', async () => {
+    renderSheet(newest);
+
+    await userEvent.click(await screen.findByRole('button', { name: '+ Add a note' }));
+    await userEvent.type(screen.getByLabelText('Note'), 'A striking quote.');
+
+    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
   });
 
   it('surfaces the server’s reason when a save is refused', async () => {

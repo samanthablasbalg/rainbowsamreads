@@ -84,7 +84,18 @@ describe('ProgressLogSheet', () => {
     expect(capturedBody).toEqual({ current_page: 200, logged_on: localIsoDate() });
   });
 
-  it('allows saving the same page as the current position', async () => {
+  it('disables Save for the same page as the current position with no note', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement({ resume_from_page: 100 }));
+
+    await user.type(await screen.findByPlaceholderText('---'), '100');
+    await user.tab();
+
+    expect(screen.getByText('Add a note, or advance past page 100')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Save progress for Piranesi' })).toBeDisabled();
+  });
+
+  it('allows saving the same page as the current position when a note is typed', async () => {
     const user = userEvent.setup();
     let capturedBody: unknown;
     server.use(
@@ -98,10 +109,42 @@ describe('ProgressLogSheet', () => {
 
     const positionInput = await screen.findByPlaceholderText('---');
     await user.type(positionInput, '100');
+    await user.click(screen.getByRole('button', { name: '+ Add a note' }));
+    await user.type(screen.getByLabelText('Note'), 'A striking quote.');
     await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ current_page: 100, logged_on: localIsoDate() });
+    expect(capturedBody).toEqual({
+      current_page: 100,
+      logged_on: localIsoDate(),
+      note: 'A striking quote.',
+    });
+  });
+
+  it('sends the typed note alongside a page that actually advances', async () => {
+    const user = userEvent.setup();
+    let capturedBody: unknown;
+    server.use(
+      getEngagementsLogProgressMockHandler(async (info) => {
+        capturedBody = await info.request.json();
+        return getEngagementsLogProgressResponseMock();
+      }),
+      getEngagementsGetEngagementMockHandler()
+    );
+    renderSheet(buildEngagement());
+
+    const positionInput = await screen.findByPlaceholderText('---');
+    await user.type(positionInput, '200');
+    await user.click(screen.getByRole('button', { name: '+ Add a note' }));
+    await user.type(screen.getByLabelText('Note'), 'A striking quote.');
+    await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(capturedBody).toEqual({
+      current_page: 200,
+      logged_on: localIsoDate(),
+      note: 'A striking quote.',
+    });
   });
 
   it("sends yesterday's date when the Yesterday chip is picked", async () => {
