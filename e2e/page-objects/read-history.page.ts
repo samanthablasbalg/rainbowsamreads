@@ -31,7 +31,13 @@ export class ReadHistoryPage {
   constructor(public readonly page: Page) {
     this.backLink = page.getByRole('link', { name: 'Currently reading' });
     this.entries = page.getByRole('list', { name: 'History' });
-    this.logProgressButton = page.getByRole('button', { name: 'Log progress', exact: true });
+    // Two buttons render this action -- a link on the header line at width, a full-width
+    // CTA below it on a phone -- and both stay in the DOM, the wrong one `display: none`.
+    // A role match alone finds both, so the visible filter is what picks the one this
+    // project's viewport is actually showing.
+    this.logProgressButton = page
+      .getByRole('button', { name: 'Log progress' })
+      .filter({ visible: true });
     this.startDateButton = page.getByRole('button', { name: 'Edit start date' });
     // A native date input exposes no implicit `textbox` role, so the date fields go
     // through their label rather than getByRole -- the same as ProgressLogSheetPage.

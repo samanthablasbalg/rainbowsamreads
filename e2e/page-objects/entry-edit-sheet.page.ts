@@ -20,6 +20,10 @@ export class EntryEditSheetPage {
   readonly saveButton: Locator;
   readonly cancelButton: Locator;
   readonly olderEntryNotice: Locator;
+  // An entry with no note opens with the textarea collapsed behind this button; one that
+  // already has a note shows it as static markdown behind an "Edit note" button instead.
+  readonly addNoteButton: Locator;
+  readonly noteInput: Locator;
 
   /** @param page - The Playwright page the sheet is open on. */
   constructor(public readonly page: Page) {
@@ -32,6 +36,8 @@ export class EntryEditSheetPage {
     this.saveButton = this.sheet.getByRole('button', { name: 'Save', exact: true });
     this.cancelButton = this.sheet.getByRole('button', { name: 'Cancel', exact: true });
     this.olderEntryNotice = this.sheet.getByText(/Only the most recent session/);
+    this.addNoteButton = this.sheet.getByRole('button', { name: '+ Add a note' });
+    this.noteInput = this.sheet.getByRole('textbox', { name: 'Note' });
   }
 
   /**
@@ -57,6 +63,15 @@ export class EntryEditSheetPage {
    */
   async setEndPage(page: number): Promise<void> {
     await this.pageInput.fill(String(page));
+  }
+
+  /**
+   * Reveals the note textarea and writes a note into it.
+   * @param note - The note's text, in markdown.
+   */
+  async addNote(note: string): Promise<void> {
+    await this.addNoteButton.click();
+    await this.noteInput.fill(note);
   }
 
   /** Saves the edit. */
