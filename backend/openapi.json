@@ -2031,6 +2031,18 @@
               }
             ],
             "title": "Length Override"
+          },
+          "audio_length_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Length Minutes"
           }
         },
         "type": "object",

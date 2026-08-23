@@ -155,6 +155,7 @@ export interface EngagementEditionCreate {
   edition_format?: Format | null;
   origin_id?: string | null;
   length_override?: number | null;
+  audio_length_minutes?: number | null;
 }
 
 export interface EngagementEditionRead {
