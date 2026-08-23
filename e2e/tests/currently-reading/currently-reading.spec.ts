@@ -84,7 +84,7 @@ test('Backdating a log stores it under the chosen day', async ({ page, apiClient
 
   await test.step('Verify the read’s page shows the entry under the chosen day', async () => {
     await history.goto(engId);
-    await expect(history.getEntryRow('Sun, Jun 15, 2025')).toBeVisible();
+    await expect(history.getDayGroup('Sun, Jun 15, 2025')).toBeVisible();
   });
 });
 

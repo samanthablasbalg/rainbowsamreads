@@ -42,12 +42,13 @@ export class ReadHistoryPage {
     this.finishDateInput = page.getByLabel('finish date', { exact: true });
     this.saveFinishDateButton = page.getByRole('button', { name: 'Save finish date' });
     this.cancelFinishDateButton = page.getByRole('button', { name: 'Cancel finish date edit' });
-    this.lengthButton = page.getByRole('button', { name: 'Edit length' });
+    this.lengthButton = page.getByRole('button', { name: 'Edit print length' });
     // Unlike the dates, the length editor is a text input, so it does carry a textbox
-    // role. Pages take a number, audio takes HH:MM.
-    this.lengthInput = page.getByRole('textbox', { name: 'length' });
-    this.saveLengthButton = page.getByRole('button', { name: 'Save length' });
-    this.cancelLengthButton = page.getByRole('button', { name: 'Cancel length edit' });
+    // role. A read bound in two formats shows one length per format, so the control is
+    // named for the format it belongs to -- print here, which takes a number.
+    this.lengthInput = page.getByRole('textbox', { name: 'print length' });
+    this.saveLengthButton = page.getByRole('button', { name: 'Save print length' });
+    this.cancelLengthButton = page.getByRole('button', { name: 'Cancel print length edit' });
     this.progressBar = page.getByRole('progressbar');
     this.errorAlert = page.getByRole('alert');
   }
@@ -61,21 +62,23 @@ export class ReadHistoryPage {
   }
 
   /**
-   * Locates one entry's row, which is named for the date it was logged on.
-   * @param dateLabel - The row's date as rendered, e.g. 'Sun, Jun 15, 2025'.
-   * @returns The row locator.
+   * Locates one day's group of entries. The timeline groups sessions by the day they
+   * were logged on, and the group's list is what carries the date -- the cards inside it
+   * don't repeat it.
+   * @param dateLabel - The group's date as rendered, e.g. 'Sun, Jun 15, 2025'.
+   * @returns The day group locator.
    */
-  getEntryRow(dateLabel: string): Locator {
-    return this.entries.getByRole('listitem', { name: dateLabel });
+  getDayGroup(dateLabel: string): Locator {
+    return this.entries.getByRole('list', { name: dateLabel });
   }
 
   /**
    * Locates the control that opens one entry's edit sheet.
-   * @param dateLabel - The row's date as rendered.
+   * @param dateLabel - The entry's date as rendered.
    * @returns The edit button locator.
    */
   getEditEntryButton(dateLabel: string): Locator {
-    return this.getEntryRow(dateLabel).getByRole('button', {
+    return this.getDayGroup(dateLabel).getByRole('button', {
       name: `Edit entry from ${dateLabel}`,
     });
   }
