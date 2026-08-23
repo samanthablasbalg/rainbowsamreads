@@ -91,6 +91,17 @@ class Engagement(TimestampMixin, Base):
                 return ee.edition.cover_url
         return self.book.default_cover_url
 
+    def _latest_log(self) -> ProgressLog | None:
+        return max(self.progress_logs, key=_log_sort_key, default=None)
+
+    @property
+    def resume_unit(self) -> LogUnit | None:
+        """Which ruler the read is on -- the unit of the entry that set the frontier.
+        None until something is logged. Both resume points are always populated, so this
+        is what says which of them the read is actually sitting on."""
+        latest = self._latest_log()
+        return latest.unit if latest is not None else None
+
     def _latest_page_end(self) -> int | None:
         page_logs = [log for log in self.progress_logs if log.page_end is not None]
         if not page_logs:

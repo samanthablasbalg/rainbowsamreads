@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import datetime
 import uuid
-from typing import TYPE_CHECKING, Annotated, Literal
+from typing import TYPE_CHECKING, Annotated, Literal, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 if TYPE_CHECKING:
     from app.models.progress_log import ProgressLog
@@ -16,6 +16,14 @@ class ProgressLogCreate(BaseModel):
     audio_length_minutes: int | None = Field(default=None, gt=0)
     logged_on: datetime.date | None = None
     note: str | None = None
+
+    @model_validator(mode="after")
+    def check_exactly_one_unit(self) -> Self:
+        """The unit belongs to the entry, not to the read: one bound in both rulers
+        logs pages on the days it was read and minutes on the days it was heard."""
+        if (self.current_page is None) == (self.current_minute is None):
+            raise ValueError("Provide exactly one of current_page or current_minute")
+        return self
 
 
 class ProgressLogUpdate(BaseModel):

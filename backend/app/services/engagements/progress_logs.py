@@ -55,15 +55,23 @@ def log_progress(
     if engagement.status != ReadingStatus.reading:
         raise ConflictError("Can only log progress on an engagement being read.")
 
-    is_audio = Format.audio in engagement.formats
-    unit = LogUnit.minutes if is_audio else LogUnit.pages
+    # The unit is the entry's own, not the read's: a read bound in both rulers logs
+    # pages some days and minutes others. Exactly one of the two arrived (the schema
+    # enforces it), so the assert narrows for mypy rather than checking anything new.
+    is_audio = current_minute is not None
     position = current_minute if is_audio else current_page
+    assert position is not None
+
+    if is_audio and Format.audio not in engagement.formats:
+        raise ConflictError("This read has no audio format. Add one to log time.")
+    if not is_audio and engagement.page_format is None:
+        raise ConflictError("This read is audio only. Add a format to log pages.")
+
+    unit = LogUnit.minutes if is_audio else LogUnit.pages
+    # Both resume points are the shared frontier converted, so a session that switches
+    # ruler starts flush against the last one rather than behind it.
     resume = engagement.resume_from_minute if is_audio else engagement.resume_from_page
 
-    if position is None:
-        raise InvalidOperationError(
-            "current_minute is required for audio, current_page otherwise."
-        )
     if position < resume:
         raise ConflictError("Progress can't go backwards.")
     if position == resume and note is None:

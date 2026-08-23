@@ -2179,6 +2179,16 @@
             "type": "integer",
             "title": "Resume From Minute"
           },
+          "resume_unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LogUnit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "length_pages": {
             "anyOf": [
               {
@@ -2245,6 +2255,7 @@
           "abandoned_on",
           "resume_from_page",
           "resume_from_minute",
+          "resume_unit",
           "length_pages",
           "length_minutes",
           "completion_pct",
@@ -2305,6 +2316,14 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "LogUnit": {
+        "type": "string",
+        "enum": [
+          "pages",
+          "minutes"
+        ],
+        "title": "LogUnit"
       },
       "MinuteProgressLogRead": {
         "properties": {

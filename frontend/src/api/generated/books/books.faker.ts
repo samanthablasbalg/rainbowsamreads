@@ -6,7 +6,7 @@
  */
 import { faker } from '@faker-js/faker';
 
-import { DatePrecision, Format, ReadingStatus } from '../readingTracker.schemas';
+import { DatePrecision, Format, LogUnit, ReadingStatus } from '../readingTracker.schemas';
 import type { BookRead, BookSearchResult, EngagementRead } from '../readingTracker.schemas';
 
 export const getBooksListBooksResponseMock = (): BookRead[] =>
@@ -252,6 +252,10 @@ export const getBooksListBookEngagementsResponseMock = (): EngagementRead[] =>
     abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
     resume_from_page: faker.number.int(),
     resume_from_minute: faker.number.int(),
+    resume_unit: faker.helpers.arrayElement([
+      faker.helpers.arrayElement(Object.values(LogUnit)),
+      null,
+    ]),
     length_pages: faker.helpers.arrayElement([faker.number.int(), null]),
     length_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
     completion_pct: faker.helpers.arrayElement([faker.number.int(), null]),

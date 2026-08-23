@@ -169,36 +169,36 @@ def _transition_to_finished(
         raise ConflictError("finished_on cannot be before started_on.")
 
     engagement.finished_on = effective_on
-    if Format.audio not in engagement.formats:
-        page_count = engagement.resolve_length(engagement.page_format or Format.print)
-        if page_count is not None and engagement.resume_from_page != page_count:
-            progress_log_crud.create(
-                db,
-                ProgressLog(
-                    engagement_id=engagement.id,
-                    user_id=engagement.user_id,
-                    logged_on=effective_on,
-                    unit=LogUnit.pages,
-                    page_start=engagement.resume_from_page,
-                    page_end=page_count,
-                    new_ground=True,
-                ),
-            )
-    else:
-        audio_length = engagement.resolve_length(Format.audio)
-        if audio_length is not None and engagement.resume_from_minute != audio_length:
-            progress_log_crud.create(
-                db,
-                ProgressLog(
-                    engagement_id=engagement.id,
-                    user_id=engagement.user_id,
-                    logged_on=effective_on,
-                    unit=LogUnit.minutes,
-                    minute_start=engagement.resume_from_minute,
-                    minute_end=audio_length,
-                    new_ground=True,
-                ),
-            )
+
+    # The closing log lands on the ruler the read was last logged on. With nothing
+    # logged there is no ruler to read off, so audio wins as it did before.
+    unit = engagement.resume_unit or (
+        LogUnit.minutes if Format.audio in engagement.formats else LogUnit.pages
+    )
+    is_audio = unit == LogUnit.minutes
+    length = engagement.resolve_length(
+        Format.audio if is_audio else (engagement.page_format or Format.print)
+    )
+    position = (
+        engagement.resume_from_minute if is_audio else engagement.resume_from_page
+    )
+    if length is None or position >= length:
+        return
+
+    progress_log_crud.create(
+        db,
+        ProgressLog(
+            engagement_id=engagement.id,
+            user_id=engagement.user_id,
+            logged_on=effective_on,
+            unit=unit,
+            minute_start=position if is_audio else None,
+            minute_end=length if is_audio else None,
+            page_start=None if is_audio else position,
+            page_end=None if is_audio else length,
+            new_ground=True,
+        ),
+    )
 
 
 def _transition_to_dnf(
