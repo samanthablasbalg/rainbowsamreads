@@ -17,9 +17,10 @@ import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
 import { ReadingProgress } from '@/components/common/reading-progress';
 import { Button } from '@/components/ui/button';
 import { authorNames, coverSrc } from '@/utils/book';
+import { FORMATS } from '@/utils/format';
 import { STATUSES } from '@/utils/status';
 import { invalidateRead } from '../utils/invalidate-read';
-import { EntryList } from './entry-list';
+import { EntryTimeline } from './entry-timeline';
 import { InlineDateEdit } from './inline-date-edit';
 import { InlineLengthEdit } from './inline-length-edit';
 
@@ -37,16 +38,13 @@ export function ReadHistory({ engagementId }: { engagementId: string }) {
   return (
     <section>
       <BackLink status={engagement.status} />
-      <ReadHeader engagement={engagement} />
+      <ReadHeader
+        engagement={engagement}
+        onLogProgress={canLog ? () => setLogging(true) : undefined}
+      />
 
-      {canLog && (
-        <Button className="mb-6 w-full sm:w-auto" onClick={() => setLogging(true)}>
-          Log progress
-        </Button>
-      )}
-
-      <EntryList
-        engagementId={engagementId}
+      <EntryTimeline
+        engagement={engagement}
         onLogProgress={canLog ? () => setLogging(true) : undefined}
       />
 
@@ -96,7 +94,13 @@ function dateFields(engagement: EngagementRead) {
       ];
 }
 
-function ReadHeader({ engagement }: { engagement: EngagementRead }) {
+function ReadHeader({
+  engagement,
+  onLogProgress,
+}: {
+  engagement: EngagementRead;
+  onLogProgress?: () => void;
+}) {
   const { book, formats, completion_pct } = engagement;
 
   const queryClient = useQueryClient();
@@ -110,34 +114,44 @@ function ReadHeader({ engagement }: { engagement: EngagementRead }) {
     mutation: { onSuccess },
   });
 
-  const isAudio = formats.includes(Format.audio);
-
   return (
-    <header className="mb-6 flex items-start gap-4">
-      <CoverImage src={coverSrc(engagement)} title={book.title} />
+    <header className="mb-6 flex items-start gap-3 sm:gap-4">
+      <CoverImage src={coverSrc(engagement)} title={book.title} className="sm:h-33 sm:w-22" />
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <h1 className="text-xl leading-tight font-semibold">{book.title}</h1>
+        <h1 className="text-xl leading-tight font-bold sm:text-2xl">{book.title}</h1>
 
         <p className="truncate text-sm text-muted-foreground">{authorNames(book)}</p>
 
-        {/* Facts about the copy being read, which is where its length belongs -- the row
-            below is the read's lifecycle, and a length is not an event in it. */}
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2">
           <FormatIcons formats={formats} />
-          <span className="inline-flex items-center gap-1.5">
-            Length
-            <InlineLengthEdit
-              value={isAudio ? engagement.length_minutes : engagement.length_pages}
-              isAudio={isAudio}
-              onSave={(next) =>
-                updateLength.mutateAsync({
-                  engagementId: engagement.id,
-                  data: isAudio ? { length_minutes: next } : { length_pages: next },
-                })
-              }
-            />
-          </span>
+        </div>
+
+        {/* Facts about the copy being read, which is where its length belongs -- the row
+            below is the read's lifecycle, and a length is not an event in it. One per
+            format, because a read bound in two carries a length in each. */}
+        <div className="flex flex-wrap items-center gap-x-4 text-sm text-muted-foreground">
+          {formats.map((format) => {
+            const isAudio = format === Format.audio;
+            const label = `${FORMATS[format].label} length`;
+
+            return (
+              <span key={format} className="inline-flex items-center gap-1.5">
+                {label}
+                <InlineLengthEdit
+                  label={label.toLowerCase()}
+                  value={isAudio ? engagement.length_minutes : engagement.length_pages}
+                  isAudio={isAudio}
+                  onSave={(next) =>
+                    updateLength.mutateAsync({
+                      engagementId: engagement.id,
+                      data: isAudio ? { length_minutes: next } : { length_pages: next },
+                    })
+                  }
+                />
+              </span>
+            );
+          })}
         </div>
 
         <ReadingProgress title={book.title} pct={completion_pct} />
@@ -160,7 +174,27 @@ function ReadHeader({ engagement }: { engagement: EngagementRead }) {
               />
             </span>
           ))}
+
+          {/* Desktop puts logging back on this line as a link. A full-width CTA is a
+              phone affordance; at width it dominates a header it isn't the subject of.
+              The mobile button below is the same action. */}
+          {onLogProgress && (
+            <Button
+              variant="link"
+              size="sm"
+              className="ml-auto hidden h-auto p-0 font-bold text-brand-pink sm:inline-flex"
+              onClick={onLogProgress}
+            >
+              + Log progress
+            </Button>
+          )}
         </div>
+
+        {onLogProgress && (
+          <Button className="mt-2 w-full sm:hidden" onClick={onLogProgress}>
+            Log progress
+          </Button>
+        )}
 
         {/* The editor stays open holding the refused value, so the reason goes here
             rather than crowding the line of metadata it sits in. */}

@@ -29,8 +29,8 @@ test('A read’s page is reachable from currently reading and lists its entries'
   });
 
   await test.step('Verify both entries and the read’s dates are shown', async () => {
-    await expect(history.getEntryRow('Sun, Jun 15, 2025')).toBeVisible();
-    await expect(history.getEntryRow('Sat, Jun 14, 2025')).toBeVisible();
+    await expect(history.getDayGroup('Sun, Jun 15, 2025')).toBeVisible();
+    await expect(history.getDayGroup('Sat, Jun 14, 2025')).toBeVisible();
     await expect(history.startDateButton).toBeVisible();
     await expect(history.finishDateButton).toBeVisible();
   });
@@ -56,7 +56,7 @@ test('A finished read’s page is reachable from the finished shelf', async ({ p
   });
 
   await test.step('Verify the entry is listed', async () => {
-    await expect(history.getEntryRow('Sun, Jun 15, 2025')).toBeVisible();
+    await expect(history.getDayGroup('Sun, Jun 15, 2025')).toBeVisible();
   });
 });
 
@@ -85,8 +85,8 @@ test('Editing an entry’s date persists and renders the new date', async ({ pag
   });
 
   await test.step('Verify the entry moved to the new date', async () => {
-    await expect(history.getEntryRow('Sun, Jun 15, 2025')).toBeVisible();
-    await expect(history.getEntryRow('Sun, Jun 1, 2025')).toHaveCount(0);
+    await expect(history.getDayGroup('Sun, Jun 15, 2025')).toBeVisible();
+    await expect(history.getDayGroup('Sun, Jun 1, 2025')).toHaveCount(0);
   });
 });
 
@@ -117,8 +117,8 @@ test('Editing the newest entry’s end page persists and shows the updated range
     await expect(sheet.sheet).toHaveCount(0);
   });
 
-  await test.step('Verify the row shows the wider range', async () => {
-    await expect(history.getEntryRow('Sun, Jun 15, 2025')).toContainText('pp. 0–100');
+  await test.step('Verify the card shows the wider range', async () => {
+    await expect(history.getDayGroup('Sun, Jun 15, 2025')).toContainText('p. 100');
   });
 });
 
@@ -210,8 +210,8 @@ test('Deleting the newest entry reverts progress to the prior entry', async ({
   });
 
   await test.step('Verify only the prior entry remains', async () => {
-    await expect(history.getEntryRow('Sun, Jun 15, 2025')).toHaveCount(0);
-    await expect(history.getEntryRow('Sat, Jun 14, 2025')).toBeVisible();
+    await expect(history.getDayGroup('Sun, Jun 15, 2025')).toHaveCount(0);
+    await expect(history.getDayGroup('Sat, Jun 14, 2025')).toBeVisible();
   });
 
   await test.step('Verify the progress bar reverted to the prior entry', async () => {

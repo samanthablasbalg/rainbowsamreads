@@ -3,20 +3,11 @@ import { useState } from 'react';
 import { withPointer } from '@/test/pointer-decorator';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { Button } from '@/components/ui/button';
+import { buildEntryView } from '@/test/data-generators';
 import type { EntryView } from '../utils/entry-view';
 import { EntryEditSheet } from './entry-edit-sheet';
 
-const newestPageEntry: EntryView = {
-  id: 'log-1',
-  dateLabel: 'Sun, Jun 15, 2025',
-  rangeLabel: 'pp. 50–100',
-  amountLabel: '+50 pp',
-  isNewest: true,
-  loggedOn: '2025-06-15',
-  isAudio: false,
-  start: 50,
-  end: 100,
-};
+const newestPageEntry = buildEntryView();
 
 function ControlledSheet({ entry }: { entry: EntryView }) {
   const [open, setOpen] = useState(false);
@@ -60,7 +51,6 @@ export const NewestAudioEntry: Story = {
     <ControlledSheet
       entry={{
         ...newestPageEntry,
-        rangeLabel: '01:20–02:05',
         amountLabel: '+45 min',
         isAudio: true,
         start: 80,
@@ -79,4 +69,25 @@ export const OlderEntry: Story = {
 export const MobileSheet: Story = {
   decorators: [withPointer(true)],
   render: () => <ControlledSheet entry={newestPageEntry} />,
+};
+
+// An existing note shows as static markdown behind an Edit button, same as ReviewSheet's
+// existing body -- not an open textarea, since the sheet has other fields to edit first.
+export const EntryWithNote: Story = {
+  render: () => (
+    <ControlledSheet entry={{ ...newestPageEntry, note: 'A striking quote from this page.' }} />
+  ),
+};
+
+// The textarea and typed text only exist once Edit is clicked, so that state needs its own
+// story to land in the a11y gate.
+export const EditingExistingNote: Story = {
+  render: () => (
+    <ControlledSheet entry={{ ...newestPageEntry, note: 'A striking quote from this page.' }} />
+  ),
+  play: async (context) => {
+    await openSheet(context);
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit note' }));
+    expect(await screen.findByLabelText('Note')).toHaveValue('A striking quote from this page.');
+  },
 };

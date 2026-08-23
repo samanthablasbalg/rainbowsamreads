@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import {
   ResponsiveDialog,
+  ResponsiveDialogBody,
   ResponsiveDialogContent,
   ResponsiveDialogDescription,
   ResponsiveDialogFooter,
@@ -79,43 +80,45 @@ function FormatPickForm({ cancelLabel = 'Cancel', onDone, ...props }: FormatPick
         </ResponsiveDialogDescription>
       </ResponsiveDialogHeader>
 
-      {form.step === 'status' && (
-        <div className="flex flex-col gap-2">
-          {statuses?.map((status) => (
-            <Button
-              key={status}
-              variant="outline"
-              className="justify-start"
-              aria-label={`Add ${title} as ${STATUSES[status].label}`}
-              onClick={() => form.pickStatus(status)}
-            >
-              {STATUSES[status].label}
-            </Button>
-          ))}
-        </div>
-      )}
+      <ResponsiveDialogBody>
+        {form.step === 'status' && (
+          <div className="flex flex-col gap-2">
+            {statuses?.map((status) => (
+              <Button
+                key={status}
+                variant="outline"
+                className="justify-start"
+                aria-label={`Add ${title} as ${STATUSES[status].label}`}
+                onClick={() => form.pickStatus(status)}
+              >
+                {STATUSES[status].label}
+              </Button>
+            ))}
+          </div>
+        )}
 
-      {form.step === 'format' && (
-        <div className="flex flex-col gap-2">
-          {Object.values(Format).map((format) => (
-            <Button
-              key={format}
-              variant="outline"
-              className="justify-start"
-              disabled={form.startPending}
-              aria-label={pickLabel(form.status, title, FORMATS[format].label)}
-              onClick={() => form.pickFormat(format)}
-            >
-              <HugeiconsIcon icon={FORMATS[format].icon} data-icon="inline-start" />
-              {FORMATS[format].label}
-            </Button>
-          ))}
-        </div>
-      )}
+        {form.step === 'format' && (
+          <div className="flex flex-col gap-2">
+            {Object.values(Format).map((format) => (
+              <Button
+                key={format}
+                variant="outline"
+                className="justify-start"
+                disabled={form.startPending}
+                aria-label={pickLabel(form.status, title, FORMATS[format].label)}
+                onClick={() => form.pickFormat(format)}
+              >
+                <HugeiconsIcon icon={FORMATS[format].icon} data-icon="inline-start" />
+                {FORMATS[format].label}
+              </Button>
+            ))}
+          </div>
+        )}
 
-      {form.step === 'length' && <AudioLengthField form={form} />}
+        {form.step === 'length' && <AudioLengthField form={form} />}
 
-      {form.error && <ErrorText>{form.error}</ErrorText>}
+        {form.error && <ErrorText>{form.error}</ErrorText>}
+      </ResponsiveDialogBody>
 
       {/* Back rather than a third button: it returns to the format list, which is where
           Cancel lives, so the length step never has to carry both. */}

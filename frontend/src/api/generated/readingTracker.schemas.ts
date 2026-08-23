@@ -240,6 +240,7 @@ export interface MinuteProgressLogRead {
   engagement_id: string;
   logged_on: string;
   new_ground: boolean;
+  note: string | null;
   type?: 'minute';
   minute_start: number;
   minute_end: number;
@@ -250,6 +251,7 @@ export interface PageProgressLogRead {
   engagement_id: string;
   logged_on: string;
   new_ground: boolean;
+  note: string | null;
   type?: 'page';
   page_start: number;
   page_end: number;
@@ -260,12 +262,14 @@ export interface ProgressLogCreate {
   current_minute?: number | null;
   audio_length_minutes?: number | null;
   logged_on?: string | null;
+  note?: string | null;
 }
 
 export interface ProgressLogUpdate {
   logged_on?: string | null;
   page_end?: number | null;
   minute_end?: number | null;
+  note?: string | null;
 }
 
 export interface ReviewUpsert {

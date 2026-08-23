@@ -15,6 +15,7 @@ import { ButtonLabel } from '@/components/common/button-label';
 import { CoverImage } from '@/components/common/cover-image';
 import { ErrorText } from '@/components/common/error-text';
 import { FormatIcons } from '@/components/common/format-icons';
+import { NoteField } from '@/components/common/note-field';
 import { PositionInput } from '@/components/common/position-input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -22,6 +23,7 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
   ResponsiveDialog,
+  ResponsiveDialogBody,
   ResponsiveDialogContent,
   ResponsiveDialogFooter,
   ResponsiveDialogHeader,
@@ -70,9 +72,11 @@ function ProgressLogForm({
         <ProgressLogIdentity engagement={engagement} />
       </ResponsiveDialogHeader>
 
-      <ProgressLogFields form={form} />
+      <ResponsiveDialogBody>
+        <ProgressLogFields form={form} />
 
-      {form.error && <ErrorText>{form.error}</ErrorText>}
+        {form.error && <ErrorText>{form.error}</ErrorText>}
+      </ResponsiveDialogBody>
 
       <ResponsiveDialogFooter>
         <Button variant="outline" disabled={form.savePending} onClick={onDone}>
@@ -217,6 +221,13 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
           </Field>
         )}
       </div>
+
+      <NoteField
+        id="progress-log-note"
+        value={form.note}
+        onValueChange={form.setNote}
+        disabled={form.savePending}
+      />
     </div>
   );
 }
@@ -231,6 +242,7 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
   const [dateEditorOpen, setDateEditorOpen] = useState(false);
   const [date, setDateRaw] = useState(localIsoDate);
   const [dateSource, setDateSource] = useState<'chip' | 'picker'>('chip');
+  const [note, setNoteRaw] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   function setPosition(value: string) {
@@ -249,6 +261,11 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     setDateSource('chip');
     setError(null);
     setDateEditorOpen(false);
+  }
+
+  function setNote(value: string) {
+    setNoteRaw(value);
+    setError(null);
   }
 
   const queryClient = useQueryClient();
@@ -285,9 +302,10 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
 
   const maxPosition = isAudio ? engagement.length_minutes : engagement.length_pages;
   const maxDisplay = maxPosition == null ? null : formatPosition(maxPosition, isAudio);
+  const hasNote = note.trim() !== '';
   const canSave =
     parsedPosition !== null &&
-    parsedPosition >= fromValue &&
+    (parsedPosition > fromValue || (parsedPosition === fromValue && hasNote)) &&
     (maxPosition == null || parsedPosition <= maxPosition);
 
   let positionError: string | null = null;
@@ -298,6 +316,10 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
       positionError = isAudio
         ? `Can't be before ${fromDisplay}`
         : `Can't be before page ${fromValue}`;
+    } else if (parsedPosition === fromValue && !hasNote) {
+      positionError = isAudio
+        ? `Add a note, or advance past ${fromDisplay}`
+        : `Add a note, or advance past page ${fromValue}`;
     } else if (maxPosition != null && parsedPosition > maxPosition) {
       positionError = isAudio
         ? `Cannot exceed ${formatMinutesAsHhmm(maxPosition)}`
@@ -313,6 +335,7 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
       data: {
         ...(isAudio ? { current_minute: parsedPosition } : { current_page: parsedPosition }),
         logged_on: date,
+        ...(hasNote && { note }),
       },
     });
   }
@@ -333,6 +356,8 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     dateSource,
     setDate,
     pickDate,
+    note,
+    setNote,
     canSave,
     handleSave,
     error,

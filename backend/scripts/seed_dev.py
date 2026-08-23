@@ -117,8 +117,13 @@ def start_reading(
     return str(post("/engagements", body)["id"])
 
 
-def log_progress(engagement_id: str, current_page: int) -> None:
-    post(f"/engagements/{engagement_id}/progress-logs", {"current_page": current_page})
+def log_progress(
+    engagement_id: str, current_page: int, note: str | None = None
+) -> None:
+    body: dict[str, object] = {"current_page": current_page}
+    if note is not None:
+        body["note"] = note
+    post(f"/engagements/{engagement_id}/progress-logs", body)
 
 
 def log_audio_progress(engagement_id: str, current_minute: int) -> None:
@@ -171,7 +176,18 @@ eng = start_reading(
     "print",
 )
 log_progress(eng, 68)
-log_progress(eng, 142)
+# A long note, a short one, and a zero-length entry that exists only to carry a second
+# quote from the page already reached -- the three shapes History has to render.
+log_progress(
+    eng,
+    142,
+    "> The Beauty of the House is immeasurable; its Kindness infinite.\n\n"
+    "I keep returning to this line. I think it is meant as comfort and I think it is "
+    "meant as a warning, and I am no longer sure those are two different things. "
+    "Piranesi believes the House loves him. Perhaps it does. Perhaps that is exactly "
+    "the problem.",
+)
+log_progress(eng, 142, "A second quote from the same page.")
 
 eng = start_reading(
     add_book(
@@ -220,7 +236,7 @@ eng = start_reading(
     ),
     "print",
 )
-log_progress(eng, 97)
+log_progress(eng, 97, "Gave it a fair run. *Life is short.*")
 dnf(eng)
 
 apply_cover_urls()

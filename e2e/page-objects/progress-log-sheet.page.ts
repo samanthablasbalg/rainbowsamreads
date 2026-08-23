@@ -15,6 +15,10 @@ export class ProgressLogSheetPage {
   readonly cancelButton: Locator;
   readonly dateToggleButton: Locator;
   readonly dateInput: Locator;
+  // The note starts collapsed behind its affordance, so the textarea does not exist
+  // until that button is clicked.
+  readonly addNoteButton: Locator;
+  readonly noteInput: Locator;
 
   /** @param page - The Playwright page the sheet is open on. */
   constructor(public readonly page: Page) {
@@ -26,6 +30,8 @@ export class ProgressLogSheetPage {
     // A native date input exposes no implicit `textbox` role, so this goes through
     // the label rather than getByRole.
     this.dateInput = page.getByLabel('Log date');
+    this.addNoteButton = page.getByRole('button', { name: '+ Add a note' });
+    this.noteInput = page.getByRole('textbox', { name: 'Note' });
   }
 
   /**
@@ -91,5 +97,15 @@ export class ProgressLogSheetPage {
    */
   async setDate(date: string): Promise<void> {
     await this.dateInput.fill(date);
+  }
+
+  /**
+   * Reveals the note textarea and writes a note into it. A note is what lets a log sit at
+   * the position the read is already on, so this is also what makes such a log saveable.
+   * @param note - The note's text, in markdown.
+   */
+  async addNote(note: string): Promise<void> {
+    await this.addNoteButton.click();
+    await this.noteInput.fill(note);
   }
 }

@@ -7,10 +7,18 @@ type InlineLengthEditProps = {
   value: number | null;
   // Pages against minutes, the same split the log sheet reads its denominator on.
   isAudio: boolean;
+  // Names the control for assistive tech. Defaulted because most reads have one length,
+  // but a read bound in two formats shows two of these and they can't both be "length".
+  label?: string;
   onSave: (value: number) => Promise<unknown>;
 };
 
-export function InlineLengthEdit({ value, isAudio, onSave }: InlineLengthEditProps) {
+export function InlineLengthEdit({
+  value,
+  isAudio,
+  label = 'length',
+  onSave,
+}: InlineLengthEditProps) {
   const [editing, setEditing] = useState(false);
 
   if (editing) {
@@ -18,6 +26,7 @@ export function InlineLengthEdit({ value, isAudio, onSave }: InlineLengthEditPro
       <LengthEditor
         value={value}
         isAudio={isAudio}
+        label={label}
         onSave={async (next) => {
           try {
             await onSave(next);
@@ -33,7 +42,7 @@ export function InlineLengthEdit({ value, isAudio, onSave }: InlineLengthEditPro
   }
 
   return (
-    <EditableValue label="length" onEdit={() => setEditing(true)}>
+    <EditableValue label={label} onEdit={() => setEditing(true)}>
       {lengthLabel(value, isAudio)}
     </EditableValue>
   );
@@ -49,11 +58,13 @@ function lengthLabel(value: number | null, isAudio: boolean) {
 function LengthEditor({
   value,
   isAudio,
+  label,
   onSave,
   onCancel,
 }: {
   value: number | null;
   isAudio: boolean;
+  label: string;
   onSave: (value: number) => void;
   onCancel: () => void;
 }) {
@@ -76,12 +87,12 @@ function LengthEditor({
   }
 
   return (
-    <InlineEditor label="length" error={error} onSave={save} onCancel={onCancel}>
+    <InlineEditor label={label} error={error} onSave={save} onCancel={onCancel}>
       <PositionInput
         autoFocus
         className="h-8 w-20"
         isAudio={isAudio}
-        aria-label="length"
+        aria-label={label}
         aria-invalid={!!error}
         value={draft}
         onValueChange={setDraft}

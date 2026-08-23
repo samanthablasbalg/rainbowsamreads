@@ -110,7 +110,9 @@ describe('ReadHistory', () => {
 
     render(<ReadHistory engagementId="engagement-Piranesi" />);
 
-    expect(await screen.findByRole('button', { name: 'Edit length' })).toHaveTextContent('272');
+    expect(await screen.findByRole('button', { name: 'Edit print length' })).toHaveTextContent(
+      '272'
+    );
   });
 
   it('shows the length of an audio read as a duration', async () => {
@@ -118,7 +120,9 @@ describe('ReadHistory', () => {
 
     render(<ReadHistory engagementId="engagement-Piranesi" />);
 
-    expect(await screen.findByRole('button', { name: 'Edit length' })).toHaveTextContent('10:00');
+    expect(await screen.findByRole('button', { name: 'Edit audio length' })).toHaveTextContent(
+      '10:00'
+    );
   });
 
   it('patches the length in pages for a page-measured read', async () => {
@@ -133,10 +137,10 @@ describe('ReadHistory', () => {
 
     render(<ReadHistory engagementId="engagement-Piranesi" />);
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Edit length' }));
-    await userEvent.clear(screen.getByLabelText('length'));
-    await userEvent.type(screen.getByLabelText('length'), '300');
-    await userEvent.click(screen.getByRole('button', { name: 'Save length' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit print length' }));
+    await userEvent.clear(screen.getByLabelText('print length'));
+    await userEvent.type(screen.getByLabelText('print length'), '300');
+    await userEvent.click(screen.getByRole('button', { name: 'Save print length' }));
 
     await waitFor(() => expect(sent).toEqual([{ length_pages: 300 }]));
   });
@@ -153,9 +157,9 @@ describe('ReadHistory', () => {
 
     render(<ReadHistory engagementId="engagement-Piranesi" />);
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Edit length' }));
-    await userEvent.type(screen.getByLabelText('length'), '0930');
-    await userEvent.click(screen.getByRole('button', { name: 'Save length' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit audio length' }));
+    await userEvent.type(screen.getByLabelText('audio length'), '0930');
+    await userEvent.click(screen.getByRole('button', { name: 'Save audio length' }));
 
     await waitFor(() => expect(sent).toEqual([{ length_minutes: 570 }]));
   });
@@ -176,10 +180,10 @@ describe('ReadHistory', () => {
 
     render(<ReadHistory engagementId="engagement-Piranesi" />);
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Edit length' }));
-    await userEvent.clear(screen.getByLabelText('length'));
-    await userEvent.type(screen.getByLabelText('length'), '100');
-    await userEvent.click(screen.getByRole('button', { name: 'Save length' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit print length' }));
+    await userEvent.clear(screen.getByLabelText('print length'));
+    await userEvent.type(screen.getByLabelText('print length'), '100');
+    await userEvent.click(screen.getByRole('button', { name: 'Save print length' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'That is shorter than the furthest point logged (page 500). Edit those entries first.'

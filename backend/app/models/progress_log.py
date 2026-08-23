@@ -34,6 +34,6 @@ class ProgressLog(TimestampMixin, Base):
     minute_start: Mapped[int | None]
     minute_end: Mapped[int | None]
     new_ground: Mapped[bool] = mapped_column(default=True)
-    journal_entry: Mapped[str | None] = mapped_column(Text)
+    note: Mapped[str | None] = mapped_column(Text)
 
     engagement: Mapped[Engagement] = relationship(back_populates="progress_logs")

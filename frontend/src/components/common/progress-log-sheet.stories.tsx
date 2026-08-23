@@ -76,3 +76,17 @@ export const CustomDate: Story = {
     expect(await screen.findByRole('button', { name: 'Jun 15' })).toBeInTheDocument();
   },
 };
+
+// A note is what makes staying on the same page valid at all -- the position field alone
+// would 409 on the server, and the frontend now agrees before it ever gets there.
+export const SamePageWithNote: Story = {
+  render: () => <ControlledSheet engagement={baseEngagement} />,
+  play: async (context) => {
+    await openSheet(context);
+    await userEvent.type(await screen.findByPlaceholderText('---'), '132');
+    await userEvent.click(await screen.findByRole('button', { name: '+ Add a note' }));
+    await userEvent.type(screen.getByLabelText('Note'), 'A striking quote from this page.');
+
+    expect(await screen.findByRole('button', { name: /Save progress/ })).toBeEnabled();
+  },
+};
