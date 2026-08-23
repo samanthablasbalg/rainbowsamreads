@@ -12,6 +12,7 @@ from app.models.edition import Edition, EngagementEdition
 from app.models.engagement import Engagement
 from app.models.progress_log import ProgressLog
 from tests.helpers import (
+    _bind_edition,
     _create_audio_engagement,
     _create_bare_book,
     _create_book,
@@ -346,6 +347,71 @@ def test_completion_pct_binding_takes_precedence_over_book_page_count(
 
     data = client.get("/api/engagements?status=reading").json()
     assert data[0]["completion_pct"] == 50
+
+
+# --- The shared frontier across two rulers ---
+
+
+def test_page_frontier_converts_to_the_audio_ruler(client: TestClient) -> None:
+    """Read half of a 440-page print copy, then bind the audiobook: the audio ruler
+    resumes at the same point in the book, not at zero."""
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=440)
+    audio = _create_edition(client, book["id"], "audio", audio_minutes=430)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 220)
+    _bind_edition(client, engagement["id"], audio["id"])
+
+    data = client.get(f"/api/engagements/{engagement['id']}").json()
+    assert data["completion_pct"] == 50
+    assert data["resume_from_minute"] == 215
+    assert data["resume_from_page"] == 220
+
+
+def test_minute_frontier_converts_to_the_page_ruler(client: TestClient) -> None:
+    book = _create_bare_book(client)
+    print_edition = _create_edition(client, book["id"], page_count=440)
+    _create_edition(client, book["id"], "audio", audio_minutes=430)
+    engagement = _create_audio_engagement(client, book["id"])
+    _log_audio_progress(client, engagement["id"], 215)
+    _bind_edition(client, engagement["id"], print_edition["id"])
+
+    data = client.get(f"/api/engagements/{engagement['id']}").json()
+    assert data["completion_pct"] == 50
+    assert data["resume_from_page"] == 220
+    assert data["resume_from_minute"] == 215
+
+
+def test_completion_follows_the_latest_entry_not_the_audio_binding(
+    client: TestClient,
+) -> None:
+    """A read bound in audio that has only been logged in pages reports its page
+    progress. Completion used to answer on the audio ruler whenever audio was bound,
+    which read as no progress at all until the first minute was logged."""
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=400)
+    audio = _create_edition(client, book["id"], "audio", audio_minutes=600)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 100)
+    _bind_edition(client, engagement["id"], audio["id"])
+
+    data = client.get(f"/api/engagements/{engagement['id']}").json()
+    assert data["completion_pct"] == 25
+
+
+def test_resume_falls_back_to_its_own_ruler_without_a_length(
+    client: TestClient,
+) -> None:
+    """No page count, so there is no fraction to convert -- the page ruler still
+    answers with the last page logged."""
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"])
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 120)
+
+    data = client.get(f"/api/engagements/{engagement['id']}").json()
+    assert data["completion_pct"] is None
+    assert data["resume_from_page"] == 120
 
 
 # --- Finish log ---

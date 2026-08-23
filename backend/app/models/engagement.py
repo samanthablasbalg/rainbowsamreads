@@ -12,6 +12,7 @@ from app.database import Base
 from app.models.enums import (
     DatePrecision,
     Format,
+    LogUnit,
     ReadingStatus,
     date_precision_type,
 )
@@ -23,6 +24,12 @@ if TYPE_CHECKING:
     from app.models.progress_log import ProgressLog
     from app.models.review import Review
     from app.models.user import User
+
+
+# Same key the stored journal is ordered on (see services/engagements/progress_logs.py):
+# the two have to agree, since one orders the history and the other picks the latest.
+def _log_sort_key(log: ProgressLog) -> tuple[datetime.date, datetime.datetime]:
+    return (log.logged_on, log.created_at)
 
 
 class Engagement(TimestampMixin, Base):
@@ -88,25 +95,21 @@ class Engagement(TimestampMixin, Base):
         page_logs = [log for log in self.progress_logs if log.page_end is not None]
         if not page_logs:
             return None
-        return max(page_logs, key=lambda log: (log.logged_on, log.created_at)).page_end
+        return max(page_logs, key=_log_sort_key).page_end
 
     @property
     def resume_from_page(self) -> int:
-        end = self._latest_page_end()
-        return end if end is not None else 0
+        return self._resume_in(self.length_pages, self._latest_page_end())
 
     def _latest_minute_end(self) -> int | None:
         minute_logs = [log for log in self.progress_logs if log.minute_end is not None]
         if not minute_logs:
             return None
-        return max(
-            minute_logs, key=lambda log: (log.logged_on, log.created_at)
-        ).minute_end
+        return max(minute_logs, key=_log_sort_key).minute_end
 
     @property
     def resume_from_minute(self) -> int:
-        end = self._latest_minute_end()
-        return end if end is not None else 0
+        return self._resume_in(self.length_minutes, self._latest_minute_end())
 
     def binding_for(self, fmt: Format) -> EngagementEdition | None:
         return next(
@@ -151,20 +154,44 @@ class Engagement(TimestampMixin, Base):
         fmt = self.page_format
         return None if fmt is None else self.resolve_length(fmt)
 
+    def _resume_in(self, length: int | None, latest_end: int | None) -> int:
+        """Where the read stands on one ruler. Converted from the shared frontier, so a
+        session picks up where the *read* is rather than where this format last was --
+        switch to audio at page 220 of 440 and it resumes at 3:35 of 7:10. Falls back to
+        this ruler's own last position when there is no fraction to convert."""
+        fraction = self.covered_fraction
+        if fraction is None or not length:
+            return latest_end or 0
+        return round(fraction * length)
+
+    @property
+    def covered_fraction(self) -> float | None:
+        """How far into the book this read has got, 0-1, whichever ruler it was on.
+
+        Pages and minutes measure one axis (ADR-0007), so a position on either converts
+        to the other through this. Every entry starts at the frontier and moves forward
+        -- so the latest entry's end *is* the frontier, and no summing is needed. When
+        re-coverage and out-of-order entries arrive (issue 96) that stops holding and
+        this becomes the cumulative sum of new-ground spans the ADR describes.
+
+        None when the ruler in use has no length to divide by -- the same "can't say"
+        completion has always returned for a book with no page count.
+        """
+        latest = max(self.progress_logs, key=_log_sort_key, default=None)
+        if latest is None:
+            return None
+        position, length = (
+            (latest.minute_end, self.length_minutes)
+            if latest.unit == LogUnit.minutes
+            else (latest.page_end, self.length_pages)
+        )
+        if position is None or not length:
+            return None
+        return position / length
+
     @property
     def completion_pct(self) -> int | None:
-        if not self.progress_logs:
+        fraction = self.covered_fraction
+        if fraction is None:
             return None
-        if Format.audio in self.formats:
-            position = self._latest_minute_end()
-            if position is None:
-                return None
-            denominator = self.length_minutes
-        else:
-            position = self._latest_page_end()
-            if position is None:
-                return None
-            denominator = self.length_pages
-        if not denominator:
-            return None
-        return max(0, min(100, round(position / denominator * 100)))
+        return max(0, min(100, round(fraction * 100)))
