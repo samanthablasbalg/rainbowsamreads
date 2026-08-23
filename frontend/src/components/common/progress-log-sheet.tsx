@@ -10,7 +10,12 @@ import {
   getEngagementsListProgressLogsQueryKey,
   useEngagementsLogProgress,
 } from '@/api/generated/engagements/engagements';
-import { Format, ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
+import {
+  Format,
+  LogUnit,
+  ReadingStatus,
+  type EngagementRead,
+} from '@/api/generated/readingTracker.schemas';
 import { ButtonLabel } from '@/components/common/button-label';
 import { CoverImage } from '@/components/common/cover-image';
 import { ErrorText } from '@/components/common/error-text';
@@ -31,6 +36,7 @@ import {
 } from '@/components/ui/responsive-dialog';
 import { cn } from '@/lib/utils';
 import { coverSrc } from '@/utils/book';
+import { FORMATS } from '@/utils/format';
 import { formatMinutesAsHhmm } from '@/utils/format-minutes';
 import { localIsoDate } from '@/utils/local-date';
 import { formatPosition, parsePosition } from '@/utils/position';
@@ -135,6 +141,31 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {form.unitSwitchFormat && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant={form.isAudio ? 'outline' : 'default'}
+            aria-pressed={!form.isAudio}
+            size="sm"
+            disabled={form.savePending}
+            onClick={() => form.pickUnit(LogUnit.pages)}
+          >
+            <HugeiconsIcon icon={FORMATS[form.unitSwitchFormat].icon} data-icon="inline-start" />
+            Pages
+          </Button>
+          <Button
+            variant={form.isAudio ? 'default' : 'outline'}
+            aria-pressed={form.isAudio}
+            size="sm"
+            disabled={form.savePending}
+            onClick={() => form.pickUnit(LogUnit.minutes)}
+          >
+            <HugeiconsIcon icon={FORMATS[Format.audio].icon} data-icon="inline-start" />
+            Minutes
+          </Button>
+        </div>
+      )}
+
       <Card
         size="sm"
         className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-x-3 gap-y-1 px-(--card-spacing)"
@@ -233,7 +264,24 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
 }
 
 function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
-  const isAudio = engagement.formats.includes(Format.audio);
+  // Pages can't tell print from digital (ADR-0021), so anything measured in them answers
+  // on the first non-audio binding -- the same rule the backend's page_format applies.
+  const pageFormat = engagement.formats.find((format) => format !== Format.audio) ?? null;
+  // Non-null only when the read is bound in both rulers: on a single-format read the
+  // switch would be one chip that does nothing. It also carries the icon for the pages
+  // chip, so a digital + audio read doesn't show a print book.
+  const unitSwitchFormat = engagement.formats.includes(Format.audio) ? pageFormat : null;
+
+  // The unit belongs to the session, not to the read -- one bound in both logs pages the
+  // days it was read and minutes the days it was heard. It opens on the frontier's own
+  // unit, which is the ruler the last session left off on, and on a read with nothing
+  // logged yet falls back to whichever one it can actually log against.
+  const [unit, setUnit] = useState(
+    engagement.resume_unit ?? (pageFormat === null ? LogUnit.minutes : LogUnit.pages)
+  );
+  const isAudio = unit === LogUnit.minutes;
+  // Both resume points are the shared frontier converted, so switching ruler shows where
+  // the read stands in the new unit rather than where that format was last left.
   const fromValue = isAudio ? engagement.resume_from_minute : engagement.resume_from_page;
   const fromDisplay = formatPosition(fromValue, isAudio);
 
@@ -247,6 +295,15 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
 
   function setPosition(value: string) {
     setPositionRaw(value);
+    setError(null);
+  }
+
+  function pickUnit(picked: LogUnit) {
+    if (picked === unit) return;
+    setUnit(picked);
+    // Pages and minutes aren't interchangeable, so a position typed on one ruler can't
+    // carry over to the other.
+    setPositionRaw('');
     setError(null);
   }
 
@@ -344,6 +401,8 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
 
   return {
     isAudio,
+    unitSwitchFormat,
+    pickUnit,
     fromDisplay,
     maxDisplay,
     position,
