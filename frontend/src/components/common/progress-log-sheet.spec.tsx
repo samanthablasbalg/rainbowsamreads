@@ -7,7 +7,12 @@ import {
   getEngagementsLogProgressMockHandler,
   getEngagementsLogProgressResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
-import { Format, ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
+import {
+  Format,
+  LogUnit,
+  ReadingStatus,
+  type EngagementRead,
+} from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { fireEvent, render, screen, waitFor } from '@/test/render';
 import {
@@ -26,6 +31,18 @@ function buildEngagement(overrides: Partial<EngagementRead> = {}): EngagementRea
     finished_on: null,
     resume_from_page: 100,
     completion_pct: 52,
+    ...overrides,
+  });
+}
+
+// A read bound in both rulers. The frontier is shared, so the two resume points are one
+// position in two units: page 100 of 272 is minute 221 of 600.
+function buildMixedEngagement(overrides: Partial<EngagementRead> = {}): EngagementRead {
+  return buildEngagement({
+    formats: [Format.print, Format.audio],
+    resume_from_page: 100,
+    resume_from_minute: 221,
+    length_minutes: 600,
     ...overrides,
   });
 }
@@ -57,11 +74,75 @@ describe('ProgressLogSheet', () => {
   });
 
   it('shows the resume minute as From, with the HH:MM field opening empty for an audio engagement', async () => {
-    renderSheet(buildEngagement({ formats: [Format.audio], resume_from_minute: 75 }));
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
 
     expect(await screen.findByText('01:15', { exact: true })).toBeVisible();
     expect(screen.getByPlaceholderText('--:--')).toHaveValue('');
     expect(screen.queryByPlaceholderText('---')).not.toBeInTheDocument();
+  });
+
+  it('offers no unit switch on a read bound in a single format', async () => {
+    renderSheet(buildEngagement());
+
+    expect(await screen.findByPlaceholderText('---')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Pages' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Minutes' })).not.toBeInTheDocument();
+  });
+
+  it('opens a mixed read on the unit its last entry was logged in', async () => {
+    renderSheet(buildMixedEngagement({ resume_unit: LogUnit.minutes }));
+
+    expect(await screen.findByText('03:41', { exact: true })).toBeVisible();
+    expect(screen.getByPlaceholderText('--:--')).toHaveValue('');
+    expect(screen.getByRole('button', { name: 'Minutes' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('opens a mixed read on pages when nothing has been logged yet', async () => {
+    renderSheet(buildMixedEngagement({ resume_unit: null, resume_from_page: 0 }));
+
+    expect(await screen.findByPlaceholderText('---')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Pages' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('shows the shared frontier in the other unit when the unit is switched', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildMixedEngagement({ resume_unit: LogUnit.minutes }));
+
+    await user.click(await screen.findByRole('button', { name: 'Pages' }));
+
+    expect(screen.getByText('100', { exact: true })).toBeVisible();
+    expect(screen.getByPlaceholderText('---')).toHaveValue('');
+    expect(screen.queryByPlaceholderText('--:--')).not.toBeInTheDocument();
+  });
+
+  it('clears a position typed on the ruler being switched away from', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildMixedEngagement());
+
+    await user.type(await screen.findByPlaceholderText('---'), '150');
+    await user.click(screen.getByRole('button', { name: 'Minutes' }));
+
+    expect(screen.getByPlaceholderText('--:--')).toHaveValue('');
+  });
+
+  it('saves minutes once a mixed read is switched to the minute ruler', async () => {
+    const user = userEvent.setup();
+    let capturedBody: unknown;
+    server.use(
+      getEngagementsLogProgressMockHandler(async (info) => {
+        capturedBody = await info.request.json();
+        return getEngagementsLogProgressResponseMock();
+      }),
+      getEngagementsGetEngagementMockHandler()
+    );
+    renderSheet(buildMixedEngagement());
+
+    await user.click(await screen.findByRole('button', { name: 'Minutes' }));
+    await user.type(screen.getByPlaceholderText('--:--'), '04:30');
+    await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(capturedBody).toEqual({ current_minute: 270, logged_on: localIsoDate() });
   });
 
   it("saves the entered page with today's date and closes the sheet", async () => {

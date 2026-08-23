@@ -92,7 +92,7 @@ describe('ReadingCard', () => {
     expect(await screen.findByRole('dialog', { name: 'Piranesi' })).toBeVisible();
   });
 
-  it('offers history, finish, DNF and delete from the overflow menu, in that order', async () => {
+  it('offers add-format, history, finish, DNF and delete from the overflow menu, in that order', async () => {
     const user = userEvent.setup();
     renderInList(buildEngagement());
 
@@ -100,11 +100,35 @@ describe('ReadingCard', () => {
     await screen.findByRole('menu');
 
     expect(screen.getAllByRole('menuitem').map((item) => item.getAttribute('aria-label'))).toEqual([
+      'Add another format to Piranesi',
       'View history for Piranesi',
       'Mark Piranesi as finished',
       'Mark Piranesi as DNF',
       'Delete Piranesi',
     ]);
+  });
+
+  it('drops add-format once the read is already in every format', async () => {
+    const user = userEvent.setup();
+    renderInList(buildEngagement({ formats: [Format.print, Format.digital, Format.audio] }));
+
+    await user.click(screen.getByRole('button', { name: 'More actions for Piranesi' }));
+    await screen.findByRole('menu');
+
+    expect(
+      screen.queryByRole('menuitem', { name: 'Add another format to Piranesi' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('opens the add-format sheet from the overflow menu', async () => {
+    const user = userEvent.setup();
+    renderInList(buildEngagement());
+
+    await openOverflowMenuAndChoose(user, 'Add another format to Piranesi');
+
+    expect(await screen.findByRole('dialog', { name: 'Add another format' })).toHaveTextContent(
+      'Piranesi'
+    );
   });
 
   it('links View history at the read’s own page', async () => {

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import uuid
+from typing import Any
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
@@ -10,8 +11,10 @@ from sqlalchemy.orm import Session
 from app.models.book import Book
 from app.models.edition import Edition, EngagementEdition
 from app.models.engagement import Engagement
+from app.models.enums import LogUnit
 from app.models.progress_log import ProgressLog
 from tests.helpers import (
+    _bind_edition,
     _create_audio_engagement,
     _create_bare_book,
     _create_book,
@@ -348,7 +351,143 @@ def test_completion_pct_binding_takes_precedence_over_book_page_count(
     assert data[0]["completion_pct"] == 50
 
 
+# --- The shared frontier across two rulers ---
+
+
+def test_page_frontier_converts_to_the_audio_ruler(client: TestClient) -> None:
+    """Read half of a 440-page print copy, then bind the audiobook: the audio ruler
+    resumes at the same point in the book, not at zero."""
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=440)
+    audio = _create_edition(client, book["id"], "audio", audio_minutes=430)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 220)
+    _bind_edition(client, engagement["id"], audio["id"])
+
+    data = client.get(f"/api/engagements/{engagement['id']}").json()
+    assert data["completion_pct"] == 50
+    assert data["resume_from_minute"] == 215
+    assert data["resume_from_page"] == 220
+
+
+def test_minute_frontier_converts_to_the_page_ruler(client: TestClient) -> None:
+    book = _create_bare_book(client)
+    print_edition = _create_edition(client, book["id"], page_count=440)
+    _create_edition(client, book["id"], "audio", audio_minutes=430)
+    engagement = _create_audio_engagement(client, book["id"])
+    _log_audio_progress(client, engagement["id"], 215)
+    _bind_edition(client, engagement["id"], print_edition["id"])
+
+    data = client.get(f"/api/engagements/{engagement['id']}").json()
+    assert data["completion_pct"] == 50
+    assert data["resume_from_page"] == 220
+    assert data["resume_from_minute"] == 215
+
+
+def test_completion_follows_the_latest_entry_not_the_audio_binding(
+    client: TestClient,
+) -> None:
+    """A read bound in audio that has only been logged in pages reports its page
+    progress. Completion used to answer on the audio ruler whenever audio was bound,
+    which read as no progress at all until the first minute was logged."""
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=400)
+    audio = _create_edition(client, book["id"], "audio", audio_minutes=600)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 100)
+    _bind_edition(client, engagement["id"], audio["id"])
+
+    data = client.get(f"/api/engagements/{engagement['id']}").json()
+    assert data["completion_pct"] == 25
+
+
+def test_resume_falls_back_to_its_own_ruler_without_a_length(
+    client: TestClient,
+) -> None:
+    """No page count, so there is no fraction to convert -- the page ruler still
+    answers with the last page logged."""
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"])
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 120)
+
+    data = client.get(f"/api/engagements/{engagement['id']}").json()
+    assert data["completion_pct"] is None
+    assert data["resume_from_page"] == 120
+
+
+def _mixed_engagement(client: TestClient) -> dict[str, Any]:
+    """A read of a 440-page book with its 430-minute audiobook bound alongside."""
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=440)
+    audio = _create_edition(client, book["id"], "audio", audio_minutes=430)
+    engagement = _create_engagement(client, book["id"])
+    _bind_edition(client, engagement["id"], audio["id"])
+    return engagement
+
+
+def test_alternating_rulers_tile_without_a_gap(client: TestClient) -> None:
+    """Print to p.220, then listen on to 5:00: the audio session starts at the page
+    frontier converted (3:35), not at zero, and the next print session picks up from
+    where the listening left off."""
+    engagement = _mixed_engagement(client)
+
+    _log_progress(client, engagement["id"], 220)
+    audio_log = _log_audio_progress(client, engagement["id"], 300)
+    assert audio_log["minute_start"] == 215
+
+    data = client.get(f"/api/engagements/{engagement['id']}").json()
+    assert data["completion_pct"] == 70
+    assert data["resume_unit"] == "minutes"
+    assert data["resume_from_page"] == 307
+
+    page_log = _log_progress(client, engagement["id"], 400)
+    assert page_log["page_start"] == 307
+
+
+def test_a_ruler_cannot_start_behind_the_shared_frontier(client: TestClient) -> None:
+    """Half the book read in print, then a listening session back at 1:00 -- behind the
+    frontier, so it is re-coverage rather than progress, which issue 96 covers."""
+    engagement = _mixed_engagement(client)
+    _log_progress(client, engagement["id"], 220)
+
+    response = client.post(
+        f"/api/engagements/{engagement['id']}/progress-logs",
+        json={"current_minute": 60},
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Progress can't go backwards."
+
+
 # --- Finish log ---
+
+
+def test_finish_closes_out_on_the_ruler_last_logged_on(
+    client: TestClient, db: Session
+) -> None:
+    """Audio is bound, but the last session was print -- so the closing log is the rest
+    of the pages, not the rest of the audiobook."""
+    engagement = _mixed_engagement(client)
+    _log_progress(client, engagement["id"], 220)
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}", json={"status": "finished"}
+    )
+    assert response.status_code == 200
+    assert response.json()["completion_pct"] == 100
+
+    logs = (
+        db.execute(
+            select(ProgressLog).where(
+                ProgressLog.engagement_id == uuid.UUID(engagement["id"])
+            )
+        )
+        .scalars()
+        .all()
+    )
+    final_log = max(logs, key=lambda log: (log.logged_on, log.created_at))
+    assert final_log.unit == LogUnit.pages
+    assert (final_log.page_start, final_log.page_end) == (220, 440)
 
 
 def test_finish_creates_final_progress_log(client: TestClient, db: Session) -> None:
@@ -609,7 +748,9 @@ def test_audio_log_advance_guard_less_than_returns_409(client: TestClient) -> No
     assert response.status_code == 409
 
 
-def test_audio_engagement_requires_current_minute(client: TestClient) -> None:
+def test_pages_rejected_on_a_read_with_no_page_format(client: TestClient) -> None:
+    """The payload picks the ruler, so this is a well-formed request the read can't
+    honour -- it is bound in audio only."""
     book = _create_book(client)
     engagement = _create_audio_engagement(client, book["id"])
 
@@ -617,10 +758,14 @@ def test_audio_engagement_requires_current_minute(client: TestClient) -> None:
         f"/api/engagements/{engagement['id']}/progress-logs",
         json={"current_page": 100},
     )
-    assert response.status_code == 422
+    assert response.status_code == 409
+    assert (
+        response.json()["detail"]
+        == "This read is audio only. Add a format to log pages."
+    )
 
 
-def test_print_engagement_requires_current_page(client: TestClient) -> None:
+def test_minutes_rejected_on_a_read_with_no_audio_format(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
 
@@ -628,7 +773,22 @@ def test_print_engagement_requires_current_page(client: TestClient) -> None:
         f"/api/engagements/{engagement['id']}/progress-logs",
         json={"current_minute": 75},
     )
-    assert response.status_code == 422
+    assert response.status_code == 409
+    assert (
+        response.json()["detail"]
+        == "This read has no audio format. Add one to log time."
+    )
+
+
+def test_a_log_must_name_exactly_one_ruler(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+
+    for payload in ({}, {"current_page": 100, "current_minute": 75}):
+        response = client.post(
+            f"/api/engagements/{engagement['id']}/progress-logs", json=payload
+        )
+        assert response.status_code == 422
 
 
 def test_length_capture_writes_book_default_audio_minutes(

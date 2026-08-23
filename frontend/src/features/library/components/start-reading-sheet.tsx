@@ -24,7 +24,7 @@ import {
   ResponsiveDialogTitle,
 } from '@/components/ui/responsive-dialog';
 import { FORMATS } from '@/utils/format';
-import { formatMinutesAsHhmm, parseHhmmToMinutes } from '@/utils/format-minutes';
+import { formatLength, lengthField, parseLength } from '@/utils/length';
 import { localIsoDate } from '@/utils/local-date';
 import { STATUSES } from '@/utils/status';
 
@@ -153,7 +153,7 @@ function useStartReadingForm(book: BookRead, onClose: () => void) {
   // slightly stale hint; typing over the hint makes an override either way.
   const knownLength = isAudio ? book.default_audio_minutes : book.default_page_count;
   const typed = length.trim() !== '';
-  const parsedLength = isAudio ? parseHhmmToMinutes(length) : parsePages(length);
+  const parsedLength = parseLength(isAudio, length);
 
   function setLength(value: string) {
     setLengthRaw(value);
@@ -198,12 +198,7 @@ function useStartReadingForm(book: BookRead, onClose: () => void) {
     setLength,
     setLengthFocused,
     lengthLabel: isAudio ? 'Length' : 'Pages',
-    lengthPlaceholder:
-      knownLength === null
-        ? null
-        : isAudio
-          ? formatMinutesAsHhmm(knownLength)
-          : String(knownLength),
+    lengthPlaceholder: knownLength === null ? null : formatLength(isAudio, knownLength),
     lengthRequired: knownLength === null,
     lengthError,
     startedOn,
@@ -213,18 +208,4 @@ function useStartReadingForm(book: BookRead, onClose: () => void) {
     error,
     startPending: createEngagement.isPending,
   };
-}
-
-function parsePages(value: string): number | null {
-  const trimmed = value.trim();
-  return /^\d+$/.test(trimmed) && Number(trimmed) > 0 ? Number(trimmed) : null;
-}
-
-// An audio length is the first one this book has ever had, so it's a fact about the audio
-// edition and gets captured there (ADR-0022). Every other length is a correction to one
-// that already exists, which belongs to this read alone as a binding override (ADR-0021).
-function lengthField(isAudio: boolean, knownLength: number | null, value: number) {
-  return isAudio && knownLength === null
-    ? { audio_length_minutes: value }
-    : { length_override: value };
 }

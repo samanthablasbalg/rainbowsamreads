@@ -6,7 +6,7 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.models.enums import Format, ReadingStatus
+from app.models.enums import Format, LogUnit, ReadingStatus
 from app.schemas.book import BookRead
 from app.schemas.review import ReviewRead
 
@@ -55,6 +55,7 @@ class EngagementRead(BaseModel):
     abandoned_on: datetime.date | None
     resume_from_page: int
     resume_from_minute: int
+    resume_unit: LogUnit | None
     length_pages: int | None
     length_minutes: int | None
     completion_pct: int | None

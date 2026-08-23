@@ -10,6 +10,7 @@ from app.models.edition import EngagementEdition
 from app.models.engagement import Engagement
 from app.models.enums import Format
 from app.models.progress_log import ProgressLog
+from app.services.books import capture_audio_length
 
 
 def create_binding(
@@ -20,6 +21,7 @@ def create_binding(
     edition_format: Format | None,
     origin_id: uuid.UUID | None,
     length_override: int | None,
+    audio_length_minutes: int | None,
 ) -> EngagementEdition:
     if edition_id is not None:
         edition = edition_crud.get_or_raise(db, edition_id)
@@ -40,7 +42,7 @@ def create_binding(
     if engagement_edition_crud.get(db, (engagement.id, edition.id)) is not None:
         raise ConflictError("This edition is already bound to this engagement.")
 
-    return engagement_edition_crud.create(
+    binding = engagement_edition_crud.create(
         db,
         EngagementEdition(
             engagement_id=engagement.id,
@@ -50,6 +52,16 @@ def create_binding(
             length_override=length_override,
         ),
     )
+
+    # Every book is created with a synthetic audio edition carrying no length, so adding
+    # audio to a read in progress is usually the first time anyone has said how long the
+    # audiobook is. That is a fact about the edition rather than a correction to it
+    # (ADR-0022), so it is captured rather than overridden -- and only on an audio
+    # edition, since editions are shared across users.
+    if audio_length_minutes is not None and edition.edition_format == Format.audio:
+        capture_audio_length(engagement.book, edition, audio_length_minutes)
+
+    return binding
 
 
 def apply_length_change(

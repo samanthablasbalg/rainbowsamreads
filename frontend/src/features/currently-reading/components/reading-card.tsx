@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Cancel02Icon, Delete02Icon, HistoryIcon, Tick02Icon } from '@hugeicons/core-free-icons';
+import {
+  Cancel02Icon,
+  Delete02Icon,
+  HistoryIcon,
+  PlusSignIcon,
+  Tick02Icon,
+} from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getEngagementsListEngagementsQueryKey,
@@ -10,6 +16,7 @@ import {
 } from '@/api/generated/engagements/engagements';
 import {
   EngagementStatusUpdateStatus,
+  Format,
   type EngagementRead,
 } from '@/api/generated/readingTracker.schemas';
 import { BookRow } from '@/components/common/book-row';
@@ -21,6 +28,7 @@ import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdow
 import { authorNames, coverSrc } from '@/utils/book';
 import { localIsoDate } from '@/utils/local-date';
 import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
+import { AddFormatSheet } from './add-format-sheet';
 
 const CONFIRMATIONS = {
   finished: {
@@ -49,6 +57,7 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
   const { book, formats, completion_pct } = engagement;
   const queryClient = useQueryClient();
   const [logOpen, setLogOpen] = useState(false);
+  const [addFormatOpen, setAddFormatOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<ConfirmAction | null>(null);
 
   function invalidateEngagements() {
@@ -108,6 +117,20 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
       ]}
       menu={
         <>
+          {/* Multi-format is never advertised on the log button -- you come looking for it
+              here, and a read already in all three formats has nothing left to offer. */}
+          {formats.length < Object.keys(Format).length && (
+            <>
+              <DropdownMenuItem
+                aria-label={`Add another format to ${book.title}`}
+                onClick={() => setAddFormatOpen(true)}
+              >
+                <HugeiconsIcon icon={PlusSignIcon} />
+                Add another format
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
           {/* A real link rather than a navigate() on click, so the read's page opens in a
               new tab on a modified click like any other. */}
           <DropdownMenuItem
@@ -145,6 +168,12 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
       }
     >
       <ProgressLogSheet engagement={engagement} open={logOpen} onOpenChange={setLogOpen} />
+
+      <AddFormatSheet
+        engagement={engagement}
+        open={addFormatOpen}
+        onOpenChange={setAddFormatOpen}
+      />
 
       <ConfirmDialog
         open={pendingAction !== null}

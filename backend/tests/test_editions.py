@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.book import Book
 from app.models.edition import Edition
 from app.models.enums import Format
 
@@ -270,6 +271,39 @@ def test_create_binding_carries_length_override(client: TestClient) -> None:
     )
     assert response.status_code == 201
     assert response.json()["length_override"] == 300
+
+
+def test_create_binding_captures_a_first_audio_length(
+    client: TestClient, db: Session
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+
+    response = client.post(
+        f"/api/engagements/{engagement['id']}/editions",
+        json={"edition_format": "audio", "audio_length_minutes": 430},
+    )
+    assert response.status_code == 201
+    assert response.json()["edition"]["audio_minutes"] == 430
+
+    book_obj = db.get(Book, uuid.UUID(book["id"]))
+    assert book_obj is not None
+    assert book_obj.default_audio_minutes == 430
+
+
+def test_create_binding_ignores_an_audio_length_on_a_page_edition(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+    edition = _create_edition(client, book["id"], isbn="9781526622426")
+    engagement = _create_engagement(client, book["id"])
+
+    response = client.post(
+        f"/api/engagements/{engagement['id']}/editions",
+        json={"edition_id": edition["id"], "audio_length_minutes": 430},
+    )
+    assert response.status_code == 201
+    assert response.json()["edition"]["audio_minutes"] is None
 
 
 def test_create_binding_by_format_finds_existing_edition(

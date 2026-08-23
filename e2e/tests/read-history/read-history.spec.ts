@@ -221,3 +221,35 @@ test('Deleting the newest entry reverts progress to the prior entry', async ({
     );
   });
 });
+
+test('A mixed read’s history shows each session in the ruler it was logged on', async ({
+  page,
+  apiClient,
+}) => {
+  const history = new ReadHistoryPage(page);
+
+  let engId = '';
+
+  await test.step('Seed a page session, then an audio session the next day', async () => {
+    const bookId = await apiClient.createBook('Piranesi', 'Susanna Clarke', 272);
+    engId = await apiClient.markAsReading(bookId);
+    await apiClient.patchEngagementDates(engId, { started_on: '2025-06-01' });
+    await apiClient.logProgress(engId, 136, '2025-06-14');
+    await apiClient.addFormat(engId, 'audio', 600);
+    await apiClient.logAudioProgress(engId, 360, '2025-06-15');
+  });
+
+  await test.step('Navigate to the read’s page', async () => {
+    await history.goto(engId);
+  });
+
+  await test.step('Verify the page session is measured in pages', async () => {
+    await expect(history.getDayGroup('Sat, Jun 14, 2025')).toContainText('p. 136');
+    await expect(history.getDayGroup('Sat, Jun 14, 2025')).toContainText('+136 pp');
+  });
+
+  await test.step('Verify the audio session is measured in time', async () => {
+    await expect(history.getDayGroup('Sun, Jun 15, 2025')).toContainText('06:00');
+    await expect(history.getDayGroup('Sun, Jun 15, 2025')).toContainText('+60 min');
+  });
+});

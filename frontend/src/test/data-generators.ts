@@ -1,6 +1,7 @@
 import {
   DatePrecision,
   Format,
+  LogUnit,
   ReadingStatus,
   type BookRead,
   type EngagementRead,
@@ -47,6 +48,7 @@ export function buildEngagement({
     abandoned_on: null,
     resume_from_page: 272,
     resume_from_minute: 0,
+    resume_unit: LogUnit.pages,
     length_pages: 272,
     length_minutes: null,
     completion_pct: 100,
@@ -65,6 +67,7 @@ export function buildAudioEngagement({
     title,
     formats: [Format.audio],
     book: buildBook({ title, default_page_count: null, default_audio_minutes: 600 }),
+    resume_unit: LogUnit.minutes,
     length_pages: null,
     length_minutes: 600,
     ...overrides,

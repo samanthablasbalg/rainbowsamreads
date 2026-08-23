@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { withPointer } from '@/test/pointer-decorator';
 import { expect, fireEvent, screen, userEvent, within } from 'storybook/test';
 import { Format, ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
-import { buildEngagement } from '@/test/data-generators';
+import { buildAudioEngagement, buildEngagement } from '@/test/data-generators';
 import { Button } from '@/components/ui/button';
 import { ProgressLogSheet } from './progress-log-sheet';
 
@@ -46,20 +46,38 @@ export const Print: Story = {
 export const Audiobook: Story = {
   render: () => (
     <ControlledSheet
-      engagement={{
-        ...baseEngagement,
-        book: {
-          ...baseEngagement.book,
-          title: 'The House in the Cerulean Sea',
-          default_page_count: null,
-          default_audio_minutes: 600,
-        },
-        formats: [Format.audio],
+      engagement={buildAudioEngagement({
+        id: 'engagement-1',
+        title: 'The House in the Cerulean Sea',
+        status: ReadingStatus.reading,
+        finished_on: null,
         resume_from_minute: 75,
         completion_pct: 30,
+      })}
+    />
+  ),
+};
+
+// Only a read bound in both rulers gets the switch, and both chips read off one shared
+// frontier: page 132 of 272 is the same spot as 04:51 of 10:00.
+export const MultiFormat: Story = {
+  render: () => (
+    <ControlledSheet
+      engagement={{
+        ...baseEngagement,
+        formats: [Format.print, Format.audio],
+        resume_from_minute: 291,
+        length_minutes: 600,
       }}
     />
   ),
+  play: async (context) => {
+    await openSheet(context);
+    await userEvent.click(await screen.findByRole('button', { name: 'Minutes' }));
+
+    expect(await screen.findByPlaceholderText('--:--')).toBeInTheDocument();
+    expect(screen.getByText('04:51')).toBeInTheDocument();
+  },
 };
 
 export const MobileSheet: Story = {

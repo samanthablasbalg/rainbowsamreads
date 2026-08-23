@@ -4,7 +4,7 @@ import datetime
 import uuid
 from typing import Self
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.models.enums import Format
 
@@ -45,6 +45,7 @@ class EngagementEditionCreate(BaseModel):
     edition_format: Format | None = None
     origin_id: uuid.UUID | None = None
     length_override: int | None = None
+    audio_length_minutes: int | None = Field(default=None, gt=0)
 
     @model_validator(mode="after")
     def check_exactly_one_resolver(self) -> Self:

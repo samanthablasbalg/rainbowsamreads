@@ -155,6 +155,7 @@ export interface EngagementEditionCreate {
   edition_format?: Format | null;
   origin_id?: string | null;
   length_override?: number | null;
+  audio_length_minutes?: number | null;
 }
 
 export interface EngagementEditionRead {
@@ -183,6 +184,13 @@ export const ReadingStatus = {
   dnf: 'dnf',
 } as const;
 
+export type LogUnit = (typeof LogUnit)[keyof typeof LogUnit];
+
+export const LogUnit = {
+  pages: 'pages',
+  minutes: 'minutes',
+} as const;
+
 export interface ReviewRead {
   rating: string | null;
   body: string | null;
@@ -199,6 +207,7 @@ export interface EngagementRead {
   abandoned_on: string | null;
   resume_from_page: number;
   resume_from_minute: number;
+  resume_unit: LogUnit | null;
   length_pages: number | null;
   length_minutes: number | null;
   completion_pct: number | null;
