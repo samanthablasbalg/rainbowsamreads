@@ -44,7 +44,9 @@ describe('EntryTimeline', () => {
 
     renderTimeline();
 
-    const entry = within(await screen.findByRole('list', { name: 'Jun 15' })).getByRole('listitem');
+    const entry = within(await screen.findByRole('list', { name: 'Sun, Jun 15, 2025' })).getByRole(
+      'listitem'
+    );
     expect(entry).toHaveTextContent('p. 50');
     expect(entry).toHaveTextContent('p. 100');
     expect(entry).toHaveTextContent('+50 pp');
@@ -60,7 +62,7 @@ describe('EntryTimeline', () => {
 
     renderTimeline();
 
-    const day = await screen.findByRole('list', { name: 'Jun 15' });
+    const day = await screen.findByRole('list', { name: 'Sun, Jun 15, 2025' });
     expect(within(day).getAllByRole('listitem')).toHaveLength(2);
     expect(screen.getAllByText('Jun 15')).toHaveLength(1);
   });

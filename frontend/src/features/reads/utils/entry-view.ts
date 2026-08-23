@@ -35,6 +35,10 @@ export type EntryView = {
 
 export type DayGroup = {
   loggedOn: string;
+  // The header shows the day and weekday; the whole date, year included, names the
+  // group's list. Cards no longer carry a date of their own, so without this the year
+  // is nowhere on the page and a session is announced with no date at all.
+  dateLabel: string;
   dayLabel: string;
   weekdayLabel: string;
   entries: EntryView[];
@@ -58,6 +62,7 @@ export function toDayGroups(entries: EntryView[]): DayGroup[] {
     else
       groups.push({
         loggedOn: entry.loggedOn,
+        dateLabel: entry.dateLabel,
         dayLabel: entry.dayLabel,
         weekdayLabel: entry.weekdayLabel,
         entries: [entry],

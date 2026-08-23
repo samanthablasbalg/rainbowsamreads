@@ -97,7 +97,7 @@ export function EntryTimeline({
                   </p>
                 </TimelineRow>
 
-                <ul aria-label={group.dayLabel}>
+                <ul aria-label={group.dateLabel}>
                   {group.entries.map((entry) => (
                     <li key={entry.id}>
                       <TimelineRow className="pb-3">
