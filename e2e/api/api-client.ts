@@ -68,10 +68,37 @@ export class ApiClient {
    * resume point, or the backend rejects it.
    * @param engagementId - The engagement to log against.
    * @param currentMinute - The minute position reached.
+   * @param loggedOn - The date the session happened, yyyy-mm-dd. Defaults to today.
    */
-  async logAudioProgress(engagementId: string, currentMinute: number): Promise<void> {
+  async logAudioProgress(
+    engagementId: string,
+    currentMinute: number,
+    loggedOn?: string
+  ): Promise<void> {
     await this.request.post(`/api/engagements/${engagementId}/progress-logs`, {
-      data: { current_minute: currentMinute },
+      data: { current_minute: currentMinute, ...(loggedOn != null && { logged_on: loggedOn }) },
+    });
+  }
+
+  /**
+   * Binds another edition to a read already in progress, which is what makes it
+   * multi-format. createBook gives every book an edition in each format, so the
+   * format alone is enough to find one.
+   * @param engagementId - The read to add the format to.
+   * @param editionFormat - The format to add.
+   * @param audioLengthMinutes - Total length in minutes. The synthetic audio edition
+   *   carries no length of its own, so audio needs one before minutes can be logged.
+   */
+  async addFormat(
+    engagementId: string,
+    editionFormat: string,
+    audioLengthMinutes?: number
+  ): Promise<void> {
+    await this.request.post(`/api/engagements/${engagementId}/editions`, {
+      data: {
+        edition_format: editionFormat,
+        ...(audioLengthMinutes != null && { audio_length_minutes: audioLengthMinutes }),
+      },
     });
   }
 

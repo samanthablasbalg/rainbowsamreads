@@ -1,5 +1,7 @@
 import { Locator, Page } from '@playwright/test';
 
+export type LogRuler = 'Pages' | 'Minutes';
+
 // The progress-log sheet renders identically whether opened as a dialog (fine
 // pointer) or a bottom drawer (coarse), so one set of content locators drives both.
 // The switch is on pointer type, not viewport width. Instantiated against the same
@@ -60,6 +62,25 @@ export class ProgressLogSheetPage {
    */
   getMaxDisplay(value: string): Locator {
     return this.page.getByText(`of ${value}`, { exact: true });
+  }
+
+  /**
+   * Locates one of the two ruler chips. A read bound in both pages and minutes logs
+   * against either, so the sheet offers the pair; a single-format read shows neither.
+   * @param unit - The ruler's chip.
+   * @returns The chip locator.
+   */
+  getUnitButton(unit: LogRuler): Locator {
+    return this.page.getByRole('button', { name: unit, exact: true });
+  }
+
+  /**
+   * Switches the sheet to a ruler. Anything typed on the one being left is dropped,
+   * since pages and minutes aren't interchangeable.
+   * @param unit - The ruler to log against.
+   */
+  async pickUnit(unit: LogRuler): Promise<void> {
+    await this.getUnitButton(unit).click();
   }
 
   /**

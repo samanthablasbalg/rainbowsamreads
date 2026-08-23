@@ -10,6 +10,16 @@ export class CardMenuPage {
   constructor(public readonly page: Page) {}
 
   /**
+   * Locates the "Add another format" item, which a read already bound in every format
+   * does not offer.
+   * @param title - The book's title.
+   * @returns The menu item locator.
+   */
+  getAddFormatItem(title: string): Locator {
+    return this.page.getByRole('menuitem', { name: `Add another format to ${title}` });
+  }
+
+  /**
    * Locates the "View history" item.
    * @param title - The book's title.
    * @returns The menu item locator.
