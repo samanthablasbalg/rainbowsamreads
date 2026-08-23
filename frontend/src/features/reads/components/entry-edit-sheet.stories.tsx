@@ -51,7 +51,6 @@ export const NewestAudioEntry: Story = {
     <ControlledSheet
       entry={{
         ...newestPageEntry,
-        rangeLabel: '01:20–02:05',
         amountLabel: '+45 min',
         isAudio: true,
         start: 80,

@@ -143,7 +143,7 @@ function DrawerContent({ className, children, ...props }: DrawerPrimitive.Popup.
                 This div only carries the fade/clip treatment the three of them share. */}
             <div
               data-slot="drawer-content"
-              className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden rounded-[inherit] pt-4 px-4 transition-opacity duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] select-text group-data-nested-drawer-open/drawer-popup:opacity-0 group-data-nested-drawer-swiping/drawer-popup:opacity-100 group-data-swiping/drawer-popup:select-none"
+              className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden rounded-[inherit] px-4 pt-4 transition-opacity duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] select-text group-data-nested-drawer-open/drawer-popup:opacity-0 group-data-nested-drawer-swiping/drawer-popup:opacity-100 group-data-swiping/drawer-popup:select-none"
             >
               {children}
             </div>

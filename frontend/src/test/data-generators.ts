@@ -110,7 +110,6 @@ export function buildEntryView(overrides: Partial<EntryView> = {}): EntryView {
     dateLabel: 'Sun, Jun 15, 2025',
     dayLabel: 'Jun 15',
     weekdayLabel: 'Sun',
-    rangeLabel: 'pp. 50–100',
     fromLabel: 'p. 50',
     toLabel: 'p. 100',
     amountLabel: '+50 pp',

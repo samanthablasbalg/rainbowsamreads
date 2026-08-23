@@ -101,7 +101,7 @@ describe('EntryEditSheet', () => {
   });
 
   it('opens a zero-length entry without a position error already showing', async () => {
-    renderSheet({ ...newest, rangeLabel: 'p. 100', amountLabel: '', start: 100, end: 100 });
+    renderSheet({ ...newest, amountLabel: '', start: 100, end: 100 });
 
     expect(await screen.findByLabelText('Ended at page')).toHaveValue('100');
     expect(screen.queryByText('Must be past page 100')).not.toBeInTheDocument();

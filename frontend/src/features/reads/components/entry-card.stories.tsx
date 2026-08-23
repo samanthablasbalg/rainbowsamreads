@@ -29,7 +29,6 @@ export const Audio: Story = {
   args: {
     entry: {
       ...pageEntry,
-      rangeLabel: '01:20–02:05',
       fromLabel: '01:20',
       toLabel: '02:05',
       amountLabel: '+45 min',

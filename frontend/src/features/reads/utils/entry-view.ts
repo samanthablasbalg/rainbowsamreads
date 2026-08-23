@@ -16,7 +16,6 @@ export type EntryView = {
   dateLabel: string;
   dayLabel: string;
   weekdayLabel: string;
-  rangeLabel: string;
   fromLabel: string;
   toLabel: string;
   amountLabel: string;
@@ -95,9 +94,6 @@ function toEntryView(log: ProgressLog, isNewest: boolean, engagement: Engagement
       month: undefined,
       year: undefined,
     }),
-    rangeLabel: isAudio
-      ? `${formatMinutesAsHhmm(start)}–${formatMinutesAsHhmm(end)}`
-      : `pp. ${start}–${end}`,
     fromLabel,
     toLabel,
     amountLabel: `+${end - start} ${isAudio ? 'min' : 'pp'}`,

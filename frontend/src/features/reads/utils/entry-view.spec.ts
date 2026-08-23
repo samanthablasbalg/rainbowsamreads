@@ -10,10 +10,9 @@ const print = buildEngagement({ length_pages: 200 });
 const audio = buildAudioEngagement({ length_minutes: 250 });
 
 describe('toEntryViews', () => {
-  it('labels a page log with its range and the pages it covered', () => {
+  it('labels a page log with the pages it covered', () => {
     const [entry] = toEntryViews([buildPageLog({ page_start: 50, page_end: 100 })], print);
 
-    expect(entry.rangeLabel).toBe('pp. 50–100');
     expect(entry.amountLabel).toBe('+50 pp');
   });
 
@@ -27,7 +26,6 @@ describe('toEntryViews', () => {
   it('labels a minute log as clock positions and the minutes it covered', () => {
     const [entry] = toEntryViews([buildMinuteLog({ minute_start: 80, minute_end: 125 })], audio);
 
-    expect(entry.rangeLabel).toBe('01:20–02:05');
     expect(entry.amountLabel).toBe('+45 min');
     expect(entry.fromLabel).toBe('01:20');
     expect(entry.toLabel).toBe('02:05');
