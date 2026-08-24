@@ -172,8 +172,6 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
         </div>
       )}
 
-      {/* A fixed first track rather than `auto`: the From cell holds a button one moment
-          and an input the next, and the two columns beside it can't shift when it does. */}
       <Card
         size="sm"
         className="grid grid-cols-[5rem_auto_1fr_auto] items-center gap-x-3 gap-y-1 px-(--card-spacing)"
@@ -232,8 +230,6 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
           </span>
         )}
 
-        {/* One slot for both fields: the From column is too narrow to hold a message of
-            its own, and its error wins, since To is only valid relative to From. */}
         <FieldError className="col-start-1 col-end-5 row-start-3">
           {form.from.error ?? form.positionError}
         </FieldError>

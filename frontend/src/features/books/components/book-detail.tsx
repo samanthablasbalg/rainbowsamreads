@@ -38,10 +38,6 @@ export function BookDetail({ bookId }: { bookId: string }) {
         Catalog
       </Button>
 
-      {/* Two independent columns at lg, so the tall cover can't hold the main column's
-          first row open. Stacked, it is a grid instead -- the only way the cover sits
-          beside the title -- and the two wrappers go `contents` so their blocks are page
-          level grid items. */}
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 gap-y-5 lg:flex lg:gap-8">
         <aside className="contents lg:flex lg:w-60 lg:shrink-0 lg:flex-col lg:gap-4">
           <CoverImage

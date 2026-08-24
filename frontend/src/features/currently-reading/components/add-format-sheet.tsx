@@ -70,8 +70,6 @@ function AddFormatForm({ engagement, onDone }: { engagement: EngagementRead; onD
           </div>
         </div>
 
-        {/* Every format is listed, bound ones included: seeing what you're already in, and
-            where you are in it, is what tells you what adding another one means. */}
         <div role="group" aria-label="Format" className="-mx-1">
           {Object.values(Format).map((format) =>
             engagement.formats.includes(format) ? (
@@ -99,8 +97,6 @@ function AddFormatForm({ engagement, onDone }: { engagement: EngagementRead; onD
           )}
         </div>
 
-        {/* Nothing is picked to begin with -- the list is what you came here to read, and a
-            length for a format you haven't chosen has nothing to attach to. */}
         {form.format !== null && (
           <Field data-invalid={!!form.lengthError}>
             <FieldLabel htmlFor="add-format-length">{form.lengthLabel}</FieldLabel>
