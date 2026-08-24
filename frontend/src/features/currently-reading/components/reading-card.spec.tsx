@@ -90,7 +90,7 @@ describe('ReadingCard', () => {
     expect(await screen.findByRole('dialog', { name: 'Piranesi' })).toBeVisible();
   });
 
-  it('offers add-format, history, finish, DNF and delete from the overflow menu, in that order', async () => {
+  it('offers history, add-format, finish, DNF and delete from the overflow menu, in that order', async () => {
     const user = userEvent.setup();
     renderInList(buildEngagement());
 
@@ -98,8 +98,8 @@ describe('ReadingCard', () => {
     await screen.findByRole('menu');
 
     expect(screen.getAllByRole('menuitem').map((item) => item.getAttribute('aria-label'))).toEqual([
-      'Add another format to Piranesi',
       'View history for Piranesi',
+      'Add another format to Piranesi',
       'Mark Piranesi as finished',
       'Mark Piranesi as DNF',
       'Delete Piranesi',
