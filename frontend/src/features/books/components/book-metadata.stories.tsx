@@ -19,8 +19,6 @@ const engagements = [
   }),
 ];
 
-// The card lives in the 15rem rail, and its rows are built to wrap at that width rather
-// than push a caption off the side -- so the story constrains itself to the same measure.
 const meta = {
   component: BookMetadata,
   args: { book, engagements },

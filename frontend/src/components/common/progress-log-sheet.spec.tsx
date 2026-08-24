@@ -22,8 +22,6 @@ import {
 import { localIsoDate } from '@/utils/local-date';
 import { ProgressLogSheet } from './progress-log-sheet';
 
-// Logging progress only happens against an in-progress read, so these start from one
-// rather than the shared generator's finished default.
 function buildEngagement(overrides: Partial<EngagementRead> = {}): EngagementRead {
   return buildBaseEngagement({
     id: 'engagement-1',
@@ -36,8 +34,6 @@ function buildEngagement(overrides: Partial<EngagementRead> = {}): EngagementRea
   });
 }
 
-// A read bound in both rulers. The frontier is shared, so the two resume points are one
-// position in two units: page 100 of 272 is minute 221 of 600.
 function buildMixedEngagement(overrides: Partial<EngagementRead> = {}): EngagementRead {
   return buildEngagement({
     formats: [Format.print, Format.audio],
@@ -103,8 +99,6 @@ describe('ProgressLogSheet', () => {
     expect(screen.getByLabelText('start position')).toHaveValue('01:15');
   });
 
-  // The catch-up pass the whole feature exists for: a stretch read behind the frontier,
-  // which only the start position can express.
   it('saves a session that starts behind where the read has got to', async () => {
     const user = userEvent.setup();
     let capturedBody: unknown;
@@ -144,8 +138,6 @@ describe('ProgressLogSheet', () => {
     expect(screen.queryByLabelText('start position')).not.toBeInTheDocument();
   });
 
-  // Out-of-order new ground is issue 96's deferred half, so the backend 409s a start past
-  // the frontier. The sheet refuses it first, and stays open on what was typed.
   it('refuses a start past where the read has got to', async () => {
     const user = userEvent.setup();
     renderSheet(buildEngagement());
@@ -172,9 +164,6 @@ describe('ProgressLogSheet', () => {
     expect(screen.getByText("Can't start past 01:15")).toBeVisible();
   });
 
-  // The prefill is where the catch-up stopped, but the ceiling is the frontier: giving up
-  // on the catch-up and picking the print back up where the audio got to is a legal move,
-  // and the backend takes it.
   it('allows a start between an open catch-up and the frontier', async () => {
     const user = userEvent.setup();
     renderSheet(buildEngagement({ resume_from_page: 75, frontier_page: 100 }));
@@ -650,8 +639,6 @@ describe('ProgressLogSheet', () => {
     expect(screen.getByText('Cannot exceed 272 pages')).toBeVisible();
   });
 
-  // The book default is the last link of the ADR-0021 length chain. A read that
-  // overrode it caps against its own length, not the book's.
   it('caps against the read’s own length rather than the book default', async () => {
     const user = userEvent.setup();
     renderSheet(buildEngagement({ length_pages: 1000 }));

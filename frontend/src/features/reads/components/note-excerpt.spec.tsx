@@ -1,9 +1,6 @@
 import { render, screen } from '@/test/render';
 import { NoteExcerpt } from './note-excerpt';
 
-// Whether the toggle appears is a question about layout, and jsdom reports every height
-// as zero -- so nothing here can overflow, and the toggle's own behaviour is asserted in
-// note-excerpt.stories.tsx, which runs in a real browser.
 describe('NoteExcerpt', () => {
   it('renders the note as markdown rather than as its source', () => {
     render(<NoteExcerpt>{'> The Beauty of the House is immeasurable.'}</NoteExcerpt>);

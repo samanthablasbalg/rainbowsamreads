@@ -100,9 +100,6 @@ describe('EntryEditSheet', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 
-  // The entry reads p. 80 to p. 130, but the row this edits is the new-ground half that
-  // begins at the frontier it crossed, so p. 90 is the backend's refusal, not a valid
-  // shortening of the session.
   it('holds a session that crossed the frontier to the frontier, not to its own start', async () => {
     renderSheet({
       ...newest,

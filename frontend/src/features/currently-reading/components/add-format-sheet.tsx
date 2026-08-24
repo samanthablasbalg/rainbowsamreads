@@ -138,8 +138,6 @@ function AddFormatForm({ engagement, onDone }: { engagement: EngagementRead; onD
   );
 }
 
-// A list row, not a Button: the rows are one list whether or not they can be picked, and
-// Button's fixed-height pill is the wrong primitive for a two-line row with a trailing chip.
 const ROW = 'flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm';
 
 function FormatRow({
@@ -233,9 +231,6 @@ function useAddFormatForm(engagement: EngagementRead, onClose: () => void) {
   });
 
   const isAudio = format === Format.audio;
-  // The book's per-format default is the last link of the ADR-0021 length chain. This read
-  // already has a length for the format it is bound in, but the one being added has never
-  // been sized here, so the book's default is all there is to offer.
   const knownLength = format === null ? null : knownLengthFor(engagement, format);
   const typed = length.trim() !== '';
   const parsedLength = parseLength(isAudio, length);
@@ -248,8 +243,6 @@ function useAddFormatForm(engagement: EngagementRead, onClose: () => void) {
   function pickFormat(picked: Format) {
     if (picked === format) return;
     setFormat(picked);
-    // Pages and minutes aren't interchangeable, so a length typed for the old format
-    // can't carry over to the new one.
     setLengthRaw('');
     setError(null);
   }
@@ -301,7 +294,6 @@ function knownLengthLabel(engagement: EngagementRead, format: Format): string | 
   return lengthLabel(format === Format.audio, knownLengthFor(engagement, format));
 }
 
-// A bound format's length is this read's own, not the book's: the binding may override it.
 function boundLengthLabel(engagement: EngagementRead, format: Format): string | null {
   const isAudio = format === Format.audio;
   return lengthLabel(isAudio, isAudio ? engagement.length_minutes : engagement.length_pages);

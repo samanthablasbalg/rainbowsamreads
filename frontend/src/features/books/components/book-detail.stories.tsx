@@ -15,8 +15,6 @@ const piranesi = buildBook({
   publication_date: '2020-09-15',
 });
 
-// The page fetches with a suspense query, which needs a boundary above it. In the app that
-// is the route's ContentBoundary; here the story supplies its own.
 const meta = {
   component: BookDetail,
   args: { bookId: piranesi.id },

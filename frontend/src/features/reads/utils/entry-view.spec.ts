@@ -94,8 +94,6 @@ describe('toEntryViews', () => {
   });
 
   describe('a session split at the frontier', () => {
-    // What the backend stores for "at p. 100, read 80 to 130": the 80-100 it had already
-    // covered, then the 100-130 it hadn't, written by one save so they share created_at.
     const savedAt = '2025-06-15T09:30:00.000Z';
     const split = [
       buildPageLog({

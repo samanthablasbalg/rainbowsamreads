@@ -17,13 +17,6 @@ import { BookChips, BookHeader } from './book-header';
 import { BookReadings } from './book-readings';
 
 export function BookDetail({ bookId }: { bookId: string }) {
-  // One hook, so both requests go out together. Called as two suspense hooks in a row,
-  // the first suspends this component before the second is ever issued.
-  //
-  // The result types are spelled out because useSuspenseQueries infers each entry's
-  // error from `throwOnError`, and that inference gives up on the options orval
-  // returns -- leaving `unknown`, which then will not accept the narrower error type
-  // they actually carry.
   const [{ data: book }, { data: engagements }] = useSuspenseQueries<
     [[BookRead, DetailError], [EngagementRead[], DetailError]]
   >({
@@ -57,15 +50,11 @@ export function BookDetail({ bookId }: { bookId: string }) {
             className="aspect-[2/3] h-auto w-28 rounded-xl shadow-lg lg:w-full"
           />
 
-          {/* Sits under the blurb on a phone, where the book itself comes first and this
-              earns its place after it; back up into the rail once there is one. */}
           <div className="order-1 col-span-2 lg:order-none">
             <BookMetadata book={book} engagements={engagements} />
           </div>
         </aside>
 
-        {/* One measure for the whole column, so Contents and Reading history line up
-            instead of ending 64px apart. */}
         <div className="contents lg:flex lg:min-w-0 lg:max-w-2xl lg:flex-1 lg:flex-col lg:gap-6">
           <BookHeader book={book} />
 
@@ -74,8 +63,6 @@ export function BookDetail({ bookId }: { bookId: string }) {
             <BookBlurb book={book} />
           </div>
 
-          {/* Contents takes the wide column because it can run to thirty rows; the history
-              under it caps its own width so a single entry still looks deliberate. */}
           <div className="order-2 col-span-2 flex flex-col gap-6 lg:order-none">
             <BookContents />
             <BookReadings book={book} engagements={engagements} />

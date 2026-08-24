@@ -11,8 +11,6 @@ import { buildEngagement as buildBaseEngagement } from '@/test/data-generators';
 import { localIsoDate } from '@/utils/local-date';
 import { ReadingCard } from './reading-card';
 
-// A card only ever shows an in-progress read, so these specs start from one rather than
-// the shared generator's finished default.
 function buildEngagement(overrides: Partial<EngagementRead> = {}): EngagementRead {
   return buildBaseEngagement({
     id: 'engagement-1',

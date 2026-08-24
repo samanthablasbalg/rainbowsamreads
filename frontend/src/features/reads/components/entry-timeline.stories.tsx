@@ -17,8 +17,6 @@ const twoDays = [
   buildPageLog({ id: 'newer', logged_on: '2025-06-15', page_start: 50, page_end: 100 }),
 ];
 
-// The list is a suspense query, so the story supplies the boundary the route gives it in
-// the app.
 const meta = {
   component: EntryTimeline,
   args: { engagement: reading, onLogProgress: fn() },
@@ -41,7 +39,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-// Two sessions on one date share a header, and the rail carries one dot for the pair.
 export const SameDay: Story = {
   async beforeEach({ msw }) {
     msw.use(
@@ -59,7 +56,6 @@ export const SameDay: Story = {
   },
 };
 
-// An ended read caps the rail at the top as well as the bottom.
 export const Finished: Story = {
   args: { engagement: buildEngagement({ length_pages: 200 }) },
 };

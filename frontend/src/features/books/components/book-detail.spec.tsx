@@ -121,8 +121,6 @@ describe('BookDetail', () => {
     expect(await screen.findByRole('img', { name: 'Not rated' })).toBeVisible();
   });
 
-  // The status menu is built from the generated `EngagementStatusUpdateStatus`, so this
-  // pins the thing that matters: it offers what the endpoint accepts and nothing else.
   it('offers only the statuses the endpoint accepts', async () => {
     const user = userEvent.setup();
     server.use(
@@ -191,8 +189,6 @@ describe('BookDetail', () => {
     expect(await screen.findByRole('button', { name: 'Add Piranesi as Finished' })).toBeVisible();
   });
 
-  // Two of them would sit one above the other: the empty state's own button is the one to
-  // keep, because it is the thing explaining why the list is empty.
   it('leaves the history heading without a log button until there is a history', async () => {
     server.use(getBooksGetBookMockHandler(buildBook()), getBooksListBookEngagementsMockHandler([]));
 

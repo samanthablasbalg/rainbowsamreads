@@ -58,8 +58,6 @@ export const Audiobook: Story = {
   ),
 };
 
-// Only a read bound in both rulers gets the switch, and both chips read off one shared
-// frontier: page 132 of 272 is the same spot as 04:51 of 10:00.
 export const MultiFormat: Story = {
   render: () => (
     <ControlledSheet
@@ -80,14 +78,10 @@ export const MultiFormat: Story = {
   },
 };
 
-// The catch-up pass: the stretch just read started behind the frontier, and the start
-// position is the only way to say so. A value until it is clicked, an input after.
 export const EditingTheStart: Story = {
   render: () => <ControlledSheet engagement={baseEngagement} />,
   play: async (context) => {
     await openSheet(context);
-    // Nothing beside the swapped cell may move, which is a layout fact and so is checked
-    // here rather than in the spec: the To field sits in the same box either way.
     const before = (await screen.findByLabelText('To · now')).getBoundingClientRect();
 
     await userEvent.click(await screen.findByRole('button', { name: 'Edit start position' }));
@@ -115,8 +109,6 @@ export const CustomDate: Story = {
   },
 };
 
-// A note is what makes staying on the same page valid at all -- the position field alone
-// would 409 on the server, and the frontend now agrees before it ever gets there.
 export const SamePageWithNote: Story = {
   render: () => <ControlledSheet engagement={baseEngagement} />,
   play: async (context) => {

@@ -25,9 +25,6 @@ import {
 import { localIsoDate } from '@/utils/local-date';
 import { LogReadingSheet } from './log-reading-sheet';
 
-// Labels every status a read can come back as. The menu offers only the subset the PATCH
-// endpoint accepts, which is the narrower question -- hence a table here and a separate
-// list below, rather than one doing both jobs.
 const STATUS_LABELS: Record<ReadingStatus, string> = {
   interested: 'Interested',
   tbr: 'To read',
@@ -37,10 +34,6 @@ const STATUS_LABELS: Record<ReadingStatus, string> = {
   dnf: 'DNF',
 };
 
-// Same rule the search endpoint uses server-side (`_pick_status` in app/api/books.py): an
-// active read wins regardless of recency, otherwise it's whichever engagement moved last.
-// Null for a book nobody has opened, which is what makes the untracked card a state of
-// this component rather than a separate one.
 function currentEngagement(engagements: EngagementRead[]): EngagementRead | null {
   if (engagements.length === 0) {
     return null;
@@ -51,9 +44,6 @@ function currentEngagement(engagements: EngagementRead[]): EngagementRead | null
   );
 }
 
-// A book's rating is every read of it, averaged -- one read being the one-element case.
-// Rounded to a quarter, the resolution the stars are drawn at, so the spoken label and
-// the picture agree. Null when nothing has been rated.
 function averageRating(engagements: EngagementRead[]): number | null {
   const ratings = engagements.flatMap((e) => (e.review?.rating ? [Number(e.review.rating)] : []));
   if (ratings.length === 0) {
@@ -63,9 +53,6 @@ function averageRating(engagements: EngagementRead[]): number | null {
   return Math.round(mean * 4) / 4;
 }
 
-// One card of labelled rows, holding what is known about this book beyond the book itself.
-// It keeps its shape whether or not the book has been read, so nothing jumps when the
-// first read is logged.
 export function BookMetadata({
   book,
   engagements,
@@ -80,7 +67,6 @@ export function BookMetadata({
   const updateStatus = useEngagementsUpdateEngagementStatus({
     mutation: {
       onSuccess: () => {
-        // This card's own source, plus the shelves elsewhere that group by status.
         queryClient.invalidateQueries({
           queryKey: getBooksListBookEngagementsQueryKey(book.id),
         });

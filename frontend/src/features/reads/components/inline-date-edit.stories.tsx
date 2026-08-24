@@ -27,7 +27,6 @@ export const Unset: Story = {
   args: { value: null },
 };
 
-// An abandoned date renders here too, but PATCH /dates cannot write it.
 export const Disabled: Story = {
   args: { disabled: true },
 };

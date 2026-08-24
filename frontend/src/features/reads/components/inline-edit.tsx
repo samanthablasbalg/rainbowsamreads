@@ -12,8 +12,6 @@ type EditableValueProps = {
   children: ReactNode;
 };
 
-// Dotted-underlined so the value reads as editable at rest; a disabled one carries no
-// underline, because there is nothing to open.
 export function EditableValue({ label, disabled = false, onEdit, children }: EditableValueProps) {
   return (
     <Button
@@ -33,16 +31,12 @@ export function EditableValue({ label, disabled = false, onEdit, children }: Edi
 
 type InlineEditorProps = {
   label: string;
-  // Shown beside the controls rather than as a block: the whole editor sits inline in a
-  // line of metadata, so ErrorText's paragraph can't nest here.
   error?: string | null;
   onSave: () => void;
   onCancel: () => void;
   children: ReactNode;
 };
 
-// Enter and Escape are handled here rather than on each input, since they bubble out of
-// whichever control the caller puts in.
 export function InlineEditor({ label, error, onSave, onCancel, children }: InlineEditorProps) {
   return (
     <span

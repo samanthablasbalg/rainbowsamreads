@@ -30,13 +30,10 @@ export const Expanded: Story = {
   },
 };
 
-// Short enough that the clamp never bites, so More still shows but changes nothing.
 export const Short: Story = {
   args: { book: buildBook({ description: 'A house that is the whole world.' }) },
 };
 
-// Google has no description for plenty of books; the section removes itself rather than
-// leaving a heading over nothing.
 export const Missing: Story = {
   args: { book: buildBook({ description: null }) },
 };

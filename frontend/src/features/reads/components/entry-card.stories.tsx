@@ -54,8 +54,6 @@ export const WithNote: Story = {
   },
 };
 
-// The zero-length entry a note-only log produces: no ground covered, so the span has
-// nothing to draw and the delta reads +0.
 export const NoteOnly: Story = {
   args: {
     entry: {
@@ -111,9 +109,6 @@ export const LongSpan: Story = {
   },
 };
 
-// Behind the frontier the whole way: the read was at p. 120 and this went back over
-// pp. 20-60. All of it re-read, so completion never moved and the bar keeps showing the
-// ground already covered running on past it.
 export const Reread: Story = {
   args: {
     entry: {
@@ -134,8 +129,6 @@ export const Reread: Story = {
   },
 };
 
-// The catch-up this all exists for: at p. 100, read pp. 80-130. Stored as two rows and
-// shown as one entry, orange up to the frontier and pink past it.
 export const CrossesFrontier: Story = {
   args: {
     entry: {

@@ -184,13 +184,6 @@ function useEntryEditForm(engagementId: string, entry: EntryView, onDone: () => 
 
   const parsedPosition = parsePosition(position, entry.isAudio);
 
-  // The floor is `splitAt`, not `start`: a session that crossed the frontier is shown as
-  // one entry but stored as two rows, and the end being edited belongs to the new-ground
-  // half, which starts at the split. Editing below it would be refused by the backend.
-  //
-  // A zero-length entry has splitAt === end, so the field opens pre-filled with a value
-  // that already fails `> splitAt` -- excluded here so an untouched (or reverted) field
-  // never errors on a position nothing is actually proposing to change.
   let positionError: string | null = null;
   if (
     entry.isNewest &&

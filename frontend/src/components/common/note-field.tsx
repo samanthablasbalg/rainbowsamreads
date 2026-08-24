@@ -19,9 +19,6 @@ export function NoteField({ id, value, onValueChange, disabled }: NoteFieldProps
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const hasMounted = useRef(false);
 
-  // Only a click into edit mode (empty -> "+ Add a note", or existing -> "Edit") should
-  // steal focus -- never the initial render, which would otherwise autofocus the textarea
-  // for a fresh, empty entry before the fields above it have been touched.
   useEffect(() => {
     if (hasMounted.current && editing) {
       textareaRef.current?.focus();

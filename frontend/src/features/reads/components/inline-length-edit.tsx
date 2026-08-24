@@ -5,10 +5,7 @@ import { EditableValue, InlineEditor } from './inline-edit';
 
 type InlineLengthEditProps = {
   value: number | null;
-  // Pages against minutes, the same split the log sheet reads its denominator on.
   isAudio: boolean;
-  // Names the control for assistive tech. Defaulted because most reads have one length,
-  // but a read bound in two formats shows two of these and they can't both be "length".
   label?: string;
   onSave: (value: number) => Promise<unknown>;
 };
@@ -48,8 +45,6 @@ export function InlineLengthEdit({
   );
 }
 
-// The unit rides along with the number, since the header no longer names the field.
-// A duration says what it is on its own; a bare page count doesn't.
 function lengthLabel(value: number | null, isAudio: boolean) {
   if (value === null) return '—';
   return isAudio ? formatPosition(value, true) : `${value} pages`;
@@ -72,8 +67,6 @@ function LengthEditor({
   const [attempted, setAttempted] = useState(false);
 
   const parsed = parsePosition(draft, isAudio);
-  // Only after a save attempt: the editor opens focused, so validating as it is typed
-  // would flag every half-finished number.
   let error: string | null = null;
   if (attempted) {
     if (parsed === null) error = isAudio ? 'Enter a time in HH:MM format' : 'Enter a number';

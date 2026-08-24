@@ -40,8 +40,6 @@ export type FormatPickSheetProps = {
   audioMinutes: number | null;
   statuses?: EngagementCreateStatus[];
   cancelLabel?: string;
-  // Search and the catalog send you to the shelf the new read landed on. The book page is
-  // already showing that book, so it stays put and lets the card refresh in place.
   redirectOnCreate?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;

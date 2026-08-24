@@ -48,8 +48,6 @@ export function buildEngagement({
     abandoned_on: null,
     resume_from_page: 272,
     resume_from_minute: 0,
-    // Equal to the resume points, as they are for every read with no catch-up open.
-    // Override just these to build one that has.
     frontier_page: 272,
     frontier_minute: 0,
     resume_unit: LogUnit.pages,
@@ -78,10 +76,6 @@ export function buildAudioEngagement({
   });
 }
 
-// The history groups rows by created_at -- a session that crossed the frontier is two
-// rows written in one transaction. So the default has to be distinct per log, or two
-// unrelated ones read as a single split session. Build a split pair by passing both
-// rows the same created_at.
 let createdAtSequence = 0;
 
 function nextCreatedAt(): string {
@@ -121,9 +115,6 @@ export function buildMinuteLog(
   };
 }
 
-// The view model the history builds out of a log, not an API type -- but it is what the
-// entry card and the edit sheet both take as their prop, so it is a fixture like any
-// other. Matches buildPageLog's defaults: pp. 50-100 of a 200-page read.
 export function buildEntryView(overrides: Partial<EntryView> = {}): EntryView {
   return {
     id: 'log-1',

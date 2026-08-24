@@ -5,8 +5,6 @@ import { formatDateAtPrecision } from '@/utils/format-date';
 
 const languageNames = new Intl.DisplayNames(undefined, { type: 'language' });
 
-// `of` throws on a tag it cannot parse, and original_language is whatever Google Books
-// stored.
 function languageName(code: string): string {
   try {
     return languageNames.of(code) ?? code;

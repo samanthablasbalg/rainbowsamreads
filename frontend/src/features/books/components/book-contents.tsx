@@ -22,8 +22,6 @@ const PARTS = [
 export function BookContents() {
   return (
     <Collapsible className="flex flex-col gap-3">
-      {/* The trigger sits inside the heading rather than replacing it, so the section keeps
-          its place in the document outline while being the thing you click. */}
       <h2>
         <CollapsibleTrigger
           render={

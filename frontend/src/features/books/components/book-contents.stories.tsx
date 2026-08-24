@@ -18,8 +18,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Collapsed: Story = {};
 
-// The blur is the whole point of the section, and it only exists once the panel is open --
-// so this is the story that puts it in front of the a11y check.
 export const Expanded: Story = {
   async play({ canvasElement }) {
     const canvas = within(canvasElement);
