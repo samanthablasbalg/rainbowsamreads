@@ -14,6 +14,10 @@ export class ProgressLogSheetPage {
   readonly sheet: Locator;
   readonly pageInput: Locator;
   readonly minuteInput: Locator;
+  // The From cell in its two states: a value at rest carrying the position as its text,
+  // and a field once clicked. Only one of the pair is mounted at a time.
+  readonly fromButton: Locator;
+  readonly fromInput: Locator;
   readonly cancelButton: Locator;
   readonly dateToggleButton: Locator;
   readonly dateInput: Locator;
@@ -25,8 +29,14 @@ export class ProgressLogSheetPage {
   /** @param page - The Playwright page the sheet is open on. */
   constructor(public readonly page: Page) {
     this.sheet = page.getByRole('dialog');
-    this.pageInput = page.getByPlaceholder('---', { exact: true });
-    this.minuteInput = page.getByPlaceholder('--:--', { exact: true });
+    // Both ends of the session take the same kind of input, so the placeholder alone
+    // matches the From field too once it is open. The name picks the To end; the
+    // placeholder is what still says which ruler it is measuring in.
+    const toField = page.getByRole('textbox', { name: 'To · now' });
+    this.pageInput = toField.and(page.getByPlaceholder('---', { exact: true }));
+    this.minuteInput = toField.and(page.getByPlaceholder('--:--', { exact: true }));
+    this.fromButton = page.getByRole('button', { name: 'Edit start position' });
+    this.fromInput = page.getByRole('textbox', { name: 'start position' });
     this.cancelButton = page.getByRole('button', { name: 'Cancel' });
     this.dateToggleButton = page.getByRole('button', { name: 'Pick a date' });
     // A native date input exposes no implicit `textbox` role, so this goes through
@@ -81,6 +91,17 @@ export class ProgressLogSheetPage {
    */
   async pickUnit(unit: LogRuler): Promise<void> {
     await this.getUnitButton(unit).click();
+  }
+
+  /**
+   * Moves the session's start back off its prefill, which is what a catch-up pass over
+   * ground already covered needs -- the prefill is the frontier, and the start may only
+   * go behind it.
+   * @param position - Where the session began: pages as digits, or HH:MM for audio.
+   */
+  async enterFrom(position: string): Promise<void> {
+    await this.fromButton.click();
+    await this.fromInput.fill(position);
   }
 
   /**
