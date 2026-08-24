@@ -27,8 +27,6 @@ describe('CoverImage', () => {
     );
 
     const src = container.querySelector('img')!.getAttribute('src')!;
-    // A tier Google does not hold comes back as a gray placeholder at HTTP 200, so the
-    // one that always exists has to stay selected while `w` does the enlarging.
     expect(src).toContain('zoom=1');
     expect(src).toContain('w=600');
     expect(src).not.toContain('edge=curl');

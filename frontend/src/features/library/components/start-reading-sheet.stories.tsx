@@ -42,8 +42,6 @@ export const MobileSheet: Story = {
   render: () => <ControlledSheet book={baseBook} />,
 };
 
-// Audio has no length until the first read captures one, so the field is required and
-// shows no placeholder to accept.
 export const AudioLengthRequired: Story = {
   render: () => <ControlledSheet book={baseBook} />,
   play: async (context) => {

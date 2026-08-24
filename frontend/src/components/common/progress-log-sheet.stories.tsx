@@ -58,8 +58,6 @@ export const Audiobook: Story = {
   ),
 };
 
-// Only a read bound in both rulers gets the switch, and both chips read off one shared
-// frontier: page 132 of 272 is the same spot as 04:51 of 10:00.
 export const MultiFormat: Story = {
   render: () => (
     <ControlledSheet
@@ -80,6 +78,22 @@ export const MultiFormat: Story = {
   },
 };
 
+export const EditingTheStart: Story = {
+  render: () => <ControlledSheet engagement={baseEngagement} />,
+  play: async (context) => {
+    await openSheet(context);
+    const before = (await screen.findByLabelText('To · now')).getBoundingClientRect();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit start position' }));
+    const field = await screen.findByLabelText('start position');
+    await userEvent.clear(field);
+    await userEvent.type(field, '90');
+
+    expect(field).toHaveValue('90');
+    expect(screen.getByLabelText('To · now').getBoundingClientRect()).toEqual(before);
+  },
+};
+
 export const MobileSheet: Story = {
   decorators: [withPointer(true)],
   render: () => <ControlledSheet engagement={baseEngagement} />,
@@ -95,8 +109,6 @@ export const CustomDate: Story = {
   },
 };
 
-// A note is what makes staying on the same page valid at all -- the position field alone
-// would 409 on the server, and the frontend now agrees before it ever gets there.
 export const SamePageWithNote: Story = {
   render: () => <ControlledSheet engagement={baseEngagement} />,
   play: async (context) => {

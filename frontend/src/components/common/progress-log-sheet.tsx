@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type FocusEvent } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowRight02Icon, Calendar03Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -124,6 +124,12 @@ const POSITION_LABEL_CLASS = 'text-xs font-semibold tracking-wide text-muted-for
 const POSITION_INPUT_CLASS =
   'h-auto rounded-none border-0 border-b-2 border-primary bg-transparent px-0 py-1 text-3xl leading-none font-bold md:text-3xl';
 
+const FROM_INPUT_CLASS =
+  'h-auto rounded-none border-0 border-b-2 border-primary bg-transparent px-0 py-1 text-xl leading-none font-bold text-muted-foreground md:text-xl';
+
+const FROM_BUTTON_CLASS =
+  'h-auto justify-self-start border-b-2 border-transparent p-0 py-1 text-xl leading-none font-bold text-muted-foreground underline decoration-dotted underline-offset-4 hover:decoration-solid';
+
 function ProgressLogFields({ form }: { form: ProgressLogForm }) {
   const today = localIsoDate();
   const yesterday = localIsoDate(-1);
@@ -168,7 +174,7 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
 
       <Card
         size="sm"
-        className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-x-3 gap-y-1 px-(--card-spacing)"
+        className="grid grid-cols-[5rem_auto_1fr_auto] items-center gap-x-3 gap-y-1 px-(--card-spacing)"
       >
         <span className={cn('col-start-1 row-start-1', POSITION_LABEL_CLASS)}>From</span>
         <FieldLabel
@@ -178,9 +184,29 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
           To · now
         </FieldLabel>
 
-        <span className="col-start-1 row-start-2 text-xl leading-none font-bold text-muted-foreground">
-          {form.fromDisplay}
-        </span>
+        {form.from.isEditing ? (
+          <PositionInput
+            autoFocus
+            className={cn('col-start-1 row-start-2', FROM_INPUT_CLASS)}
+            isAudio={form.isAudio}
+            aria-label="start position"
+            aria-invalid={!!form.from.error}
+            value={form.from.value}
+            onValueChange={form.from.set}
+            onFocus={form.from.focus}
+            onBlur={form.from.blur}
+          />
+        ) : (
+          <Button
+            variant="link"
+            className={cn('col-start-1 row-start-2', FROM_BUTTON_CLASS)}
+            aria-label="Edit start position"
+            disabled={form.savePending}
+            onClick={form.from.edit}
+          >
+            {form.from.value}
+          </Button>
+        )}
 
         <HugeiconsIcon
           icon={ArrowRight02Icon}
@@ -204,7 +230,9 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
           </span>
         )}
 
-        <FieldError className="col-start-3 col-end-5 row-start-3">{form.positionError}</FieldError>
+        <FieldError className="col-start-1 col-end-5 row-start-3">
+          {form.from.error ?? form.positionError}
+        </FieldError>
       </Card>
 
       <div className="flex flex-col gap-2">
@@ -263,27 +291,79 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
   );
 }
 
+type FromState = 'rest' | 'focused' | 'blurred';
+
+function useEditableFrom({
+  isAudio,
+  prefill,
+  ceiling,
+  onChange,
+}: {
+  isAudio: boolean;
+  prefill: number;
+  ceiling: number;
+  onChange: () => void;
+}) {
+  const [value, setValue] = useState(() => formatPosition(prefill, isAudio));
+  const [state, setState] = useState<FromState>('rest');
+
+  const parsed = parsePosition(value, isAudio);
+  const start = parsed !== null && parsed >= 0 && parsed <= ceiling ? parsed : null;
+  const startDisplay = start === null ? null : formatPosition(start, isAudio);
+
+  function message(): string | null {
+    if (parsed === null || parsed < 0)
+      return isAudio ? 'Enter a time in HH:MM format' : 'Enter a number';
+    if (parsed > ceiling) {
+      return isAudio
+        ? `Can't start past ${formatMinutesAsHhmm(ceiling)}`
+        : `Can't start past page ${ceiling}`;
+    }
+    return null;
+  }
+
+  return {
+    value,
+    start,
+    startDisplay,
+    isEditing: state !== 'rest',
+    error: state === 'blurred' ? message() : null,
+    set(next: string) {
+      setValue(next);
+      onChange();
+    },
+    // A unit switch is a different ruler, so the typed position can't carry over.
+    reset(next: number, nextIsAudio: boolean) {
+      setValue(formatPosition(next, nextIsAudio));
+      setState('rest');
+    },
+    edit() {
+      setState('focused');
+    },
+    focus(event: FocusEvent<HTMLInputElement>) {
+      setState('focused');
+      if (!isAudio) event.currentTarget.select();
+    },
+    blur() {
+      if (startDisplay === null) {
+        setState('blurred');
+        return;
+      }
+      setValue(startDisplay);
+      setState('rest');
+    },
+  };
+}
+
 function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
-  // Pages can't tell print from digital (ADR-0021), so anything measured in them answers
-  // on the first non-audio binding -- the same rule the backend's page_format applies.
   const pageFormat = engagement.formats.find((format) => format !== Format.audio) ?? null;
-  // Non-null only when the read is bound in both rulers: on a single-format read the
-  // switch would be one chip that does nothing. It also carries the icon for the pages
-  // chip, so a digital + audio read doesn't show a print book.
   const unitSwitchFormat = engagement.formats.includes(Format.audio) ? pageFormat : null;
 
-  // The unit belongs to the session, not to the read -- one bound in both logs pages the
-  // days it was read and minutes the days it was heard. It opens on the frontier's own
-  // unit, which is the ruler the last session left off on, and on a read with nothing
-  // logged yet falls back to whichever one it can actually log against.
   const [unit, setUnit] = useState(
     engagement.resume_unit ?? (pageFormat === null ? LogUnit.minutes : LogUnit.pages)
   );
   const isAudio = unit === LogUnit.minutes;
-  // Both resume points are the shared frontier converted, so switching ruler shows where
-  // the read stands in the new unit rather than where that format was last left.
-  const fromValue = isAudio ? engagement.resume_from_minute : engagement.resume_from_page;
-  const fromDisplay = formatPosition(fromValue, isAudio);
+  const resumeValue = isAudio ? engagement.resume_from_minute : engagement.resume_from_page;
 
   const [position, setPositionRaw] = useState('');
   const [positionFocused, setPositionFocused] = useState(false);
@@ -293,6 +373,13 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
   const [note, setNoteRaw] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  const from = useEditableFrom({
+    isAudio,
+    prefill: resumeValue,
+    ceiling: isAudio ? engagement.frontier_minute : engagement.frontier_page,
+    onChange: () => setError(null),
+  });
+
   function setPosition(value: string) {
     setPositionRaw(value);
     setError(null);
@@ -301,9 +388,12 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
   function pickUnit(picked: LogUnit) {
     if (picked === unit) return;
     setUnit(picked);
-    // Pages and minutes aren't interchangeable, so a position typed on one ruler can't
-    // carry over to the other.
+    const nextIsAudio = picked === LogUnit.minutes;
     setPositionRaw('');
+    from.reset(
+      nextIsAudio ? engagement.resume_from_minute : engagement.resume_from_page,
+      nextIsAudio
+    );
     setError(null);
   }
 
@@ -355,42 +445,48 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     },
   });
 
+  const { start, startDisplay } = from;
   const parsedPosition = parsePosition(position, isAudio);
 
   const maxPosition = isAudio ? engagement.length_minutes : engagement.length_pages;
   const maxDisplay = maxPosition == null ? null : formatPosition(maxPosition, isAudio);
   const hasNote = note.trim() !== '';
   const canSave =
+    start !== null &&
     parsedPosition !== null &&
-    (parsedPosition > fromValue || (parsedPosition === fromValue && hasNote)) &&
+    (parsedPosition > start || (parsedPosition === start && hasNote)) &&
     (maxPosition == null || parsedPosition <= maxPosition);
 
-  let positionError: string | null = null;
-  if (!positionFocused && position.trim() !== '') {
-    if (parsedPosition === null) {
-      positionError = isAudio ? 'Enter a time in HH:MM format' : 'Enter a number';
-    } else if (parsedPosition < fromValue) {
-      positionError = isAudio
-        ? `Can't be before ${fromDisplay}`
-        : `Can't be before page ${fromValue}`;
-    } else if (parsedPosition === fromValue && !hasNote) {
-      positionError = isAudio
-        ? `Add a note, or advance past ${fromDisplay}`
-        : `Add a note, or advance past page ${fromValue}`;
-    } else if (maxPosition != null && parsedPosition > maxPosition) {
-      positionError = isAudio
+  const notANumber = isAudio ? 'Enter a time in HH:MM format' : 'Enter a number';
+
+  function endMessage(): string | null {
+    if (start === null || position.trim() === '') return null;
+    if (parsedPosition === null) return notANumber;
+    if (parsedPosition < start) return "Can't end before the session started";
+    if (parsedPosition === start && !hasNote) {
+      return isAudio
+        ? `Add a note, or advance past ${startDisplay}`
+        : `Add a note, or advance past page ${start}`;
+    }
+    if (maxPosition != null && parsedPosition > maxPosition) {
+      return isAudio
         ? `Cannot exceed ${formatMinutesAsHhmm(maxPosition)}`
         : `Cannot exceed ${maxPosition} pages`;
     }
+    return null;
   }
 
+  const positionError = positionFocused ? null : endMessage();
+
   function handleSave() {
-    if (parsedPosition === null) return;
+    if (start === null || parsedPosition === null) return;
     setError(null);
     logProgress.mutate({
       engagementId: engagement.id,
       data: {
-        ...(isAudio ? { current_minute: parsedPosition } : { current_page: parsedPosition }),
+        ...(isAudio
+          ? { minute_start: start, minute_end: parsedPosition }
+          : { page_start: start, page_end: parsedPosition }),
         logged_on: date,
         ...(hasNote && { note }),
       },
@@ -403,7 +499,7 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     isAudio,
     unitSwitchFormat,
     pickUnit,
-    fromDisplay,
+    from,
     maxDisplay,
     position,
     setPosition,

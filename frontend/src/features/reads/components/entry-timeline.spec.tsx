@@ -179,6 +179,38 @@ describe('EntryTimeline', () => {
     expect(screen.getAllByRole('dialog')).toHaveLength(1);
   });
 
+  it('warns that deleting a session takes the progress back with it', async () => {
+    server.use(getEngagementsListProgressLogsMockHandler([buildPageLog({ id: 'only' })]));
+
+    renderTimeline();
+    await openEditorFor('Sun, Jun 15, 2025');
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Delete entry from Sun, Jun 15, 2025' })
+    );
+
+    expect(await screen.findByRole('dialog')).toHaveTextContent(
+      'your progress will go back to where it was before it'
+    );
+  });
+
+  it('promises a re-read’s deletion won’t move progress, because it never did', async () => {
+    server.use(
+      getEngagementsListProgressLogsMockHandler([
+        buildPageLog({ id: 'only', new_ground: false, page_start: 20, page_end: 60 }),
+      ])
+    );
+
+    renderTimeline();
+    await openEditorFor('Sun, Jun 15, 2025');
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Delete entry from Sun, Jun 15, 2025' })
+    );
+
+    expect(await screen.findByRole('dialog')).toHaveTextContent(
+      "It was a re-read, so your progress won't change"
+    );
+  });
+
   it('deletes the entry once the confirmation is accepted', async () => {
     const deleted: string[] = [];
     server.use(

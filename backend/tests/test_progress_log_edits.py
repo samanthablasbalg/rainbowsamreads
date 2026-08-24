@@ -10,7 +10,9 @@ from app.models.engagement import Engagement
 from app.models.progress_log import ProgressLog
 from tests.helpers import (
     _create_audio_engagement,
+    _create_bare_book,
     _create_book,
+    _create_edition,
     _create_engagement,
     _log_audio_progress,
     _log_progress,
@@ -352,3 +354,81 @@ def test_patch_log_date_in_future_returns_422(client: TestClient) -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_patch_a_split_session_moves_the_new_ground_row(client: TestClient) -> None:
+    """The end position belongs to the half of the session that broke new ground; the
+    re-read half in front of it is unchanged."""
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=400)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 200)
+    session = _log_progress(client, engagement["id"], 250, page_start=180)
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}/progress-logs/{session['id']}",
+        json={"page_end": 300},
+    )
+
+    assert response.status_code == 200
+    logs = client.get(f"/api/engagements/{engagement['id']}/progress-logs").json()
+    assert [(log["page_start"], log["page_end"]) for log in logs[-2:]] == [
+        (180, 200),
+        (200, 300),
+    ]
+
+
+def test_patch_a_split_session_date_moves_both_rows(client: TestClient) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=400)
+    engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
+    _log_progress(client, engagement["id"], 200, logged_on="2026-01-10")
+    session = _log_progress(
+        client, engagement["id"], 250, logged_on="2026-01-11", page_start=180
+    )
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}/progress-logs/{session['id']}",
+        json={"logged_on": "2026-01-12"},
+    )
+
+    assert response.status_code == 200
+    logs = client.get(f"/api/engagements/{engagement['id']}/progress-logs").json()
+    assert [log["logged_on"] for log in logs[-2:]] == ["2026-01-12", "2026-01-12"]
+
+
+def test_patch_a_re_read_past_the_frontier_returns_409(client: TestClient) -> None:
+    """A re-read has no new-ground row to extend, so this would have to split a stored
+    row -- refused, the way starting past the frontier is."""
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=400)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 200)
+    re_read = _log_progress(client, engagement["id"], 150, page_start=100)
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}/progress-logs/{re_read['id']}",
+        json={"page_end": 250},
+    )
+
+    assert response.status_code == 409
+    assert (
+        response.json()["detail"]
+        == "A re-read can't extend past where this read has got to."
+    )
+
+
+def test_patch_a_re_read_within_the_frontier_is_allowed(client: TestClient) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=400)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 200)
+    re_read = _log_progress(client, engagement["id"], 150, page_start=100)
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}/progress-logs/{re_read['id']}",
+        json={"page_end": 180},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["page_end"] == 180

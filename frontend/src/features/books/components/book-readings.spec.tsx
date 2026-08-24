@@ -13,7 +13,6 @@ describe('BookReadings', () => {
       />
     );
 
-    // The row is a collapsible, so its actions only exist once the trigger is expanded.
     await user.click(screen.getByRole('button', { name: /Print/ }));
 
     expect(screen.getByRole('link', { name: 'Progress log' })).toHaveAttribute(

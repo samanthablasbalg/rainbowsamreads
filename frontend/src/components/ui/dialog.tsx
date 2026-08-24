@@ -49,12 +49,6 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          // flex-col + max-h, not grid: without a cap, a popup taller than the viewport
-          // (a long note, say) grows past it -- centring then carries the footer off the
-          // bottom of the screen. flex-col is what lets ResponsiveDialogBody's child
-          // shrink and scroll on its own (min-h-0 + overflow-y-auto) while header and
-          // footer stay put, same as the drawer side. 6rem clearance matches the
-          // drawer's own cap (drawer.tsx's --drawer-content-max-height).
           'fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-6rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col gap-6 rounded-4xl bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/5 duration-100 outline-none sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
           className
         )}
@@ -77,12 +71,6 @@ function DialogContent({
 
 function DialogBody({ className, ...props }: React.ComponentProps<'div'>) {
   return (
-    // -mx-4 px-4: overflow-y-auto makes overflow-x compute to auto as well, so the box
-    // clips horizontally at its content edge -- eating focus rings and any child that
-    // outdents to optically align its text (NoteField's -ml-3 trigger). The gutter has to
-    // clear the widest of those; the negative margin puts the content back where it was.
-    // -my-1 py-1: same clip, vertical axis -- a focused child's ring (ring-[3px]) at the
-    // top or bottom edge of the scroll needs the same clearance the border does.
     <div
       data-slot="dialog-body"
       className={cn(

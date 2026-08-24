@@ -5,38 +5,36 @@ import type {
 } from '@/api/generated/readingTracker.schemas';
 import { formatIsoDate } from '@/utils/format-date';
 import { formatMinutesAsHhmm } from '@/utils/format-minutes';
+import { groupConsecutiveBy } from '@/utils/group-consecutive';
 
 // The API has no name for the union it returns, so this is it.
 export type ProgressLog = PageProgressLogRead | MinuteProgressLogRead;
 
 export type EntryView = {
   id: string;
-  // The whole date, still: the edit sheet titles itself with it and the delete
-  // confirmation names the session by it. The timeline's own header splits it in two.
   dateLabel: string;
   dayLabel: string;
   weekdayLabel: string;
   fromLabel: string;
   toLabel: string;
   amountLabel: string;
+  spanLabel: string;
   isNewest: boolean;
   loggedOn: string;
   isAudio: boolean;
   start: number;
   end: number;
-  // Where this session sits in the book, 0-100, for the span bar. Measured against the
-  // length of *this entry's* format rather than the read's, so a read bound in both
-  // still places each session against the thing it was read in.
+  hasNewGround: boolean;
+  splitAt: number;
   startPct: number;
+  splitPct: number;
   endPct: number;
+  coveredPct: number;
   note: string | null;
 };
 
 export type DayGroup = {
   loggedOn: string;
-  // The header shows the day and weekday; the whole date, year included, names the
-  // group's list. Cards no longer carry a date of their own, so without this the year
-  // is nowhere on the page and a session is announced with no date at all.
   dateLabel: string;
   dayLabel: string;
   weekdayLabel: string;
@@ -44,51 +42,67 @@ export type DayGroup = {
 };
 
 export function toEntryViews(logs: ProgressLog[], engagement: EngagementRead): EntryView[] {
-  const newestId = logs.length > 0 ? logs[logs.length - 1].id : null;
+  const sessions = toSessions(logs);
 
-  return logs.map((log) => toEntryView(log, log.id === newestId, engagement)).reverse();
+  let coveredPct = 0;
+
+  return sessions
+    .map((rows, index) => {
+      const entry = toEntryView(rows, index === sessions.length - 1, engagement, coveredPct);
+      coveredPct = Math.max(coveredPct, entry.endPct);
+      return entry;
+    })
+    .reverse();
+}
+
+// A session that crossed the frontier is stored as two rows, and the reader thinks of
+// the pair as one entry. They share `created_at` to the microsecond, because one save is
+// one transaction; separate saves never can.
+function toSessions(logs: ProgressLog[]): ProgressLog[][] {
+  return groupConsecutiveBy(logs, (log) => log.created_at);
 }
 
 // Consecutive entries on one date share a header, so a second session the same day
-// doesn't repeat it. Folded rather than bucketed by date: the list is already ordered,
-// and two runs of the same date arriving apart would be a bug in the ordering, not two
-// groups to merge.
+// doesn't repeat it.
 export function toDayGroups(entries: EntryView[]): DayGroup[] {
-  return entries.reduce<DayGroup[]>((groups, entry) => {
-    const open = groups.at(-1);
-
-    if (open?.loggedOn === entry.loggedOn) open.entries.push(entry);
-    else
-      groups.push({
-        loggedOn: entry.loggedOn,
-        dateLabel: entry.dateLabel,
-        dayLabel: entry.dayLabel,
-        weekdayLabel: entry.weekdayLabel,
-        entries: [entry],
-      });
-
-    return groups;
-  }, []);
+  return groupConsecutiveBy(entries, (entry) => entry.loggedOn).map(([first, ...rest]) => ({
+    loggedOn: first.loggedOn,
+    dateLabel: first.dateLabel,
+    dayLabel: first.dayLabel,
+    weekdayLabel: first.weekdayLabel,
+    entries: [first, ...rest],
+  }));
 }
 
-function toEntryView(log: ProgressLog, isNewest: boolean, engagement: EngagementRead): EntryView {
-  // `in` rather than the `type` discriminant: the generated union types it as optional,
-  // so narrowing on the columns that actually differ cannot disagree with the payload.
-  const isAudio = 'minute_end' in log;
-  const [start, end] = isAudio
-    ? [log.minute_start, log.minute_end]
-    : [log.page_start, log.page_end];
+// The rows are the session's spans, oldest first, so the last one is the half the
+// backend addresses the session by: its id, and the note a split save put on it.
+function toEntryView(
+  rows: ProgressLog[],
+  isNewest: boolean,
+  engagement: EngagementRead,
+  coveredPct: number
+): EntryView {
+  const first = rows[0];
+  const last = rows[rows.length - 1];
 
+  const isAudio = 'minute_end' in last;
+  const [start] = spanOf(first);
+  const [newStart, end] = spanOf(last);
+
+  const hasNewGround = last.new_ground;
+  const splitAt = hasNewGround ? newStart : end;
+
+  const unit = isAudio ? 'min' : 'pp';
   const length = isAudio ? engagement.length_minutes : engagement.length_pages;
   const [fromLabel, toLabel] = isAudio
     ? [formatMinutesAsHhmm(start), formatMinutesAsHhmm(end)]
     : [`p. ${start}`, `p. ${end}`];
 
   return {
-    id: log.id,
-    dateLabel: formatIsoDate(log.logged_on, { weekday: 'short' }),
-    dayLabel: formatIsoDate(log.logged_on, { year: undefined }),
-    weekdayLabel: formatIsoDate(log.logged_on, {
+    id: last.id,
+    dateLabel: formatIsoDate(last.logged_on, { weekday: 'short' }),
+    dayLabel: formatIsoDate(last.logged_on, { year: undefined }),
+    weekdayLabel: formatIsoDate(last.logged_on, {
       weekday: 'short',
       day: undefined,
       month: undefined,
@@ -96,20 +110,42 @@ function toEntryView(log: ProgressLog, isNewest: boolean, engagement: Engagement
     }),
     fromLabel,
     toLabel,
-    amountLabel: `+${end - start} ${isAudio ? 'min' : 'pp'}`,
+    amountLabel: `${hasNewGround ? '+' : ''}${end - start} ${unit}`,
+    spanLabel: spanLabelFor({ fromLabel, toLabel, isAudio, start, splitAt, end }),
     isNewest,
-    loggedOn: log.logged_on,
+    loggedOn: last.logged_on,
     isAudio,
     start,
     end,
+    hasNewGround,
+    splitAt,
     startPct: toPct(start, length),
+    splitPct: toPct(splitAt, length),
     endPct: toPct(end, length),
-    note: log.note,
+    coveredPct,
+    note: last.note,
   };
 }
 
-// A read always has a length for the format it is bound in, so the null arm is the
-// generated type's, not a state the UI is designed around.
+function spanLabelFor({
+  fromLabel,
+  toLabel,
+  isAudio,
+  start,
+  splitAt,
+  end,
+}: Pick<EntryView, 'fromLabel' | 'toLabel' | 'isAudio' | 'start' | 'splitAt' | 'end'>): string {
+  if (splitAt === start) return `New ground, ${fromLabel} to ${toLabel}`;
+  if (splitAt === end) return `Re-read, ${fromLabel} to ${toLabel}`;
+
+  const splitLabel = isAudio ? formatMinutesAsHhmm(splitAt) : `p. ${splitAt}`;
+  return `Re-read ${fromLabel} to ${splitLabel}, then new ground to ${toLabel}`;
+}
+
+function spanOf(log: ProgressLog): [number, number] {
+  return 'minute_end' in log ? [log.minute_start, log.minute_end] : [log.page_start, log.page_end];
+}
+
 function toPct(position: number, length: number | null): number {
   if (!length) return 0;
   return Math.max(0, Math.min(100, (position / length) * 100));

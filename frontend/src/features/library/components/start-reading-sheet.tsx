@@ -148,9 +148,6 @@ function useStartReadingForm(book: BookRead, onClose: () => void) {
   });
 
   const isAudio = format === Format.audio;
-  // The book's per-format default is the last link of the ADR-0021 length chain, and the
-  // only one the catalog list payload carries. An edition corrected away from it shows a
-  // slightly stale hint; typing over the hint makes an override either way.
   const knownLength = isAudio ? book.default_audio_minutes : book.default_page_count;
   const typed = length.trim() !== '';
   const parsedLength = parseLength(isAudio, length);
@@ -163,8 +160,6 @@ function useStartReadingForm(book: BookRead, onClose: () => void) {
   function pickFormat(picked: Format) {
     if (picked === format) return;
     setFormat(picked);
-    // Pages and minutes aren't interchangeable, so a length typed for the old format
-    // can't carry over to the new one.
     setLengthRaw('');
     setError(null);
   }

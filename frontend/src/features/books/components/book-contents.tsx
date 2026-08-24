@@ -22,8 +22,6 @@ const PARTS = [
 export function BookContents() {
   return (
     <Collapsible className="flex flex-col gap-3">
-      {/* The trigger sits inside the heading rather than replacing it, so the section keeps
-          its place in the document outline while being the thing you click. */}
       <h2>
         <CollapsibleTrigger
           render={
@@ -41,8 +39,6 @@ export function BookContents() {
 
       <CollapsibleContent>
         <div className="relative">
-          {/* Scenery, not content: hidden from assistive tech and stripped of every real
-              control, so nothing in here is reachable by keyboard behind the blur. */}
           <div aria-hidden="true" className="pointer-events-none blur-[3px] select-none">
             <Card className="gap-0 divide-y divide-accent py-0">
               <div className="px-4 py-3.5">
@@ -64,8 +60,6 @@ export function BookContents() {
                     {part.title}
                   </span>
 
-                  {/* Both trailing columns are fixed and equal, so a row that offers Log and
-                      a row that reports a date put their page range in the same place. */}
                   <span className="hidden w-28 shrink-0 text-right text-xs text-muted-foreground sm:block">
                     {part.position}
                   </span>

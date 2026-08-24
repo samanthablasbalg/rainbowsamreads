@@ -11,8 +11,6 @@ import { buildEngagement as buildBaseEngagement } from '@/test/data-generators';
 import { localIsoDate } from '@/utils/local-date';
 import { ReadingCard } from './reading-card';
 
-// A card only ever shows an in-progress read, so these specs start from one rather than
-// the shared generator's finished default.
 function buildEngagement(overrides: Partial<EngagementRead> = {}): EngagementRead {
   return buildBaseEngagement({
     id: 'engagement-1',
@@ -92,7 +90,7 @@ describe('ReadingCard', () => {
     expect(await screen.findByRole('dialog', { name: 'Piranesi' })).toBeVisible();
   });
 
-  it('offers add-format, history, finish, DNF and delete from the overflow menu, in that order', async () => {
+  it('offers history, add-format, finish, DNF and delete from the overflow menu, in that order', async () => {
     const user = userEvent.setup();
     renderInList(buildEngagement());
 
@@ -100,8 +98,8 @@ describe('ReadingCard', () => {
     await screen.findByRole('menu');
 
     expect(screen.getAllByRole('menuitem').map((item) => item.getAttribute('aria-label'))).toEqual([
-      'Add another format to Piranesi',
       'View history for Piranesi',
+      'Add another format to Piranesi',
       'Mark Piranesi as finished',
       'Mark Piranesi as DNF',
       'Delete Piranesi',

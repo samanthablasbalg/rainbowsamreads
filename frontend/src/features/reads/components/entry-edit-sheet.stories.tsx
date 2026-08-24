@@ -32,9 +32,6 @@ async function openSheet({ canvasElement }: { canvasElement: HTMLElement }) {
   expect(await screen.findByRole('dialog')).toBeInTheDocument();
 }
 
-// No `component`, for the reason progress-log-sheet.stories.tsx gives: every story renders
-// ControlledSheet. Save and delete behaviour is covered by the spec; these are the
-// presentation variants and the a11y gate.
 const meta = {
   play: openSheet,
 } satisfies Meta;
@@ -60,8 +57,6 @@ export const NewestAudioEntry: Story = {
   ),
 };
 
-// The other half of the sheet: an older entry has no position field and no delete, and
-// says why rather than showing a control the API would reject.
 export const OlderEntry: Story = {
   render: () => <ControlledSheet entry={{ ...newestPageEntry, isNewest: false }} />,
 };
@@ -71,16 +66,12 @@ export const MobileSheet: Story = {
   render: () => <ControlledSheet entry={newestPageEntry} />,
 };
 
-// An existing note shows as static markdown behind an Edit button, same as ReviewSheet's
-// existing body -- not an open textarea, since the sheet has other fields to edit first.
 export const EntryWithNote: Story = {
   render: () => (
     <ControlledSheet entry={{ ...newestPageEntry, note: 'A striking quote from this page.' }} />
   ),
 };
 
-// The textarea and typed text only exist once Edit is clicked, so that state needs its own
-// story to land in the a11y gate.
 export const EditingExistingNote: Story = {
   render: () => (
     <ControlledSheet entry={{ ...newestPageEntry, note: 'A striking quote from this page.' }} />

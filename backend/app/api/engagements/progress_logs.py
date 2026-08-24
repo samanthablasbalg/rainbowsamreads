@@ -44,8 +44,10 @@ def log_progress(
     log = progress_log_service.log_progress(
         db,
         engagement,
-        current_page=payload.current_page,
-        current_minute=payload.current_minute,
+        page_start=payload.page_start,
+        page_end=payload.page_end,
+        minute_start=payload.minute_start,
+        minute_end=payload.minute_end,
         logged_on=payload.logged_on,
         audio_length_minutes=payload.audio_length_minutes,
         note=payload.note,

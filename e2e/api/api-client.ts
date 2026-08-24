@@ -1,5 +1,8 @@
 import { APIRequestContext } from '@playwright/test';
 
+/** The two rulers a session can be measured on, as the backend names them. */
+export type LogUnit = 'pages' | 'minutes';
+
 export class ApiClient {
   /** @param request - Playwright's request context, used to call the backend. */
   constructor(private readonly request: APIRequestContext) {}
@@ -49,8 +52,19 @@ export class ApiClient {
   }
 
   /**
-   * Logs progress on an engagement. The page must advance past the current
-   * resume point, or the backend rejects it.
+   * Where the sheet would prefill "From" -- a session names both its ends, so seeding
+   * one that just carries on from the last needs this first.
+   * @param engagementId - The engagement to read.
+   * @param unit - Which ruler to read the resume point on.
+   */
+  async getResumePoint(engagementId: string, unit: LogUnit): Promise<number> {
+    const field = unit === 'minutes' ? 'resume_from_minute' : 'resume_from_page';
+    const response = await this.request.get(`/api/engagements/${engagementId}`);
+    return ((await response.json()) as Record<typeof field, number>)[field];
+  }
+
+  /**
+   * Logs a reading session that carries straight on from where the read stands.
    * @param engagementId - The engagement to log against.
    * @param currentPage - The page reached.
    * @param loggedOn - The date the session happened, yyyy-mm-dd. Defaults to today,
@@ -58,14 +72,18 @@ export class ApiClient {
    *   needs to tell its entries apart, since a row is named for its date.
    */
   async logProgress(engagementId: string, currentPage: number, loggedOn?: string): Promise<void> {
+    const pageStart = await this.getResumePoint(engagementId, 'pages');
     await this.request.post(`/api/engagements/${engagementId}/progress-logs`, {
-      data: { current_page: currentPage, ...(loggedOn != null && { logged_on: loggedOn }) },
+      data: {
+        page_start: pageStart,
+        page_end: currentPage,
+        ...(loggedOn != null && { logged_on: loggedOn }),
+      },
     });
   }
 
   /**
-   * Logs audio progress on an engagement. The minute must advance past the current
-   * resume point, or the backend rejects it.
+   * Logs a listening session that carries straight on from where the read stands.
    * @param engagementId - The engagement to log against.
    * @param currentMinute - The minute position reached.
    * @param loggedOn - The date the session happened, yyyy-mm-dd. Defaults to today.
@@ -75,8 +93,13 @@ export class ApiClient {
     currentMinute: number,
     loggedOn?: string
   ): Promise<void> {
+    const minuteStart = await this.getResumePoint(engagementId, 'minutes');
     await this.request.post(`/api/engagements/${engagementId}/progress-logs`, {
-      data: { current_minute: currentMinute, ...(loggedOn != null && { logged_on: loggedOn }) },
+      data: {
+        minute_start: minuteStart,
+        minute_end: currentMinute,
+        ...(loggedOn != null && { logged_on: loggedOn }),
+      },
     });
   }
 

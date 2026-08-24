@@ -41,7 +41,7 @@ describe('EntryEditSheet', () => {
   });
 
   it('seeds an audio entry as a clock position', async () => {
-    renderSheet({ ...newest, isAudio: true, start: 80, end: 125 });
+    renderSheet({ ...newest, isAudio: true, start: 80, splitAt: 80, end: 125 });
 
     expect(await screen.findByLabelText('Ended at')).toHaveValue('02:05');
   });
@@ -73,7 +73,7 @@ describe('EntryEditSheet', () => {
 
   it('sends a minute position for an audio entry', async () => {
     const sent = capturePatch();
-    renderSheet({ ...newest, isAudio: true, start: 80, end: 125 });
+    renderSheet({ ...newest, isAudio: true, start: 80, splitAt: 80, end: 125 });
 
     await userEvent.clear(await screen.findByLabelText('Ended at'));
     await userEvent.type(screen.getByLabelText('Ended at'), '02:30');
@@ -100,8 +100,26 @@ describe('EntryEditSheet', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 
+  it('holds a session that crossed the frontier to the frontier, not to its own start', async () => {
+    renderSheet({
+      ...newest,
+      fromLabel: 'p. 80',
+      toLabel: 'p. 130',
+      start: 80,
+      splitAt: 100,
+      end: 130,
+    });
+
+    await userEvent.clear(await screen.findByLabelText('Ended at page'));
+    await userEvent.type(screen.getByLabelText('Ended at page'), '90');
+    await userEvent.tab();
+
+    expect(await screen.findByText('Must be past page 100')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+  });
+
   it('opens a zero-length entry without a position error already showing', async () => {
-    renderSheet({ ...newest, amountLabel: '', start: 100, end: 100 });
+    renderSheet({ ...newest, amountLabel: '+0 pp', start: 100, splitAt: 100, end: 100 });
 
     expect(await screen.findByLabelText('Ended at page')).toHaveValue('100');
     expect(screen.queryByText('Must be past page 100')).not.toBeInTheDocument();

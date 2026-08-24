@@ -22,26 +22,25 @@ import {
 import { localIsoDate } from '@/utils/local-date';
 import { ProgressLogSheet } from './progress-log-sheet';
 
-// Logging progress only happens against an in-progress read, so these start from one
-// rather than the shared generator's finished default.
 function buildEngagement(overrides: Partial<EngagementRead> = {}): EngagementRead {
   return buildBaseEngagement({
     id: 'engagement-1',
     status: ReadingStatus.reading,
     finished_on: null,
     resume_from_page: 100,
+    frontier_page: 100,
     completion_pct: 52,
     ...overrides,
   });
 }
 
-// A read bound in both rulers. The frontier is shared, so the two resume points are one
-// position in two units: page 100 of 272 is minute 221 of 600.
 function buildMixedEngagement(overrides: Partial<EngagementRead> = {}): EngagementRead {
   return buildEngagement({
     formats: [Format.print, Format.audio],
     resume_from_page: 100,
+    frontier_page: 100,
     resume_from_minute: 221,
+    frontier_minute: 221,
     length_minutes: 600,
     ...overrides,
   });
@@ -73,8 +72,127 @@ describe('ProgressLogSheet', () => {
     expect(screen.getByRole('button', { name: 'Save progress for Piranesi' })).toBeDisabled();
   });
 
+  it('opens the start position as a value rather than a field', async () => {
+    renderSheet(buildEngagement());
+
+    expect(await screen.findByRole('button', { name: 'Edit start position' })).toHaveTextContent(
+      '100'
+    );
+    expect(screen.queryByLabelText('start position')).not.toBeInTheDocument();
+  });
+
+  it('opens the start position for editing prefilled with where the read resumes', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement());
+
+    await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
+
+    expect(screen.getByLabelText('start position')).toHaveValue('100');
+  });
+
+  it('edits the start position in HH:MM on an audio read', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75, frontier_minute: 75 }));
+
+    await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
+
+    expect(screen.getByLabelText('start position')).toHaveValue('01:15');
+  });
+
+  it('saves a session that starts behind where the read has got to', async () => {
+    const user = userEvent.setup();
+    let capturedBody: unknown;
+    server.use(
+      getEngagementsLogProgressMockHandler(async (info) => {
+        capturedBody = await info.request.json();
+        return getEngagementsLogProgressResponseMock();
+      }),
+      getEngagementsGetEngagementMockHandler()
+    );
+    renderSheet(buildEngagement());
+
+    await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
+    await user.clear(screen.getByLabelText('start position'));
+    await user.type(screen.getByLabelText('start position'), '50');
+    await user.type(screen.getByLabelText('To · now'), '75');
+    await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(capturedBody).toEqual({
+      page_start: 50,
+      page_end: 75,
+      logged_on: localIsoDate(),
+    });
+  });
+
+  it('collapses the start position back to a value once it is a valid one', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement());
+
+    await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
+    await user.clear(screen.getByLabelText('start position'));
+    await user.type(screen.getByLabelText('start position'), '50');
+    await user.tab();
+
+    expect(screen.getByRole('button', { name: 'Edit start position' })).toHaveTextContent('50');
+    expect(screen.queryByLabelText('start position')).not.toBeInTheDocument();
+  });
+
+  it('refuses a start past where the read has got to', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement());
+
+    await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
+    await user.clear(screen.getByLabelText('start position'));
+    await user.type(screen.getByLabelText('start position'), '150');
+    await user.tab();
+
+    expect(screen.getByText("Can't start past page 100")).toBeVisible();
+    expect(screen.getByLabelText('start position')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Save progress for Piranesi' })).toBeDisabled();
+  });
+
+  it('refuses a start past the audio frontier in HH:MM', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75, frontier_minute: 75 }));
+
+    await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
+    await user.clear(screen.getByLabelText('start position'));
+    await user.type(screen.getByLabelText('start position'), '02:00');
+    await user.tab();
+
+    expect(screen.getByText("Can't start past 01:15")).toBeVisible();
+  });
+
+  it('allows a start between an open catch-up and the frontier', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement({ resume_from_page: 75, frontier_page: 100 }));
+
+    await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
+    await user.clear(screen.getByLabelText('start position'));
+    await user.type(screen.getByLabelText('start position'), '100');
+    await user.tab();
+
+    expect(screen.queryByText("Can't start past page 100")).not.toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Edit start position' })).toHaveTextContent(
+      '100'
+    );
+  });
+
+  it('re-seeds the start position from the ruler switched to', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildMixedEngagement({ resume_unit: LogUnit.minutes }));
+
+    await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
+    await user.clear(screen.getByLabelText('start position'));
+    await user.type(screen.getByLabelText('start position'), '02:00');
+    await user.click(screen.getByRole('button', { name: 'Pages' }));
+
+    expect(screen.getByRole('button', { name: 'Edit start position' })).toHaveTextContent('100');
+  });
+
   it('shows the resume minute as From, with the HH:MM field opening empty for an audio engagement', async () => {
-    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75, frontier_minute: 75 }));
 
     expect(await screen.findByText('01:15', { exact: true })).toBeVisible();
     expect(screen.getByPlaceholderText('--:--')).toHaveValue('');
@@ -142,7 +260,11 @@ describe('ProgressLogSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ current_minute: 270, logged_on: localIsoDate() });
+    expect(capturedBody).toEqual({
+      minute_start: 221,
+      minute_end: 270,
+      logged_on: localIsoDate(),
+    });
   });
 
   it("saves the entered page with today's date and closes the sheet", async () => {
@@ -162,7 +284,11 @@ describe('ProgressLogSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ current_page: 200, logged_on: localIsoDate() });
+    expect(capturedBody).toEqual({
+      page_start: 100,
+      page_end: 200,
+      logged_on: localIsoDate(),
+    });
   });
 
   it('disables Save for the same page as the current position with no note', async () => {
@@ -196,7 +322,8 @@ describe('ProgressLogSheet', () => {
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(capturedBody).toEqual({
-      current_page: 100,
+      page_start: 100,
+      page_end: 100,
       logged_on: localIsoDate(),
       note: 'A striking quote.',
     });
@@ -222,7 +349,8 @@ describe('ProgressLogSheet', () => {
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(capturedBody).toEqual({
-      current_page: 200,
+      page_start: 100,
+      page_end: 200,
       logged_on: localIsoDate(),
       note: 'A striking quote.',
     });
@@ -246,7 +374,11 @@ describe('ProgressLogSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ current_page: 200, logged_on: localIsoDate(-1) });
+    expect(capturedBody).toEqual({
+      page_start: 100,
+      page_end: 200,
+      logged_on: localIsoDate(-1),
+    });
   });
 
   it('selects the Yesterday chip when the Yesterday chip is picked', async () => {
@@ -328,7 +460,11 @@ describe('ProgressLogSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ current_page: 200, logged_on: '2025-06-15' });
+    expect(capturedBody).toEqual({
+      page_start: 100,
+      page_end: 200,
+      logged_on: '2025-06-15',
+    });
   });
 
   it('patches the saved engagement into the reading list cache without reordering it', async () => {
@@ -459,13 +595,17 @@ describe('ProgressLogSheet', () => {
       }),
       getEngagementsGetEngagementMockHandler()
     );
-    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75, frontier_minute: 75 }));
 
     await user.type(await screen.findByPlaceholderText('--:--'), '02:30');
     await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ current_minute: 150, logged_on: localIsoDate() });
+    expect(capturedBody).toEqual({
+      minute_start: 75,
+      minute_end: 150,
+      logged_on: localIsoDate(),
+    });
   });
 
   it('rejects a page that is not a number', async () => {
@@ -479,14 +619,14 @@ describe('ProgressLogSheet', () => {
     expect(screen.getByRole('button', { name: 'Save progress for Piranesi' })).toBeDisabled();
   });
 
-  it('rejects a page before the one the read resumes from', async () => {
+  it('rejects a page before the one the session started on', async () => {
     const user = userEvent.setup();
     renderSheet(buildEngagement({ resume_from_page: 100 }));
 
     await user.type(await screen.findByPlaceholderText('---'), '50');
     await user.tab();
 
-    expect(screen.getByText("Can't be before page 100")).toBeVisible();
+    expect(screen.getByText("Can't end before the session started")).toBeVisible();
   });
 
   it('rejects a page past the end of the book', async () => {
@@ -499,8 +639,6 @@ describe('ProgressLogSheet', () => {
     expect(screen.getByText('Cannot exceed 272 pages')).toBeVisible();
   });
 
-  // The book default is the last link of the ADR-0021 length chain. A read that
-  // overrode it caps against its own length, not the book's.
   it('caps against the read’s own length rather than the book default', async () => {
     const user = userEvent.setup();
     renderSheet(buildEngagement({ length_pages: 1000 }));
@@ -516,15 +654,15 @@ describe('ProgressLogSheet', () => {
     renderSheet(buildEngagement({ resume_from_page: 100 }));
 
     await user.type(await screen.findByPlaceholderText('---'), '50');
-    expect(screen.queryByText("Can't be before page 100")).not.toBeInTheDocument();
+    expect(screen.queryByText("Can't end before the session started")).not.toBeInTheDocument();
 
     await user.tab();
-    expect(screen.getByText("Can't be before page 100")).toBeVisible();
+    expect(screen.getByText("Can't end before the session started")).toBeVisible();
   });
 
   it('rejects a time that is not HH:MM', async () => {
     const user = userEvent.setup();
-    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75, frontier_minute: 75 }));
 
     await user.type(await screen.findByPlaceholderText('--:--'), '00:73');
     await user.tab();
@@ -532,19 +670,19 @@ describe('ProgressLogSheet', () => {
     expect(screen.getByText('Enter a time in HH:MM format')).toBeVisible();
   });
 
-  it('rejects a time before the one the read resumes from', async () => {
+  it('rejects a time before the one the session started on', async () => {
     const user = userEvent.setup();
-    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75, frontier_minute: 75 }));
 
     await user.type(await screen.findByPlaceholderText('--:--'), '00:30');
     await user.tab();
 
-    expect(screen.getByText("Can't be before 01:15")).toBeVisible();
+    expect(screen.getByText("Can't end before the session started")).toBeVisible();
   });
 
   it('rejects a time past the end of the audiobook', async () => {
     const user = userEvent.setup();
-    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75, frontier_minute: 75 }));
 
     await user.type(await screen.findByPlaceholderText('--:--'), '11:00');
     await user.tab();

@@ -21,7 +21,6 @@ export function BookBlurb({ book }: { book: BookRead }) {
           {book.description}
         </p>
 
-        {/* Fades the clamped last line into the page rather than cutting it mid-stroke. */}
         {!expanded && (
           <div
             aria-hidden="true"

@@ -127,9 +127,6 @@ function ReadHeader({
           <FormatIcons formats={formats} />
         </div>
 
-        {/* Facts about the copy being read, which is where its length belongs -- the row
-            below is the read's lifecycle, and a length is not an event in it. One per
-            format, because a read bound in two carries a length in each. */}
         <div className="flex flex-wrap items-center gap-x-4 text-sm text-muted-foreground">
           {formats.map((format) => {
             const isAudio = format === Format.audio;
@@ -175,9 +172,6 @@ function ReadHeader({
             </span>
           ))}
 
-          {/* Desktop puts logging back on this line as a link. A full-width CTA is a
-              phone affordance; at width it dominates a header it isn't the subject of.
-              The mobile button below is the same action. */}
           {onLogProgress && (
             <Button
               variant="link"
@@ -196,8 +190,6 @@ function ReadHeader({
           </Button>
         )}
 
-        {/* The editor stays open holding the refused value, so the reason goes here
-            rather than crowding the line of metadata it sits in. */}
         {updateDates.isError && (
           <ErrorText>
             {errorDetail(updateDates.error, "Couldn't save that date. Please try again.")}

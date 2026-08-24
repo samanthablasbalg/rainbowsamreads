@@ -15,8 +15,6 @@ const long = [
 const meta = {
   component: NoteExcerpt,
   args: { children: 'A striking line from this page.' },
-  // A fixed width, because how many lines a note occupies -- and therefore whether the
-  // toggle appears at all -- is a function of how narrow the card is.
   decorators: [
     (Story) => (
       <div className="w-80">
@@ -29,8 +27,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// The measurement is layout, which jsdom has no answer for, so the overflow behaviour is
-// asserted here in a real browser rather than in the unit spec.
 export const Fits: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -61,8 +57,6 @@ export const Expanded: Story = {
     const toggle = canvas.getByRole('button', { name: 'Show less' });
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
 
-    // The tail of the note only exists on screen once the clamp is off, and the toggle
-    // has to survive its own expansion -- measuring while open would retract it.
     await expect(canvas.getByText(/no longer believe those are different things/)).toBeVisible();
   },
 };

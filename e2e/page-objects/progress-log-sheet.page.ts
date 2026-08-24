@@ -12,8 +12,13 @@ export class ProgressLogSheetPage {
   // role-based absence assertions pass whether or not the action ran. Both branches
   // render role="dialog", so this matches either way.
   readonly sheet: Locator;
-  readonly pageInput: Locator;
-  readonly minuteInput: Locator;
+  // Both ends of the session take the same kind of input; the placeholder is what says
+  // which ruler this one is measuring in.
+  readonly toInput: Locator;
+  // The From cell in its two states: a value at rest carrying the position as its text,
+  // and a field once clicked. Only one of the pair is mounted at a time.
+  readonly fromButton: Locator;
+  readonly fromInput: Locator;
   readonly cancelButton: Locator;
   readonly dateToggleButton: Locator;
   readonly dateInput: Locator;
@@ -25,8 +30,9 @@ export class ProgressLogSheetPage {
   /** @param page - The Playwright page the sheet is open on. */
   constructor(public readonly page: Page) {
     this.sheet = page.getByRole('dialog');
-    this.pageInput = page.getByPlaceholder('---', { exact: true });
-    this.minuteInput = page.getByPlaceholder('--:--', { exact: true });
+    this.toInput = page.getByRole('textbox', { name: 'To · now' });
+    this.fromButton = page.getByRole('button', { name: 'Edit start position' });
+    this.fromInput = page.getByRole('textbox', { name: 'start position' });
     this.cancelButton = page.getByRole('button', { name: 'Cancel' });
     this.dateToggleButton = page.getByRole('button', { name: 'Pick a date' });
     // A native date input exposes no implicit `textbox` role, so this goes through
@@ -84,19 +90,22 @@ export class ProgressLogSheetPage {
   }
 
   /**
-   * Types a page number into the current-page field.
-   * @param page - The page reached.
+   * Moves the session's start back off its prefill, which is what a catch-up pass over
+   * ground already covered needs -- the prefill is the frontier, and the start may only
+   * go behind it.
+   * @param position - Where the session began: pages as digits, or HH:MM for audio.
    */
-  async enterPage(page: number): Promise<void> {
-    await this.pageInput.fill(String(page));
+  async enterFrom(position: string): Promise<void> {
+    await this.fromButton.click();
+    await this.fromInput.fill(position);
   }
 
   /**
-   * Types a position into the HH:MM field for audio reads.
-   * @param hhmm - The position in HH:MM format.
+   * Types where the session ended into the To field.
+   * @param position - The position reached: pages as digits, or HH:MM for audio.
    */
-  async enterMinute(hhmm: string): Promise<void> {
-    await this.minuteInput.fill(hhmm);
+  async enterPosition(position: string): Promise<void> {
+    await this.toInput.fill(position);
   }
 
   /**

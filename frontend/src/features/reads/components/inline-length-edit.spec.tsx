@@ -121,8 +121,6 @@ describe('InlineLengthEdit', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Must be more than zero');
   });
 
-  // The read renders the server's reason; this only has to keep the value alive so the
-  // correction can be adjusted rather than retyped from the old one.
   it('stays open holding the typed length when the save is refused', async () => {
     const onSave = vi.fn().mockRejectedValue(new Error('too short'));
     render(<InlineLengthEdit value={272} isAudio={false} onSave={onSave} />);

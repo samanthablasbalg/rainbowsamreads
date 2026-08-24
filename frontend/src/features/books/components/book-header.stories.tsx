@@ -9,8 +9,6 @@ const book = buildBook({
   genres: ['Fantasy', 'Mystery', 'Queer'],
 });
 
-// The two exports always render together on the page, so the stories show them stacked
-// rather than pretending either is used alone.
 const meta = {
   component: BookHeader,
   args: { book },
@@ -27,7 +25,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-// Google Books often knows only the year, and the chips are whatever it happened to store.
 export const YearOnly: Story = {
   args: {
     book: buildBook({
@@ -49,7 +46,6 @@ export const Audiobook: Story = {
   },
 };
 
-// Nothing but a title and an author -- the header still has to look deliberate.
 export const Bare: Story = {
   args: { book: buildBook({ default_page_count: null }) },
 };

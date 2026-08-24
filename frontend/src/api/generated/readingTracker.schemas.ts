@@ -207,6 +207,8 @@ export interface EngagementRead {
   abandoned_on: string | null;
   resume_from_page: number;
   resume_from_minute: number;
+  frontier_page: number;
+  frontier_minute: number;
   resume_unit: LogUnit | null;
   length_pages: number | null;
   length_minutes: number | null;
@@ -248,6 +250,7 @@ export interface MinuteProgressLogRead {
   id: string;
   engagement_id: string;
   logged_on: string;
+  created_at: string;
   new_ground: boolean;
   note: string | null;
   type?: 'minute';
@@ -259,6 +262,7 @@ export interface PageProgressLogRead {
   id: string;
   engagement_id: string;
   logged_on: string;
+  created_at: string;
   new_ground: boolean;
   note: string | null;
   type?: 'page';
@@ -267,8 +271,10 @@ export interface PageProgressLogRead {
 }
 
 export interface ProgressLogCreate {
-  current_page?: number | null;
-  current_minute?: number | null;
+  page_start?: number | null;
+  page_end?: number | null;
+  minute_start?: number | null;
+  minute_end?: number | null;
   audio_length_minutes?: number | null;
   logged_on?: string | null;
   note?: string | null;

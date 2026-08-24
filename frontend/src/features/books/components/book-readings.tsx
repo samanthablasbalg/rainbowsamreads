@@ -12,8 +12,6 @@ import { FORMATS } from '@/utils/format';
 import { formatDaysBetween, formatIsoDate } from '@/utils/format-date';
 import { LogReadingSheet } from './log-reading-sheet';
 
-// The row's date: when it finished, when it was abandoned, or when it started, in that
-// order -- whichever of those actually happened last for this engagement.
 function readingDate(engagement: EngagementRead): string | null {
   return engagement.finished_on ?? engagement.abandoned_on ?? engagement.started_on;
 }
@@ -27,9 +25,6 @@ function readingDescriptor(engagement: EngagementRead): string {
   return `${formats} · ${formatDaysBetween(engagement.started_on, endedOn)}`;
 }
 
-// One row per engagement, newest first -- the order the API already returns them in.
-// Rating, dates, format and review all belong to the row and never to the book: that is
-// the whole reason this page has a list here instead of a single rating at the top.
 export function BookReadings({
   book,
   engagements,
@@ -45,8 +40,6 @@ export function BookReadings({
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 className="text-lg font-semibold">Reading history</h2>
 
-        {/* Only alongside a list -- the empty state below carries its own call to action,
-            and two of them on one screen is one too many. */}
         {hasReadings && (
           <Button
             variant="link"

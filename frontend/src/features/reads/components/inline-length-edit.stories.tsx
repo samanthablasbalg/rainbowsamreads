@@ -23,18 +23,14 @@ type Story = StoryObj<typeof meta>;
 
 export const Pages: Story = {};
 
-// An audio read edits in HH:MM, the same input the log sheet takes a position in.
 export const Audio: Story = {
   args: { value: 600, isAudio: true },
 };
 
-// A read bound to an edition nobody has given a length yet.
 export const Unset: Story = {
   args: { value: null },
 };
 
-// Save and refusal behaviour is covered by the spec; this is the open state's a11y gate,
-// which the closed stories above never reach.
 export const Editing: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.click(within(canvasElement).getByRole('button', { name: 'Edit length' }));

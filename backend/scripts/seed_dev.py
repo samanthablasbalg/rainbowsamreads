@@ -10,6 +10,7 @@ import psycopg2
 from dotenv import load_dotenv
 
 from app.db_url import owner_database_url
+from app.models.enums import LogUnit
 
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env"))
 
@@ -117,10 +118,19 @@ def start_reading(
     return str(post("/engagements", body)["id"])
 
 
+def resume_from(engagement_id: str, unit: LogUnit) -> int:
+    engagement = _request("GET", f"/engagements/{engagement_id}", None)
+    field = "resume_from_minute" if unit == LogUnit.minutes else "resume_from_page"
+    return cast(int, engagement[field])
+
+
 def log_progress(
     engagement_id: str, current_page: int, note: str | None = None
 ) -> None:
-    body: dict[str, object] = {"current_page": current_page}
+    body: dict[str, object] = {
+        "page_start": resume_from(engagement_id, LogUnit.pages),
+        "page_end": current_page,
+    }
     if note is not None:
         body["note"] = note
     post(f"/engagements/{engagement_id}/progress-logs", body)
@@ -129,7 +139,10 @@ def log_progress(
 def log_audio_progress(engagement_id: str, current_minute: int) -> None:
     post(
         f"/engagements/{engagement_id}/progress-logs",
-        {"current_minute": current_minute},
+        {
+            "minute_start": resume_from(engagement_id, LogUnit.minutes),
+            "minute_end": current_minute,
+        },
     )
 
 

@@ -92,6 +92,125 @@ describe('toEntryViews', () => {
   it('returns nothing for a read with no logs', () => {
     expect(toEntryViews([], print)).toEqual([]);
   });
+
+  describe('a session split at the frontier', () => {
+    const savedAt = '2025-06-15T09:30:00.000Z';
+    const split = [
+      buildPageLog({
+        id: 're',
+        created_at: savedAt,
+        new_ground: false,
+        page_start: 80,
+        page_end: 100,
+      }),
+      buildPageLog({
+        id: 'new',
+        created_at: savedAt,
+        page_start: 100,
+        page_end: 130,
+        note: 'Caught up.',
+      }),
+    ];
+
+    it('folds the two rows into one entry spanning both', () => {
+      const entries = toEntryViews(split, print);
+
+      expect(entries).toHaveLength(1);
+      expect(entries[0].fromLabel).toBe('p. 80');
+      expect(entries[0].toLabel).toBe('p. 130');
+    });
+
+    it('counts the whole span read, not just the new ground', () => {
+      expect(toEntryViews(split, print)[0].amountLabel).toBe('+50 pp');
+    });
+
+    it('names the bar with the frontier it crossed, which no other label carries', () => {
+      expect(toEntryViews(split, print)[0].spanLabel).toBe(
+        'Re-read p. 80 to p. 100, then new ground to p. 130'
+      );
+    });
+
+    it('addresses the entry by the new-ground row, which carries the note', () => {
+      const [entry] = toEntryViews(split, print);
+
+      expect(entry.id).toBe('new');
+      expect(entry.note).toBe('Caught up.');
+    });
+
+    it('marks the frontier it crossed, so the card can colour each half', () => {
+      const [entry] = toEntryViews(split, print);
+
+      expect(entry.hasNewGround).toBe(true);
+      expect(entry.splitAt).toBe(100);
+      expect(entry.splitPct).toBe(50);
+    });
+
+    it('keeps a separate save on the same day as its own entry', () => {
+      const entries = toEntryViews([...split, buildPageLog({ id: 'later' })], print);
+
+      expect(entries.map((entry) => entry.id)).toEqual(['later', 'new']);
+    });
+  });
+
+  describe('a session entirely behind the frontier', () => {
+    const reread = [buildPageLog({ new_ground: false, page_start: 20, page_end: 60 })];
+
+    it('gives the whole span to the re-read half', () => {
+      const [entry] = toEntryViews(reread, print);
+
+      expect(entry.hasNewGround).toBe(false);
+      expect(entry.splitAt).toBe(60);
+      expect(entry.splitPct).toBe(30);
+    });
+
+    it('states the pages read without claiming completion moved', () => {
+      const [entry] = toEntryViews(reread, print);
+
+      expect(entry.amountLabel).toBe('40 pp');
+      expect(entry.spanLabel).toBe('Re-read, p. 20 to p. 60');
+    });
+  });
+
+  describe('the frontier each session found', () => {
+    it('is where the one before it ended', () => {
+      const entries = toEntryViews(
+        [
+          buildPageLog({ page_start: 0, page_end: 40 }),
+          buildPageLog({ page_start: 40, page_end: 90 }),
+        ],
+        print
+      );
+
+      expect(entries.map((entry) => entry.coveredPct)).toEqual([20, 0]);
+    });
+
+    it('holds where it was through a re-read, and stays there for what follows', () => {
+      const entries = toEntryViews(
+        [
+          buildPageLog({ page_start: 0, page_end: 120 }),
+          buildPageLog({ new_ground: false, page_start: 20, page_end: 60 }),
+          buildPageLog({ page_start: 120, page_end: 140 }),
+        ],
+        print
+      );
+
+      expect(entries.map((entry) => entry.coveredPct)).toEqual([60, 60, 0]);
+    });
+
+    it('starts a read at nothing covered', () => {
+      const [entry] = toEntryViews([buildPageLog({ page_start: 0, page_end: 40 })], print);
+
+      expect(entry.coveredPct).toBe(0);
+    });
+  });
+
+  it('gives an unsplit session no re-read half at all', () => {
+    const [entry] = toEntryViews([buildPageLog({ page_start: 50, page_end: 100 })], print);
+
+    expect(entry.hasNewGround).toBe(true);
+    expect(entry.splitAt).toBe(50);
+    expect(entry.splitPct).toBe(entry.startPct);
+  });
 });
 
 describe('toDayGroups', () => {

@@ -22,7 +22,7 @@ test('Logging progress with a note shows the note on the entry', async ({ page, 
 
   await test.step('Log page 100 with a note, backdated to a fixed day', async () => {
     await history.logProgressButton.click();
-    await sheet.enterPage(100);
+    await sheet.enterPosition('100');
     await sheet.openDatePicker();
     await sheet.setDate('2025-06-15');
     await sheet.addNote('The Beauty of the House is immeasurable.');
@@ -56,7 +56,7 @@ test('Noting two quotes on the page already reached keeps both', async ({ page, 
 
   await test.step('Note a first quote without advancing past page 100', async () => {
     await history.logProgressButton.click();
-    await sheet.enterPage(100);
+    await sheet.enterPosition('100');
     await sheet.openDatePicker();
     await sheet.setDate('2025-06-15');
     await sheet.addNote('The first quote from this page.');
@@ -66,7 +66,7 @@ test('Noting two quotes on the page already reached keeps both', async ({ page, 
 
   await test.step('Note a second quote on the same page', async () => {
     await history.logProgressButton.click();
-    await sheet.enterPage(100);
+    await sheet.enterPosition('100');
     await sheet.openDatePicker();
     await sheet.setDate('2025-06-15');
     await sheet.addNote('The second quote from this page.');

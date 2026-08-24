@@ -4,6 +4,8 @@ from typing import Any, cast
 
 from fastapi.testclient import TestClient
 
+from app.models.enums import LogUnit
+
 
 def _create_book(
     client: TestClient,
@@ -46,14 +48,26 @@ def _create_engagement(
     return cast(dict[str, Any], response.json())
 
 
+def _resume_from(client: TestClient, engagement_id: str, unit: LogUnit) -> int:
+    """Where the sheet would prefill "From". A session names both its ends now, so a
+    helper that takes only the position reached has to ask for the other one."""
+    response = client.get(f"/api/engagements/{engagement_id}")
+    assert response.status_code == 200
+    field = "resume_from_minute" if unit == LogUnit.minutes else "resume_from_page"
+    return cast(int, response.json()[field])
+
+
 def _log_progress(
     client: TestClient,
     engagement_id: str,
     current_page: int,
     logged_on: str | None = None,
     note: str | None = None,
+    page_start: int | None = None,
 ) -> dict[str, Any]:
-    body: dict[str, Any] = {"current_page": current_page}
+    if page_start is None:
+        page_start = _resume_from(client, engagement_id, LogUnit.pages)
+    body: dict[str, Any] = {"page_start": page_start, "page_end": current_page}
     if logged_on is not None:
         body["logged_on"] = logged_on
     if note is not None:
@@ -107,9 +121,16 @@ def _log_audio_progress(
     engagement_id: str,
     current_minute: int,
     logged_on: str | None = None,
+    minute_start: int | None = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
-    body: dict[str, Any] = {"current_minute": current_minute, **kwargs}
+    if minute_start is None:
+        minute_start = _resume_from(client, engagement_id, LogUnit.minutes)
+    body: dict[str, Any] = {
+        "minute_start": minute_start,
+        "minute_end": current_minute,
+        **kwargs,
+    }
     if logged_on is not None:
         body["logged_on"] = logged_on
     response = client.post(f"/api/engagements/{engagement_id}/progress-logs", json=body)

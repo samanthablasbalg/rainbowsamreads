@@ -43,7 +43,7 @@ test('Adding an audiobook to a print read logs minutes against the shared fronti
   });
 
   await test.step('Log an hour of listening', async () => {
-    await logSheet.enterMinute('06:00');
+    await logSheet.enterPosition('06:00');
     await logSheet.save('Piranesi');
     await expect(logSheet.sheet).toHaveCount(0);
   });

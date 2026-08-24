@@ -45,14 +45,8 @@ export function EntryTimeline({
     deleteLog.mutate({ engagementId: engagement.id, logId });
   }
 
-  // Recomputed every render rather than held in state: editing an entry's date moves it
-  // into another day, and the grouping has to follow the data rather than the layout it
-  // happened to have when the list first arrived.
   const groups = toDayGroups(toEntryViews(logs, engagement));
 
-  // Only an ended read has a marker at the top for the rail to start from. Without one
-  // the first date's row starts the rail at its own dot instead, so the line doesn't
-  // stub out above the newest entry with nothing terminating it.
   const ended =
     engagement.status === ReadingStatus.finished || engagement.status === ReadingStatus.dnf;
 
@@ -131,11 +125,7 @@ export function EntryTimeline({
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
         title="Delete this entry?"
-        description={
-          deleting
-            ? `The session from ${deleting.dateLabel} will be removed and your progress will go back to where it was before it. This can't be undone.`
-            : ''
-        }
+        description={deleteDescription(deleting)}
         confirmLabel="Delete"
         tone="danger"
         onConfirm={handleDelete}
@@ -144,14 +134,14 @@ export function EntryTimeline({
   );
 }
 
-// One line per row rather than one down the whole timeline: every row draws it at the
-// same x and rows stack, so it reads as continuous without anything having to know the
-// height of what it passes. The rail column is a flex child left at its default stretch,
-// which is what gives `inset-y-0` a full row to span -- centring it instead would
-// collapse the column to the dot's own height and break the line into dashes.
-//
-// `left-3` is the centre of `w-6`, and the dot is placed at the same coordinate. That is
-// what keeps the two aligned, at any dot size, without arithmetic.
+function deleteDescription(entry: EntryView | null): string {
+  if (entry === null) return '';
+
+  return entry.hasNewGround
+    ? `The session from ${entry.dateLabel} will be removed and your progress will go back to where it was before it. This can't be undone.`
+    : `The session from ${entry.dateLabel} will be removed. It was a re-read, so your progress won't change. This can't be undone.`;
+}
+
 function TimelineRow({
   line = 'full',
   dot,
@@ -170,8 +160,6 @@ function TimelineRow({
           className={cn(
             'absolute left-3 w-0.5 -translate-x-1/2 bg-border',
             line === 'full' && 'inset-y-0',
-            // Bookends stop at their own dot, so the rail terminates on the marker
-            // rather than running past it.
             line === 'below' && 'top-1/2 bottom-0',
             line === 'above' && 'top-0 bottom-1/2'
           )}
@@ -186,9 +174,6 @@ function TimelineRow({
   );
 }
 
-// Deliberately the same size as the started marker below, filled where that one is
-// hollow: both are punctuation on the rail, and only the end marker carries a glyph and
-// the weight to go with it.
 function DayDot() {
   return <span className="block size-2.5 rounded-full bg-primary ring-2 ring-background" />;
 }

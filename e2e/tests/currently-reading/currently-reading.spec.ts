@@ -31,7 +31,7 @@ test('Logging progress advances the card in place and survives reload', async ({
   });
 
   await test.step('Log a higher page', async () => {
-    await sheet.enterPage(200);
+    await sheet.enterPosition('200');
     await sheet.save('Dune');
   });
 
@@ -72,7 +72,7 @@ test('Backdating a log stores it under the chosen day', async ({ page, apiClient
     await currentlyReading.openLogSheet('Dune');
     await sheet.openDatePicker();
     await sheet.setDate('2025-06-15');
-    await sheet.enterPage(100);
+    await sheet.enterPosition('100');
     await sheet.save('Dune');
   });
 
@@ -102,9 +102,9 @@ test('Audio log sheet shows HH:MM input instead of a page input', async ({ page,
     await currentlyReading.openLogSheet('The Hobbit');
   });
 
-  await test.step('Verify the HH:MM input is shown and the page input is absent', async () => {
-    await expect(sheet.minuteInput).toBeVisible();
-    await expect(sheet.pageInput).toHaveCount(0);
+  await test.step('Verify the To field is measuring in HH:MM, not in pages', async () => {
+    await expect(sheet.toInput).toBeVisible();
+    await expect(sheet.toInput).toHaveAttribute('placeholder', '--:--');
   });
 });
 
@@ -123,7 +123,7 @@ test('Logging audio progress advances the completion percentage', async ({ page,
   });
 
   await test.step('Log 01:00 of progress', async () => {
-    await sheet.enterMinute('01:00');
+    await sheet.enterPosition('01:00');
     await sheet.save('The Hobbit');
   });
 
@@ -151,5 +151,82 @@ test('Audio log sheet pre-fills with the last logged minute', async ({ page, api
 
   await test.step('Verify the sheet pre-fills with 01:15', async () => {
     await expect(sheet.getFromDisplay('01:15')).toBeVisible();
+  });
+});
+
+test('Catching the pages up to the audio re-reads without moving completion', async ({
+  page,
+  apiClient,
+}) => {
+  const currentlyReading = new CurrentlyReadingPage(page);
+  const sheet = new ProgressLogSheetPage(page);
+
+  await test.step('Seed an eight-hour audiobook heard to two hours, bound in digital too', async () => {
+    const bookId = await apiClient.createBook('The Fifth Season', 'N. K. Jemisin', 400);
+    const engId = await apiClient.markAsReading(bookId, 'audio', 480);
+    await apiClient.logAudioProgress(engId, 120);
+    await apiClient.addFormat(engId, 'digital');
+  });
+
+  await test.step('Open the log sheet on a read that stands a quarter of the way through', async () => {
+    await currentlyReading.goto();
+    await expect(currentlyReading.getProgressBar('The Fifth Season')).toHaveAccessibleName(
+      'The Fifth Season progress: 25%'
+    );
+    await currentlyReading.openLogSheet('The Fifth Season');
+  });
+
+  await test.step('Re-read pages 50 to 75, behind where the listening had got to', async () => {
+    await sheet.pickUnit('Pages');
+    await sheet.enterFrom('50');
+    await sheet.enterPosition('75');
+    await sheet.save('The Fifth Season');
+    await expect(sheet.sheet).toHaveCount(0);
+  });
+
+  await test.step('Verify ground covered a second time left completion where it was', async () => {
+    await expect(currentlyReading.getProgressBar('The Fifth Season')).toHaveAccessibleName(
+      'The Fifth Season progress: 25%'
+    );
+  });
+
+  await test.step('Verify the sheet still resumes on minutes, at the frontier', async () => {
+    await currentlyReading.openLogSheet('The Fifth Season');
+    await expect(sheet.getUnitButton('Minutes')).toHaveAttribute('aria-pressed', 'true');
+    await expect(sheet.fromButton).toHaveText('02:00');
+  });
+
+  await test.step('Verify the page ruler resumes at its own catch-up position instead', async () => {
+    await sheet.pickUnit('Pages');
+    await expect(sheet.fromButton).toHaveText('75');
+  });
+
+  await test.step('Read the remaining pages up to the frontier', async () => {
+    await sheet.enterPosition('100');
+    await sheet.save('The Fifth Season');
+    await expect(sheet.sheet).toHaveCount(0);
+    await expect(currentlyReading.getProgressBar('The Fifth Season')).toHaveAccessibleName(
+      'The Fifth Season progress: 25%'
+    );
+  });
+
+  await test.step('Verify both rulers now resume at the shared frontier', async () => {
+    await currentlyReading.openLogSheet('The Fifth Season');
+    await expect(sheet.fromButton).toHaveText('02:00');
+    await sheet.pickUnit('Pages');
+    await expect(sheet.fromButton).toHaveText('100');
+  });
+
+  await test.step('Listen half an hour past the frontier', async () => {
+    await sheet.pickUnit('Minutes');
+    await sheet.enterPosition('02:30');
+    await sheet.save('The Fifth Season');
+    await expect(sheet.sheet).toHaveCount(0);
+  });
+
+  await test.step('Verify only new ground moves completion', async () => {
+    await expect(currentlyReading.getProgressBar('The Fifth Season')).toHaveAccessibleName(
+      'The Fifth Season progress: 31%'
+    );
   });
 });

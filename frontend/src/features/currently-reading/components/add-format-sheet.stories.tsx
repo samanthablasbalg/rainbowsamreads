@@ -42,14 +42,10 @@ export const MobileSheet: Story = {
   render: () => <ControlledSheet engagement={printRead} />,
 };
 
-// The bound row reads out of the audio ruler, and the two page formats left to add both
-// offer the book's page count.
 export const ReadingInAudio: Story = {
   render: () => <ControlledSheet engagement={buildAudioEngagement({ resume_from_minute: 220 })} />,
 };
 
-// Audio has no length until the first read captures one, so picking it makes the field
-// required and leaves no placeholder to accept.
 export const AudioLengthRequired: Story = {
   render: () => <ControlledSheet engagement={printRead} />,
   play: async (context) => {

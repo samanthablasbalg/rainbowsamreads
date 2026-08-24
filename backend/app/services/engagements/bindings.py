@@ -8,8 +8,7 @@ from app.crud import edition_crud, engagement_edition_crud
 from app.exceptions import ConflictError, NotFoundError
 from app.models.edition import EngagementEdition
 from app.models.engagement import Engagement
-from app.models.enums import Format
-from app.models.progress_log import ProgressLog
+from app.models.enums import Format, LogUnit
 from app.services.books import capture_audio_length
 
 
@@ -100,10 +99,13 @@ def _pull_back_the_final_entry(
 ) -> None:
     """Make room for a shorter length by shortening the one entry that ran to the old
     end, or refuse the correction outright when more than one entry is in the way."""
+    # On this format's ruler only: a page entry's number means nothing against an audio
+    # length, and the two rulers are corrected independently.
+    unit = LogUnit.minutes if is_audio else LogUnit.pages
     stranded = [
-        (log, end)
+        (log, log.end)
         for log in engagement.progress_logs
-        if (end := _end_of(log, is_audio)) is not None and end > length
+        if log.unit == unit and log.end is not None and log.end > length
     ]
     if not stranded:
         return
@@ -114,7 +116,7 @@ def _pull_back_the_final_entry(
     # can't be fixed by moving one number, and update_progress_log's refusal to log
     # past the end stands: leaving them would show a permanently clamped 100%.
     log, _ = stranded[0]
-    if len(stranded) > 1 or _start_of(log, is_audio) >= length:
+    if len(stranded) > 1 or log.start >= length:
         furthest = max(end for _, end in stranded)
         reached = f"{furthest} minutes" if is_audio else f"page {furthest}"
         raise ConflictError(
@@ -126,11 +128,3 @@ def _pull_back_the_final_entry(
         log.minute_end = length
     else:
         log.page_end = length
-
-
-def _end_of(log: ProgressLog, is_audio: bool) -> int | None:
-    return log.minute_end if is_audio else log.page_end
-
-
-def _start_of(log: ProgressLog, is_audio: bool) -> int:
-    return (log.minute_start if is_audio else log.page_start) or 0
