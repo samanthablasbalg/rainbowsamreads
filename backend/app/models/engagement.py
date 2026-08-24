@@ -28,8 +28,11 @@ if TYPE_CHECKING:
 
 # Same key the stored journal is ordered on (see services/engagements/progress_logs.py):
 # the two have to agree, since one orders the history and the other picks the latest.
-def _log_sort_key(log: ProgressLog) -> tuple[datetime.date, datetime.datetime]:
-    return (log.logged_on, log.created_at)
+# A session crossing the frontier is stored as a re-coverage row and a new-ground row
+# sharing a transaction timestamp, so `new_ground` breaks that tie and the new-ground
+# half always sorts last -- otherwise `max()` over the pair picks arbitrarily.
+def _log_sort_key(log: ProgressLog) -> tuple[datetime.date, datetime.datetime, bool]:
+    return (log.logged_on, log.created_at, log.new_ground)
 
 
 class Engagement(TimestampMixin, Base):
@@ -91,36 +94,25 @@ class Engagement(TimestampMixin, Base):
                 return ee.edition.cover_url
         return self.book.default_cover_url
 
-    def _latest_log(self) -> ProgressLog | None:
-        return max(self.progress_logs, key=_log_sort_key, default=None)
-
     @property
     def resume_unit(self) -> LogUnit | None:
         """Which ruler the read is on -- the unit of the entry that set the frontier.
         None until something is logged. Both resume points are always populated, so this
-        is what says which of them the read is actually sitting on."""
-        latest = self._latest_log()
-        return latest.unit if latest is not None else None
+        is what says which of them the read is actually sitting on.
 
-    def _latest_page_end(self) -> int | None:
-        page_logs = [log for log in self.progress_logs if log.page_end is not None]
-        if not page_logs:
-            return None
-        return max(page_logs, key=_log_sort_key).page_end
+        New ground only: a catch-up pass over ground already covered doesn't move the
+        read onto that pass's ruler."""
+        new_ground = [log for log in self.progress_logs if log.new_ground]
+        latest = max(new_ground, key=_log_sort_key, default=None)
+        return latest.unit if latest is not None else None
 
     @property
     def resume_from_page(self) -> int:
-        return self._resume_in(self.length_pages, self._latest_page_end())
-
-    def _latest_minute_end(self) -> int | None:
-        minute_logs = [log for log in self.progress_logs if log.minute_end is not None]
-        if not minute_logs:
-            return None
-        return max(minute_logs, key=_log_sort_key).minute_end
+        return self._resume_in(LogUnit.pages)
 
     @property
     def resume_from_minute(self) -> int:
-        return self._resume_in(self.length_minutes, self._latest_minute_end())
+        return self._resume_in(LogUnit.minutes)
 
     def binding_for(self, fmt: Format) -> EngagementEdition | None:
         return next(
@@ -165,11 +157,27 @@ class Engagement(TimestampMixin, Base):
         fmt = self.page_format
         return None if fmt is None else self.resolve_length(fmt)
 
-    def _resume_in(self, length: int | None, latest_end: int | None) -> int:
+    def _resume_in(self, unit: LogUnit) -> int:
         """Where the read stands on one ruler. Converted from the shared frontier, so a
         session picks up where the *read* is rather than where this format last was --
         switch to audio at page 220 of 440 and it resumes at 3:35 of 7:10. Falls back to
-        this ruler's own last position when there is no fraction to convert."""
+        this ruler's own last position when there is no fraction to convert.
+
+        Except when this ruler's own last entry was re-coverage: the frontier is shared
+        but a catch-up position is not, so re-reading the print to catch up to the audio
+        resumes on the print where that pass stopped, and leaves the audio at 2:00.
+        """
+        is_audio = unit == LogUnit.minutes
+        logs = [log for log in self.progress_logs if log.unit == unit]
+        latest = max(logs, key=_log_sort_key, default=None)
+        latest_end = (
+            None
+            if latest is None
+            else (latest.minute_end if is_audio else latest.page_end)
+        )
+        if latest is not None and not latest.new_ground:
+            return latest_end or 0
+        length = self.length_minutes if is_audio else self.length_pages
         fraction = self.covered_fraction
         if fraction is None or not length:
             return latest_end or 0
@@ -180,25 +188,26 @@ class Engagement(TimestampMixin, Base):
         """How far into the book this read has got, 0-1, whichever ruler it was on.
 
         Pages and minutes measure one axis (ADR-0007), so a position on either converts
-        to the other through this. Every entry starts at the frontier and moves forward
-        -- so the latest entry's end *is* the frontier, and no summing is needed. When
-        re-coverage and out-of-order entries arrive (issue 96) that stops holding and
-        this becomes the cumulative sum of new-ground spans the ADR describes.
+        to the other through this -- each entry's end is divided by its own ruler.
 
-        None when the ruler in use has no length to divide by -- the same "can't say"
-        completion has always returned for a book with no page count.
+        A high-water mark, so it never decreases: a session behind the frontier is
+        re-coverage and leaves completion where it was. New ground stays contiguous from
+        zero, which makes the furthest end and the ADR's cumulative sum over new-ground
+        spans the same number; the sum is what out-of-order new ground will need.
+
+        None when no entry has a ruler with a length to divide by -- the same "can't
+        say" completion has always returned for a book with no page count.
         """
-        latest = max(self.progress_logs, key=_log_sort_key, default=None)
-        if latest is None:
-            return None
-        position, length = (
-            (latest.minute_end, self.length_minutes)
-            if latest.unit == LogUnit.minutes
-            else (latest.page_end, self.length_pages)
-        )
-        if position is None or not length:
-            return None
-        return position / length
+        fractions = []
+        for log in self.progress_logs:
+            position, length = (
+                (log.minute_end, self.length_minutes)
+                if log.unit == LogUnit.minutes
+                else (log.page_end, self.length_pages)
+            )
+            if position is not None and length:
+                fractions.append(position / length)
+        return max(fractions, default=None)
 
     @property
     def completion_pct(self) -> int | None:

@@ -19,8 +19,8 @@ def reject_future_date(value: datetime.date | None) -> None:
         raise InvalidOperationError("Date cannot be in the future.")
 
 
-def log_sort_key(log: ProgressLog) -> tuple[datetime.date, datetime.datetime]:
-    return (log.logged_on, log.created_at)
+def log_sort_key(log: ProgressLog) -> tuple[datetime.date, datetime.datetime, bool]:
+    return (log.logged_on, log.created_at, log.new_ground)
 
 
 def latest_log(logs: list[ProgressLog]) -> ProgressLog | None:
@@ -35,7 +35,11 @@ def list_for_engagement(db: Session, engagement_id: uuid.UUID) -> list[ProgressL
         db.execute(
             select(ProgressLog)
             .where(ProgressLog.engagement_id == engagement_id)
-            .order_by(ProgressLog.logged_on.asc(), ProgressLog.created_at.asc())
+            .order_by(
+                ProgressLog.logged_on.asc(),
+                ProgressLog.created_at.asc(),
+                ProgressLog.new_ground.asc(),
+            )
         )
         .scalars()
         .all()

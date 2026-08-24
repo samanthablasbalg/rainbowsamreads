@@ -1118,17 +1118,16 @@ def test_resume_from_page_uses_canonical_order_latest(
     assert response.json()[0]["resume_from_page"] == 100
 
 
-def test_completion_pct_uses_canonical_order_latest(
-    client: TestClient, db: Session
-) -> None:
+def test_completion_pct_is_a_high_water_mark(client: TestClient, db: Session) -> None:
     book = _create_book(client)
     book_obj = db.get(Book, uuid.UUID(book["id"]))
     assert book_obj is not None
     book_obj.default_page_count = 300
     db.commit()
     engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
-    # Retarget dates via PATCH so the page-100 log ends up canonical latest
-    # (Jan 30) ahead of the page-200 log (Jan 20) → completion_pct = 33, not 67.
+    # Retarget dates via PATCH so the page-100 log ends up canonical latest (Jan 30)
+    # ahead of the page-200 log (Jan 20). Page 200 was still reached, so completion
+    # holds at 67 rather than falling back to the latest entry's 33.
     first = _log_progress(client, engagement["id"], 100)
     second = _log_progress(client, engagement["id"], 200)
     client.patch(
@@ -1141,7 +1140,7 @@ def test_completion_pct_uses_canonical_order_latest(
     )
 
     response = client.get("/api/engagements?status=reading")
-    assert response.json()[0]["completion_pct"] == 33
+    assert response.json()[0]["completion_pct"] == 67
 
 
 # --- Delete progress logs ---
