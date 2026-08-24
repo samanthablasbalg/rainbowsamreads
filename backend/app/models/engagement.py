@@ -17,6 +17,7 @@ from app.models.enums import (
     date_precision_type,
 )
 from app.models.mixins import TimestampMixin
+from app.models.progress_log import log_sort_key
 
 if TYPE_CHECKING:
     from app.models.book import Book
@@ -24,19 +25,6 @@ if TYPE_CHECKING:
     from app.models.progress_log import ProgressLog
     from app.models.review import Review
     from app.models.user import User
-
-
-# Same key the stored journal is ordered on (see services/engagements/progress_logs.py):
-# the two have to agree, since one orders the history and the other picks the latest.
-# A session crossing the frontier is stored as a re-coverage row and a new-ground row
-# sharing a transaction timestamp, so `new_ground` breaks that tie and the new-ground
-# half always sorts last -- otherwise `max()` over the pair picks arbitrarily.
-def _log_sort_key(log: ProgressLog) -> tuple[datetime.date, datetime.datetime, bool]:
-    return (log.logged_on, log.created_at, log.new_ground)
-
-
-def _end_of(log: ProgressLog) -> int | None:
-    return log.minute_end if log.unit == LogUnit.minutes else log.page_end
 
 
 class Engagement(TimestampMixin, Base):
@@ -107,7 +95,7 @@ class Engagement(TimestampMixin, Base):
         New ground only: a catch-up pass over ground already covered doesn't move the
         read onto that pass's ruler."""
         new_ground = [log for log in self.progress_logs if log.new_ground]
-        latest = max(new_ground, key=_log_sort_key, default=None)
+        latest = max(new_ground, key=log_sort_key, default=None)
         return latest.unit if latest is not None else None
 
     @property
@@ -117,6 +105,17 @@ class Engagement(TimestampMixin, Base):
     @property
     def resume_from_minute(self) -> int:
         return self._resume_in(LogUnit.minutes)
+
+    # Where a session may start is capped by the frontier, not by the resume point: with
+    # a catch-up open the two differ, and abandoning the catch-up to pick the read back
+    # up at the frontier is a move the sheet has to allow.
+    @property
+    def frontier_page(self) -> int:
+        return self.frontier_in(LogUnit.pages)
+
+    @property
+    def frontier_minute(self) -> int:
+        return self.frontier_in(LogUnit.minutes)
 
     def binding_for(self, fmt: Format) -> EngagementEdition | None:
         return next(
@@ -163,7 +162,7 @@ class Engagement(TimestampMixin, Base):
 
     def _latest_log_in(self, unit: LogUnit) -> ProgressLog | None:
         logs = [log for log in self.progress_logs if log.unit == unit]
-        return max(logs, key=_log_sort_key, default=None)
+        return max(logs, key=log_sort_key, default=None)
 
     def frontier_in(self, unit: LogUnit) -> int:
         """How far the read has got, on one ruler. Pages and minutes measure one axis
@@ -175,7 +174,7 @@ class Engagement(TimestampMixin, Base):
         fraction = self.covered_fraction
         if fraction is None or not length:
             latest = self._latest_log_in(unit)
-            return 0 if latest is None else (_end_of(latest) or 0)
+            return 0 if latest is None else (latest.end or 0)
         return round(fraction * length)
 
     def _resume_in(self, unit: LogUnit) -> int:
@@ -187,7 +186,7 @@ class Engagement(TimestampMixin, Base):
         resumes on the print where that pass stopped, and leaves the audio at 2:00."""
         latest = self._latest_log_in(unit)
         if latest is not None and not latest.new_ground:
-            return _end_of(latest) or 0
+            return latest.end or 0
         return self.frontier_in(unit)
 
     @property
@@ -207,13 +206,13 @@ class Engagement(TimestampMixin, Base):
         """
         fractions = []
         for log in self.progress_logs:
-            position, length = (
-                (log.minute_end, self.length_minutes)
+            length = (
+                self.length_minutes
                 if log.unit == LogUnit.minutes
-                else (log.page_end, self.length_pages)
+                else self.length_pages
             )
-            if position is not None and length:
-                fractions.append(position / length)
+            if log.end is not None and length:
+                fractions.append(log.end / length)
         return max(fractions, default=None)
 
     @property

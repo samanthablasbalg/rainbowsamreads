@@ -67,6 +67,8 @@ export const getEngagementsCreateEngagementResponseMock = (
   abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   resume_from_page: faker.number.int(),
   resume_from_minute: faker.number.int(),
+  frontier_page: faker.number.int(),
+  frontier_minute: faker.number.int(),
   resume_unit: faker.helpers.arrayElement([
     faker.helpers.arrayElement(Object.values(LogUnit)),
     null,
@@ -144,6 +146,8 @@ export const getEngagementsListEngagementsResponseMock = (): EngagementRead[] =>
     abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
     resume_from_page: faker.number.int(),
     resume_from_minute: faker.number.int(),
+    frontier_page: faker.number.int(),
+    frontier_minute: faker.number.int(),
     resume_unit: faker.helpers.arrayElement([
       faker.helpers.arrayElement(Object.values(LogUnit)),
       null,
@@ -221,6 +225,8 @@ export const getEngagementsUpdateEngagementStatusResponseMock = (
   abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   resume_from_page: faker.number.int(),
   resume_from_minute: faker.number.int(),
+  frontier_page: faker.number.int(),
+  frontier_minute: faker.number.int(),
   resume_unit: faker.helpers.arrayElement([
     faker.helpers.arrayElement(Object.values(LogUnit)),
     null,
@@ -299,6 +305,8 @@ export const getEngagementsGetEngagementResponseMock = (
   abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   resume_from_page: faker.number.int(),
   resume_from_minute: faker.number.int(),
+  frontier_page: faker.number.int(),
+  frontier_minute: faker.number.int(),
   resume_unit: faker.helpers.arrayElement([
     faker.helpers.arrayElement(Object.values(LogUnit)),
     null,
@@ -377,6 +385,8 @@ export const getEngagementsUpdateEngagementDatesResponseMock = (
   abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   resume_from_page: faker.number.int(),
   resume_from_minute: faker.number.int(),
+  frontier_page: faker.number.int(),
+  frontier_minute: faker.number.int(),
   resume_unit: faker.helpers.arrayElement([
     faker.helpers.arrayElement(Object.values(LogUnit)),
     null,
@@ -455,6 +465,8 @@ export const getEngagementsUpdateEngagementLengthResponseMock = (
   abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   resume_from_page: faker.number.int(),
   resume_from_minute: faker.number.int(),
+  frontier_page: faker.number.int(),
+  frontier_minute: faker.number.int(),
   resume_unit: faker.helpers.arrayElement([
     faker.helpers.arrayElement(Object.values(LogUnit)),
     null,
@@ -712,6 +724,8 @@ export const getEngagementsUpsertReviewResponseMock = (
   abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   resume_from_page: faker.number.int(),
   resume_from_minute: faker.number.int(),
+  frontier_page: faker.number.int(),
+  frontier_minute: faker.number.int(),
   resume_unit: faker.helpers.arrayElement([
     faker.helpers.arrayElement(Object.values(LogUnit)),
     null,

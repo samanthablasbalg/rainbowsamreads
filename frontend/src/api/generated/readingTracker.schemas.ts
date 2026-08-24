@@ -207,6 +207,8 @@ export interface EngagementRead {
   abandoned_on: string | null;
   resume_from_page: number;
   resume_from_minute: number;
+  frontier_page: number;
+  frontier_minute: number;
   resume_unit: LogUnit | null;
   length_pages: number | null;
   length_minutes: number | null;

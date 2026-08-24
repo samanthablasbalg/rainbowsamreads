@@ -48,6 +48,10 @@ export function buildEngagement({
     abandoned_on: null,
     resume_from_page: 272,
     resume_from_minute: 0,
+    // Equal to the resume points, as they are for every read with no catch-up open.
+    // Override just these to build one that has.
+    frontier_page: 272,
+    frontier_minute: 0,
     resume_unit: LogUnit.pages,
     length_pages: 272,
     length_minutes: null,

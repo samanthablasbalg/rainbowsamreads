@@ -10,17 +10,13 @@ from app.crud import engagement_crud, progress_log_crud
 from app.exceptions import ConflictError, InvalidOperationError
 from app.models.engagement import Engagement
 from app.models.enums import Format, LogUnit, ReadingStatus
-from app.models.progress_log import ProgressLog
+from app.models.progress_log import ProgressLog, log_sort_key
 from app.services.books import capture_audio_length
 
 
 def reject_future_date(value: datetime.date | None) -> None:
     if value is not None and value > datetime.date.today():
         raise InvalidOperationError("Date cannot be in the future.")
-
-
-def log_sort_key(log: ProgressLog) -> tuple[datetime.date, datetime.datetime, bool]:
-    return (log.logged_on, log.created_at, log.new_ground)
 
 
 def latest_log(logs: list[ProgressLog]) -> ProgressLog | None:
@@ -112,7 +108,7 @@ def log_progress(
         )
 
     # Re-coverage first, so the pair reads in the order it was covered and the
-    # new-ground half sorts last (see the model's _log_sort_key).
+    # new-ground half sorts last (see log_sort_key).
     if start >= frontier:
         spans = [(start, end, True)]
     elif end <= frontier:
@@ -133,12 +129,12 @@ def log_progress(
                 page_start=None if is_audio else span_start,
                 page_end=None if is_audio else span_end,
                 new_ground=new_ground,
-                # The note is about the session, and a split session's note belongs on
-                # the row the client will address it by.
-                note=note if new_ground or len(spans) == 1 else None,
+                # The note is about the session, and goes on the row the client will
+                # address it by: the last, which is the new-ground half of a split.
+                note=note if index == len(spans) - 1 else None,
             ),
         )
-        for span_start, span_end, new_ground in spans
+        for index, (span_start, span_end, new_ground) in enumerate(spans)
     ]
 
     if is_audio and audio_length_minutes is not None:

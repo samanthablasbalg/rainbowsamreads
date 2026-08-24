@@ -2191,6 +2191,14 @@
             "type": "integer",
             "title": "Resume From Minute"
           },
+          "frontier_page": {
+            "type": "integer",
+            "title": "Frontier Page"
+          },
+          "frontier_minute": {
+            "type": "integer",
+            "title": "Frontier Minute"
+          },
           "resume_unit": {
             "anyOf": [
               {
@@ -2267,6 +2275,8 @@
           "abandoned_on",
           "resume_from_page",
           "resume_from_minute",
+          "frontier_page",
+          "frontier_minute",
           "resume_unit",
           "length_pages",
           "length_minutes",

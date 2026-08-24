@@ -550,6 +550,30 @@ def test_catching_up_a_second_format_leaves_the_read_where_it_was(
     assert data["resume_from_minute"] == 120
 
 
+def test_the_frontier_outruns_the_resume_point_while_a_catch_up_is_open(
+    client: TestClient,
+) -> None:
+    """Both are on the wire because they are not the same number. The resume point is
+    where the sheet prefills; the frontier is how far a session may start. They part
+    company exactly while a catch-up is open, and abandoning the catch-up to pick the
+    print back up at the frontier has to stay a legal move."""
+    engagement, digital_id = _catch_up_engagement(client)
+    _log_audio_progress(client, engagement["id"], 120)
+    _bind_edition(client, engagement["id"], digital_id)
+    _log_progress(client, engagement["id"], 75, page_start=50)
+
+    data = client.get(f"/api/engagements/{engagement['id']}").json()
+    assert data["resume_from_page"] == 75
+    assert data["frontier_page"] == 100
+    # The audio ruler never left the frontier, so there the two agree.
+    assert data["resume_from_minute"] == 120
+    assert data["frontier_minute"] == 120
+
+    # Skipping the rest of the catch-up: new ground straight from the frontier.
+    resumed = _log_progress(client, engagement["id"], 130, page_start=100)
+    assert resumed["new_ground"] is True
+
+
 def test_a_session_crossing_the_frontier_is_stored_as_two_rows(
     client: TestClient,
 ) -> None:
