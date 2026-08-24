@@ -184,8 +184,12 @@ function useEntryEditForm(engagementId: string, entry: EntryView, onDone: () => 
 
   const parsedPosition = parsePosition(position, entry.isAudio);
 
-  // A zero-length entry has start === end, so the field opens pre-filled with a value
-  // that already fails `> start` -- excluded here so an untouched (or reverted) field
+  // The floor is `splitAt`, not `start`: a session that crossed the frontier is shown as
+  // one entry but stored as two rows, and the end being edited belongs to the new-ground
+  // half, which starts at the split. Editing below it would be refused by the backend.
+  //
+  // A zero-length entry has splitAt === end, so the field opens pre-filled with a value
+  // that already fails `> splitAt` -- excluded here so an untouched (or reverted) field
   // never errors on a position nothing is actually proposing to change.
   let positionError: string | null = null;
   if (
@@ -196,17 +200,17 @@ function useEntryEditForm(engagementId: string, entry: EntryView, onDone: () => 
   ) {
     if (parsedPosition === null) {
       positionError = entry.isAudio ? 'Enter a time in HH:MM format' : 'Enter a number';
-    } else if (parsedPosition <= entry.start) {
+    } else if (parsedPosition <= entry.splitAt) {
       positionError = entry.isAudio
-        ? `Must be past ${formatMinutesAsHhmm(entry.start)}`
-        : `Must be past page ${entry.start}`;
+        ? `Must be past ${formatMinutesAsHhmm(entry.splitAt)}`
+        : `Must be past page ${entry.splitAt}`;
     }
   }
 
   const dateChanged = date !== entry.loggedOn;
   const positionChanged = entry.isNewest && parsedPosition !== null && parsedPosition !== entry.end;
   const positionValid =
-    !entry.isNewest || (parsedPosition !== null && parsedPosition > entry.start);
+    !entry.isNewest || (parsedPosition !== null && parsedPosition > entry.splitAt);
   const trimmedNote = note.trim();
   const noteChanged = trimmedNote !== (entry.note ?? '');
 

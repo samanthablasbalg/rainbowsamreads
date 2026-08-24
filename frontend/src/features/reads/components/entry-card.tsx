@@ -1,6 +1,7 @@
 import { HugeiconsIcon } from '@hugeicons/react';
 import { PencilEdit02Icon } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { EntryView } from '../utils/entry-view';
 import { NoteExcerpt } from './note-excerpt';
 
@@ -28,7 +29,12 @@ export function EntryCard({ entry, onEdit }: { entry: EntryView; onEdit: () => v
         </Button>
       </div>
 
-      <EntrySpan startPct={entry.startPct} endPct={entry.endPct} />
+      <EntrySpan
+        coveredPct={entry.coveredPct}
+        startPct={entry.startPct}
+        splitPct={entry.splitPct}
+        endPct={entry.endPct}
+      />
 
       {entry.note && (
         <div className="mt-3">
@@ -39,16 +45,47 @@ export function EntryCard({ entry, onEdit }: { entry: EntryView; onEdit: () => v
   );
 }
 
-// Where the session sits in the whole book: everything before it in the border colour,
-// the session itself in primary. Hidden from assistive tech because it restates the
-// positions the line above already gives in words.
-function EntrySpan({ startPct, endPct }: { startPct: number; endPct: number }) {
+// Where the session sits in the whole book: how far the read had already got in the
+// border colour, then the session itself on top of it, orange for the part it had
+// covered before and primary for the new ground. The underlay runs to the frontier
+// rather than to the session's start, so a re-read still shows the ground waiting ahead
+// of it -- for a new-ground session the two are the same number.
+//
+// Each half of the session is rounded on the outer end and square where they meet, so
+// the changeover is one vertical edge rather than two caps pinching together -- and
+// rounds its inner end as well when `splitPct` has collapsed onto an end and it is the
+// whole session. Hidden from assistive tech because it restates the positions the line
+// above already gives in words.
+function EntrySpan({
+  coveredPct,
+  startPct,
+  splitPct,
+  endPct,
+}: {
+  coveredPct: number;
+  startPct: number;
+  splitPct: number;
+  endPct: number;
+}) {
   return (
     <div aria-hidden="true" className="relative mt-2.5 h-1.5 overflow-hidden rounded-full bg-muted">
-      <div className="absolute inset-y-0 left-0 bg-border" style={{ width: `${startPct}%` }} />
       <div
-        className="absolute inset-y-0 rounded-full bg-primary"
-        style={{ left: `${startPct}%`, width: `${endPct - startPct}%` }}
+        className="absolute inset-y-0 left-0 rounded-full bg-border"
+        style={{ width: `${coveredPct}%` }}
+      />
+      <div
+        className={cn(
+          'absolute inset-y-0 rounded-l-full bg-brand-orange',
+          splitPct === endPct && 'rounded-r-full'
+        )}
+        style={{ left: `${startPct}%`, width: `${splitPct - startPct}%` }}
+      />
+      <div
+        className={cn(
+          'absolute inset-y-0 rounded-r-full bg-primary',
+          splitPct === startPct && 'rounded-l-full'
+        )}
+        style={{ left: `${splitPct}%`, width: `${endPct - splitPct}%` }}
       />
     </div>
   );

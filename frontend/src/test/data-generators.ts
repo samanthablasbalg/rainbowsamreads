@@ -134,8 +134,12 @@ export function buildEntryView(overrides: Partial<EntryView> = {}): EntryView {
     isAudio: false,
     start: 50,
     end: 100,
+    hasNewGround: true,
+    splitAt: 50,
     startPct: 25,
+    splitPct: 25,
     endPct: 50,
+    coveredPct: 25,
     note: null,
     ...overrides,
   };

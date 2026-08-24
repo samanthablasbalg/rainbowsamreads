@@ -131,17 +131,23 @@ export function EntryTimeline({
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
         title="Delete this entry?"
-        description={
-          deleting
-            ? `The session from ${deleting.dateLabel} will be removed and your progress will go back to where it was before it. This can't be undone.`
-            : ''
-        }
+        description={deleteDescription(deleting)}
         confirmLabel="Delete"
         tone="danger"
         onConfirm={handleDelete}
       />
     </section>
   );
+}
+
+// A re-read moved no progress, so there is nothing for deleting it to take back -- the
+// warning that there is would be the one thing about the delete that isn't true.
+function deleteDescription(entry: EntryView | null): string {
+  if (entry === null) return '';
+
+  return entry.hasNewGround
+    ? `The session from ${entry.dateLabel} will be removed and your progress will go back to where it was before it. This can't be undone.`
+    : `The session from ${entry.dateLabel} will be removed. It was a re-read, so your progress won't change. This can't be undone.`;
 }
 
 // One line per row rather than one down the whole timeline: every row draws it at the
