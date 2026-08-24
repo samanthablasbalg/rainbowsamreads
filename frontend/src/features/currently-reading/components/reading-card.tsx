@@ -117,6 +117,16 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
       ]}
       menu={
         <>
+          {/* A real link rather than a navigate() on click, so the read's page opens in a
+              new tab on a modified click like any other. */}
+          <DropdownMenuItem
+            aria-label={`View history for ${book.title}`}
+            render={<Link to={`/reads/${engagement.id}`} />}
+          >
+            <HugeiconsIcon icon={HistoryIcon} />
+            View history
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           {/* Multi-format is never advertised on the log button -- you come looking for it
               here, and a read already in all three formats has nothing left to offer. */}
           {formats.length < Object.keys(Format).length && (
@@ -131,16 +141,6 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
               <DropdownMenuSeparator />
             </>
           )}
-          {/* A real link rather than a navigate() on click, so the read's page opens in a
-              new tab on a modified click like any other. */}
-          <DropdownMenuItem
-            aria-label={`View history for ${book.title}`}
-            render={<Link to={`/reads/${engagement.id}`} />}
-          >
-            <HugeiconsIcon icon={HistoryIcon} />
-            View history
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem
             aria-label={`Mark ${book.title} as finished`}
             onClick={() => setPendingAction('finished')}
