@@ -117,10 +117,18 @@ def start_reading(
     return str(post("/engagements", body)["id"])
 
 
+def resume_from(engagement_id: str, field: str) -> int:
+    engagement = _request("GET", f"/engagements/{engagement_id}", None)
+    return cast(int, engagement[field])
+
+
 def log_progress(
     engagement_id: str, current_page: int, note: str | None = None
 ) -> None:
-    body: dict[str, object] = {"current_page": current_page}
+    body: dict[str, object] = {
+        "page_start": resume_from(engagement_id, "resume_from_page"),
+        "page_end": current_page,
+    }
     if note is not None:
         body["note"] = note
     post(f"/engagements/{engagement_id}/progress-logs", body)
@@ -129,7 +137,10 @@ def log_progress(
 def log_audio_progress(engagement_id: str, current_minute: int) -> None:
     post(
         f"/engagements/{engagement_id}/progress-logs",
-        {"current_minute": current_minute},
+        {
+            "minute_start": resume_from(engagement_id, "resume_from_minute"),
+            "minute_end": current_minute,
+        },
     )
 
 

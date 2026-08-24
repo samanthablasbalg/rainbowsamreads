@@ -35,6 +35,10 @@ def _log_sort_key(log: ProgressLog) -> tuple[datetime.date, datetime.datetime, b
     return (log.logged_on, log.created_at, log.new_ground)
 
 
+def _end_of(log: ProgressLog) -> int | None:
+    return log.minute_end if log.unit == LogUnit.minutes else log.page_end
+
+
 class Engagement(TimestampMixin, Base):
     __tablename__ = "engagements"
     __table_args__ = (UniqueConstraint("id", "user_id"),)
@@ -157,31 +161,34 @@ class Engagement(TimestampMixin, Base):
         fmt = self.page_format
         return None if fmt is None else self.resolve_length(fmt)
 
+    def _latest_log_in(self, unit: LogUnit) -> ProgressLog | None:
+        logs = [log for log in self.progress_logs if log.unit == unit]
+        return max(logs, key=_log_sort_key, default=None)
+
+    def frontier_in(self, unit: LogUnit) -> int:
+        """How far the read has got, on one ruler. Pages and minutes measure one axis
+        (ADR-0007), so this is the shared high-water mark converted -- reach page 220 of
+        440 and the read has got to 3:35 of a 7:10 audiobook, whether or not a minute
+        was ever logged. Falls back to this ruler's own last position when there is no
+        fraction to convert."""
+        length = self.length_minutes if unit == LogUnit.minutes else self.length_pages
+        fraction = self.covered_fraction
+        if fraction is None or not length:
+            latest = self._latest_log_in(unit)
+            return 0 if latest is None else (_end_of(latest) or 0)
+        return round(fraction * length)
+
     def _resume_in(self, unit: LogUnit) -> int:
-        """Where the read stands on one ruler. Converted from the shared frontier, so a
-        session picks up where the *read* is rather than where this format last was --
-        switch to audio at page 220 of 440 and it resumes at 3:35 of 7:10. Falls back to
-        this ruler's own last position when there is no fraction to convert.
+        """Where a session on this ruler should pick up. The frontier, so switching
+        ruler starts flush against the read rather than behind it.
 
         Except when this ruler's own last entry was re-coverage: the frontier is shared
         but a catch-up position is not, so re-reading the print to catch up to the audio
-        resumes on the print where that pass stopped, and leaves the audio at 2:00.
-        """
-        is_audio = unit == LogUnit.minutes
-        logs = [log for log in self.progress_logs if log.unit == unit]
-        latest = max(logs, key=_log_sort_key, default=None)
-        latest_end = (
-            None
-            if latest is None
-            else (latest.minute_end if is_audio else latest.page_end)
-        )
+        resumes on the print where that pass stopped, and leaves the audio at 2:00."""
+        latest = self._latest_log_in(unit)
         if latest is not None and not latest.new_ground:
-            return latest_end or 0
-        length = self.length_minutes if is_audio else self.length_pages
-        fraction = self.covered_fraction
-        if fraction is None or not length:
-            return latest_end or 0
-        return round(fraction * length)
+            return _end_of(latest) or 0
+        return self.frontier_in(unit)
 
     @property
     def covered_fraction(self) -> float | None:

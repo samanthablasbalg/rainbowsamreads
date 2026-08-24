@@ -40,12 +40,12 @@ def test_log_progress_returns_201_with_correct_fields(client: TestClient) -> Non
     assert log["new_ground"] is True
 
 
-def test_log_progress_derives_start_from_last_log(client: TestClient) -> None:
+def test_log_progress_stores_the_span_it_was_given(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 100)
 
-    second = _log_progress(client, engagement["id"], 250)
+    second = _log_progress(client, engagement["id"], 250, page_start=100)
 
     assert second["page_start"] == 100
     assert second["page_end"] == 250
@@ -54,7 +54,7 @@ def test_log_progress_derives_start_from_last_log(client: TestClient) -> None:
 def test_log_progress_unknown_engagement_returns_404(client: TestClient) -> None:
     response = client.post(
         f"/api/engagements/{uuid.uuid4()}/progress-logs",
-        json={"current_page": 50},
+        json={"page_start": 0, "page_end": 50},
     )
     assert response.status_code == 404
 
@@ -66,33 +66,56 @@ def test_log_progress_finished_engagement_returns_409(client: TestClient) -> Non
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"current_page": 50},
+        json={"page_start": 0, "page_end": 50},
     )
     assert response.status_code == 409
 
 
-def test_log_progress_page_equal_to_last_returns_409(client: TestClient) -> None:
+def test_log_progress_zero_length_span_without_a_note_returns_409(
+    client: TestClient,
+) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 100)
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"current_page": 100},
+        json={"page_start": 100, "page_end": 100},
     )
     assert response.status_code == 409
 
 
-def test_log_progress_page_less_than_last_returns_409(client: TestClient) -> None:
+def test_log_progress_ending_before_it_started_returns_409(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 100)
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"current_page": 50},
+        json={"page_start": 80, "page_end": 50},
     )
     assert response.status_code == 409
+    assert response.json()["detail"] == "A session can't end before it started."
+
+
+def test_log_progress_starting_past_the_frontier_returns_409(
+    client: TestClient,
+) -> None:
+    """Skipping ahead leaves the ground between untouched, and whether that ground is
+    unread or read-and-unlogged is what the rest of issue 96 answers."""
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 100)
+
+    response = client.post(
+        f"/api/engagements/{engagement['id']}/progress-logs",
+        json={"page_start": 150, "page_end": 200},
+    )
+    assert response.status_code == 409
+    assert (
+        response.json()["detail"]
+        == "A session can't start past where this read has got to."
+    )
 
 
 def test_log_progress_zero_page_returns_422(client: TestClient) -> None:
@@ -101,7 +124,7 @@ def test_log_progress_zero_page_returns_422(client: TestClient) -> None:
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"current_page": 0},
+        json={"page_start": 0, "page_end": 0},
     )
     assert response.status_code == 422
 
@@ -112,7 +135,19 @@ def test_log_progress_negative_page_returns_422(client: TestClient) -> None:
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"current_page": -10},
+        json={"page_start": 0, "page_end": -10},
+    )
+    assert response.status_code == 422
+
+
+def test_log_progress_half_a_span_returns_422(client: TestClient) -> None:
+    """A start with no end names no session."""
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+
+    response = client.post(
+        f"/api/engagements/{engagement['id']}/progress-logs",
+        json={"page_start": 0},
     )
     assert response.status_code == 422
 
@@ -129,19 +164,23 @@ def test_log_progress_with_note_returns_it(client: TestClient) -> None:
     assert log["note"] == "A striking quote."
 
 
-def test_log_progress_page_less_than_last_still_rejected_with_note(
+def test_starting_past_the_frontier_still_rejected_with_a_note(
     client: TestClient,
 ) -> None:
+    """A note buys a session that covers no ground; it does not buy one that skips."""
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 100)
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"current_page": 50, "note": "A note"},
+        json={"page_start": 150, "page_end": 200, "note": "A note"},
     )
     assert response.status_code == 409
-    assert response.json()["detail"] == "Progress can't go backwards."
+    assert (
+        response.json()["detail"]
+        == "A session can't start past where this read has got to."
+    )
 
 
 def test_log_progress_page_equal_to_last_with_note_returns_201(
@@ -259,13 +298,18 @@ def test_engagement_completion_pct_after_logging(
 def test_engagement_completion_pct_capped_at_100(
     client: TestClient, db: Session
 ) -> None:
+    """A session can't be logged past the book's length, so the only way past it is a
+    length corrected downwards afterwards."""
     book = _create_book(client)
     book_obj = db.get(Book, uuid.UUID(book["id"]))
     assert book_obj is not None
-    book_obj.default_page_count = 300
+    book_obj.default_page_count = 400
     db.commit()
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 350)
+
+    book_obj.default_page_count = 300
+    db.commit()
 
     response = client.get("/api/engagements?status=reading")
     assert response.json()[0]["completion_pct"] == 100
@@ -445,18 +489,126 @@ def test_alternating_rulers_tile_without_a_gap(client: TestClient) -> None:
     assert page_log["page_start"] == 307
 
 
-def test_a_ruler_cannot_start_behind_the_shared_frontier(client: TestClient) -> None:
+def test_a_ruler_can_start_behind_the_shared_frontier(client: TestClient) -> None:
     """Half the book read in print, then a listening session back at 1:00 -- behind the
-    frontier, so it is re-coverage rather than progress, which issue 96 covers."""
+    frontier, so it is re-coverage rather than progress, and moves neither."""
     engagement = _mixed_engagement(client)
     _log_progress(client, engagement["id"], 220)
 
-    response = client.post(
-        f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"current_minute": 60},
+    log = _log_audio_progress(client, engagement["id"], 60, minute_start=0)
+
+    assert log["new_ground"] is False
+    data = client.get(f"/api/engagements/{engagement['id']}").json()
+    assert data["completion_pct"] == 50
+    assert data["resume_unit"] == "pages"
+
+
+# --- Re-coverage: sessions behind the frontier ---
+
+
+def _catch_up_engagement(client: TestClient) -> tuple[dict[str, Any], str]:
+    """An audiobook of 480 minutes with a 400-page digital copy alongside, so 2:00 sits
+    exactly on p. 100. Returns the read and the digital edition's id, unbound."""
+    book = _create_bare_book(client)
+    digital = _create_edition(client, book["id"], "digital", page_count=400)
+    _create_edition(client, book["id"], "audio", audio_minutes=480)
+    return _create_audio_engagement(client, book["id"]), digital["id"]
+
+
+def test_catching_up_a_second_format_leaves_the_read_where_it_was(
+    client: TestClient,
+) -> None:
+    """The workflow issue 96 exists for. Listen to 2:00, add the ebook, read the pages
+    already heard to catch up: none of that is progress, and the read stays on audio at
+    2:00 throughout."""
+    engagement, digital_id = _catch_up_engagement(client)
+    _log_audio_progress(client, engagement["id"], 120)
+    _bind_edition(client, engagement["id"], digital_id)
+
+    data = client.get(f"/api/engagements/{engagement['id']}").json()
+    assert data["completion_pct"] == 25
+    assert data["resume_from_page"] == 100
+
+    catch_up = _log_progress(client, engagement["id"], 75, page_start=50)
+    assert catch_up["new_ground"] is False
+
+    # The sheet opens on the ruler the read is on, at the frontier -- unmoved.
+    data = client.get(f"/api/engagements/{engagement['id']}").json()
+    assert data["completion_pct"] == 25
+    assert data["resume_unit"] == "minutes"
+    assert data["resume_from_minute"] == 120
+    # Pages, though, pick up where the catch-up pass stopped, not at the frontier.
+    assert data["resume_from_page"] == 75
+
+    rest_of_the_catch_up = _log_progress(client, engagement["id"], 100, page_start=75)
+    assert rest_of_the_catch_up["new_ground"] is False
+
+    # Caught up: both rulers now sit on the frontier, and either can take new ground.
+    data = client.get(f"/api/engagements/{engagement['id']}").json()
+    assert data["completion_pct"] == 25
+    assert data["resume_from_page"] == 100
+    assert data["resume_from_minute"] == 120
+
+
+def test_a_session_crossing_the_frontier_is_stored_as_two_rows(
+    client: TestClient,
+) -> None:
+    """At p. 200, back up and read 180 to 250: 180-200 is re-read, 200-250 is new."""
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=400)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 200)
+
+    new_ground = _log_progress(client, engagement["id"], 250, page_start=180)
+
+    logs = client.get(f"/api/engagements/{engagement['id']}/progress-logs").json()
+    assert [
+        (log["page_start"], log["page_end"], log["new_ground"]) for log in logs
+    ] == [
+        (0, 200, True),
+        (180, 200, False),
+        (200, 250, True),
+    ]
+    # The new-ground row is what the response returns, so the client addresses the
+    # session by an id that exists whether or not the save split.
+    assert new_ground["id"] == logs[-1]["id"]
+    # And the two rows of one save carry the same timestamp, which is what groups them.
+    assert logs[-2]["created_at"] == logs[-1]["created_at"]
+
+    data = client.get(f"/api/engagements/{engagement['id']}").json()
+    assert data["completion_pct"] == 62
+
+
+def test_a_split_session_puts_its_note_on_the_new_ground_row(
+    client: TestClient,
+) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=400)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 200)
+
+    _log_progress(
+        client, engagement["id"], 250, page_start=180, note="Worth rereading."
     )
-    assert response.status_code == 409
-    assert response.json()["detail"] == "Progress can't go backwards."
+
+    logs = client.get(f"/api/engagements/{engagement['id']}/progress-logs").json()
+    assert logs[-2]["note"] is None
+    assert logs[-1]["note"] == "Worth rereading."
+
+
+def test_re_coverage_does_not_move_a_finished_read_past_the_frontier(
+    client: TestClient,
+) -> None:
+    """Finishing closes out from the frontier, not from where a catch-up stopped."""
+    engagement, digital_id = _catch_up_engagement(client)
+    _log_audio_progress(client, engagement["id"], 120)
+    _bind_edition(client, engagement["id"], digital_id)
+    _log_progress(client, engagement["id"], 75, page_start=50)
+
+    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "finished"})
+
+    logs = client.get(f"/api/engagements/{engagement['id']}/progress-logs").json()
+    assert (logs[-1]["minute_start"], logs[-1]["minute_end"]) == (120, 480)
 
 
 # --- Finish log ---
@@ -692,12 +844,12 @@ def test_audio_log_returns_201_with_minutes_fields(client: TestClient) -> None:
     assert log["new_ground"] is True
 
 
-def test_audio_log_derives_minute_start_from_last_log(client: TestClient) -> None:
+def test_audio_log_stores_the_span_it_was_given(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_audio_engagement(client, book["id"])
     _log_audio_progress(client, engagement["id"], 75)
 
-    second = _log_audio_progress(client, engagement["id"], 150)
+    second = _log_audio_progress(client, engagement["id"], 150, minute_start=75)
 
     assert second["minute_start"] == 75
     assert second["minute_end"] == 150
@@ -724,28 +876,28 @@ def test_audio_engagement_resume_from_minute_reflects_latest_log(
     assert response.json()[0]["resume_from_minute"] == 150
 
 
-def test_audio_log_advance_guard_equal_returns_409(client: TestClient) -> None:
+def test_audio_zero_length_span_without_a_note_returns_409(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_audio_engagement(client, book["id"])
     _log_audio_progress(client, engagement["id"], 75)
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"current_minute": 75},
+        json={"minute_start": 75, "minute_end": 75},
     )
     assert response.status_code == 409
 
 
-def test_audio_log_advance_guard_less_than_returns_409(client: TestClient) -> None:
+def test_audio_span_behind_the_frontier_is_re_coverage(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_audio_engagement(client, book["id"])
     _log_audio_progress(client, engagement["id"], 75)
 
-    response = client.post(
-        f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"current_minute": 50},
-    )
-    assert response.status_code == 409
+    log = _log_audio_progress(client, engagement["id"], 50, minute_start=20)
+
+    assert log["minute_start"] == 20
+    assert log["minute_end"] == 50
+    assert log["new_ground"] is False
 
 
 def test_pages_rejected_on_a_read_with_no_page_format(client: TestClient) -> None:
@@ -756,7 +908,7 @@ def test_pages_rejected_on_a_read_with_no_page_format(client: TestClient) -> Non
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"current_page": 100},
+        json={"page_start": 0, "page_end": 100},
     )
     assert response.status_code == 409
     assert (
@@ -771,7 +923,7 @@ def test_minutes_rejected_on_a_read_with_no_audio_format(client: TestClient) -> 
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"current_minute": 75},
+        json={"minute_start": 0, "minute_end": 75},
     )
     assert response.status_code == 409
     assert (
@@ -784,7 +936,8 @@ def test_a_log_must_name_exactly_one_ruler(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
 
-    for payload in ({}, {"current_page": 100, "current_minute": 75}):
+    both = {"page_start": 0, "page_end": 100, "minute_start": 0, "minute_end": 75}
+    for payload in ({}, both):
         response = client.post(
             f"/api/engagements/{engagement['id']}/progress-logs", json=payload
         )
@@ -995,7 +1148,7 @@ def test_log_before_started_on_returns_409(client: TestClient, db: Session) -> N
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"current_page": 50, "logged_on": "2026-01-10"},
+        json={"page_start": 0, "page_end": 50, "logged_on": "2026-01-10"},
     )
 
     assert response.status_code == 409
@@ -1008,7 +1161,7 @@ def test_log_future_date_returns_422(client: TestClient) -> None:
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"current_page": 50, "logged_on": future},
+        json={"page_start": 0, "page_end": 50, "logged_on": future},
     )
 
     assert response.status_code == 422
@@ -1021,7 +1174,7 @@ def test_log_backdated_behind_later_day_returns_409(client: TestClient) -> None:
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"current_page": 200, "logged_on": "2026-01-10"},
+        json={"page_start": 100, "page_end": 200, "logged_on": "2026-01-10"},
     )
 
     assert response.status_code == 409
@@ -1036,7 +1189,7 @@ def test_log_backdated_to_day_with_existing_log_and_higher_page_is_allowed(
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"current_page": 200, "logged_on": "2026-01-10"},
+        json={"page_start": 100, "page_end": 200, "logged_on": "2026-01-10"},
     )
 
     assert response.status_code == 201
@@ -1173,6 +1326,43 @@ def test_delete_penultimate_progress_log_returns_409(client: TestClient) -> None
     engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
     first = _log_progress(client, engagement["id"], 100, logged_on="2026-01-10")
     _log_progress(client, engagement["id"], 200, logged_on="2026-01-20")
+
+    response = client.delete(
+        f"/api/engagements/{engagement['id']}/progress-logs/{first['id']}"
+    )
+    assert response.status_code == 409
+
+
+def test_delete_a_split_session_removes_both_of_its_rows(client: TestClient) -> None:
+    """One session, so one delete -- the split is storage, not something the reader
+    put there."""
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=400)
+    engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
+    _log_progress(client, engagement["id"], 200, logged_on="2026-01-10")
+    session = _log_progress(
+        client, engagement["id"], 250, logged_on="2026-01-11", page_start=180
+    )
+
+    response = client.delete(
+        f"/api/engagements/{engagement['id']}/progress-logs/{session['id']}"
+    )
+
+    assert response.status_code == 204
+    logs = client.get(f"/api/engagements/{engagement['id']}/progress-logs").json()
+    assert [log["page_end"] for log in logs] == [200]
+
+
+def test_delete_the_re_coverage_half_of_a_later_session_returns_409(
+    client: TestClient,
+) -> None:
+    """The most recent *group* is what can be deleted, so an earlier session's row is
+    still refused even though its group is the latest one's neighbour."""
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=400)
+    engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
+    first = _log_progress(client, engagement["id"], 200, logged_on="2026-01-10")
+    _log_progress(client, engagement["id"], 250, logged_on="2026-01-11", page_start=180)
 
     response = client.delete(
         f"/api/engagements/{engagement['id']}/progress-logs/{first['id']}"

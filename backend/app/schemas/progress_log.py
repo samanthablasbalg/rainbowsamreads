@@ -11,8 +11,10 @@ if TYPE_CHECKING:
 
 
 class ProgressLogCreate(BaseModel):
-    current_page: int | None = Field(default=None, gt=0)
-    current_minute: int | None = Field(default=None, gt=0)
+    page_start: int | None = Field(default=None, ge=0)
+    page_end: int | None = Field(default=None, gt=0)
+    minute_start: int | None = Field(default=None, ge=0)
+    minute_end: int | None = Field(default=None, gt=0)
     audio_length_minutes: int | None = Field(default=None, gt=0)
     logged_on: datetime.date | None = None
     note: str | None = None
@@ -20,9 +22,15 @@ class ProgressLogCreate(BaseModel):
     @model_validator(mode="after")
     def check_exactly_one_unit(self) -> Self:
         """The unit belongs to the entry, not to the read: one bound in both rulers
-        logs pages on the days it was read and minutes on the days it was heard."""
-        if (self.current_page is None) == (self.current_minute is None):
-            raise ValueError("Provide exactly one of current_page or current_minute")
+        logs pages on the days it was read and minutes on the days it was heard.
+
+        A session names both its ends. It used to send only the position it reached and
+        the backend derived the start from the frontier, which cannot express a session
+        that starts behind it -- the re-read this exists to allow."""
+        pages = self.page_start is not None and self.page_end is not None
+        minutes = self.minute_start is not None and self.minute_end is not None
+        if pages == minutes:
+            raise ValueError("Provide exactly one of a page span or a minute span")
         return self
 
 
@@ -37,6 +45,10 @@ class _ProgressLogReadBase(BaseModel):
     id: uuid.UUID
     engagement_id: uuid.UUID
     logged_on: datetime.date
+    # A session that crossed the frontier is stored as two rows written in one
+    # transaction, so they share this to the microsecond and the client groups on it
+    # to show the session as one entry.
+    created_at: datetime.datetime
     new_ground: bool
     note: str | None
 
@@ -79,6 +91,7 @@ def progress_log_read(
             id=log.id,
             engagement_id=log.engagement_id,
             logged_on=log.logged_on,
+            created_at=log.created_at,
             new_ground=log.new_ground,
             note=log.note,
             page_start=log.page_start,
@@ -90,6 +103,7 @@ def progress_log_read(
         id=log.id,
         engagement_id=log.engagement_id,
         logged_on=log.logged_on,
+        created_at=log.created_at,
         new_ground=log.new_ground,
         note=log.note,
         minute_start=log.minute_start,

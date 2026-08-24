@@ -142,7 +142,11 @@ describe('ProgressLogSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ current_minute: 270, logged_on: localIsoDate() });
+    expect(capturedBody).toEqual({
+      minute_start: 221,
+      minute_end: 270,
+      logged_on: localIsoDate(),
+    });
   });
 
   it("saves the entered page with today's date and closes the sheet", async () => {
@@ -162,7 +166,11 @@ describe('ProgressLogSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ current_page: 200, logged_on: localIsoDate() });
+    expect(capturedBody).toEqual({
+      page_start: 100,
+      page_end: 200,
+      logged_on: localIsoDate(),
+    });
   });
 
   it('disables Save for the same page as the current position with no note', async () => {
@@ -196,7 +204,8 @@ describe('ProgressLogSheet', () => {
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(capturedBody).toEqual({
-      current_page: 100,
+      page_start: 100,
+      page_end: 100,
       logged_on: localIsoDate(),
       note: 'A striking quote.',
     });
@@ -222,7 +231,8 @@ describe('ProgressLogSheet', () => {
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(capturedBody).toEqual({
-      current_page: 200,
+      page_start: 100,
+      page_end: 200,
       logged_on: localIsoDate(),
       note: 'A striking quote.',
     });
@@ -246,7 +256,11 @@ describe('ProgressLogSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ current_page: 200, logged_on: localIsoDate(-1) });
+    expect(capturedBody).toEqual({
+      page_start: 100,
+      page_end: 200,
+      logged_on: localIsoDate(-1),
+    });
   });
 
   it('selects the Yesterday chip when the Yesterday chip is picked', async () => {
@@ -328,7 +342,11 @@ describe('ProgressLogSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ current_page: 200, logged_on: '2025-06-15' });
+    expect(capturedBody).toEqual({
+      page_start: 100,
+      page_end: 200,
+      logged_on: '2025-06-15',
+    });
   });
 
   it('patches the saved engagement into the reading list cache without reordering it', async () => {
@@ -465,7 +483,11 @@ describe('ProgressLogSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ current_minute: 150, logged_on: localIsoDate() });
+    expect(capturedBody).toEqual({
+      minute_start: 75,
+      minute_end: 150,
+      logged_on: localIsoDate(),
+    });
   });
 
   it('rejects a page that is not a number', async () => {

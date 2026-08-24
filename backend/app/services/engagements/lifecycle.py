@@ -179,9 +179,9 @@ def _transition_to_finished(
     length = engagement.resolve_length(
         Format.audio if is_audio else (engagement.page_format or Format.print)
     )
-    position = (
-        engagement.resume_from_minute if is_audio else engagement.resume_from_page
-    )
+    # The frontier, not the resume point: those differ when the last session on this
+    # ruler was a re-read, and the closing span covers what is left of the *book*.
+    position = engagement.frontier_in(unit)
     if length is None or position >= length:
         return
 

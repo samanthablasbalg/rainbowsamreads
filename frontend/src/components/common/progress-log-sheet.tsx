@@ -390,7 +390,9 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     logProgress.mutate({
       engagementId: engagement.id,
       data: {
-        ...(isAudio ? { current_minute: parsedPosition } : { current_page: parsedPosition }),
+        ...(isAudio
+          ? { minute_start: fromValue, minute_end: parsedPosition }
+          : { page_start: fromValue, page_end: parsedPosition }),
         logged_on: date,
         ...(hasNote && { note }),
       },

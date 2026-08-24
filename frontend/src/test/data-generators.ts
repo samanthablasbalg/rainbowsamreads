@@ -74,11 +74,23 @@ export function buildAudioEngagement({
   });
 }
 
+// The history groups rows by created_at -- a session that crossed the frontier is two
+// rows written in one transaction. So the default has to be distinct per log, or two
+// unrelated ones read as a single split session. Build a split pair by passing both
+// rows the same created_at.
+let createdAtSequence = 0;
+
+function nextCreatedAt(): string {
+  createdAtSequence += 1;
+  return new Date(Date.UTC(2025, 5, 15, 12, 0, createdAtSequence)).toISOString();
+}
+
 export function buildPageLog(overrides: Partial<PageProgressLogRead> = {}): PageProgressLogRead {
   return {
     id: 'log-1',
     engagement_id: 'engagement-Piranesi',
     logged_on: '2025-06-15',
+    created_at: nextCreatedAt(),
     new_ground: true,
     note: null,
     type: 'page',
@@ -95,6 +107,7 @@ export function buildMinuteLog(
     id: 'log-1',
     engagement_id: 'engagement-Piranesi',
     logged_on: '2025-06-15',
+    created_at: nextCreatedAt(),
     new_ground: true,
     note: null,
     type: 'minute',

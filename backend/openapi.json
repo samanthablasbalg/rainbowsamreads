@@ -2354,6 +2354,11 @@
             "format": "date",
             "title": "Logged On"
           },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
           "new_ground": {
             "type": "boolean",
             "title": "New Ground"
@@ -2389,6 +2394,7 @@
           "id",
           "engagement_id",
           "logged_on",
+          "created_at",
           "new_ground",
           "note",
           "minute_start",
@@ -2412,6 +2418,11 @@
             "type": "string",
             "format": "date",
             "title": "Logged On"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
           },
           "new_ground": {
             "type": "boolean",
@@ -2448,6 +2459,7 @@
           "id",
           "engagement_id",
           "logged_on",
+          "created_at",
           "new_ground",
           "note",
           "page_start",
@@ -2457,19 +2469,19 @@
       },
       "ProgressLogCreate": {
         "properties": {
-          "current_page": {
+          "page_start": {
             "anyOf": [
               {
                 "type": "integer",
-                "exclusiveMinimum": 0.0
+                "minimum": 0.0
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Current Page"
+            "title": "Page Start"
           },
-          "current_minute": {
+          "page_end": {
             "anyOf": [
               {
                 "type": "integer",
@@ -2479,7 +2491,31 @@
                 "type": "null"
               }
             ],
-            "title": "Current Minute"
+            "title": "Page End"
+          },
+          "minute_start": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minute Start"
+          },
+          "minute_end": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minute End"
           },
           "audio_length_minutes": {
             "anyOf": [
