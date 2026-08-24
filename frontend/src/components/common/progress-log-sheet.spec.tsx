@@ -73,6 +73,114 @@ describe('ProgressLogSheet', () => {
     expect(screen.getByRole('button', { name: 'Save progress for Piranesi' })).toBeDisabled();
   });
 
+  it('opens the start position as a value rather than a field', async () => {
+    renderSheet(buildEngagement());
+
+    expect(await screen.findByRole('button', { name: 'Edit start position' })).toHaveTextContent(
+      '100'
+    );
+    expect(screen.queryByLabelText('start position')).not.toBeInTheDocument();
+  });
+
+  it('opens the start position for editing prefilled with where the read resumes', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement());
+
+    await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
+
+    expect(screen.getByLabelText('start position')).toHaveValue('100');
+  });
+
+  it('edits the start position in HH:MM on an audio read', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+
+    await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
+
+    expect(screen.getByLabelText('start position')).toHaveValue('01:15');
+  });
+
+  // The catch-up pass the whole feature exists for: a stretch read behind the frontier,
+  // which only the start position can express.
+  it('saves a session that starts behind where the read has got to', async () => {
+    const user = userEvent.setup();
+    let capturedBody: unknown;
+    server.use(
+      getEngagementsLogProgressMockHandler(async (info) => {
+        capturedBody = await info.request.json();
+        return getEngagementsLogProgressResponseMock();
+      }),
+      getEngagementsGetEngagementMockHandler()
+    );
+    renderSheet(buildEngagement());
+
+    await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
+    await user.clear(screen.getByLabelText('start position'));
+    await user.type(screen.getByLabelText('start position'), '50');
+    await user.type(screen.getByLabelText('To · now'), '75');
+    await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(capturedBody).toEqual({
+      page_start: 50,
+      page_end: 75,
+      logged_on: localIsoDate(),
+    });
+  });
+
+  it('collapses the start position back to a value once it is a valid one', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement());
+
+    await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
+    await user.clear(screen.getByLabelText('start position'));
+    await user.type(screen.getByLabelText('start position'), '50');
+    await user.tab();
+
+    expect(screen.getByRole('button', { name: 'Edit start position' })).toHaveTextContent('50');
+    expect(screen.queryByLabelText('start position')).not.toBeInTheDocument();
+  });
+
+  // Out-of-order new ground is issue 96's deferred half, so the backend 409s a start past
+  // the frontier. The sheet refuses it first, and stays open on what was typed.
+  it('refuses a start past where the read has got to', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement());
+
+    await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
+    await user.clear(screen.getByLabelText('start position'));
+    await user.type(screen.getByLabelText('start position'), '150');
+    await user.tab();
+
+    expect(screen.getByText("Can't start past page 100")).toBeVisible();
+    expect(screen.getByLabelText('start position')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Save progress for Piranesi' })).toBeDisabled();
+  });
+
+  it('refuses a start past the audio frontier in HH:MM', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+
+    await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
+    await user.clear(screen.getByLabelText('start position'));
+    await user.type(screen.getByLabelText('start position'), '02:00');
+    await user.tab();
+
+    expect(screen.getByText("Can't start past 01:15")).toBeVisible();
+  });
+
+  it('re-seeds the start position from the ruler switched to', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildMixedEngagement({ resume_unit: LogUnit.minutes }));
+
+    await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
+    await user.clear(screen.getByLabelText('start position'));
+    await user.type(screen.getByLabelText('start position'), '02:00');
+    await user.click(screen.getByRole('button', { name: 'Pages' }));
+
+    expect(screen.getByRole('button', { name: 'Edit start position' })).toHaveTextContent('100');
+  });
+
   it('shows the resume minute as From, with the HH:MM field opening empty for an audio engagement', async () => {
     renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
 
@@ -501,14 +609,14 @@ describe('ProgressLogSheet', () => {
     expect(screen.getByRole('button', { name: 'Save progress for Piranesi' })).toBeDisabled();
   });
 
-  it('rejects a page before the one the read resumes from', async () => {
+  it('rejects a page before the one the session started on', async () => {
     const user = userEvent.setup();
     renderSheet(buildEngagement({ resume_from_page: 100 }));
 
     await user.type(await screen.findByPlaceholderText('---'), '50');
     await user.tab();
 
-    expect(screen.getByText("Can't be before page 100")).toBeVisible();
+    expect(screen.getByText("Can't end before the session started")).toBeVisible();
   });
 
   it('rejects a page past the end of the book', async () => {
@@ -538,10 +646,10 @@ describe('ProgressLogSheet', () => {
     renderSheet(buildEngagement({ resume_from_page: 100 }));
 
     await user.type(await screen.findByPlaceholderText('---'), '50');
-    expect(screen.queryByText("Can't be before page 100")).not.toBeInTheDocument();
+    expect(screen.queryByText("Can't end before the session started")).not.toBeInTheDocument();
 
     await user.tab();
-    expect(screen.getByText("Can't be before page 100")).toBeVisible();
+    expect(screen.getByText("Can't end before the session started")).toBeVisible();
   });
 
   it('rejects a time that is not HH:MM', async () => {
@@ -554,14 +662,14 @@ describe('ProgressLogSheet', () => {
     expect(screen.getByText('Enter a time in HH:MM format')).toBeVisible();
   });
 
-  it('rejects a time before the one the read resumes from', async () => {
+  it('rejects a time before the one the session started on', async () => {
     const user = userEvent.setup();
     renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
 
     await user.type(await screen.findByPlaceholderText('--:--'), '00:30');
     await user.tab();
 
-    expect(screen.getByText("Can't be before 01:15")).toBeVisible();
+    expect(screen.getByText("Can't end before the session started")).toBeVisible();
   });
 
   it('rejects a time past the end of the audiobook', async () => {

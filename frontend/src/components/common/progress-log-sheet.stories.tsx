@@ -80,6 +80,26 @@ export const MultiFormat: Story = {
   },
 };
 
+// The catch-up pass: the stretch just read started behind the frontier, and the start
+// position is the only way to say so. A value until it is clicked, an input after.
+export const EditingTheStart: Story = {
+  render: () => <ControlledSheet engagement={baseEngagement} />,
+  play: async (context) => {
+    await openSheet(context);
+    // Nothing beside the swapped cell may move, which is a layout fact and so is checked
+    // here rather than in the spec: the To field sits in the same box either way.
+    const before = (await screen.findByLabelText('To · now')).getBoundingClientRect();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit start position' }));
+    const field = await screen.findByLabelText('start position');
+    await userEvent.clear(field);
+    await userEvent.type(field, '90');
+
+    expect(field).toHaveValue('90');
+    expect(screen.getByLabelText('To · now').getBoundingClientRect()).toEqual(before);
+  },
+};
+
 export const MobileSheet: Story = {
   decorators: [withPointer(true)],
   render: () => <ControlledSheet engagement={baseEngagement} />,

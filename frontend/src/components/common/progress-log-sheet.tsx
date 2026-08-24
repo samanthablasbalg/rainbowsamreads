@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type FocusEvent } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowRight02Icon, Calendar03Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -124,6 +124,14 @@ const POSITION_LABEL_CLASS = 'text-xs font-semibold tracking-wide text-muted-for
 const POSITION_INPUT_CLASS =
   'h-auto rounded-none border-0 border-b-2 border-primary bg-transparent px-0 py-1 text-3xl leading-none font-bold md:text-3xl';
 
+// The From cell in its two states. Both carry `py-1` and a 2px bottom edge -- the button's
+// transparent -- so opening the editor swaps the control without moving the row.
+const FROM_INPUT_CLASS =
+  'h-auto rounded-none border-0 border-b-2 border-primary bg-transparent px-0 py-1 text-xl leading-none font-bold text-muted-foreground md:text-xl';
+
+const FROM_BUTTON_CLASS =
+  'h-auto justify-self-start border-b-2 border-transparent p-0 py-1 text-xl leading-none font-bold text-muted-foreground underline decoration-dotted underline-offset-4 hover:decoration-solid';
+
 function ProgressLogFields({ form }: { form: ProgressLogForm }) {
   const today = localIsoDate();
   const yesterday = localIsoDate(-1);
@@ -166,9 +174,11 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
         </div>
       )}
 
+      {/* A fixed first track rather than `auto`: the From cell holds a button one moment
+          and an input the next, and the two columns beside it can't shift when it does. */}
       <Card
         size="sm"
-        className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-x-3 gap-y-1 px-(--card-spacing)"
+        className="grid grid-cols-[5rem_auto_1fr_auto] items-center gap-x-3 gap-y-1 px-(--card-spacing)"
       >
         <span className={cn('col-start-1 row-start-1', POSITION_LABEL_CLASS)}>From</span>
         <FieldLabel
@@ -178,9 +188,29 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
           To · now
         </FieldLabel>
 
-        <span className="col-start-1 row-start-2 text-xl leading-none font-bold text-muted-foreground">
-          {form.fromDisplay}
-        </span>
+        {form.editingFrom ? (
+          <PositionInput
+            autoFocus
+            className={cn('col-start-1 row-start-2', FROM_INPUT_CLASS)}
+            isAudio={form.isAudio}
+            aria-label="start position"
+            aria-invalid={!!form.fromError}
+            value={form.from}
+            onValueChange={form.setFrom}
+            onFocus={form.focusFrom}
+            onBlur={form.blurFrom}
+          />
+        ) : (
+          <Button
+            variant="link"
+            className={cn('col-start-1 row-start-2', FROM_BUTTON_CLASS)}
+            aria-label="Edit start position"
+            disabled={form.savePending}
+            onClick={form.editFrom}
+          >
+            {form.from}
+          </Button>
+        )}
 
         <HugeiconsIcon
           icon={ArrowRight02Icon}
@@ -204,7 +234,11 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
           </span>
         )}
 
-        <FieldError className="col-start-3 col-end-5 row-start-3">{form.positionError}</FieldError>
+        {/* One slot for both fields: the From column is too narrow to hold a message of
+            its own, and its error wins, since To is only valid relative to From. */}
+        <FieldError className="col-start-1 col-end-5 row-start-3">
+          {form.fromError ?? form.positionError}
+        </FieldError>
       </Card>
 
       <div className="flex flex-col gap-2">
@@ -280,11 +314,19 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     engagement.resume_unit ?? (pageFormat === null ? LogUnit.minutes : LogUnit.pages)
   );
   const isAudio = unit === LogUnit.minutes;
-  // Both resume points are the shared frontier converted, so switching ruler shows where
-  // the read stands in the new unit rather than where that format was last left.
-  const fromValue = isAudio ? engagement.resume_from_minute : engagement.resume_from_page;
-  const fromDisplay = formatPosition(fromValue, isAudio);
+  // Where a session on this ruler picks up: the shared frontier, or this ruler's own last
+  // position when the pass that set it was re-coverage (the backend's Rule 3). It is the
+  // ceiling on the start as well as the prefill -- a session may begin behind where the
+  // read has got to, never past it.
+  const resumeValue = isAudio ? engagement.resume_from_minute : engagement.resume_from_page;
+  const resumeDisplay = formatPosition(resumeValue, isAudio);
 
+  // Editable, because a catch-up pass starts behind the frontier. A value at rest rather
+  // than a field, since the overwhelming majority of sessions start where the last one
+  // ended and the prefill is already right.
+  const [from, setFromRaw] = useState(() => formatPosition(resumeValue, isAudio));
+  const [editingFrom, setEditingFrom] = useState(false);
+  const [fromFocused, setFromFocused] = useState(false);
   const [position, setPositionRaw] = useState('');
   const [positionFocused, setPositionFocused] = useState(false);
   const [dateEditorOpen, setDateEditorOpen] = useState(false);
@@ -298,12 +340,25 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     setError(null);
   }
 
+  function setFrom(value: string) {
+    setFromRaw(value);
+    setError(null);
+  }
+
   function pickUnit(picked: LogUnit) {
     if (picked === unit) return;
     setUnit(picked);
-    // Pages and minutes aren't interchangeable, so a position typed on one ruler can't
-    // carry over to the other.
+    // Pages and minutes aren't interchangeable, so neither position typed on one ruler
+    // can carry over to the other -- the start goes back to the new ruler's own prefill.
+    const nextIsAudio = picked === LogUnit.minutes;
     setPositionRaw('');
+    setFromRaw(
+      formatPosition(
+        nextIsAudio ? engagement.resume_from_minute : engagement.resume_from_page,
+        nextIsAudio
+      )
+    );
+    setEditingFrom(false);
     setError(null);
   }
 
@@ -355,44 +410,86 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     },
   });
 
+  const parsedFrom = parsePosition(from, isAudio);
+  // The start the session will be saved with, or null while what's typed isn't one.
+  const start =
+    parsedFrom !== null && parsedFrom >= 0 && parsedFrom <= resumeValue ? parsedFrom : null;
+  const startDisplay = start === null ? null : formatPosition(start, isAudio);
+
+  function editFrom() {
+    setEditingFrom(true);
+  }
+
+  function focusFrom(event: FocusEvent<HTMLInputElement>) {
+    setFromFocused(true);
+    // The editor opens on a value that is usually being replaced wholesale, so a page
+    // typed over it lands on its own. HhmmInput pins its own caret to the end instead,
+    // which is the only spot its digit-shifting makes sense from.
+    if (!isAudio) event.currentTarget.select();
+  }
+
+  function blurFrom() {
+    setFromFocused(false);
+    // Back to a value at rest, but only once it is one -- collapsing on something the
+    // error row is about to complain about would hide what the complaint is aimed at.
+    if (startDisplay === null) return;
+    setFromRaw(startDisplay);
+    setEditingFrom(false);
+  }
+
   const parsedPosition = parsePosition(position, isAudio);
 
   const maxPosition = isAudio ? engagement.length_minutes : engagement.length_pages;
   const maxDisplay = maxPosition == null ? null : formatPosition(maxPosition, isAudio);
   const hasNote = note.trim() !== '';
   const canSave =
+    start !== null &&
     parsedPosition !== null &&
-    (parsedPosition > fromValue || (parsedPosition === fromValue && hasNote)) &&
+    (parsedPosition > start || (parsedPosition === start && hasNote)) &&
     (maxPosition == null || parsedPosition <= maxPosition);
 
-  let positionError: string | null = null;
-  if (!positionFocused && position.trim() !== '') {
-    if (parsedPosition === null) {
-      positionError = isAudio ? 'Enter a time in HH:MM format' : 'Enter a number';
-    } else if (parsedPosition < fromValue) {
-      positionError = isAudio
-        ? `Can't be before ${fromDisplay}`
-        : `Can't be before page ${fromValue}`;
-    } else if (parsedPosition === fromValue && !hasNote) {
-      positionError = isAudio
-        ? `Add a note, or advance past ${fromDisplay}`
-        : `Add a note, or advance past page ${fromValue}`;
-    } else if (maxPosition != null && parsedPosition > maxPosition) {
-      positionError = isAudio
+  const notANumber = isAudio ? 'Enter a time in HH:MM format' : 'Enter a number';
+
+  function startMessage(): string | null {
+    if (parsedFrom === null || parsedFrom < 0) return notANumber;
+    if (parsedFrom > resumeValue) {
+      return isAudio ? `Can't start past ${resumeDisplay}` : `Can't start past page ${resumeValue}`;
+    }
+    return null;
+  }
+
+  function endMessage(): string | null {
+    // Nothing to say about the end while the start it is measured against isn't a
+    // position yet -- that error is the one the row is showing.
+    if (start === null || position.trim() === '') return null;
+    if (parsedPosition === null) return notANumber;
+    if (parsedPosition < start) return "Can't end before the session started";
+    if (parsedPosition === start && !hasNote) {
+      return isAudio
+        ? `Add a note, or advance past ${startDisplay}`
+        : `Add a note, or advance past page ${start}`;
+    }
+    if (maxPosition != null && parsedPosition > maxPosition) {
+      return isAudio
         ? `Cannot exceed ${formatMinutesAsHhmm(maxPosition)}`
         : `Cannot exceed ${maxPosition} pages`;
     }
+    return null;
   }
 
+  // Both held back until the field is left: a half-typed number isn't a wrong one.
+  const fromError = editingFrom && !fromFocused ? startMessage() : null;
+  const positionError = positionFocused ? null : endMessage();
+
   function handleSave() {
-    if (parsedPosition === null) return;
+    if (start === null || parsedPosition === null) return;
     setError(null);
     logProgress.mutate({
       engagementId: engagement.id,
       data: {
         ...(isAudio
-          ? { minute_start: fromValue, minute_end: parsedPosition }
-          : { page_start: fromValue, page_end: parsedPosition }),
+          ? { minute_start: start, minute_end: parsedPosition }
+          : { page_start: start, page_end: parsedPosition }),
         logged_on: date,
         ...(hasNote && { note }),
       },
@@ -405,7 +502,13 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     isAudio,
     unitSwitchFormat,
     pickUnit,
-    fromDisplay,
+    from,
+    setFrom,
+    editingFrom,
+    editFrom,
+    focusFrom,
+    blurFrom,
+    fromError,
     maxDisplay,
     position,
     setPosition,
