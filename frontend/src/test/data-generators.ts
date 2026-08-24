@@ -133,6 +133,7 @@ export function buildEntryView(overrides: Partial<EntryView> = {}): EntryView {
     fromLabel: 'p. 50',
     toLabel: 'p. 100',
     amountLabel: '+50 pp',
+    spanLabel: 'New ground, p. 50 to p. 100',
     isNewest: true,
     loggedOn: '2025-06-15',
     isAudio: false,

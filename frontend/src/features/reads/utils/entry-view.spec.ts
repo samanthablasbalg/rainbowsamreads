@@ -126,6 +126,12 @@ describe('toEntryViews', () => {
       expect(toEntryViews(split, print)[0].amountLabel).toBe('+50 pp');
     });
 
+    it('names the bar with the frontier it crossed, which no other label carries', () => {
+      expect(toEntryViews(split, print)[0].spanLabel).toBe(
+        'Re-read p. 80 to p. 100, then new ground to p. 130'
+      );
+    });
+
     it('addresses the entry by the new-ground row, which carries the note', () => {
       const [entry] = toEntryViews(split, print);
 
@@ -160,7 +166,10 @@ describe('toEntryViews', () => {
     });
 
     it('states the pages read without claiming completion moved', () => {
-      expect(toEntryViews(reread, print)[0].amountLabel).toBe('40 pp');
+      const [entry] = toEntryViews(reread, print);
+
+      expect(entry.amountLabel).toBe('40 pp');
+      expect(entry.spanLabel).toBe('Re-read, p. 20 to p. 60');
     });
   });
 

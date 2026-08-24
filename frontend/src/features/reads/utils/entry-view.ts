@@ -5,6 +5,7 @@ import type {
 } from '@/api/generated/readingTracker.schemas';
 import { formatIsoDate } from '@/utils/format-date';
 import { formatMinutesAsHhmm } from '@/utils/format-minutes';
+import { groupConsecutiveBy } from '@/utils/group-consecutive';
 
 // The API has no name for the union it returns, so this is it.
 export type ProgressLog = PageProgressLogRead | MinuteProgressLogRead;
@@ -19,6 +20,9 @@ export type EntryView = {
   fromLabel: string;
   toLabel: string;
   amountLabel: string;
+  // The span bar's accessible name: where the session crossed the frontier, which no
+  // other label on the card carries.
+  spanLabel: string;
   isNewest: boolean;
   loggedOn: string;
   isAudio: boolean;
@@ -75,40 +79,21 @@ export function toEntryViews(logs: ProgressLog[], engagement: EngagementRead): E
 
 // A session that crossed the frontier is stored as two rows, and the reader thinks of
 // the pair as one entry. They share `created_at` to the microsecond, because one save is
-// one transaction; separate saves never can. Folded rather than bucketed for the same
-// reason toDayGroups is: the API already sorts on that key, so a group arriving in two
-// runs would be an ordering bug, not two runs to merge.
+// one transaction; separate saves never can.
 function toSessions(logs: ProgressLog[]): ProgressLog[][] {
-  return logs.reduce<ProgressLog[][]>((sessions, log) => {
-    const open = sessions.at(-1);
-
-    if (open?.[0].created_at === log.created_at) open.push(log);
-    else sessions.push([log]);
-
-    return sessions;
-  }, []);
+  return groupConsecutiveBy(logs, (log) => log.created_at);
 }
 
 // Consecutive entries on one date share a header, so a second session the same day
-// doesn't repeat it. Folded rather than bucketed by date: the list is already ordered,
-// and two runs of the same date arriving apart would be a bug in the ordering, not two
-// groups to merge.
+// doesn't repeat it.
 export function toDayGroups(entries: EntryView[]): DayGroup[] {
-  return entries.reduce<DayGroup[]>((groups, entry) => {
-    const open = groups.at(-1);
-
-    if (open?.loggedOn === entry.loggedOn) open.entries.push(entry);
-    else
-      groups.push({
-        loggedOn: entry.loggedOn,
-        dateLabel: entry.dateLabel,
-        dayLabel: entry.dayLabel,
-        weekdayLabel: entry.weekdayLabel,
-        entries: [entry],
-      });
-
-    return groups;
-  }, []);
+  return groupConsecutiveBy(entries, (entry) => entry.loggedOn).map(([first, ...rest]) => ({
+    loggedOn: first.loggedOn,
+    dateLabel: first.dateLabel,
+    dayLabel: first.dayLabel,
+    weekdayLabel: first.weekdayLabel,
+    entries: [first, ...rest],
+  }));
 }
 
 // The rows are the session's spans, oldest first, so the last one is the half the
@@ -152,6 +137,7 @@ function toEntryView(
     // The whole span, since that is what was read -- but a pure re-read moved no
     // completion, so it doesn't get to claim a `+`.
     amountLabel: `${hasNewGround ? '+' : ''}${end - start} ${unit}`,
+    spanLabel: spanLabelFor({ fromLabel, toLabel, isAudio, start, splitAt, end }),
     isNewest,
     loggedOn: last.logged_on,
     isAudio,
@@ -165,6 +151,23 @@ function toEntryView(
     coveredPct,
     note: last.note,
   };
+}
+
+// `splitAt` sits on `start` when nothing was re-read and on `end` when nothing was new,
+// so the two ends pick the wholly-one-thing cases out and anything left is a split.
+function spanLabelFor({
+  fromLabel,
+  toLabel,
+  isAudio,
+  start,
+  splitAt,
+  end,
+}: Pick<EntryView, 'fromLabel' | 'toLabel' | 'isAudio' | 'start' | 'splitAt' | 'end'>): string {
+  if (splitAt === start) return `New ground, ${fromLabel} to ${toLabel}`;
+  if (splitAt === end) return `Re-read, ${fromLabel} to ${toLabel}`;
+
+  const splitLabel = isAudio ? formatMinutesAsHhmm(splitAt) : `p. ${splitAt}`;
+  return `Re-read ${fromLabel} to ${splitLabel}, then new ground to ${toLabel}`;
 }
 
 function spanOf(log: ProgressLog): [number, number] {

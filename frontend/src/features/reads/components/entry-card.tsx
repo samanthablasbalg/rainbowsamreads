@@ -15,7 +15,13 @@ export function EntryCard({ entry, onEdit }: { entry: EntryView; onEdit: () => v
         <span className="text-muted-foreground">→</span>
         <span className="text-base font-extrabold tabular-nums">{entry.toLabel}</span>
 
-        <span className="ml-auto text-xs font-extrabold text-brand-pink tabular-nums">
+        {/* Orange for a re-read, the same colour its half of the bar below is drawn in. */}
+        <span
+          className={cn(
+            'ml-auto text-xs font-extrabold tabular-nums',
+            entry.hasNewGround ? 'text-brand-pink' : 'text-brand-orange'
+          )}
+        >
           {entry.amountLabel}
         </span>
 
@@ -29,12 +35,7 @@ export function EntryCard({ entry, onEdit }: { entry: EntryView; onEdit: () => v
         </Button>
       </div>
 
-      <EntrySpan
-        coveredPct={entry.coveredPct}
-        startPct={entry.startPct}
-        splitPct={entry.splitPct}
-        endPct={entry.endPct}
-      />
+      <EntrySpan entry={entry} />
 
       {entry.note && (
         <div className="mt-3">
@@ -54,21 +55,17 @@ export function EntryCard({ entry, onEdit }: { entry: EntryView; onEdit: () => v
 // Each half of the session is rounded on the outer end and square where they meet, so
 // the changeover is one vertical edge rather than two caps pinching together -- and
 // rounds its inner end as well when `splitPct` has collapsed onto an end and it is the
-// whole session. Hidden from assistive tech because it restates the positions the line
-// above already gives in words.
-function EntrySpan({
-  coveredPct,
-  startPct,
-  splitPct,
-  endPct,
-}: {
-  coveredPct: number;
-  startPct: number;
-  splitPct: number;
-  endPct: number;
-}) {
+// whole session. Named rather than hidden: where the session crossed the frontier is
+// only drawn here, so hiding it would drop that from the card entirely.
+function EntrySpan({ entry }: { entry: EntryView }) {
+  const { coveredPct, startPct, splitPct, endPct } = entry;
+
   return (
-    <div aria-hidden="true" className="relative mt-2.5 h-1.5 overflow-hidden rounded-full bg-muted">
+    <div
+      role="img"
+      aria-label={entry.spanLabel}
+      className="relative mt-2.5 h-1.5 overflow-hidden rounded-full bg-muted"
+    >
       <div
         className="absolute inset-y-0 left-0 rounded-full bg-border"
         style={{ width: `${coveredPct}%` }}
