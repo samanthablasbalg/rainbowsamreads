@@ -80,7 +80,7 @@ test('Starting a read with a length override measures progress against the overr
   });
 
   await test.step('Log page 250', async () => {
-    await sheet.enterPage(250);
+    await sheet.enterPosition('250');
     await sheet.save('Piranesi');
     await expect(sheet.sheet).toHaveCount(0);
   });

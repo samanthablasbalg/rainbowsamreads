@@ -12,8 +12,9 @@ export class ProgressLogSheetPage {
   // role-based absence assertions pass whether or not the action ran. Both branches
   // render role="dialog", so this matches either way.
   readonly sheet: Locator;
-  readonly pageInput: Locator;
-  readonly minuteInput: Locator;
+  // Both ends of the session take the same kind of input; the placeholder is what says
+  // which ruler this one is measuring in.
+  readonly toInput: Locator;
   // The From cell in its two states: a value at rest carrying the position as its text,
   // and a field once clicked. Only one of the pair is mounted at a time.
   readonly fromButton: Locator;
@@ -29,12 +30,7 @@ export class ProgressLogSheetPage {
   /** @param page - The Playwright page the sheet is open on. */
   constructor(public readonly page: Page) {
     this.sheet = page.getByRole('dialog');
-    // Both ends of the session take the same kind of input, so the placeholder alone
-    // matches the From field too once it is open. The name picks the To end; the
-    // placeholder is what still says which ruler it is measuring in.
-    const toField = page.getByRole('textbox', { name: 'To · now' });
-    this.pageInput = toField.and(page.getByPlaceholder('---', { exact: true }));
-    this.minuteInput = toField.and(page.getByPlaceholder('--:--', { exact: true }));
+    this.toInput = page.getByRole('textbox', { name: 'To · now' });
     this.fromButton = page.getByRole('button', { name: 'Edit start position' });
     this.fromInput = page.getByRole('textbox', { name: 'start position' });
     this.cancelButton = page.getByRole('button', { name: 'Cancel' });
@@ -105,19 +101,11 @@ export class ProgressLogSheetPage {
   }
 
   /**
-   * Types a page number into the current-page field.
-   * @param page - The page reached.
+   * Types where the session ended into the To field.
+   * @param position - The position reached: pages as digits, or HH:MM for audio.
    */
-  async enterPage(page: number): Promise<void> {
-    await this.pageInput.fill(String(page));
-  }
-
-  /**
-   * Types a position into the HH:MM field for audio reads.
-   * @param hhmm - The position in HH:MM format.
-   */
-  async enterMinute(hhmm: string): Promise<void> {
-    await this.minuteInput.fill(hhmm);
+  async enterPosition(position: string): Promise<void> {
+    await this.toInput.fill(position);
   }
 
   /**

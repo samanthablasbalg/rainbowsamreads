@@ -31,7 +31,7 @@ test('Logging progress advances the card in place and survives reload', async ({
   });
 
   await test.step('Log a higher page', async () => {
-    await sheet.enterPage(200);
+    await sheet.enterPosition('200');
     await sheet.save('Dune');
   });
 
@@ -72,7 +72,7 @@ test('Backdating a log stores it under the chosen day', async ({ page, apiClient
     await currentlyReading.openLogSheet('Dune');
     await sheet.openDatePicker();
     await sheet.setDate('2025-06-15');
-    await sheet.enterPage(100);
+    await sheet.enterPosition('100');
     await sheet.save('Dune');
   });
 
@@ -102,9 +102,9 @@ test('Audio log sheet shows HH:MM input instead of a page input', async ({ page,
     await currentlyReading.openLogSheet('The Hobbit');
   });
 
-  await test.step('Verify the HH:MM input is shown and the page input is absent', async () => {
-    await expect(sheet.minuteInput).toBeVisible();
-    await expect(sheet.pageInput).toHaveCount(0);
+  await test.step('Verify the To field is measuring in HH:MM, not in pages', async () => {
+    await expect(sheet.toInput).toBeVisible();
+    await expect(sheet.toInput).toHaveAttribute('placeholder', '--:--');
   });
 });
 
@@ -123,7 +123,7 @@ test('Logging audio progress advances the completion percentage', async ({ page,
   });
 
   await test.step('Log 01:00 of progress', async () => {
-    await sheet.enterMinute('01:00');
+    await sheet.enterPosition('01:00');
     await sheet.save('The Hobbit');
   });
 
@@ -179,7 +179,7 @@ test('Catching the pages up to the audio re-reads without moving completion', as
   await test.step('Re-read pages 50 to 75, behind where the listening had got to', async () => {
     await sheet.pickUnit('Pages');
     await sheet.enterFrom('50');
-    await sheet.enterPage(75);
+    await sheet.enterPosition('75');
     await sheet.save('The Fifth Season');
     await expect(sheet.sheet).toHaveCount(0);
   });
@@ -202,7 +202,7 @@ test('Catching the pages up to the audio re-reads without moving completion', as
   });
 
   await test.step('Read the remaining pages up to the frontier', async () => {
-    await sheet.enterPage(100);
+    await sheet.enterPosition('100');
     await sheet.save('The Fifth Season');
     await expect(sheet.sheet).toHaveCount(0);
     await expect(currentlyReading.getProgressBar('The Fifth Season')).toHaveAccessibleName(
@@ -219,7 +219,7 @@ test('Catching the pages up to the audio re-reads without moving completion', as
 
   await test.step('Listen half an hour past the frontier', async () => {
     await sheet.pickUnit('Minutes');
-    await sheet.enterMinute('02:30');
+    await sheet.enterPosition('02:30');
     await sheet.save('The Fifth Season');
     await expect(sheet.sheet).toHaveCount(0);
   });
