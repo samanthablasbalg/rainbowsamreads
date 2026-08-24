@@ -30,6 +30,7 @@ function buildEngagement(overrides: Partial<EngagementRead> = {}): EngagementRea
     status: ReadingStatus.reading,
     finished_on: null,
     resume_from_page: 100,
+    frontier_page: 100,
     completion_pct: 52,
     ...overrides,
   });
@@ -41,7 +42,9 @@ function buildMixedEngagement(overrides: Partial<EngagementRead> = {}): Engageme
   return buildEngagement({
     formats: [Format.print, Format.audio],
     resume_from_page: 100,
+    frontier_page: 100,
     resume_from_minute: 221,
+    frontier_minute: 221,
     length_minutes: 600,
     ...overrides,
   });
@@ -93,7 +96,7 @@ describe('ProgressLogSheet', () => {
 
   it('edits the start position in HH:MM on an audio read', async () => {
     const user = userEvent.setup();
-    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75, frontier_minute: 75 }));
 
     await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
 
@@ -159,7 +162,7 @@ describe('ProgressLogSheet', () => {
 
   it('refuses a start past the audio frontier in HH:MM', async () => {
     const user = userEvent.setup();
-    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75, frontier_minute: 75 }));
 
     await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
     await user.clear(screen.getByLabelText('start position'));
@@ -167,6 +170,24 @@ describe('ProgressLogSheet', () => {
     await user.tab();
 
     expect(screen.getByText("Can't start past 01:15")).toBeVisible();
+  });
+
+  // The prefill is where the catch-up stopped, but the ceiling is the frontier: giving up
+  // on the catch-up and picking the print back up where the audio got to is a legal move,
+  // and the backend takes it.
+  it('allows a start between an open catch-up and the frontier', async () => {
+    const user = userEvent.setup();
+    renderSheet(buildEngagement({ resume_from_page: 75, frontier_page: 100 }));
+
+    await user.click(await screen.findByRole('button', { name: 'Edit start position' }));
+    await user.clear(screen.getByLabelText('start position'));
+    await user.type(screen.getByLabelText('start position'), '100');
+    await user.tab();
+
+    expect(screen.queryByText("Can't start past page 100")).not.toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Edit start position' })).toHaveTextContent(
+      '100'
+    );
   });
 
   it('re-seeds the start position from the ruler switched to', async () => {
@@ -182,7 +203,7 @@ describe('ProgressLogSheet', () => {
   });
 
   it('shows the resume minute as From, with the HH:MM field opening empty for an audio engagement', async () => {
-    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75, frontier_minute: 75 }));
 
     expect(await screen.findByText('01:15', { exact: true })).toBeVisible();
     expect(screen.getByPlaceholderText('--:--')).toHaveValue('');
@@ -585,7 +606,7 @@ describe('ProgressLogSheet', () => {
       }),
       getEngagementsGetEngagementMockHandler()
     );
-    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75, frontier_minute: 75 }));
 
     await user.type(await screen.findByPlaceholderText('--:--'), '02:30');
     await user.click(screen.getByRole('button', { name: 'Save progress for Piranesi' }));
@@ -654,7 +675,7 @@ describe('ProgressLogSheet', () => {
 
   it('rejects a time that is not HH:MM', async () => {
     const user = userEvent.setup();
-    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75, frontier_minute: 75 }));
 
     await user.type(await screen.findByPlaceholderText('--:--'), '00:73');
     await user.tab();
@@ -664,7 +685,7 @@ describe('ProgressLogSheet', () => {
 
   it('rejects a time before the one the session started on', async () => {
     const user = userEvent.setup();
-    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75, frontier_minute: 75 }));
 
     await user.type(await screen.findByPlaceholderText('--:--'), '00:30');
     await user.tab();
@@ -674,7 +695,7 @@ describe('ProgressLogSheet', () => {
 
   it('rejects a time past the end of the audiobook', async () => {
     const user = userEvent.setup();
-    renderSheet(buildAudioEngagement({ resume_from_minute: 75 }));
+    renderSheet(buildAudioEngagement({ resume_from_minute: 75, frontier_minute: 75 }));
 
     await user.type(await screen.findByPlaceholderText('--:--'), '11:00');
     await user.tab();

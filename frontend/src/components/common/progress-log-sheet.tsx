@@ -188,17 +188,17 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
           To · now
         </FieldLabel>
 
-        {form.editingFrom ? (
+        {form.from.isEditing ? (
           <PositionInput
             autoFocus
             className={cn('col-start-1 row-start-2', FROM_INPUT_CLASS)}
             isAudio={form.isAudio}
             aria-label="start position"
-            aria-invalid={!!form.fromError}
-            value={form.from}
-            onValueChange={form.setFrom}
-            onFocus={form.focusFrom}
-            onBlur={form.blurFrom}
+            aria-invalid={!!form.from.error}
+            value={form.from.value}
+            onValueChange={form.from.set}
+            onFocus={form.from.focus}
+            onBlur={form.from.blur}
           />
         ) : (
           <Button
@@ -206,9 +206,9 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
             className={cn('col-start-1 row-start-2', FROM_BUTTON_CLASS)}
             aria-label="Edit start position"
             disabled={form.savePending}
-            onClick={form.editFrom}
+            onClick={form.from.edit}
           >
-            {form.from}
+            {form.from.value}
           </Button>
         )}
 
@@ -237,7 +237,7 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
         {/* One slot for both fields: the From column is too narrow to hold a message of
             its own, and its error wins, since To is only valid relative to From. */}
         <FieldError className="col-start-1 col-end-5 row-start-3">
-          {form.fromError ?? form.positionError}
+          {form.from.error ?? form.positionError}
         </FieldError>
       </Card>
 
@@ -297,6 +297,83 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
   );
 }
 
+// The From cell is a value at rest that turns into a field: the overwhelming majority of
+// sessions start where the last one ended, so the prefill is already right and only a
+// catch-up pass needs to type over it. `blurred` exists to hold the error back until the
+// field is left -- a half-typed number isn't a wrong one.
+type FromState = 'rest' | 'focused' | 'blurred';
+
+function useEditableFrom({
+  isAudio,
+  prefill,
+  ceiling,
+  onChange,
+}: {
+  isAudio: boolean;
+  prefill: number;
+  // How far a session may start, which is the frontier, not the prefill: with a catch-up
+  // open the read resumes behind the frontier, and abandoning the catch-up to pick back
+  // up at it is a legal move.
+  ceiling: number;
+  onChange: () => void;
+}) {
+  const [value, setValue] = useState(() => formatPosition(prefill, isAudio));
+  const [state, setState] = useState<FromState>('rest');
+
+  const parsed = parsePosition(value, isAudio);
+  // The start the session will be saved with, or null while what's typed isn't one.
+  const start = parsed !== null && parsed >= 0 && parsed <= ceiling ? parsed : null;
+  const startDisplay = start === null ? null : formatPosition(start, isAudio);
+
+  function message(): string | null {
+    if (parsed === null || parsed < 0)
+      return isAudio ? 'Enter a time in HH:MM format' : 'Enter a number';
+    if (parsed > ceiling) {
+      return isAudio
+        ? `Can't start past ${formatMinutesAsHhmm(ceiling)}`
+        : `Can't start past page ${ceiling}`;
+    }
+    return null;
+  }
+
+  return {
+    value,
+    start,
+    startDisplay,
+    isEditing: state !== 'rest',
+    error: state === 'blurred' ? message() : null,
+    set(next: string) {
+      setValue(next);
+      onChange();
+    },
+    // A unit switch is a different ruler, so the typed position can't carry over.
+    reset(next: number, nextIsAudio: boolean) {
+      setValue(formatPosition(next, nextIsAudio));
+      setState('rest');
+    },
+    edit() {
+      setState('focused');
+    },
+    focus(event: FocusEvent<HTMLInputElement>) {
+      setState('focused');
+      // The editor opens on a value that is usually being replaced wholesale, so a page
+      // typed over it lands on its own. HhmmInput pins its own caret to the end instead,
+      // which is the only spot its digit-shifting makes sense from.
+      if (!isAudio) event.currentTarget.select();
+    },
+    blur() {
+      // Back to a value at rest, but only once it is one -- collapsing on something the
+      // error row is about to complain about would hide what the complaint is aimed at.
+      if (startDisplay === null) {
+        setState('blurred');
+        return;
+      }
+      setValue(startDisplay);
+      setState('rest');
+    },
+  };
+}
+
 function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
   // Pages can't tell print from digital (ADR-0021), so anything measured in them answers
   // on the first non-audio binding -- the same rule the backend's page_format applies.
@@ -315,18 +392,9 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
   );
   const isAudio = unit === LogUnit.minutes;
   // Where a session on this ruler picks up: the shared frontier, or this ruler's own last
-  // position when the pass that set it was re-coverage (the backend's Rule 3). It is the
-  // ceiling on the start as well as the prefill -- a session may begin behind where the
-  // read has got to, never past it.
+  // position when the pass that set it was re-coverage (the backend's Rule 3).
   const resumeValue = isAudio ? engagement.resume_from_minute : engagement.resume_from_page;
-  const resumeDisplay = formatPosition(resumeValue, isAudio);
 
-  // Editable, because a catch-up pass starts behind the frontier. A value at rest rather
-  // than a field, since the overwhelming majority of sessions start where the last one
-  // ended and the prefill is already right.
-  const [from, setFromRaw] = useState(() => formatPosition(resumeValue, isAudio));
-  const [editingFrom, setEditingFrom] = useState(false);
-  const [fromFocused, setFromFocused] = useState(false);
   const [position, setPositionRaw] = useState('');
   const [positionFocused, setPositionFocused] = useState(false);
   const [dateEditorOpen, setDateEditorOpen] = useState(false);
@@ -335,13 +403,15 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
   const [note, setNoteRaw] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  const from = useEditableFrom({
+    isAudio,
+    prefill: resumeValue,
+    ceiling: isAudio ? engagement.frontier_minute : engagement.frontier_page,
+    onChange: () => setError(null),
+  });
+
   function setPosition(value: string) {
     setPositionRaw(value);
-    setError(null);
-  }
-
-  function setFrom(value: string) {
-    setFromRaw(value);
     setError(null);
   }
 
@@ -352,13 +422,10 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     // can carry over to the other -- the start goes back to the new ruler's own prefill.
     const nextIsAudio = picked === LogUnit.minutes;
     setPositionRaw('');
-    setFromRaw(
-      formatPosition(
-        nextIsAudio ? engagement.resume_from_minute : engagement.resume_from_page,
-        nextIsAudio
-      )
+    from.reset(
+      nextIsAudio ? engagement.resume_from_minute : engagement.resume_from_page,
+      nextIsAudio
     );
-    setEditingFrom(false);
     setError(null);
   }
 
@@ -410,33 +477,7 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     },
   });
 
-  const parsedFrom = parsePosition(from, isAudio);
-  // The start the session will be saved with, or null while what's typed isn't one.
-  const start =
-    parsedFrom !== null && parsedFrom >= 0 && parsedFrom <= resumeValue ? parsedFrom : null;
-  const startDisplay = start === null ? null : formatPosition(start, isAudio);
-
-  function editFrom() {
-    setEditingFrom(true);
-  }
-
-  function focusFrom(event: FocusEvent<HTMLInputElement>) {
-    setFromFocused(true);
-    // The editor opens on a value that is usually being replaced wholesale, so a page
-    // typed over it lands on its own. HhmmInput pins its own caret to the end instead,
-    // which is the only spot its digit-shifting makes sense from.
-    if (!isAudio) event.currentTarget.select();
-  }
-
-  function blurFrom() {
-    setFromFocused(false);
-    // Back to a value at rest, but only once it is one -- collapsing on something the
-    // error row is about to complain about would hide what the complaint is aimed at.
-    if (startDisplay === null) return;
-    setFromRaw(startDisplay);
-    setEditingFrom(false);
-  }
-
+  const { start, startDisplay } = from;
   const parsedPosition = parsePosition(position, isAudio);
 
   const maxPosition = isAudio ? engagement.length_minutes : engagement.length_pages;
@@ -449,14 +490,6 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     (maxPosition == null || parsedPosition <= maxPosition);
 
   const notANumber = isAudio ? 'Enter a time in HH:MM format' : 'Enter a number';
-
-  function startMessage(): string | null {
-    if (parsedFrom === null || parsedFrom < 0) return notANumber;
-    if (parsedFrom > resumeValue) {
-      return isAudio ? `Can't start past ${resumeDisplay}` : `Can't start past page ${resumeValue}`;
-    }
-    return null;
-  }
 
   function endMessage(): string | null {
     // Nothing to say about the end while the start it is measured against isn't a
@@ -478,7 +511,6 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
   }
 
   // Both held back until the field is left: a half-typed number isn't a wrong one.
-  const fromError = editingFrom && !fromFocused ? startMessage() : null;
   const positionError = positionFocused ? null : endMessage();
 
   function handleSave() {
@@ -503,12 +535,6 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
     unitSwitchFormat,
     pickUnit,
     from,
-    setFrom,
-    editingFrom,
-    editFrom,
-    focusFrom,
-    blurFrom,
-    fromError,
     maxDisplay,
     position,
     setPosition,
