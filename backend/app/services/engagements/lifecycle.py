@@ -45,7 +45,9 @@ def list_for_book(db: Session, book_id: uuid.UUID) -> list[Engagement]:
 def list_by_status(db: Session, status: ReadingStatus) -> list[Engagement]:
     """A shelf, most recent first. Each status has its own notion of recency: a read in
     progress is ranked by its last sign of life, which includes logging progress without
-    touching the engagement itself; a finished or abandoned one by the date it ended."""
+    touching the engagement itself; a finished or abandoned one by the date it ended,
+    with an undated read sinking to the bottom rather than to Postgres' NULLs-first
+    top."""
     latest_log_sq = (
         select(
             ProgressLog.engagement_id,
@@ -66,7 +68,7 @@ def list_by_status(db: Session, status: ReadingStatus) -> list[Engagement]:
             select(Engagement)
             .where(Engagement.status == status)
             .outerjoin(latest_log_sq, Engagement.id == latest_log_sq.c.engagement_id)
-            .order_by(order_key.desc(), Engagement.id.asc())
+            .order_by(order_key.desc().nulls_last(), Engagement.id.asc())
             .options(*ENGAGEMENT_READ_OPTIONS)
         )
         .scalars()
@@ -84,10 +86,14 @@ def create_engagement(
     audio_length_minutes: int | None = None,
     length_override: int | None = None,
     started_on: datetime.date | None = None,
+    finished_on: datetime.date | None = None,
 ) -> Engagement:
     book = book_crud.get_or_raise(db, book_id)
 
     reject_future_date(started_on)
+    reject_future_date(finished_on)
+    if finished_on is not None and started_on is not None and finished_on < started_on:
+        raise ConflictError("finished_on cannot be before started_on.")
 
     duplicate = db.execute(
         select(Engagement)
@@ -110,7 +116,12 @@ def create_engagement(
             book_id=book_id,
             user_id=user_id,
             status=status,
-            started_on=started_on or datetime.date.today(),
+            # Only a read in progress falls back to today. One logged after the fact
+            # may genuinely not know when it began, and guessing would be a lie.
+            started_on=started_on
+            or (datetime.date.today() if status == ReadingStatus.reading else None),
+            finished_on=finished_on if status == ReadingStatus.finished else None,
+            abandoned_on=finished_on if status == ReadingStatus.dnf else None,
         ),
     )
 

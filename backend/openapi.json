@@ -1946,6 +1946,18 @@
               }
             ],
             "title": "Started On"
+          },
+          "finished_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished On"
           }
         },
         "type": "object",
@@ -1953,7 +1965,8 @@
           "book_id",
           "edition_format"
         ],
-        "title": "EngagementCreate"
+        "title": "EngagementCreate",
+        "description": "`finished_on` is the date the read ended, whichever way it ended: it lands in\n`abandoned_on` when the status is dnf."
       },
       "EngagementDatesUpdate": {
         "properties": {

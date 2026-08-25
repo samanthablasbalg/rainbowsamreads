@@ -136,6 +136,10 @@ export const EngagementCreateStatus = {
   dnf: 'dnf',
 } as const;
 
+/**
+ * `finished_on` is the date the read ended, whichever way it ended: it lands in
+ * `abandoned_on` when the status is dnf.
+ */
 export interface EngagementCreate {
   book_id: string;
   edition_format: Format;
@@ -143,6 +147,7 @@ export interface EngagementCreate {
   audio_length_minutes?: number | null;
   length_override?: number | null;
   started_on?: string | null;
+  finished_on?: string | null;
 }
 
 export interface EngagementDatesUpdate {

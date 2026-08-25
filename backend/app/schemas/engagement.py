@@ -12,12 +12,22 @@ from app.schemas.review import ReviewRead
 
 
 class EngagementCreate(BaseModel):
+    """`finished_on` is the date the read ended, whichever way it ended: it lands in
+    `abandoned_on` when the status is dnf."""
+
     book_id: uuid.UUID
     edition_format: Format
     status: Literal["reading", "finished", "dnf"] = "reading"
     audio_length_minutes: int | None = Field(default=None, gt=0)
     length_override: int | None = Field(default=None, gt=0)
     started_on: datetime.date | None = None
+    finished_on: datetime.date | None = None
+
+    @model_validator(mode="after")
+    def check_finished_on_matches_status(self) -> Self:
+        if self.finished_on is not None and self.status == "reading":
+            raise ValueError("A read in progress cannot have an end date")
+        return self
 
 
 class EngagementStatusUpdate(BaseModel):

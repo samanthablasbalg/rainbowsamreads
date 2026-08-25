@@ -217,6 +217,8 @@ def test_create_engagement_at_finished_status(client: TestClient) -> None:
     data = response.json()
     assert data["status"] == "finished"
     assert data["finished_on"] is None
+    # No invented start date: a read logged after the fact may not know when it began.
+    assert data["started_on"] is None
 
 
 def test_create_engagement_at_dnf_status(client: TestClient) -> None:
@@ -227,6 +229,144 @@ def test_create_engagement_at_dnf_status(client: TestClient) -> None:
     )
     assert response.status_code == 201
     assert response.json()["status"] == "dnf"
+
+
+def test_create_engagement_at_finished_stores_both_dates(client: TestClient) -> None:
+    book = _create_book(client)
+    response = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "edition_format": "print",
+            "status": "finished",
+            "started_on": "2026-03-01",
+            "finished_on": "2026-03-20",
+        },
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["started_on"] == "2026-03-01"
+    assert data["finished_on"] == "2026-03-20"
+
+
+def test_create_engagement_at_finished_takes_an_end_date_alone(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+    response = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "edition_format": "print",
+            "status": "finished",
+            "finished_on": "2026-03-20",
+        },
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["started_on"] is None
+    assert data["finished_on"] == "2026-03-20"
+
+
+def test_create_engagement_at_dnf_stores_the_end_date_as_abandoned_on(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+    response = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "edition_format": "print",
+            "status": "dnf",
+            "finished_on": "2026-03-20",
+        },
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["abandoned_on"] == "2026-03-20"
+    assert data["finished_on"] is None
+
+
+def test_create_engagement_at_finished_creates_no_progress_log(
+    client: TestClient, db: Session
+) -> None:
+    """Unlike finishing a read in progress, which logs the closing span. Nothing was
+    ever read in the app here, so there is no span to close."""
+    book = _create_book(client)
+    db_book = db.get(Book, uuid.UUID(book["id"]))
+    assert db_book is not None
+    db_book.default_page_count = 300
+    db.commit()
+
+    response = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "edition_format": "print",
+            "status": "finished",
+            "finished_on": "2026-03-20",
+        },
+    )
+    assert response.status_code == 201
+
+    logs = (
+        db.execute(
+            select(ProgressLog).where(
+                ProgressLog.engagement_id == uuid.UUID(response.json()["id"])
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert logs == []
+
+
+def test_create_engagement_reading_with_finished_on_returns_422(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+    response = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "edition_format": "print",
+            "status": "reading",
+            "finished_on": "2026-03-20",
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_create_engagement_future_finished_on_returns_422(client: TestClient) -> None:
+    book = _create_book(client)
+    future = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
+    response = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "edition_format": "print",
+            "status": "finished",
+            "finished_on": future,
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_create_engagement_finished_on_before_started_on_returns_409(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+    response = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "edition_format": "print",
+            "status": "finished",
+            "started_on": "2026-03-20",
+            "finished_on": "2026-03-01",
+        },
+    )
+    assert response.status_code == 409
 
 
 def test_create_engagement_invalid_status_returns_422(client: TestClient) -> None:
@@ -715,6 +855,23 @@ def test_list_finished_orders_by_finished_on_not_last_touch(
     _set_updated_at(db, eng_a["id"], datetime.datetime(2026, 1, 1, tzinfo=datetime.UTC))
     _set_finished_on(db, eng_b["id"], datetime.date(2026, 3, 1))
     _set_updated_at(db, eng_b["id"], datetime.datetime(2026, 6, 1, tzinfo=datetime.UTC))
+
+    data = client.get("/api/engagements?status=finished").json()
+    assert [e["book"]["title"] for e in data] == ["Book A", "Book B"]
+
+
+def test_list_finished_puts_an_undated_read_last(
+    client: TestClient, db: Session
+) -> None:
+    book_a = _create_book(client, title="Book A", author="Author A")
+    book_b = _create_book(client, title="Book B", author="Author B")
+    eng_a = _create_engagement(client, book_a["id"])
+    client.patch(f"/api/engagements/{eng_a['id']}", json={"status": "finished"})
+    _set_finished_on(db, eng_a["id"], datetime.date(2026, 5, 1))
+    client.post(
+        "/api/engagements",
+        json={"book_id": book_b["id"], "edition_format": "print", "status": "finished"},
+    )
 
     data = client.get("/api/engagements?status=finished").json()
     assert [e["book"]["title"] for e in data] == ["Book A", "Book B"]

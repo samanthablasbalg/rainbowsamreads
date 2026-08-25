@@ -40,6 +40,7 @@ def create_engagement(
         audio_length_minutes=payload.audio_length_minutes,
         length_override=payload.length_override,
         started_on=payload.started_on,
+        finished_on=payload.finished_on,
     )
     db.commit()
     return EngagementRead.model_validate(reload(db, engagement.id))
