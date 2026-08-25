@@ -164,6 +164,32 @@ describe('BookDetail', () => {
     );
   });
 
+  // Reading again after an ending is another time through the book, so it opens the
+  // start-reading sheet rather than reopening the read that already ended.
+  it.each([ReadingStatus.finished, ReadingStatus.dnf])(
+    'starts a new read instead of reopening a %s one',
+    async (status) => {
+      const user = userEvent.setup();
+      const captured: { body?: unknown } = {};
+      server.use(
+        getBooksGetBookMockHandler(buildBook()),
+        getBooksListBookEngagementsMockHandler([buildEngagement({ id: 'engagement-1', status })]),
+        getEngagementsUpdateEngagementStatusMockHandler(async (info) => {
+          captured.body = await info.request.json();
+          return getEngagementsUpdateEngagementStatusResponseMock();
+        })
+      );
+
+      render(<BookDetail bookId="book-Piranesi" />);
+
+      await user.click(await screen.findByRole('button', { name: /Finished|DNF/ }));
+      await user.click(await screen.findByRole('menuitem', { name: 'Reading' }));
+
+      expect(await screen.findByRole('button', { name: 'Start reading Piranesi' })).toBeVisible();
+      expect(captured.body).toBeUndefined();
+    }
+  );
+
   it('starts a read from an untracked book without leaving the page', async () => {
     const user = userEvent.setup();
     server.use(getBooksGetBookMockHandler(buildBook()), getBooksListBookEngagementsMockHandler([]));

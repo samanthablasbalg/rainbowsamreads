@@ -14,6 +14,7 @@ import {
   useEngagementsUpdateEngagementStatus,
 } from '@/api/generated/engagements/engagements';
 import { StarRating } from '@/components/common/star-rating';
+import { StartReadingSheet } from '@/components/common/start-reading-sheet';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -33,6 +34,11 @@ const STATUS_LABELS: Record<ReadingStatus, string> = {
   finished: 'Finished',
   dnf: 'DNF',
 };
+
+// Finished and DNF are endings. Picking Reading again is another time through the book,
+// not a correction to the last one, so it starts a new engagement through the sheet
+// instead of reopening the one that already ended.
+const ENDED: ReadingStatus[] = [ReadingStatus.finished, ReadingStatus.dnf];
 
 function currentEngagement(engagements: EngagementRead[]): EngagementRead | null {
   if (engagements.length === 0) {
@@ -86,6 +92,7 @@ export function BookMetadata({
                   variant="secondary"
                   size="sm"
                   className="font-extrabold"
+                  aria-label={`Status: ${STATUS_LABELS[current.status]}`}
                   disabled={updateStatus.isPending}
                 >
                   {STATUS_LABELS[current.status]}
@@ -98,10 +105,13 @@ export function BookMetadata({
                 <DropdownMenuItem
                   key={status}
                   onClick={() =>
-                    updateStatus.mutate({
-                      engagementId: current.id,
-                      data: { status, effective_on: localIsoDate() },
-                    })
+                    status === EngagementStatusUpdateStatus.reading &&
+                    ENDED.includes(current.status)
+                      ? setAddOpen(true)
+                      : updateStatus.mutate({
+                          engagementId: current.id,
+                          data: { status, effective_on: localIsoDate() },
+                        })
                   }
                 >
                   {STATUS_LABELS[status]}
@@ -110,18 +120,21 @@ export function BookMetadata({
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              className="font-extrabold"
-              onClick={() => setAddOpen(true)}
-            >
-              Not tracked
-              <HugeiconsIcon icon={ArrowDown01Icon} data-icon="inline-end" />
-            </Button>
-            <LogReadingSheet book={book} open={addOpen} onOpenChange={setAddOpen} />
-          </>
+          <Button
+            variant="outline"
+            size="sm"
+            className="font-extrabold"
+            onClick={() => setAddOpen(true)}
+          >
+            Not tracked
+            <HugeiconsIcon icon={ArrowDown01Icon} data-icon="inline-end" />
+          </Button>
+        )}
+
+        {current ? (
+          <StartReadingSheet book={book} open={addOpen} onOpenChange={setAddOpen} />
+        ) : (
+          <LogReadingSheet book={book} open={addOpen} onOpenChange={setAddOpen} />
         )}
       </Row>
 
