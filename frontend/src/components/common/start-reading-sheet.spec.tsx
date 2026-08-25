@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { HttpResponse, http } from 'msw';
-import { useLocation } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import userEvent from '@testing-library/user-event';
 import {
   getEngagementsCreateEngagementMockHandler,
@@ -11,14 +11,23 @@ import { buildBook } from '@/test/data-generators';
 import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
 import { localIsoDate } from '@/utils/local-date';
+import { STATUSES } from '@/utils/status';
 import { StartReadingSheet } from './start-reading-sheet';
 
+// The sheet leaves navigation to whoever opened it, so the harness stands in for the
+// catalog -- the caller that does send you to the Reading shelf once a read starts.
 function ControlledSheet({ book }: { book: BookRead }) {
   const [open, setOpen] = useState(true);
+  const navigate = useNavigate();
   return (
     <>
       <p>path: {useLocation().pathname}</p>
-      <StartReadingSheet book={book} open={open} onOpenChange={setOpen} />
+      <StartReadingSheet
+        book={book}
+        open={open}
+        onOpenChange={setOpen}
+        onStarted={() => navigate(STATUSES.reading.to)}
+      />
     </>
   );
 }

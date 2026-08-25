@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { errorDetail, type DetailError } from '@/api/error-detail';
@@ -26,26 +25,36 @@ import {
 import { FORMATS } from '@/utils/format';
 import { formatLength, lengthField, parseLength } from '@/utils/length';
 import { localIsoDate } from '@/utils/local-date';
-import { STATUSES } from '@/utils/status';
 
 type StartReadingSheetProps = {
   book: BookRead;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // Where a started read belongs next is the caller's call: the catalog sends you to the
+  // Reading shelf, the book page leaves you on the book you just picked up again.
+  onStarted?: () => void;
 };
 
-export function StartReadingSheet({ book, open, onOpenChange }: StartReadingSheetProps) {
+export function StartReadingSheet({ book, open, onOpenChange, onStarted }: StartReadingSheetProps) {
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent>
-        <StartReadingForm book={book} onDone={() => onOpenChange(false)} />
+        <StartReadingForm book={book} onDone={() => onOpenChange(false)} onStarted={onStarted} />
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
 }
 
-function StartReadingForm({ book, onDone }: { book: BookRead; onDone: () => void }) {
-  const form = useStartReadingForm(book, onDone);
+function StartReadingForm({
+  book,
+  onDone,
+  onStarted,
+}: {
+  book: BookRead;
+  onDone: () => void;
+  onStarted?: () => void;
+}) {
+  const form = useStartReadingForm(book, onDone, onStarted);
 
   return (
     <>
@@ -121,14 +130,13 @@ function StartReadingForm({ book, onDone }: { book: BookRead; onDone: () => void
   );
 }
 
-function useStartReadingForm(book: BookRead, onClose: () => void) {
+function useStartReadingForm(book: BookRead, onClose: () => void, onStarted?: () => void) {
   const [format, setFormat] = useState<Format>(Format.print);
   const [length, setLengthRaw] = useState('');
   const [lengthFocused, setLengthFocused] = useState(false);
   const [startedOn, setStartedOn] = useState(localIsoDate());
   const [error, setError] = useState<string | null>(null);
 
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const createEngagement = useEngagementsCreateEngagement<DetailError>({
@@ -139,7 +147,7 @@ function useStartReadingForm(book: BookRead, onClose: () => void) {
           queryClient.invalidateQueries({ queryKey: getBooksListBookEngagementsQueryKey(book.id) }),
         ]);
         onClose();
-        navigate(STATUSES.reading.to);
+        onStarted?.();
       },
       onError: (err) => {
         setError(errorDetail(err, 'Failed to start this read. Please try again.'));
