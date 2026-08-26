@@ -1,7 +1,8 @@
 import { expect, test } from '../../fixtures/api-client';
 import { SearchPanelPage } from '../../page-objects/search-panel.page';
-import { FormatPickSheetPage } from '../../page-objects/format-pick-sheet.page';
+import { StartReadingSheetPage } from '../../page-objects/start-reading-sheet.page';
 import { CurrentlyReadingPage } from '../../page-objects/currently-reading.page';
+import { FinishedBooksPage } from '../../page-objects/finished-books.page';
 
 test('Importing a search result adds it to the catalog without touching the library', async ({
   page,
@@ -21,7 +22,9 @@ test('Importing a search result adds it to the catalog without touching the libr
   });
 
   await test.step('Decline adding it to the library', async () => {
-    await new FormatPickSheetPage(page).dismiss('No thanks — just import');
+    const sheet = new StartReadingSheetPage(page);
+    await sheet.dismiss('No thanks — just import');
+    await expect(sheet.sheet).toHaveCount(0);
   });
 
   await test.step('Verify it now shows as in the catalog, not the library', async () => {
@@ -53,6 +56,8 @@ test('A failed search shows an error, not a crash', async ({ page }) => {
 test('Adding a catalog result to my library sets its status', async ({ page, apiClient }) => {
   const searchPanel = new SearchPanelPage(page);
   const currentlyReading = new CurrentlyReadingPage(page);
+  const sheet = new StartReadingSheetPage(page);
+  const finishedBooks = new FinishedBooksPage(page);
   const title = "The Cartographer's Quiet Room";
 
   await test.step('Create a catalog book with no engagement', async () => {
@@ -60,13 +65,15 @@ test('Adding a catalog result to my library sets its status', async ({ page, api
     await currentlyReading.goto();
   });
 
-  await test.step('Add it to my library as Finished', async () => {
+  await test.step('Add it to my library as Finished, dated', async () => {
     await searchPanel.searchFor(title);
     await searchPanel.addBook(title);
-
-    const formatPickSheet = new FormatPickSheetPage(page);
-    await formatPickSheet.chooseStatus(title, 'Finished');
-    await formatPickSheet.pick(title, 'Print', { status: 'Finished' });
+    await sheet.chooseStatus(title, 'Finished');
+    await sheet.addAs(title, 'Print', 'Finished', {
+      startedOn: '2026-01-15',
+      endedOn: '2026-02-20',
+    });
+    await expect(sheet.sheet).toHaveCount(0);
   });
 
   await test.step('Verify it now shows its status, with no action', async () => {
@@ -74,5 +81,10 @@ test('Adding a catalog result to my library sets its status', async ({ page, api
     await searchPanel.searchFor(title);
     await expect(searchPanel.getResultRow(title)).toContainText('Finished');
     await expect(searchPanel.getAddButton(title)).toHaveCount(0);
+  });
+
+  await test.step('Verify the finish date came back with it', async () => {
+    await finishedBooks.goto();
+    await expect(finishedBooks.getEntry(title)).toContainText(/Finished\b.*2026/);
   });
 });

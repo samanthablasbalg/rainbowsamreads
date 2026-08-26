@@ -2,21 +2,36 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { withPointer } from '@/test/pointer-decorator';
 import { expect, screen, userEvent, within } from 'storybook/test';
-import type { BookRead } from '@/api/generated/readingTracker.schemas';
+import {
+  EngagementCreateStatus,
+  type BookRead,
+  type EngagementCreateStatus as Status,
+} from '@/api/generated/readingTracker.schemas';
 import { Button } from '@/components/ui/button';
 import { buildBook } from '@/test/data-generators';
 import { StartReadingSheet } from './start-reading-sheet';
 
 const baseBook = buildBook();
 
-function ControlledSheet({ book }: { book: BookRead }) {
+const ADD_STATUSES = [
+  EngagementCreateStatus.reading,
+  EngagementCreateStatus.finished,
+  EngagementCreateStatus.dnf,
+];
+
+function ControlledSheet({ book, statuses }: { book: BookRead; statuses?: Status[] }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <Button variant="outline" onClick={() => setOpen(true)}>
         Open
       </Button>
-      <StartReadingSheet book={book} open={open} onOpenChange={setOpen} />
+      <StartReadingSheet
+        book={book}
+        {...(statuses && { statuses })}
+        open={open}
+        onOpenChange={setOpen}
+      />
     </>
   );
 }
@@ -53,4 +68,19 @@ export const AudioLengthRequired: Story = {
 
 export const NoLengthKnownAtAll: Story = {
   render: () => <ControlledSheet book={buildBook({ default_page_count: null })} />,
+};
+
+export const ChoosingWhereItGoes: Story = {
+  render: () => <ControlledSheet book={baseBook} statuses={ADD_STATUSES} />,
+};
+
+export const AddingAFinishedRead: Story = {
+  render: () => <ControlledSheet book={baseBook} statuses={ADD_STATUSES} />,
+  play: async (context) => {
+    await openSheet(context);
+    await userEvent.click(
+      await screen.findByRole('button', { name: `Add ${baseBook.title} as Finished` })
+    );
+    expect(await screen.findByLabelText('Finish date')).toHaveValue('');
+  },
 };

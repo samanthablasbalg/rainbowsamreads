@@ -1,11 +1,14 @@
 import { Locator, Page } from '@playwright/test';
 
 export type StartableFormat = 'Print' | 'Digital' | 'Audio';
+export type StartableStatus = 'Reading' | 'Finished' | 'DNF';
 
 /**
- * The catalog's start-a-read surface: one form carrying the format toggles, an
- * optional length for this read, and the start date. Everything is scoped to the
- * component element rather than to whichever host opened it.
+ * The add-a-read surface: one form carrying the format toggles, an optional length
+ * for this read, and its dates. Hosts that offer more than one status (search) put a
+ * status-choice step in front of that form; the catalog goes straight to it.
+ * Everything is scoped to the component element rather than to whichever host opened
+ * it.
  */
 export class StartReadingSheetPage {
   // The sheet's root. Wait for this to be gone before asserting anything about the
@@ -41,12 +44,62 @@ export class StartReadingSheetPage {
   }
 
   /**
-   * Locates the submit button, whose aria-label carries the book title.
+   * Locates a status choice on the step that precedes the form, shown only when the
+   * host offers more than one status.
    * @param title - The book's title.
-   * @returns The start button locator.
+   * @param status - The status to locate.
+   * @returns The status button locator.
    */
-  getStartButton(title: string): Locator {
-    return this.sheet.getByRole('button', { name: `Start reading ${title}` });
+  getStatusButton(title: string, status: StartableStatus): Locator {
+    return this.sheet.getByRole('button', { name: `Add ${title} as ${status}` });
+  }
+
+  /**
+   * Locates the start date input, which every status offers. It prefills to today for
+   * a read in progress and stays blank for one logged after the fact.
+   * @returns The start date input locator.
+   */
+  getStartDateInput(): Locator {
+    return this.sheet.getByLabel('Start date');
+  }
+
+  /**
+   * Locates the end date input, offered only for a read that is already over. Its
+   * label follows how the read ended.
+   * @param status - The status being added.
+   * @returns The end date input locator.
+   */
+  getEndDateInput(status: StartableStatus): Locator {
+    return this.sheet.getByLabel(status === 'DNF' ? 'Stopped on' : 'Finish date');
+  }
+
+  /**
+   * Locates the submit button, whose aria-label carries the book title. Only a read
+   * in progress is "started"; the others are added.
+   * @param title - The book's title.
+   * @param status - The status being added; defaults to Reading.
+   * @returns The submit button locator.
+   */
+  getSubmitButton(title: string, status: StartableStatus = 'Reading'): Locator {
+    const name = status === 'Reading' ? `Start reading ${title}` : `Add ${title}`;
+    return this.sheet.getByRole('button', { name });
+  }
+
+  /**
+   * Picks a status on the step that precedes the form.
+   * @param title - The book's title.
+   * @param status - The status to pick.
+   */
+  async chooseStatus(title: string, status: StartableStatus): Promise<void> {
+    await this.getStatusButton(title, status).click();
+  }
+
+  /**
+   * Dismisses the sheet via its bail-out button, whatever it's labeled.
+   * @param label - The button's label; defaults to "Cancel".
+   */
+  async dismiss(label = 'Cancel'): Promise<void> {
+    await this.sheet.getByRole('button', { name: label }).click();
   }
 
   /**
@@ -61,6 +114,32 @@ export class StartReadingSheetPage {
     if (length !== undefined) {
       await this.getLengthInput(format).fill(length);
     }
-    await this.getStartButton(title).click();
+    await this.getSubmitButton(title).click();
+  }
+
+  /**
+   * Adds a read that is already over: picks a format, fills whichever dates are
+   * known, and submits. Both dates are optional -- a read you remember finishing but
+   * not when takes neither.
+   * @param title - The book's title.
+   * @param format - The format it was read in.
+   * @param status - How the read ended.
+   * @param dates.startedOn - The start date, as YYYY-MM-DD.
+   * @param dates.endedOn - The finish or stopped-on date, as YYYY-MM-DD.
+   */
+  async addAs(
+    title: string,
+    format: StartableFormat,
+    status: StartableStatus,
+    dates: { startedOn?: string; endedOn?: string } = {}
+  ): Promise<void> {
+    await this.getFormatButton(format).click();
+    if (dates.startedOn !== undefined) {
+      await this.getStartDateInput().fill(dates.startedOn);
+    }
+    if (dates.endedOn !== undefined) {
+      await this.getEndDateInput(status).fill(dates.endedOn);
+    }
+    await this.getSubmitButton(title, status).click();
   }
 }

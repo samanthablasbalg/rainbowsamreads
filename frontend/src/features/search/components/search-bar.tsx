@@ -4,7 +4,9 @@ import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Search01Icon } from '@hugeicons/core-free-icons';
 import {
+  getBooksGetBookQueryKey,
   getBooksListBooksQueryKey,
+  useBooksGetBook,
   useBooksImportBook,
   useBooksSearchBooks,
 } from '@/api/generated/books/books';
@@ -14,7 +16,7 @@ import {
   type BookSearchResult,
 } from '@/api/generated/readingTracker.schemas';
 import { ErrorText } from '@/components/common/error-text';
-import { FormatPickSheet, type FormatPickSheetProps } from '@/components/common/format-pick-sheet';
+import { StartReadingSheet } from '@/components/common/start-reading-sheet';
 import {
   Combobox,
   ComboboxContent,
@@ -39,7 +41,7 @@ const ADD_STATUSES = [
   EngagementCreateStatus.dnf,
 ];
 
-type PendingSheet = Omit<FormatPickSheetProps, 'open' | 'onOpenChange'>;
+type PendingSheet = { bookId: string; cancelLabel?: string };
 
 const SECTIONS: { heading: string; hint: string | null; state: BookSearchResultState }[] = [
   { heading: 'In your library', hint: null, state: BookSearchResultState.in_library },
@@ -64,14 +66,11 @@ export function SearchBar() {
     mutation: {
       onSuccess: async (book) => {
         await queryClient.invalidateQueries({ queryKey: getBooksListBooksQueryKey() });
+        // The sheet reads the book back by id; seeding what the import just returned
+        // spares it a round trip for a book we are already holding.
+        queryClient.setQueryData(getBooksGetBookQueryKey(book.id), book);
         collapse();
-        setSheet({
-          bookId: book.id,
-          title: book.title,
-          audioMinutes: book.default_audio_minutes,
-          statuses: ADD_STATUSES,
-          cancelLabel: 'No thanks — just import',
-        });
+        setSheet({ bookId: book.id, cancelLabel: 'No thanks — just import' });
       },
     },
   });
@@ -81,20 +80,10 @@ export function SearchBar() {
     importBook.reset();
   }
 
-  // A catalog result carries no audio length, so picking Audio always stops to ask.
   function handleAdd(result: BookSearchResult) {
     collapse();
-    setSheet({
-      bookId: result.book_id!,
-      title: result.title,
-      audioMinutes: null,
-      statuses: ADD_STATUSES,
-    });
+    setSheet({ bookId: result.book_id! });
   }
-
-  const sheetElement = sheet && (
-    <FormatPickSheet {...sheet} open onOpenChange={(open) => !open && setSheet(null)} />
-  );
 
   return (
     <>
@@ -113,8 +102,29 @@ export function SearchBar() {
       ) : (
         <SearchButton onClick={() => setExpanded(true)} />
       )}
-      {sheetElement}
+      {sheet && <AddToLibrarySheet {...sheet} onClose={() => setSheet(null)} />}
     </>
+  );
+}
+
+// The sheet needs the book's default lengths, which a search result doesn't carry, so
+// the id is read back into the full book before the sheet can open on it.
+function AddToLibrarySheet({
+  bookId,
+  cancelLabel,
+  onClose,
+}: PendingSheet & { onClose: () => void }) {
+  const { data: book } = useBooksGetBook(bookId);
+  if (!book) return null;
+
+  return (
+    <StartReadingSheet
+      book={book}
+      statuses={ADD_STATUSES}
+      {...(cancelLabel && { cancelLabel })}
+      open
+      onOpenChange={(open) => !open && onClose()}
+    />
   );
 }
 
