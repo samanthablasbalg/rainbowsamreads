@@ -47,9 +47,7 @@ describe('ReadHistory', () => {
     );
   });
 
-  // PATCH /dates takes started_on and finished_on only, so an abandoned date is shown
-  // but cannot be opened.
-  it('shows the abandoned date instead of a finish date for a DNF read, not editable', async () => {
+  it('shows the abandoned date instead of a finish date for a DNF read', async () => {
     server.use(
       getEngagementsGetEngagementMockHandler(
         buildEngagement({
@@ -62,10 +60,36 @@ describe('ReadHistory', () => {
 
     render(<ReadHistory engagementId="engagement-Piranesi" />);
 
-    const abandoned = await screen.findByRole('button', { name: 'Edit abandon date' });
-    expect(abandoned).toHaveTextContent('Feb 4, 2025');
-    expect(abandoned).toBeDisabled();
+    expect(await screen.findByRole('button', { name: 'Edit abandon date' })).toHaveTextContent(
+      'Feb 4, 2025'
+    );
     expect(screen.queryByRole('button', { name: 'Edit finish date' })).not.toBeInTheDocument();
+  });
+
+  it('patches the abandoned date of a DNF read', async () => {
+    const sent: Record<string, unknown>[] = [];
+    server.use(
+      getEngagementsGetEngagementMockHandler(
+        buildEngagement({
+          status: ReadingStatus.dnf,
+          finished_on: null,
+          abandoned_on: '2025-02-04',
+        })
+      ),
+      http.patch('*/api/engagements/*/dates', async ({ request }) => {
+        sent.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({});
+      })
+    );
+
+    render(<ReadHistory engagementId="engagement-Piranesi" />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit abandon date' }));
+    await userEvent.clear(screen.getByLabelText('abandon date'));
+    await userEvent.type(screen.getByLabelText('abandon date'), '2025-02-06');
+    await userEvent.click(screen.getByRole('button', { name: 'Save abandon date' }));
+
+    await waitFor(() => expect(sent).toEqual([{ abandoned_on: '2025-02-06' }]));
   });
 
   it('shows a dash for a date that is not set yet', async () => {
@@ -103,6 +127,27 @@ describe('ReadHistory', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save finish date' }));
 
     await waitFor(() => expect(sent).toEqual([{ finished_on: '2025-03-14' }]));
+  });
+
+  it('finishes a read that is still in progress when its finish date is set', async () => {
+    const sent: Record<string, unknown>[] = [];
+    server.use(
+      getEngagementsGetEngagementMockHandler(
+        buildEngagement({ status: ReadingStatus.reading, finished_on: null })
+      ),
+      http.patch('*/api/engagements/:engagementId', async ({ request }) => {
+        sent.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({});
+      })
+    );
+
+    render(<ReadHistory engagementId="engagement-Piranesi" />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit finish date' }));
+    await userEvent.type(screen.getByLabelText('finish date'), '2025-03-14');
+    await userEvent.click(screen.getByRole('button', { name: 'Save finish date' }));
+
+    await waitFor(() => expect(sent).toEqual([{ status: 'finished', effective_on: '2025-03-14' }]));
   });
 
   it('shows the length of a page-measured read', async () => {

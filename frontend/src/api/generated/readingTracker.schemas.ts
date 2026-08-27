@@ -150,9 +150,14 @@ export interface EngagementCreate {
   finished_on?: string | null;
 }
 
+/**
+ * Corrects dates a read already has. Ending a read is the status endpoint's job:
+ * `finished_on` here edits a finished read, `abandoned_on` a dnf one.
+ */
 export interface EngagementDatesUpdate {
   started_on?: string | null;
   finished_on?: string | null;
+  abandoned_on?: string | null;
 }
 
 export interface EngagementEditionCreate {

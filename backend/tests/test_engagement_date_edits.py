@@ -150,3 +150,52 @@ def test_patch_dates_finished_before_latest_log_returns_409(
         json={"finished_on": "2026-03-01"},
     )
     assert response.status_code == 409
+
+
+def test_patch_dates_abandoned_on_persists(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
+    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "dnf"})
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}/dates",
+        json={"abandoned_on": "2026-02-01"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["abandoned_on"] == "2026-02-01"
+
+
+def test_patch_dates_abandoned_before_started_returns_409(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], started_on="2026-06-01")
+    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "dnf"})
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}/dates",
+        json={"abandoned_on": "2026-01-01"},
+    )
+    assert response.status_code == 409
+
+
+def test_patch_dates_abandoned_before_latest_log_returns_409(
+    client: TestClient, db: Session
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
+    _log_progress(client, engagement["id"], 100)
+
+    log = db.execute(
+        select(ProgressLog).where(
+            ProgressLog.engagement_id == uuid.UUID(engagement["id"])
+        )
+    ).scalar_one()
+    log.logged_on = datetime.date(2026, 3, 15)
+    db.commit()
+    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "dnf"})
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}/dates",
+        json={"abandoned_on": "2026-03-01"},
+    )
+    assert response.status_code == 409

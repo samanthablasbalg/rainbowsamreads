@@ -7,11 +7,10 @@ import { EditableValue, InlineEditor } from './inline-edit';
 type InlineDateEditProps = {
   value: string | null;
   label: string;
-  disabled?: boolean;
   onSave: (value: string) => Promise<unknown>;
 };
 
-export function InlineDateEdit({ value, label, disabled = false, onSave }: InlineDateEditProps) {
+export function InlineDateEdit({ value, label, onSave }: InlineDateEditProps) {
   const [editing, setEditing] = useState(false);
 
   if (editing) {
@@ -34,7 +33,7 @@ export function InlineDateEdit({ value, label, disabled = false, onSave }: Inlin
   }
 
   return (
-    <EditableValue label={label} disabled={disabled} onEdit={() => setEditing(true)}>
+    <EditableValue label={label} onEdit={() => setEditing(true)}>
       {value ? formatIsoDate(value) : '—'}
     </EditableValue>
   );

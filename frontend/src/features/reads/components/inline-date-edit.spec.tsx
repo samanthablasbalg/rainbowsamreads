@@ -95,12 +95,4 @@ describe('InlineDateEdit', () => {
     expect(await screen.findByLabelText('start date')).toHaveValue('2025-01-01');
     expect(screen.queryByRole('button', { name: 'Edit start date' })).not.toBeInTheDocument();
   });
-
-  it('does not open when disabled', async () => {
-    renderEdit({ disabled: true });
-
-    await userEvent.click(screen.getByRole('button', { name: 'Edit start date' }));
-
-    expect(screen.queryByLabelText('start date')).not.toBeInTheDocument();
-  });
 });

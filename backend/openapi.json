@@ -1993,10 +1993,23 @@
               }
             ],
             "title": "Finished On"
+          },
+          "abandoned_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abandoned On"
           }
         },
         "type": "object",
-        "title": "EngagementDatesUpdate"
+        "title": "EngagementDatesUpdate",
+        "description": "Corrects dates a read already has. Ending a read is the status endpoint's job:\n`finished_on` here edits a finished read, `abandoned_on` a dnf one."
       },
       "EngagementEditionCreate": {
         "properties": {

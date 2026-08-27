@@ -36,8 +36,12 @@ class EngagementStatusUpdate(BaseModel):
 
 
 class EngagementDatesUpdate(BaseModel):
+    """Corrects dates a read already has. Ending a read is the status endpoint's job:
+    `finished_on` here edits a finished read, `abandoned_on` a dnf one."""
+
     started_on: datetime.date | None = None
     finished_on: datetime.date | None = None
+    abandoned_on: datetime.date | None = None
 
 
 class EngagementLengthUpdate(BaseModel):

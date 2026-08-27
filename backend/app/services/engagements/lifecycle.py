@@ -257,6 +257,7 @@ def apply_date_change(
     engagement: Engagement,
     started_on: datetime.date | None,
     finished_on: datetime.date | None,
+    abandoned_on: datetime.date | None = None,
 ) -> None:
     logs = sorted(
         engagement.progress_logs, key=lambda log: (log.logged_on, log.created_at)
@@ -265,30 +266,37 @@ def apply_date_change(
     latest_log_date = logs[-1].logged_on if logs else None
 
     effective_started = started_on if started_on is not None else engagement.started_on
-    effective_finished = (
-        finished_on if finished_on is not None else engagement.finished_on
-    )
 
-    if (
-        effective_finished is not None
-        and effective_started is not None
-        and effective_finished < effective_started
-    ):
-        raise ConflictError("finished_on cannot be before started_on.")
     if (
         started_on is not None
         and earliest_log_date is not None
         and started_on > earliest_log_date
     ):
         raise ConflictError("started_on cannot be after the earliest progress log.")
-    if (
-        finished_on is not None
-        and latest_log_date is not None
-        and finished_on < latest_log_date
+
+    # A read has one end date, in whichever column matches how it ended, and both
+    # answer to the same two rules.
+    for name, incoming, current in (
+        ("finished_on", finished_on, engagement.finished_on),
+        ("abandoned_on", abandoned_on, engagement.abandoned_on),
     ):
-        raise ConflictError("finished_on cannot be before the latest progress log.")
+        effective_end = incoming if incoming is not None else current
+        if (
+            effective_end is not None
+            and effective_started is not None
+            and effective_end < effective_started
+        ):
+            raise ConflictError(f"{name} cannot be before started_on.")
+        if (
+            incoming is not None
+            and latest_log_date is not None
+            and incoming < latest_log_date
+        ):
+            raise ConflictError(f"{name} cannot be before the latest progress log.")
 
     if started_on is not None:
         engagement.started_on = started_on
     if finished_on is not None:
         engagement.finished_on = finished_on
+    if abandoned_on is not None:
+        engagement.abandoned_on = abandoned_on

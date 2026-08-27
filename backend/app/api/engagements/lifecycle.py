@@ -71,7 +71,7 @@ def update_engagement_dates(
 ) -> EngagementRead:
     engagement = engagement_crud.get_or_raise(db, engagement_id)
     lifecycle_service.apply_date_change(
-        engagement, payload.started_on, payload.finished_on
+        engagement, payload.started_on, payload.finished_on, payload.abandoned_on
     )
     db.commit()
     return EngagementRead.model_validate(reload(db, engagement_id))
