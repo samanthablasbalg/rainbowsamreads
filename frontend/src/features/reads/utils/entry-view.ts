@@ -65,13 +65,26 @@ function toSessions(logs: ProgressLog[]): ProgressLog[][] {
 // Consecutive entries on one date share a header, so a second session the same day
 // doesn't repeat it.
 export function toDayGroups(entries: EntryView[]): DayGroup[] {
-  return groupConsecutiveBy(entries, (entry) => entry.loggedOn).map(([first, ...rest]) => ({
+  const days = groupConsecutiveBy(entries, (entry) => entry.loggedOn);
+
+  return days.map(([first, ...rest], index) => ({
     loggedOn: first.loggedOn,
     dateLabel: first.dateLabel,
-    dayLabel: first.dayLabel,
+    dayLabel: crossesYear(days, index) ? formatIsoDate(first.loggedOn) : first.dayLabel,
     weekdayLabel: first.weekdayLabel,
     entries: [first, ...rest],
   }));
+}
+
+// A day next to a day in another year says which year it is, and so does its neighbour:
+// a lone "Jan 12" above a "Jan 11" reads as one run of days when it isn't.
+function crossesYear(days: EntryView[][], index: number): boolean {
+  const yearOf = (day: EntryView[]) => day[0].loggedOn.slice(0, 4);
+  const year = yearOf(days[index]);
+
+  return [days[index - 1], days[index + 1]].some(
+    (neighbour) => neighbour !== undefined && yearOf(neighbour) !== year
+  );
 }
 
 // The rows are the session's spans, oldest first, so the last one is the half the

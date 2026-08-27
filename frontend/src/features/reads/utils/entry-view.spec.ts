@@ -244,6 +244,25 @@ describe('toDayGroups', () => {
     expect(groups.map((group) => group.loggedOn)).toEqual(['2025-06-15', '2025-06-14']);
   });
 
+  it('names the year on both days either side of a year boundary', () => {
+    const groups = toDayGroups(
+      toEntryViews(
+        [
+          buildPageLog({ logged_on: '2021-01-11' }),
+          buildPageLog({ logged_on: '2026-01-12' }),
+          buildPageLog({ logged_on: '2026-01-13' }),
+        ],
+        print
+      )
+    );
+
+    expect(groups.map((group) => group.dayLabel)).toEqual([
+      'Jan 13',
+      'Jan 12, 2026',
+      'Jan 11, 2021',
+    ]);
+  });
+
   it('returns nothing for a read with no entries', () => {
     expect(toDayGroups([])).toEqual([]);
   });
