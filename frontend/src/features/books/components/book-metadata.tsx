@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { localIsoDate } from '@/utils/local-date';
+import { statusUpdateBody } from '@/utils/status';
 import { LogReadingSheet } from './log-reading-sheet';
 
 const STATUS_LABELS: Record<ReadingStatus, string> = {
@@ -110,7 +110,7 @@ export function BookMetadata({
                       ? setAddOpen(true)
                       : updateStatus.mutate({
                           engagementId: current.id,
-                          data: { status, effective_on: localIsoDate() },
+                          data: statusUpdateBody(status),
                         })
                   }
                 >

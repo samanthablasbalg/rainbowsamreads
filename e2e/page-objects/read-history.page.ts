@@ -20,6 +20,7 @@ export class ReadHistoryPage {
   readonly finishDateInput: Locator;
   readonly saveFinishDateButton: Locator;
   readonly cancelFinishDateButton: Locator;
+  readonly abandonDate: Locator;
   readonly lengthButton: Locator;
   readonly lengthInput: Locator;
   readonly saveLengthButton: Locator;
@@ -48,6 +49,10 @@ export class ReadHistoryPage {
     this.finishDateInput = page.getByLabel('finish date', { exact: true });
     this.saveFinishDateButton = page.getByRole('button', { name: 'Save finish date' });
     this.cancelFinishDateButton = page.getByRole('button', { name: 'Cancel finish date edit' });
+    // A DNF read shows an abandon date where a finished one shows a finish date. The
+    // backend derives it, so it renders as the same control the other dates use, only
+    // disabled -- still a button, and its text is the date.
+    this.abandonDate = page.getByRole('button', { name: 'Edit abandon date' });
     this.lengthButton = page.getByRole('button', { name: 'Edit print length' });
     // Unlike the dates, the length editor is a text input, so it does carry a textbox
     // role. A read bound in two formats shows one length per format, so the control is

@@ -209,7 +209,7 @@ describe('ReadingCard', () => {
     await user.click(screen.getByRole('button', { name: 'Mark as DNF' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ status: 'dnf', effective_on: localIsoDate() });
+    expect(capturedBody).toEqual({ status: 'dnf' });
   });
 
   it('deletes the engagement, after confirming, when Delete is chosen', async () => {

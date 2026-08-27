@@ -26,7 +26,7 @@ import { ReadingProgress } from '@/components/common/reading-progress';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { authorNames, coverSrc } from '@/utils/book';
-import { localIsoDate } from '@/utils/local-date';
+import { statusUpdateBody } from '@/utils/status';
 import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
 import { AddFormatSheet } from './add-format-sheet';
 
@@ -77,10 +77,7 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
     } else if (pendingAction !== null) {
       updateStatus.mutate({
         engagementId: engagement.id,
-        data: {
-          status: EngagementStatusUpdateStatus[pendingAction],
-          effective_on: localIsoDate(),
-        },
+        data: statusUpdateBody(EngagementStatusUpdateStatus[pendingAction]),
       });
     }
     setPendingAction(null);
