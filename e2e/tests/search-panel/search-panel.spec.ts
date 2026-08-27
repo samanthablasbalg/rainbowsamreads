@@ -61,7 +61,7 @@ test('Adding a catalog result to my library sets its status', async ({ page, api
   const title = "The Cartographer's Quiet Room";
 
   await test.step('Create a catalog book with no engagement', async () => {
-    await apiClient.createBook(title, 'Mira Voss');
+    await apiClient.createBook(title, 'Mira Voss', 288);
     await currentlyReading.goto();
   });
 
