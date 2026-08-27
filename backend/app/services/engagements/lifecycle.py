@@ -13,7 +13,7 @@ from app.crud import (
     engagement_edition_crud,
     progress_log_crud,
 )
-from app.exceptions import ConflictError, NotFoundError
+from app.exceptions import ConflictError, InvalidOperationError, NotFoundError
 from app.models.edition import Edition, EngagementEdition
 from app.models.engagement import Engagement
 from app.models.enums import Format, LogUnit, ReadingStatus
@@ -166,8 +166,26 @@ def _reject_duplicate_reading(db: Session, engagement: Engagement) -> None:
         raise ConflictError("Already reading another engagement for this book.")
 
 
+def _closing_unit(engagement: Engagement, unit: LogUnit | None) -> LogUnit:
+    """Which ruler the closing span is measured on. A read going in one format has only
+    one answer; a read going in both has to be told which, which is what the finish
+    sheet asks for."""
+    if unit is not None:
+        return unit
+    if engagement.page_format is None:
+        return LogUnit.minutes
+    if Format.audio not in engagement.formats:
+        return LogUnit.pages
+    raise InvalidOperationError(
+        "This read is going in more than one format, so finishing it needs a unit."
+    )
+
+
 def _transition_to_finished(
-    db: Session, engagement: Engagement, effective_on: datetime.date
+    db: Session,
+    engagement: Engagement,
+    effective_on: datetime.date,
+    unit: LogUnit | None,
 ) -> None:
     latest = latest_log(engagement.progress_logs)
     if latest is not None and effective_on < latest.logged_on:
@@ -181,11 +199,7 @@ def _transition_to_finished(
 
     engagement.finished_on = effective_on
 
-    # The closing log lands on the ruler the read was last logged on. With nothing
-    # logged there is no ruler to read off, so audio wins as it did before.
-    unit = engagement.resume_unit or (
-        LogUnit.minutes if Format.audio in engagement.formats else LogUnit.pages
-    )
+    unit = _closing_unit(engagement, unit)
     is_audio = unit == LogUnit.minutes
     length = engagement.resolve_length(
         Format.audio if is_audio else (engagement.page_format or Format.print)
@@ -232,6 +246,7 @@ def update_status(
     *,
     new_status: ReadingStatus,
     effective_on: datetime.date | None,
+    unit: LogUnit | None = None,
 ) -> None:
     if new_status == engagement.status:
         return
@@ -248,7 +263,7 @@ def update_status(
             engagement.finished_on = None
             engagement.abandoned_on = None
         case ReadingStatus.finished:
-            _transition_to_finished(db, engagement, resolved_on)
+            _transition_to_finished(db, engagement, resolved_on, unit)
         case ReadingStatus.dnf:
             _transition_to_dnf(engagement, effective_on, resolved_on)
 

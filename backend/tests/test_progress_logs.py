@@ -629,7 +629,10 @@ def test_re_coverage_does_not_move_a_finished_read_past_the_frontier(
     _bind_edition(client, engagement["id"], digital_id)
     _log_progress(client, engagement["id"], 75, page_start=50)
 
-    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "finished"})
+    client.patch(
+        f"/api/engagements/{engagement['id']}",
+        json={"status": "finished", "unit": "minutes"},
+    )
 
     logs = client.get(f"/api/engagements/{engagement['id']}/progress-logs").json()
     assert (logs[-1]["minute_start"], logs[-1]["minute_end"]) == (120, 480)
@@ -638,16 +641,17 @@ def test_re_coverage_does_not_move_a_finished_read_past_the_frontier(
 # --- Finish log ---
 
 
-def test_finish_closes_out_on_the_ruler_last_logged_on(
+def test_finish_closes_out_on_the_ruler_it_was_given(
     client: TestClient, db: Session
 ) -> None:
-    """Audio is bound, but the last session was print -- so the closing log is the rest
-    of the pages, not the rest of the audiobook."""
+    """Both rulers are bound, so finishing says which one it ends on -- here pages, so
+    the closing log is the rest of the pages, not the rest of the audiobook."""
     engagement = _mixed_engagement(client)
     _log_progress(client, engagement["id"], 220)
 
     response = client.patch(
-        f"/api/engagements/{engagement['id']}", json={"status": "finished"}
+        f"/api/engagements/{engagement['id']}",
+        json={"status": "finished", "unit": "pages"},
     )
     assert response.status_code == 200
     assert response.json()["completion_pct"] == 100
@@ -664,6 +668,61 @@ def test_finish_closes_out_on_the_ruler_last_logged_on(
     final_log = max(logs, key=lambda log: (log.logged_on, log.created_at))
     assert final_log.unit == LogUnit.pages
     assert (final_log.page_start, final_log.page_end) == (220, 440)
+
+
+def test_finish_closes_out_on_the_other_ruler_when_told_to(
+    client: TestClient, db: Session
+) -> None:
+    """Same read, same sessions, minutes asked for instead: the closing log runs out the
+    audiobook from the shared frontier, 220/440 pages being 215 of 430 minutes."""
+    engagement = _mixed_engagement(client)
+    _log_progress(client, engagement["id"], 220)
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}",
+        json={"status": "finished", "unit": "minutes"},
+    )
+    assert response.status_code == 200
+    assert response.json()["completion_pct"] == 100
+
+    logs = (
+        db.execute(
+            select(ProgressLog).where(
+                ProgressLog.engagement_id == uuid.UUID(engagement["id"])
+            )
+        )
+        .scalars()
+        .all()
+    )
+    final_log = max(logs, key=lambda log: (log.logged_on, log.created_at))
+    assert final_log.unit == LogUnit.minutes
+    assert (final_log.minute_start, final_log.minute_end) == (215, 430)
+
+
+def test_finish_a_multi_format_read_without_a_unit_returns_422(
+    client: TestClient,
+) -> None:
+    """Nothing logged, so there is no ruler to read off and two to choose between. The
+    sheet asks; an API call that doesn't is refused rather than guessed at."""
+    engagement = _mixed_engagement(client)
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}", json={"status": "finished"}
+    )
+    assert response.status_code == 422
+
+
+def test_finish_a_single_format_read_needs_no_unit(client: TestClient) -> None:
+    """One ruler bound is not a choice, so finishing still works unasked."""
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], page_count=300)
+    engagement = _create_engagement(client, book["id"])
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}", json={"status": "finished"}
+    )
+    assert response.status_code == 200
+    assert response.json()["completion_pct"] == 100
 
 
 def test_finish_creates_final_progress_log(client: TestClient, db: Session) -> None:

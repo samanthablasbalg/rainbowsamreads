@@ -2335,13 +2335,24 @@
               }
             ],
             "title": "Effective On"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LogUnit"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
         "required": [
           "status"
         ],
-        "title": "EngagementStatusUpdate"
+        "title": "EngagementStatusUpdate",
+        "description": "`unit` picks the ruler the closing log is written on when finishing a read that\nhas been going in more than one. Defaults to the one the read is already on."
       },
       "Format": {
         "type": "string",

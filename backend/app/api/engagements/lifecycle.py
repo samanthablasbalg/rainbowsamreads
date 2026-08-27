@@ -58,6 +58,7 @@ def update_engagement_status(
         engagement,
         new_status=ReadingStatus(payload.status),
         effective_on=payload.effective_on,
+        unit=payload.unit,
     )
     db.commit()
     return EngagementRead.model_validate(reload(db, engagement_id))
