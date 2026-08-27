@@ -128,10 +128,12 @@ export class ApiClient {
   /**
    * Marks an engagement as finished.
    * @param engagementId - The engagement to finish.
+   * @param effectiveOn - The date the read ended, yyyy-mm-dd. Defaults to today. Pass it
+   *   when a test needs the finish date to sit on a seeded log rather than on today.
    */
-  async markAsFinished(engagementId: string): Promise<void> {
+  async markAsFinished(engagementId: string, effectiveOn?: string): Promise<void> {
     await this.request.patch(`/api/engagements/${engagementId}`, {
-      data: { status: 'finished' },
+      data: { status: 'finished', ...(effectiveOn != null && { effective_on: effectiveOn }) },
     });
   }
 

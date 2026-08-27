@@ -113,6 +113,17 @@ export class ReadHistoryPage {
   }
 
   /**
+   * Sets the read's finish date through the inline editor. Only a finished read offers
+   * this as a correction -- on a read still in progress the same control finishes it.
+   * @param date - The date in yyyy-mm-dd format.
+   */
+  async setFinishDate(date: string): Promise<void> {
+    await this.finishDateButton.click();
+    await this.finishDateInput.fill(date);
+    await this.saveFinishDateButton.click();
+  }
+
+  /**
    * Corrects the read's length through the inline editor.
    * @param length - Pages as a number, or HH:MM for an audio read.
    */
