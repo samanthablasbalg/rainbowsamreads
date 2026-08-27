@@ -274,44 +274,93 @@ def apply_date_change(
     finished_on: datetime.date | None,
     abandoned_on: datetime.date | None = None,
 ) -> None:
-    logs = sorted(
-        engagement.progress_logs, key=lambda log: (log.logged_on, log.created_at)
-    )
-    earliest_log_date = logs[0].logged_on if logs else None
-    latest_log_date = logs[-1].logged_on if logs else None
+    """Corrects the dates a read already has.
 
-    effective_started = started_on if started_on is not None else engagement.started_on
-
-    if (
-        started_on is not None
-        and earliest_log_date is not None
-        and started_on > earliest_log_date
-    ):
-        raise ConflictError("started_on cannot be after the earliest progress log.")
-
-    # A read has one end date, in whichever column matches how it ended, and both
-    # answer to the same two rules.
-    for name, incoming, current in (
-        ("finished_on", finished_on, engagement.finished_on),
-        ("abandoned_on", abandoned_on, engagement.abandoned_on),
-    ):
-        effective_end = incoming if incoming is not None else current
-        if (
-            effective_end is not None
-            and effective_started is not None
-            and effective_end < effective_started
-        ):
-            raise ConflictError(f"{name} cannot be before started_on.")
-        if (
-            incoming is not None
-            and latest_log_date is not None
-            and incoming < latest_log_date
-        ):
-            raise ConflictError(f"{name} cannot be before the latest progress log.")
-
+    A date moved onto the session at its boundary takes that session with it rather than
+    being refused: correcting a start you got wrong shouldn't mean correcting the first
+    log first, then the date. What is still refused is a move that would carry the
+    boundary session past its neighbour, because the order of the logs is what the
+    frontier and the re-read split are read from.
+    """
     if started_on is not None:
+        _make_room_for_start(
+            engagement, started_on, _end_date(engagement, finished_on, abandoned_on)
+        )
         engagement.started_on = started_on
+
+    # A read has one end date, in whichever column matches how it ended, and both answer
+    # to the same rules.
     if finished_on is not None:
+        _make_room_for_end(engagement, finished_on, engagement.finished_on)
         engagement.finished_on = finished_on
     if abandoned_on is not None:
+        _make_room_for_end(engagement, abandoned_on, engagement.abandoned_on)
         engagement.abandoned_on = abandoned_on
+
+
+def _end_date(
+    engagement: Engagement,
+    finished_on: datetime.date | None,
+    abandoned_on: datetime.date | None,
+) -> datetime.date | None:
+    """The end date a new start has to stay behind: whatever this request is setting it
+    to, falling back to whichever column the read already has."""
+    return (
+        finished_on or abandoned_on or engagement.finished_on or engagement.abandoned_on
+    )
+
+
+def _log_dates(engagement: Engagement) -> list[datetime.date]:
+    return sorted({log.logged_on for log in engagement.progress_logs})
+
+
+def _shift_logs_on(
+    engagement: Engagement, day: datetime.date, to: datetime.date
+) -> None:
+    """Every log on `day` moves, not just the one at the boundary: same-day sessions
+    have to stay on the same side of it, and a session that crossed the frontier is two
+    rows sharing a day."""
+    for log in engagement.progress_logs:
+        if log.logged_on == day:
+            log.logged_on = to
+
+
+def _make_room_for_start(
+    engagement: Engagement,
+    new_start: datetime.date,
+    end_date: datetime.date | None,
+) -> None:
+    dates = _log_dates(engagement)
+    # Only a start moving onto the first session drags it. One moving earlier just opens
+    # a gap, because starting a read doesn't write a log the way finishing one does.
+    dragging = bool(dates) and new_start > dates[0]
+    if dragging and len(dates) > 1 and new_start > dates[1]:
+        raise ConflictError(
+            f"This read has a session on {dates[1]}, so it can't have started after"
+            " that."
+        )
+    if end_date is not None and new_start > end_date:
+        raise ConflictError("A read can't start after the date it ended.")
+    if dragging:
+        _shift_logs_on(engagement, dates[0], new_start)
+
+
+def _make_room_for_end(
+    engagement: Engagement,
+    new_end: datetime.date,
+    current_end: datetime.date | None,
+) -> None:
+    dates = _log_dates(engagement)
+    # Moving earlier drags the last session back with it. Moving later drags it only
+    # when it was sitting on the end date, which is where finishing a read puts the
+    # closing log it writes -- a session logged before that date stays where it was.
+    dragging = bool(dates) and (new_end < dates[-1] or dates[-1] == current_end)
+    if dragging and len(dates) > 1 and new_end < dates[-2]:
+        raise ConflictError(
+            f"This read has a session on {dates[-2]}, so it can't have ended before"
+            " that."
+        )
+    if engagement.started_on is not None and new_end < engagement.started_on:
+        raise ConflictError("A read can't end before the date it started.")
+    if dragging:
+        _shift_logs_on(engagement, dates[-1], new_end)
