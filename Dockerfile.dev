@@ -64,9 +64,9 @@ RUN git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git /root/.oh-my-zsh 
     && cp /root/.oh-my-zsh/templates/zshrc.zsh-template /root/.zshrc \
     && chsh -s /usr/bin/zsh root
 
-# Claude Code runs inside the container. Only the binary lives here; config,
+# Coding agents run inside the container. Only their binaries live here; config,
 # auth and memory are mounted from the host at run time.
-RUN npm install -g @anthropic-ai/claude-code
+RUN npm install -g @anthropic-ai/claude-code @openai/codex
 
 # Python dependencies, at /opt/venv — outside the repo on purpose. A venv inside
 # the repo would sit under the bind mount and need a named volume to stay fast,
