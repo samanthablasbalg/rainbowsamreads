@@ -31,8 +31,8 @@ test('A read’s page is reachable from currently reading and lists its entries'
   await test.step('Verify both entries and the read’s dates are shown', async () => {
     await expect(history.getDayGroup('Sun, Jun 15, 2025')).toBeVisible();
     await expect(history.getDayGroup('Sat, Jun 14, 2025')).toBeVisible();
-    await expect(history.startDateButton).toBeVisible();
-    await expect(history.finishDateButton).toBeVisible();
+    await expect(history.getDateDisplay('start date')).toBeVisible();
+    await expect(history.getDateDisplay('finish date')).toBeVisible();
   });
 });
 

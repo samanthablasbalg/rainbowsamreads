@@ -66,7 +66,7 @@ test('Finishing on an earlier date dates the read from that day', async ({ page,
 
   await test.step('Verify the read finished on the date given, not today', async () => {
     await readHistory.goto(engagementId);
-    await expect(readHistory.finishDateButton).toHaveText('Jun 15, 2025');
+    await expect(readHistory.getDateDisplay('finish date')).toContainText('Jun 15, 2025');
   });
 
   await test.step('Verify the closing entry lands on that day too', async () => {

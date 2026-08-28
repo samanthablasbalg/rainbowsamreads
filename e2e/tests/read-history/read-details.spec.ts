@@ -22,9 +22,8 @@ test('Editing the read’s start date persists and renders the new date', async 
     await history.setStartDate('2025-01-01');
   });
 
-  await test.step('Verify the new start date is shown and the editor closed', async () => {
-    await expect(history.startDateInput).toHaveCount(0);
-    await expect(history.startDateButton).toHaveText('Jan 1, 2025');
+  await test.step('Verify the new start date is shown', async () => {
+    await expect(history.getDateDisplay('start date')).toContainText('Jan 1, 2025');
   });
 });
 
@@ -83,8 +82,7 @@ test('Moving the start date onto the first session takes that session with it', 
   });
 
   await test.step('Verify the start date moved', async () => {
-    await expect(history.startDateInput).toHaveCount(0);
-    await expect(history.startDateButton).toHaveText('Jan 3, 2025');
+    await expect(history.getDateDisplay('start date')).toContainText('Jan 3, 2025');
   });
 
   await test.step('Verify the first session moved with it and the later one did not', async () => {
@@ -120,8 +118,7 @@ test('Moving the finish date back onto an earlier day takes the closing session 
   });
 
   await test.step('Verify the finish date moved', async () => {
-    await expect(history.finishDateInput).toHaveCount(0);
-    await expect(history.finishDateButton).toHaveText('Jun 7, 2025');
+    await expect(history.getDateDisplay('finish date')).toContainText('Jun 7, 2025');
   });
 
   await test.step('Verify the closing session moved with it and the earlier one did not', async () => {

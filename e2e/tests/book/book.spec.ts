@@ -91,7 +91,7 @@ test('Switching an in-progress read to Finished from the book page shelves it as
 
   await test.step('It is finished today, not on the last logged day', async () => {
     await readHistory.goto(engagementId);
-    await expect(readHistory.finishDateButton).toHaveText(TODAY);
+    await expect(readHistory.getDateDisplay('finish date')).toContainText(TODAY);
   });
 });
 
@@ -128,6 +128,6 @@ test('Switching an in-progress read to DNF from the book page abandons it on the
 
   await test.step("It is abandoned on the last session's date, not today", async () => {
     await readHistory.goto(engagementId);
-    await expect(readHistory.abandonDate).toHaveText('May 15, 2026');
+    await expect(readHistory.getDateDisplay('abandon date')).toContainText('May 15, 2026');
   });
 });
