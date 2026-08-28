@@ -7,8 +7,15 @@ import {
   useEngagementsGetEngagementSuspense,
   useEngagementsUpdateEngagementDates,
   useEngagementsUpdateEngagementLength,
+  useEngagementsUpdateEngagementStatus,
 } from '@/api/generated/engagements/engagements';
-import { Format, ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
+import {
+  EngagementStatusUpdateStatus,
+  Format,
+  ReadingStatus,
+  type EngagementDatesUpdate,
+  type EngagementRead,
+} from '@/api/generated/readingTracker.schemas';
 import { errorDetail, type DetailError } from '@/api/error-detail';
 import { CoverImage } from '@/components/common/cover-image';
 import { ErrorText } from '@/components/common/error-text';
@@ -68,8 +75,6 @@ function BackLink({ status }: { status: ReadingStatus }) {
   );
 }
 
-// `field: null` means "show it, don't open it": PATCH /dates takes started_on and
-// finished_on and nothing else, so an abandoned date is readable and not writable.
 function dateFields(engagement: EngagementRead) {
   const started = {
     field: 'started_on' as const,
@@ -81,7 +86,12 @@ function dateFields(engagement: EngagementRead) {
   return engagement.status === ReadingStatus.dnf
     ? [
         started,
-        { field: null, prefix: 'Abandoned', label: 'abandon date', value: engagement.abandoned_on },
+        {
+          field: 'abandoned_on' as const,
+          prefix: 'Abandoned',
+          label: 'abandon date',
+          value: engagement.abandoned_on,
+        },
       ]
     : [
         started,
@@ -113,6 +123,22 @@ function ReadHeader({
   const updateLength = useEngagementsUpdateEngagementLength<DetailError>({
     mutation: { onSuccess },
   });
+  const finishRead = useEngagementsUpdateEngagementStatus<DetailError>({
+    mutation: { onSuccess },
+  });
+
+  // A finish date on a read still in progress is a transition, not a correction: only
+  // the status endpoint shelves it as finished and closes out the progress left over.
+  function saveDate(field: keyof EngagementDatesUpdate, value: string) {
+    return field === 'finished_on' && engagement.status === ReadingStatus.reading
+      ? finishRead.mutateAsync({
+          engagementId: engagement.id,
+          data: { status: EngagementStatusUpdateStatus.finished, effective_on: value },
+        })
+      : updateDates.mutateAsync({ engagementId: engagement.id, data: { [field]: value } });
+  }
+
+  const dateError = updateDates.error ?? finishRead.error;
 
   return (
     <header className="mb-6 flex items-start gap-3 sm:gap-4">
@@ -160,14 +186,7 @@ function ReadHeader({
               <InlineDateEdit
                 value={value}
                 label={label}
-                disabled={field === null}
-                onSave={async (next) => {
-                  if (field)
-                    await updateDates.mutateAsync({
-                      engagementId: engagement.id,
-                      data: { [field]: next },
-                    });
-                }}
+                onSave={(next) => saveDate(field, next)}
               />
             </span>
           ))}
@@ -190,9 +209,9 @@ function ReadHeader({
           </Button>
         )}
 
-        {updateDates.isError && (
+        {dateError && (
           <ErrorText>
-            {errorDetail(updateDates.error, "Couldn't save that date. Please try again.")}
+            {errorDetail(dateError, "Couldn't save that date. Please try again.")}
           </ErrorText>
         )}
         {updateLength.isError && (

@@ -1946,6 +1946,18 @@
               }
             ],
             "title": "Started On"
+          },
+          "finished_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished On"
           }
         },
         "type": "object",
@@ -1953,7 +1965,8 @@
           "book_id",
           "edition_format"
         ],
-        "title": "EngagementCreate"
+        "title": "EngagementCreate",
+        "description": "`finished_on` is the date the read ended, whichever way it ended: it lands in\n`abandoned_on` when the status is dnf."
       },
       "EngagementDatesUpdate": {
         "properties": {
@@ -1980,10 +1993,23 @@
               }
             ],
             "title": "Finished On"
+          },
+          "abandoned_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abandoned On"
           }
         },
         "type": "object",
-        "title": "EngagementDatesUpdate"
+        "title": "EngagementDatesUpdate",
+        "description": "Corrects dates a read already has. Ending a read is the status endpoint's job:\n`finished_on` here edits a finished read, `abandoned_on` a dnf one."
       },
       "EngagementEditionCreate": {
         "properties": {
@@ -2309,13 +2335,24 @@
               }
             ],
             "title": "Effective On"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LogUnit"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
         "required": [
           "status"
         ],
-        "title": "EngagementStatusUpdate"
+        "title": "EngagementStatusUpdate",
+        "description": "`unit` picks the ruler the closing log is written on when finishing a read that\nhas been going in more than one. Defaults to the one the read is already on."
       },
       "Format": {
         "type": "string",

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { errorDetail, type DetailError } from '@/api/error-detail';
@@ -8,7 +7,11 @@ import {
   getEngagementsListEngagementsQueryKey,
   useEngagementsCreateEngagement,
 } from '@/api/generated/engagements/engagements';
-import { Format, type BookRead } from '@/api/generated/readingTracker.schemas';
+import {
+  EngagementCreateStatus,
+  Format,
+  type BookRead,
+} from '@/api/generated/readingTracker.schemas';
 import { ErrorText } from '@/components/common/error-text';
 import { PositionInput } from '@/components/common/position-input';
 import { Button } from '@/components/ui/button';
@@ -28,32 +31,101 @@ import { formatLength, lengthField, parseLength } from '@/utils/length';
 import { localIsoDate } from '@/utils/local-date';
 import { STATUSES } from '@/utils/status';
 
+const READING_ONLY = [EngagementCreateStatus.reading];
+
 type StartReadingSheetProps = {
   book: BookRead;
+  // More than one turns the sheet into two steps, asking where the read goes before
+  // asking how it was read. One (the default) goes straight to the form.
+  statuses?: EngagementCreateStatus[];
+  cancelLabel?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // Where a started read belongs next is the caller's call: the catalog sends you to the
+  // Reading shelf, the book page leaves you on the book you just picked up again.
+  onStarted?: () => void;
 };
 
-export function StartReadingSheet({ book, open, onOpenChange }: StartReadingSheetProps) {
+export function StartReadingSheet({ open, onOpenChange, ...props }: StartReadingSheetProps) {
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent>
-        <StartReadingForm book={book} onDone={() => onOpenChange(false)} />
+        <StartReadingForm {...props} onDone={() => onOpenChange(false)} />
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
 }
 
-function StartReadingForm({ book, onDone }: { book: BookRead; onDone: () => void }) {
-  const form = useStartReadingForm(book, onDone);
+type StartReadingFormProps = Omit<StartReadingSheetProps, 'open' | 'onOpenChange'> & {
+  onDone: () => void;
+};
+
+function StartReadingForm({
+  book,
+  statuses = READING_ONLY,
+  cancelLabel = 'Cancel',
+  onDone,
+  onStarted,
+}: StartReadingFormProps) {
+  const form = useStartReadingForm(book, statuses, onDone, onStarted);
 
   return (
     <>
       <ResponsiveDialogHeader>
         <ResponsiveDialogTitle>{book.title}</ResponsiveDialogTitle>
-        <ResponsiveDialogDescription>How are you reading it?</ResponsiveDialogDescription>
+        <ResponsiveDialogDescription>
+          {form.step === 'status'
+            ? 'Where does it go?'
+            : form.isReading
+              ? 'How are you reading it?'
+              : 'How did you read it?'}
+        </ResponsiveDialogDescription>
       </ResponsiveDialogHeader>
 
+      {form.step === 'status' ? (
+        <>
+          <ResponsiveDialogBody>
+            <div className="flex flex-col gap-2">
+              {statuses.map((status) => (
+                <Button
+                  key={status}
+                  variant="outline"
+                  className="justify-start"
+                  aria-label={`Add ${book.title} as ${STATUSES[status].label}`}
+                  onClick={() => form.pickStatus(status)}
+                >
+                  {STATUSES[status].label}
+                </Button>
+              ))}
+            </div>
+          </ResponsiveDialogBody>
+
+          <ResponsiveDialogFooter>
+            <Button variant="outline" onClick={onDone}>
+              {cancelLabel}
+            </Button>
+          </ResponsiveDialogFooter>
+        </>
+      ) : (
+        <StartReadingFields form={form} book={book} cancelLabel={cancelLabel} onDone={onDone} />
+      )}
+    </>
+  );
+}
+
+function StartReadingFields({
+  form,
+  book,
+  cancelLabel,
+  onDone,
+}: {
+  form: ReturnType<typeof useStartReadingForm>;
+  book: BookRead;
+  cancelLabel: string;
+  onDone: () => void;
+}) {
+  return (
+    <>
       <ResponsiveDialogBody>
         <div role="group" aria-label="Format" className="flex flex-col gap-2">
           {Object.values(Format).map((format) => (
@@ -100,35 +172,64 @@ function StartReadingForm({ book, onDone }: { book: BookRead; onDone: () => void
             value={form.startedOn}
             onChange={(event) => form.setStartedOn(event.target.value)}
           />
+          {!form.isReading && (
+            <FieldDescription>Leave either date blank if you don't know it.</FieldDescription>
+          )}
         </Field>
+
+        {!form.isReading && (
+          <Field>
+            <FieldLabel htmlFor="start-reading-finish-date">{form.finishLabel}</FieldLabel>
+            <Input
+              id="start-reading-finish-date"
+              type="date"
+              max={localIsoDate()}
+              value={form.finishedOn}
+              onChange={(event) => form.setFinishedOn(event.target.value)}
+            />
+          </Field>
+        )}
 
         {form.error && <ErrorText>{form.error}</ErrorText>}
       </ResponsiveDialogBody>
 
       <ResponsiveDialogFooter>
         <Button variant="outline" disabled={form.startPending} onClick={onDone}>
-          Cancel
+          {cancelLabel}
         </Button>
         <Button
           disabled={!form.canStart || form.startPending}
-          aria-label={`Start reading ${book.title}`}
+          aria-label={`${form.submitLabel} ${book.title}`}
           onClick={form.handleStart}
         >
-          Start reading
+          {form.submitLabel}
         </Button>
       </ResponsiveDialogFooter>
     </>
   );
 }
 
-function useStartReadingForm(book: BookRead, onClose: () => void) {
+// A read in progress starts today unless you say otherwise. One logged after the fact
+// starts blank -- prefilling today would record a date you never claimed.
+function defaultStartedOn(status: EngagementCreateStatus) {
+  return status === EngagementCreateStatus.reading ? localIsoDate() : '';
+}
+
+function useStartReadingForm(
+  book: BookRead,
+  statuses: EngagementCreateStatus[],
+  onClose: () => void,
+  onStarted?: () => void
+) {
+  const [status, setStatus] = useState(statuses[0]!);
+  const [step, setStep] = useState<'status' | 'fields'>(statuses.length > 1 ? 'status' : 'fields');
   const [format, setFormat] = useState<Format>(Format.print);
   const [length, setLengthRaw] = useState('');
   const [lengthFocused, setLengthFocused] = useState(false);
-  const [startedOn, setStartedOn] = useState(localIsoDate());
+  const [startedOn, setStartedOn] = useState(defaultStartedOn(statuses[0]!));
+  const [finishedOn, setFinishedOn] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const createEngagement = useEngagementsCreateEngagement<DetailError>({
@@ -139,7 +240,7 @@ function useStartReadingForm(book: BookRead, onClose: () => void) {
           queryClient.invalidateQueries({ queryKey: getBooksListBookEngagementsQueryKey(book.id) }),
         ]);
         onClose();
-        navigate(STATUSES.reading.to);
+        onStarted?.();
       },
       onError: (err) => {
         setError(errorDetail(err, 'Failed to start this read. Please try again.'));
@@ -164,6 +265,12 @@ function useStartReadingForm(book: BookRead, onClose: () => void) {
     setError(null);
   }
 
+  function pickStatus(picked: EngagementCreateStatus) {
+    setStatus(picked);
+    setStartedOn(defaultStartedOn(picked));
+    setStep('fields');
+  }
+
   function handleStart() {
     if (typed && parsedLength === null) return;
     setError(null);
@@ -171,8 +278,9 @@ function useStartReadingForm(book: BookRead, onClose: () => void) {
       data: {
         book_id: book.id,
         edition_format: format,
-        status: 'reading',
-        started_on: startedOn,
+        status,
+        ...(startedOn && { started_on: startedOn }),
+        ...(finishedOn && { finished_on: finishedOn }),
         ...(typed && parsedLength !== null && lengthField(isAudio, knownLength, parsedLength)),
       },
     });
@@ -185,7 +293,16 @@ function useStartReadingForm(book: BookRead, onClose: () => void) {
         : 'Enter a number of pages'
       : null;
 
+  const isReading = status === EngagementCreateStatus.reading;
+
   return {
+    step,
+    pickStatus,
+    isReading,
+    submitLabel: isReading ? 'Start reading' : 'Add',
+    finishLabel: status === EngagementCreateStatus.dnf ? 'Stopped on' : 'Finish date',
+    finishedOn,
+    setFinishedOn,
     format,
     pickFormat,
     isAudio,

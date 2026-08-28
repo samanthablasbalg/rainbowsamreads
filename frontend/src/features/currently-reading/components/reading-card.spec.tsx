@@ -168,7 +168,7 @@ describe('ReadingCard', () => {
     );
   });
 
-  it('marks the engagement finished, after confirming, when Mark as finished is chosen', async () => {
+  it('marks the engagement finished, through the finish sheet, when Mark as finished is chosen', async () => {
     const user = userEvent.setup();
     let capturedBody: unknown;
     server.use(
@@ -180,11 +180,9 @@ describe('ReadingCard', () => {
     renderInList(buildEngagement());
 
     await openOverflowMenuAndChoose(user, 'Mark Piranesi as finished');
-    expect(
-      await screen.findByRole('dialog', { name: 'Mark "Piranesi" as finished?' })
-    ).toBeVisible();
+    expect(await screen.findByRole('dialog', { name: 'Mark as finished' })).toBeVisible();
 
-    await user.click(screen.getByRole('button', { name: 'Mark finished' }));
+    await user.click(screen.getByRole('button', { name: 'Mark Piranesi as finished' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(capturedBody).toEqual({ status: 'finished', effective_on: localIsoDate() });
@@ -209,7 +207,7 @@ describe('ReadingCard', () => {
     await user.click(screen.getByRole('button', { name: 'Mark as DNF' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ status: 'dnf', effective_on: localIsoDate() });
+    expect(capturedBody).toEqual({ status: 'dnf' });
   });
 
   it('deletes the engagement, after confirming, when Delete is chosen', async () => {

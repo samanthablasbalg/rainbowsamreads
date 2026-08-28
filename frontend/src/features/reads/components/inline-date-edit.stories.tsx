@@ -26,7 +26,3 @@ export const Set: Story = {};
 export const Unset: Story = {
   args: { value: null },
 };
-
-export const Disabled: Story = {
-  args: { disabled: true },
-};

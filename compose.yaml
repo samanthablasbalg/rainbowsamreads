@@ -366,6 +366,10 @@ services:
       # .claude.json under that directory rather than under $HOME, so it lands
       # inside this already-mounted, already-reliable directory.
       - ${HOME}/.claude:/root/.claude
+      # This must not be ~/.codex: that belongs to the macOS Codex app and contains
+      # MCP commands pointing into /Applications. The CLI gets an isolated Linux
+      # home, while scripts/codex keeps its skill links pointed at .claude/skills.
+      - ${HOME}/.codex-docker:/root/.codex-docker
       - ${HOME}/.gitconfig:/root/.gitconfig
       # Not covered by .gitconfig above. With core.excludesFile unset, git reads
       # global ignore rules from the XDG path instead, so without this mount
@@ -398,6 +402,10 @@ services:
       # See the comment on the .claude mount above: this redirects
       # .claude.json into that already-mounted, already-persisted directory.
       CLAUDE_CONFIG_DIR: /root/.claude
+
+      # Keep the Linux CLI's config separate from the macOS app's ~/.codex. In
+      # particular, the app's node_repl MCP binary cannot exist in this container.
+      CODEX_HOME: /root/.codex-docker
 
       # Strictly, this side only needs the matching *mount* above: it connects to
       # the absolute socket path recorded in the descriptor, which `e2e` wrote.

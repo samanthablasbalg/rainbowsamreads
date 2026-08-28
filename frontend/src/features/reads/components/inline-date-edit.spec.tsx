@@ -1,3 +1,4 @@
+import { fireEvent, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { render, screen } from '@/test/render';
 import { InlineDateEdit } from './inline-date-edit';
@@ -9,6 +10,22 @@ function renderEdit(props: Partial<Parameters<typeof InlineDateEdit>[0]> = {}) {
 }
 
 describe('InlineDateEdit', () => {
+  function useCoarsePointer() {
+    return vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query) =>
+        ({
+          media: query,
+          matches: query === '(pointer: coarse)',
+          onchange: null,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+          dispatchEvent: () => false,
+          addListener: () => {},
+          removeListener: () => {},
+        }) as MediaQueryList
+    );
+  }
+
   it('reads as text until it is opened', () => {
     renderEdit();
 
@@ -96,11 +113,38 @@ describe('InlineDateEdit', () => {
     expect(screen.queryByRole('button', { name: 'Edit start date' })).not.toBeInTheDocument();
   });
 
-  it('does not open when disabled', async () => {
-    renderEdit({ disabled: true });
+  it('opens a native picker directly and saves its selection on touch devices', async () => {
+    const matchMedia = useCoarsePointer();
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<InlineDateEdit value="2025-06-15" label="start date" onSave={onSave} />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Edit start date' }));
+    expect(screen.getByText('Jun 15, 2025')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Edit start date' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save start date' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Cancel start date edit' })
+    ).not.toBeInTheDocument();
 
-    expect(screen.queryByLabelText('start date')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Edit start date'), {
+      target: { value: '2025-06-20' },
+    }); // Native date picker selection has no userEvent API.
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith('2025-06-20'));
+    matchMedia.mockRestore();
+  });
+
+  it('keeps the saved date displayed when a touch save is refused', async () => {
+    const matchMedia = useCoarsePointer();
+    const onSave = vi.fn().mockRejectedValue(new Error('before the latest entry'));
+    render(<InlineDateEdit value="2025-06-15" label="start date" onSave={onSave} />);
+
+    fireEvent.change(screen.getByLabelText('Edit start date'), {
+      target: { value: '2025-01-01' },
+    }); // Native date picker selection has no userEvent API.
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith('2025-01-01'));
+    expect(screen.getByText('Jun 15, 2025')).toBeVisible();
+    expect(screen.getByLabelText('Edit start date')).toHaveValue('2025-06-15');
+    matchMedia.mockRestore();
   });
 });

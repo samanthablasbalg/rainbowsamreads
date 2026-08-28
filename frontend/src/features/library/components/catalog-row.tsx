@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { BookOpen01Icon, Delete02Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -8,10 +9,11 @@ import { errorDetail, type DetailError } from '@/api/error-detail';
 import { BookRow } from '@/components/common/book-row';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { ErrorText } from '@/components/common/error-text';
+import { StartReadingSheet } from '@/components/common/start-reading-sheet';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { authorNames, formatAudioLength, formatPageCount } from '@/utils/book';
-import { StartReadingSheet } from './start-reading-sheet';
+import { STATUSES } from '@/utils/status';
 
 function formatLengths({ default_page_count, default_audio_minutes }: BookRead): string | null {
   const lengths = [
@@ -24,6 +26,7 @@ function formatLengths({ default_page_count, default_audio_minutes }: BookRead):
 
 export function CatalogRow({ book }: { book: BookRead }) {
   const lengths = formatLengths(book);
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pickOpen, setPickOpen] = useState(false);
@@ -78,7 +81,12 @@ export function CatalogRow({ book }: { book: BookRead }) {
         </DropdownMenuItem>
       }
     >
-      <StartReadingSheet book={book} open={pickOpen} onOpenChange={setPickOpen} />
+      <StartReadingSheet
+        book={book}
+        open={pickOpen}
+        onOpenChange={setPickOpen}
+        onStarted={() => navigate(STATUSES.reading.to)}
+      />
 
       <ConfirmDialog
         open={confirmOpen}

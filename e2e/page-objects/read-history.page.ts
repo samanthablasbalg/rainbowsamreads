@@ -12,14 +12,15 @@ export class ReadHistoryPage {
   readonly backLink: Locator;
   readonly entries: Locator;
   readonly logProgressButton: Locator;
-  readonly startDateButton: Locator;
+  readonly startDateControl: Locator;
   readonly startDateInput: Locator;
   readonly saveStartDateButton: Locator;
   readonly cancelStartDateButton: Locator;
-  readonly finishDateButton: Locator;
+  readonly finishDateControl: Locator;
   readonly finishDateInput: Locator;
   readonly saveFinishDateButton: Locator;
   readonly cancelFinishDateButton: Locator;
+  readonly abandonDateControl: Locator;
   readonly lengthButton: Locator;
   readonly lengthInput: Locator;
   readonly saveLengthButton: Locator;
@@ -38,16 +39,24 @@ export class ReadHistoryPage {
     this.logProgressButton = page
       .getByRole('button', { name: 'Log progress' })
       .filter({ visible: true });
-    this.startDateButton = page.getByRole('button', { name: 'Edit start date' });
+    // A fine pointer gets the existing button-driven inline editor. A coarse pointer
+    // gets a native date input over the formatted date so its picker opens in the
+    // original tap. The shared aria-label is the stable boundary for this POM; the
+    // editing helpers below branch on the rendered element, not on a project name or
+    // viewport size.
+    this.startDateControl = page.getByLabel('Edit start date', { exact: true });
     // A native date input exposes no implicit `textbox` role, so the date fields go
     // through their label rather than getByRole -- the same as ProgressLogSheetPage.
     this.startDateInput = page.getByLabel('start date', { exact: true });
     this.saveStartDateButton = page.getByRole('button', { name: 'Save start date' });
     this.cancelStartDateButton = page.getByRole('button', { name: 'Cancel start date edit' });
-    this.finishDateButton = page.getByRole('button', { name: 'Edit finish date' });
+    this.finishDateControl = page.getByLabel('Edit finish date', { exact: true });
     this.finishDateInput = page.getByLabel('finish date', { exact: true });
     this.saveFinishDateButton = page.getByRole('button', { name: 'Save finish date' });
     this.cancelFinishDateButton = page.getByRole('button', { name: 'Cancel finish date edit' });
+    // A DNF read shows an abandon date where a finished one shows a finish date. The
+    // backend derives it, so it renders through the same control as the other dates.
+    this.abandonDateControl = page.getByLabel('Edit abandon date', { exact: true });
     this.lengthButton = page.getByRole('button', { name: 'Edit print length' });
     // Unlike the dates, the length editor is a text input, so it does carry a textbox
     // role. A read bound in two formats shows one length per format, so the control is
@@ -90,6 +99,15 @@ export class ReadHistoryPage {
   }
 
   /**
+   * Locates the visible formatted value for a read date in either pointer mode.
+   * @param label - The date's label, e.g. 'start date'.
+   * @returns The value container, which also carries its prefix such as 'Started'.
+   */
+  getDateDisplay(label: 'start date' | 'finish date' | 'abandon date'): Locator {
+    return this.page.getByRole('group', { name: `${label} value` });
+  }
+
+  /**
    * Opens one entry's edit sheet.
    * @param dateLabel - The row's date as rendered.
    */
@@ -102,9 +120,41 @@ export class ReadHistoryPage {
    * @param date - The date in yyyy-mm-dd format.
    */
   async setStartDate(date: string): Promise<void> {
-    await this.startDateButton.click();
-    await this.startDateInput.fill(date);
-    await this.saveStartDateButton.click();
+    await this.setDate(this.startDateControl, this.startDateInput, this.saveStartDateButton, date);
+  }
+
+  /**
+   * Sets the read's finish date through the inline editor. Only a finished read offers
+   * this as a correction -- on a read still in progress the same control finishes it.
+   * @param date - The date in yyyy-mm-dd format.
+   */
+  async setFinishDate(date: string): Promise<void> {
+    await this.setDate(
+      this.finishDateControl,
+      this.finishDateInput,
+      this.saveFinishDateButton,
+      date
+    );
+  }
+
+  async setDate(
+    control: Locator,
+    desktopInput: Locator,
+    saveButton: Locator,
+    date: string
+  ): Promise<void> {
+    // The control remains mounted as a type=date input on a coarse pointer. Filling it
+    // exercises the same change event as choosing from the native picker; there is no
+    // separate app-level approval step. On a fine pointer it starts as the button that
+    // opens the unchanged inline editor.
+    if ((await control.evaluate((element) => element.tagName)) === 'INPUT') {
+      await control.fill(date);
+      return;
+    }
+
+    await control.click();
+    await desktopInput.fill(date);
+    await saveButton.click();
   }
 
   /**

@@ -40,6 +40,7 @@ def create_engagement(
         audio_length_minutes=payload.audio_length_minutes,
         length_override=payload.length_override,
         started_on=payload.started_on,
+        finished_on=payload.finished_on,
     )
     db.commit()
     return EngagementRead.model_validate(reload(db, engagement.id))
@@ -57,6 +58,7 @@ def update_engagement_status(
         engagement,
         new_status=ReadingStatus(payload.status),
         effective_on=payload.effective_on,
+        unit=payload.unit,
     )
     db.commit()
     return EngagementRead.model_validate(reload(db, engagement_id))
@@ -70,7 +72,7 @@ def update_engagement_dates(
 ) -> EngagementRead:
     engagement = engagement_crud.get_or_raise(db, engagement_id)
     lifecycle_service.apply_date_change(
-        engagement, payload.started_on, payload.finished_on
+        engagement, payload.started_on, payload.finished_on, payload.abandoned_on
     )
     db.commit()
     return EngagementRead.model_validate(reload(db, engagement_id))

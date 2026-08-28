@@ -13,7 +13,9 @@ import {
   getEngagementsListEngagementsQueryKey,
   useEngagementsUpdateEngagementStatus,
 } from '@/api/generated/engagements/engagements';
+import { FinishReadSheet } from '@/components/common/finish-read-sheet';
 import { StarRating } from '@/components/common/star-rating';
+import { StartReadingSheet } from '@/components/common/start-reading-sheet';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -22,7 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { localIsoDate } from '@/utils/local-date';
+import { statusUpdateBody } from '@/utils/status';
 import { LogReadingSheet } from './log-reading-sheet';
 
 const STATUS_LABELS: Record<ReadingStatus, string> = {
@@ -33,6 +35,11 @@ const STATUS_LABELS: Record<ReadingStatus, string> = {
   finished: 'Finished',
   dnf: 'DNF',
 };
+
+// Finished and DNF are endings. Picking Reading again is another time through the book,
+// not a correction to the last one, so it starts a new engagement through the sheet
+// instead of reopening the one that already ended.
+const ENDED: ReadingStatus[] = [ReadingStatus.finished, ReadingStatus.dnf];
 
 function currentEngagement(engagements: EngagementRead[]): EngagementRead | null {
   if (engagements.length === 0) {
@@ -62,6 +69,7 @@ export function BookMetadata({
 }) {
   const current = currentEngagement(engagements);
   const [addOpen, setAddOpen] = useState(false);
+  const [finishOpen, setFinishOpen] = useState(false);
 
   const queryClient = useQueryClient();
   const updateStatus = useEngagementsUpdateEngagementStatus({
@@ -86,6 +94,7 @@ export function BookMetadata({
                   variant="secondary"
                   size="sm"
                   className="font-extrabold"
+                  aria-label={`Status: ${STATUS_LABELS[current.status]}`}
                   disabled={updateStatus.isPending}
                 >
                   {STATUS_LABELS[current.status]}
@@ -97,12 +106,21 @@ export function BookMetadata({
               {Object.values(EngagementStatusUpdateStatus).map((status) => (
                 <DropdownMenuItem
                   key={status}
-                  onClick={() =>
-                    updateStatus.mutate({
-                      engagementId: current.id,
-                      data: { status, effective_on: localIsoDate() },
-                    })
-                  }
+                  onClick={() => {
+                    if (status === EngagementStatusUpdateStatus.finished) {
+                      setFinishOpen(true);
+                    } else if (
+                      status === EngagementStatusUpdateStatus.reading &&
+                      ENDED.includes(current.status)
+                    ) {
+                      setAddOpen(true);
+                    } else {
+                      updateStatus.mutate({
+                        engagementId: current.id,
+                        data: statusUpdateBody(status),
+                      });
+                    }
+                  }}
                 >
                   {STATUS_LABELS[status]}
                 </DropdownMenuItem>
@@ -110,18 +128,24 @@ export function BookMetadata({
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="font-extrabold"
+            onClick={() => setAddOpen(true)}
+          >
+            Not tracked
+            <HugeiconsIcon icon={ArrowDown01Icon} data-icon="inline-end" />
+          </Button>
+        )}
+
+        {current ? (
           <>
-            <Button
-              variant="outline"
-              size="sm"
-              className="font-extrabold"
-              onClick={() => setAddOpen(true)}
-            >
-              Not tracked
-              <HugeiconsIcon icon={ArrowDown01Icon} data-icon="inline-end" />
-            </Button>
-            <LogReadingSheet book={book} open={addOpen} onOpenChange={setAddOpen} />
+            <StartReadingSheet book={book} open={addOpen} onOpenChange={setAddOpen} />
+            <FinishReadSheet engagement={current} open={finishOpen} onOpenChange={setFinishOpen} />
           </>
+        ) : (
+          <LogReadingSheet book={book} open={addOpen} onOpenChange={setAddOpen} />
         )}
       </Row>
 

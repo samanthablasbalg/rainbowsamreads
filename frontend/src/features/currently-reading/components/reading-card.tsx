@@ -21,22 +21,17 @@ import {
 } from '@/api/generated/readingTracker.schemas';
 import { BookRow } from '@/components/common/book-row';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
+import { FinishReadSheet } from '@/components/common/finish-read-sheet';
 import { FormatIcons } from '@/components/common/format-icons';
 import { ReadingProgress } from '@/components/common/reading-progress';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { authorNames, coverSrc } from '@/utils/book';
-import { localIsoDate } from '@/utils/local-date';
+import { statusUpdateBody } from '@/utils/status';
 import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
 import { AddFormatSheet } from './add-format-sheet';
 
 const CONFIRMATIONS = {
-  finished: {
-    title: (bookTitle: string) => `Mark "${bookTitle}" as finished?`,
-    description: 'This moves it out of Currently Reading.',
-    confirmLabel: 'Mark finished',
-    tone: 'default',
-  },
   dnf: {
     title: (bookTitle: string) => `Mark "${bookTitle}" as did not finish?`,
     description: 'This moves it out of Currently Reading.',
@@ -58,6 +53,7 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
   const queryClient = useQueryClient();
   const [logOpen, setLogOpen] = useState(false);
   const [addFormatOpen, setAddFormatOpen] = useState(false);
+  const [finishOpen, setFinishOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<ConfirmAction | null>(null);
 
   function invalidateEngagements() {
@@ -77,10 +73,7 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
     } else if (pendingAction !== null) {
       updateStatus.mutate({
         engagementId: engagement.id,
-        data: {
-          status: EngagementStatusUpdateStatus[pendingAction],
-          effective_on: localIsoDate(),
-        },
+        data: statusUpdateBody(EngagementStatusUpdateStatus[pendingAction]),
       });
     }
     setPendingAction(null);
@@ -139,7 +132,7 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
           )}
           <DropdownMenuItem
             aria-label={`Mark ${book.title} as finished`}
-            onClick={() => setPendingAction('finished')}
+            onClick={() => setFinishOpen(true)}
           >
             <HugeiconsIcon icon={Tick02Icon} />
             Mark as finished
@@ -170,6 +163,8 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
         open={addFormatOpen}
         onOpenChange={setAddFormatOpen}
       />
+
+      <FinishReadSheet engagement={engagement} open={finishOpen} onOpenChange={setFinishOpen} />
 
       <ConfirmDialog
         open={pendingAction !== null}

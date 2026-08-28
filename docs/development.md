@@ -185,6 +185,27 @@ things follow, both deliberate and both worth knowing:
   does not log the container out, and vice versa.
 - **The tokens sit in plain files in the home directory** rather than encrypted at rest.
 
+## Codex in the container
+
+```bash
+scripts/codex           # starts `workspace` if needed, then launches Codex there
+scripts/codex login     # one-time container login, if OPENAI_API_KEY is not exported
+```
+
+Codex follows the same boundary as Claude: its CLI runs in `workspace`, while its configuration and
+container-side login persist in the Mac's `~/.codex-docker` directory. It deliberately does **not**
+share `~/.codex` with the macOS app: that configuration contains MCP commands that point into
+`/Applications` and cannot run in Linux. `scripts/codex` links each checked-in
+`.claude/skills/<name>` directory into Codex's skill directory before launching it. The Claude tree
+is therefore the only skills tree to maintain; a collision with an independently installed Codex
+skill fails explicitly instead of silently replacing it.
+
+Docker is also Codex's sandbox boundary here. Docker Desktop does not permit Bubblewrap to create
+the nested Linux user namespace Codex normally uses for its own sandbox, so the wrapper starts Codex
+with `danger-full-access` **inside the container** and retains `on-request` approval prompts. This
+grants Codex access to the `workspace` container, not unrestricted access to the Mac; it avoids a
+broken nested sandbox rather than weakening the container boundary.
+
 ### Pushing from inside
 
 `origin` is an SSH remote and the keys live in 1Password rather than on disk — reachable only

@@ -1,12 +1,16 @@
 import { HttpResponse, delay, http } from 'msw';
 import userEvent from '@testing-library/user-event';
-import { getBooksSearchBooksMockHandler } from '@/api/generated/books/books.msw';
+import {
+  getBooksGetBookMockHandler,
+  getBooksSearchBooksMockHandler,
+} from '@/api/generated/books/books.msw';
 import {
   BookSearchResultState,
   DatePrecision,
   type BookRead,
   type BookSearchResult,
 } from '@/api/generated/readingTracker.schemas';
+import { buildBook } from '@/test/data-generators';
 import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
 import { SearchBar } from './search-bar';
@@ -37,6 +41,12 @@ function stubSearch(results: BookSearchResult[]) {
     })
   );
   return queries;
+}
+
+// The sheet reads the book back by id before it can open, since a search result carries
+// no default lengths for the format step to offer.
+function stubBook(title: string) {
+  server.use(getBooksGetBookMockHandler(buildBook({ title })));
 }
 
 function stubSearchFailure() {
@@ -227,6 +237,7 @@ describe('SearchBar', () => {
 
   describe('adding a book already in the app', () => {
     it('collapses the bar and asks how to add it', async () => {
+      stubBook('Small Gods');
       const user = await search([catalogResult]);
 
       await user.click(screen.getByRole('button', { name: 'Add Small Gods to your library' }));

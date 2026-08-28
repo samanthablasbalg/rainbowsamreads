@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Launch Codex inside the workspace container.
+#
+# Like Claude, Codex needs the container's toolchain and bare commands. Docker is
+# the security boundary: Docker Desktop blocks bubblewrap's nested user namespace,
+# so Codex must not try to create a second Linux sandbox inside this container.
+set -euo pipefail
+
+# Resolve from this script rather than the caller so the wrapper works anywhere.
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$root"
+
+# Codex expects each skill directly under its own skills directory. The project keeps
+# the canonical copies in .claude/skills, so link each one on every launch instead of
+# maintaining a second tree. Refuse to replace a real Codex skill with the same name.
+sync_skills='set -eu
+skills_dir="$CODEX_HOME/skills"
+mkdir -p "$skills_dir"
+for skill in "$PWD"/.claude/skills/*; do
+  [ -d "$skill" ] || continue
+  link="$skills_dir/${skill##*/}"
+  if [ -L "$link" ] && [ "$(readlink "$link")" = "$skill" ]; then
+    continue
+  fi
+  if [ -e "$link" ] || [ -L "$link" ]; then
+    echo "Codex skill collision: $link is not this project'"'"'s link." >&2
+    exit 1
+  fi
+  ln -s "$skill" "$link"
+done
+exec codex "$@"'
+
+# Idempotent and near-instant once running. OPENAI_API_KEY is optional: interactive
+# `codex login` inside the container persists through the mounted config directory.
+# Keep approval prompts, but disable Codex's nested Linux sandbox: Docker already
+# bounds this process and forbids the user namespace bubblewrap needs.
+docker compose up workspace -d >/dev/null
+exec docker compose exec -e OPENAI_API_KEY workspace \
+  sh -c "$sync_skills" -- \
+  --sandbox danger-full-access --ask-for-approval on-request "$@"

@@ -1,30 +1,56 @@
 import { useState } from 'react';
 import { HttpResponse, http } from 'msw';
-import { useLocation } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import userEvent from '@testing-library/user-event';
 import {
   getEngagementsCreateEngagementMockHandler,
   getEngagementsCreateEngagementResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
-import type { BookRead } from '@/api/generated/readingTracker.schemas';
+import { EngagementCreateStatus, type BookRead } from '@/api/generated/readingTracker.schemas';
 import { buildBook } from '@/test/data-generators';
 import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
 import { localIsoDate } from '@/utils/local-date';
+import { STATUSES } from '@/utils/status';
 import { StartReadingSheet } from './start-reading-sheet';
 
+// The sheet leaves navigation to whoever opened it, so the harness stands in for the
+// catalog -- the caller that does send you to the Reading shelf once a read starts.
 function ControlledSheet({ book }: { book: BookRead }) {
   const [open, setOpen] = useState(true);
+  const navigate = useNavigate();
   return (
     <>
       <p>path: {useLocation().pathname}</p>
-      <StartReadingSheet book={book} open={open} onOpenChange={setOpen} />
+      <StartReadingSheet
+        book={book}
+        open={open}
+        onOpenChange={setOpen}
+        onStarted={() => navigate(STATUSES.reading.to)}
+      />
     </>
   );
 }
 
 function renderSheet(overrides: Partial<BookRead> = {}) {
   return render(<ControlledSheet book={buildBook(overrides)} />);
+}
+
+// Search's caller: three statuses to choose between, and no navigation once the read is
+// added -- the bar is global, so you stay on whatever page you searched from.
+function renderAddSheet(overrides: Partial<BookRead> = {}) {
+  return render(
+    <StartReadingSheet
+      book={buildBook(overrides)}
+      statuses={[
+        EngagementCreateStatus.reading,
+        EngagementCreateStatus.finished,
+        EngagementCreateStatus.dnf,
+      ]}
+      open
+      onOpenChange={() => {}}
+    />
+  );
 }
 
 function captureCreateBody() {
@@ -162,6 +188,93 @@ describe('StartReadingSheet', () => {
 
     expect(screen.getByText('Enter a number of pages')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Start reading Piranesi' })).toBeDisabled();
+  });
+
+  it('asks where the read goes before asking how it was read', async () => {
+    renderAddSheet();
+
+    expect(await screen.findByRole('button', { name: 'Add Piranesi as Finished' })).toBeVisible();
+    expect(screen.queryByRole('group', { name: 'Format' })).not.toBeInTheDocument();
+  });
+
+  it('goes straight to the format step when only one status is offered', async () => {
+    renderSheet();
+
+    expect(await screen.findByRole('group', { name: 'Format' })).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Add Piranesi as Finished' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('adds a finished read with both dates', async () => {
+    const user = userEvent.setup();
+    const captured = captureCreateBody();
+    renderAddSheet();
+
+    await user.click(await screen.findByRole('button', { name: 'Add Piranesi as Finished' }));
+    await user.type(screen.getByLabelText('Start date'), '2026-01-15');
+    await user.type(screen.getByLabelText('Finish date'), '2026-02-20');
+    await user.click(screen.getByRole('button', { name: 'Add Piranesi' }));
+
+    await waitFor(() =>
+      expect(captured.body).toEqual({
+        book_id: 'book-Piranesi',
+        status: 'finished',
+        edition_format: 'print',
+        started_on: '2026-01-15',
+        finished_on: '2026-02-20',
+      })
+    );
+  });
+
+  it('adds a finished read you remember no dates for', async () => {
+    const user = userEvent.setup();
+    const captured = captureCreateBody();
+    renderAddSheet();
+
+    await user.click(await screen.findByRole('button', { name: 'Add Piranesi as Finished' }));
+    expect(screen.getByLabelText('Start date')).toHaveValue('');
+    expect(screen.getByLabelText('Finish date')).toHaveValue('');
+
+    await user.click(screen.getByRole('button', { name: 'Add Piranesi' }));
+
+    await waitFor(() =>
+      expect(captured.body).toEqual({
+        book_id: 'book-Piranesi',
+        status: 'finished',
+        edition_format: 'print',
+      })
+    );
+  });
+
+  it('calls the end date "Stopped on" for a read that was abandoned', async () => {
+    const user = userEvent.setup();
+    const captured = captureCreateBody();
+    renderAddSheet();
+
+    await user.click(await screen.findByRole('button', { name: 'Add Piranesi as DNF' }));
+    await user.type(screen.getByLabelText('Stopped on'), '2026-02-20');
+    await user.click(screen.getByRole('button', { name: 'Add Piranesi' }));
+
+    await waitFor(() =>
+      expect(captured.body).toEqual({
+        book_id: 'book-Piranesi',
+        status: 'dnf',
+        edition_format: 'print',
+        finished_on: '2026-02-20',
+      })
+    );
+  });
+
+  it('still prefills today and offers no end date when the read is starting now', async () => {
+    const user = userEvent.setup();
+    renderAddSheet();
+
+    await user.click(await screen.findByRole('button', { name: 'Add Piranesi as Reading' }));
+
+    expect(screen.getByLabelText('Start date')).toHaveValue(localIsoDate());
+    expect(screen.queryByLabelText('Finish date')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start reading Piranesi' })).toBeVisible();
   });
 
   it('shows the failure reason and stays open when the read cannot be started', async () => {

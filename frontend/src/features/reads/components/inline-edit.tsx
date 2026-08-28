@@ -2,25 +2,19 @@ import type { ReactNode } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Cancel01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 type EditableValueProps = {
   // Lowercase: "start date" gives "Edit start date" / "Save start date".
   label: string;
-  disabled?: boolean;
   onEdit: () => void;
   children: ReactNode;
 };
 
-export function EditableValue({ label, disabled = false, onEdit, children }: EditableValueProps) {
+export function EditableValue({ label, onEdit, children }: EditableValueProps) {
   return (
     <Button
       variant="link"
-      className={cn(
-        'h-auto p-0 font-normal text-inherit underline decoration-dotted underline-offset-4 hover:decoration-solid',
-        disabled && 'no-underline'
-      )}
-      disabled={disabled}
+      className="h-auto p-0 font-normal text-inherit underline decoration-dotted underline-offset-4 hover:decoration-solid"
       aria-label={`Edit ${label}`}
       onClick={onEdit}
     >

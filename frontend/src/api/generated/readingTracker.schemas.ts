@@ -136,6 +136,10 @@ export const EngagementCreateStatus = {
   dnf: 'dnf',
 } as const;
 
+/**
+ * `finished_on` is the date the read ended, whichever way it ended: it lands in
+ * `abandoned_on` when the status is dnf.
+ */
 export interface EngagementCreate {
   book_id: string;
   edition_format: Format;
@@ -143,11 +147,17 @@ export interface EngagementCreate {
   audio_length_minutes?: number | null;
   length_override?: number | null;
   started_on?: string | null;
+  finished_on?: string | null;
 }
 
+/**
+ * Corrects dates a read already has. Ending a read is the status endpoint's job:
+ * `finished_on` here edits a finished read, `abandoned_on` a dnf one.
+ */
 export interface EngagementDatesUpdate {
   started_on?: string | null;
   finished_on?: string | null;
+  abandoned_on?: string | null;
 }
 
 export interface EngagementEditionCreate {
@@ -227,9 +237,14 @@ export const EngagementStatusUpdateStatus = {
   dnf: 'dnf',
 } as const;
 
+/**
+ * `unit` picks the ruler the closing log is written on when finishing a read that
+ * has been going in more than one. Defaults to the one the read is already on.
+ */
 export interface EngagementStatusUpdate {
   status: EngagementStatusUpdateStatus;
   effective_on?: string | null;
+  unit?: LogUnit | null;
 }
 
 export type ValidationErrorCtx = { [key: string]: unknown };
