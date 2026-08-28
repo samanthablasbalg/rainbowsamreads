@@ -127,7 +127,7 @@ describe('InlineDateEdit', () => {
 
     fireEvent.change(screen.getByLabelText('Edit start date'), {
       target: { value: '2025-06-20' },
-    });
+    }); // Native date picker selection has no userEvent API.
 
     await waitFor(() => expect(onSave).toHaveBeenCalledWith('2025-06-20'));
     matchMedia.mockRestore();
@@ -140,7 +140,7 @@ describe('InlineDateEdit', () => {
 
     fireEvent.change(screen.getByLabelText('Edit start date'), {
       target: { value: '2025-01-01' },
-    });
+    }); // Native date picker selection has no userEvent API.
 
     await waitFor(() => expect(onSave).toHaveBeenCalledWith('2025-01-01'));
     expect(screen.getByText('Jun 15, 2025')).toBeVisible();

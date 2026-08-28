@@ -15,15 +15,15 @@ export function InlineDateEdit({ value, label, onSave }: InlineDateEditProps) {
   const coarsePointer = useIsCoarsePointer();
   const [editing, setEditing] = useState(false);
 
+  let control;
+
   // A date input has to receive the touch itself for the browser to open its picker in
   // the same user gesture. On touch devices it therefore sits transparently over the
   // formatted value, rather than first swapping that value for an editor.
   if (coarsePointer) {
-    return <TouchDatePicker value={value} label={label} onSave={onSave} />;
-  }
-
-  if (editing) {
-    return (
+    control = <TouchDatePicker value={value} label={label} onSave={onSave} />;
+  } else if (editing) {
+    control = (
       <DateEditor
         value={value}
         label={label}
@@ -39,12 +39,18 @@ export function InlineDateEdit({ value, label, onSave }: InlineDateEditProps) {
         onCancel={() => setEditing(false)}
       />
     );
+  } else {
+    control = (
+      <EditableValue label={label} onEdit={() => setEditing(true)}>
+        {value ? formatIsoDate(value) : '—'}
+      </EditableValue>
+    );
   }
 
   return (
-    <EditableValue label={label} onEdit={() => setEditing(true)}>
-      {value ? formatIsoDate(value) : '—'}
-    </EditableValue>
+    <span role="group" aria-label={`${label} value`}>
+      {control}
+    </span>
   );
 }
 

@@ -44,19 +44,19 @@ export class ReadHistoryPage {
     // original tap. The shared aria-label is the stable boundary for this POM; the
     // editing helpers below branch on the rendered element, not on a project name or
     // viewport size.
-    this.startDateControl = page.locator('[aria-label="Edit start date"]');
+    this.startDateControl = page.getByLabel('Edit start date', { exact: true });
     // A native date input exposes no implicit `textbox` role, so the date fields go
     // through their label rather than getByRole -- the same as ProgressLogSheetPage.
     this.startDateInput = page.getByLabel('start date', { exact: true });
     this.saveStartDateButton = page.getByRole('button', { name: 'Save start date' });
     this.cancelStartDateButton = page.getByRole('button', { name: 'Cancel start date edit' });
-    this.finishDateControl = page.locator('[aria-label="Edit finish date"]');
+    this.finishDateControl = page.getByLabel('Edit finish date', { exact: true });
     this.finishDateInput = page.getByLabel('finish date', { exact: true });
     this.saveFinishDateButton = page.getByRole('button', { name: 'Save finish date' });
     this.cancelFinishDateButton = page.getByRole('button', { name: 'Cancel finish date edit' });
     // A DNF read shows an abandon date where a finished one shows a finish date. The
     // backend derives it, so it renders through the same control as the other dates.
-    this.abandonDateControl = page.locator('[aria-label="Edit abandon date"]');
+    this.abandonDateControl = page.getByLabel('Edit abandon date', { exact: true });
     this.lengthButton = page.getByRole('button', { name: 'Edit print length' });
     // Unlike the dates, the length editor is a text input, so it does carry a textbox
     // role. A read bound in two formats shows one length per format, so the control is
@@ -104,7 +104,7 @@ export class ReadHistoryPage {
    * @returns The value container, which also carries its prefix such as 'Started'.
    */
   getDateDisplay(label: 'start date' | 'finish date' | 'abandon date'): Locator {
-    return this.page.locator(`[aria-label="Edit ${label}"]`).locator('..');
+    return this.page.getByRole('group', { name: `${label} value` });
   }
 
   /**
@@ -137,7 +137,7 @@ export class ReadHistoryPage {
     );
   }
 
-  private async setDate(
+  async setDate(
     control: Locator,
     desktopInput: Locator,
     saveButton: Locator,
