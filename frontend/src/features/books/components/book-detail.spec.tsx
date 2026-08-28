@@ -7,7 +7,7 @@ import {
   getEngagementsUpdateEngagementStatusMockHandler,
   getEngagementsUpdateEngagementStatusResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
-import { DatePrecision, ReadingStatus } from '@/api/generated/readingTracker.schemas';
+import { DatePrecision, Format, ReadingStatus } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
 import { buildBook, buildEngagement } from '@/test/data-generators';
@@ -140,13 +140,18 @@ describe('BookDetail', () => {
     expect(screen.queryByRole('menuitem', { name: 'Paused' })).not.toBeInTheDocument();
   });
 
-  it('changes the status of the read the pill is showing', async () => {
+  it('finishes the read the pill is showing with its date and closing ruler', async () => {
     const user = userEvent.setup();
     const captured: { body?: unknown } = {};
     server.use(
       getBooksGetBookMockHandler(buildBook()),
       getBooksListBookEngagementsMockHandler([
-        buildEngagement({ id: 'engagement-1', status: ReadingStatus.reading }),
+        buildEngagement({
+          id: 'engagement-1',
+          status: ReadingStatus.reading,
+          formats: [Format.print, Format.audio],
+          length_minutes: 600,
+        }),
       ]),
       getEngagementsUpdateEngagementStatusMockHandler(async (info) => {
         captured.body = await info.request.json();
@@ -158,9 +163,15 @@ describe('BookDetail', () => {
 
     await user.click(await screen.findByRole('button', { name: /Reading/ }));
     await user.click(await screen.findByRole('menuitem', { name: 'Finished' }));
+    await user.click(await screen.findByRole('button', { name: 'Minutes' }));
+    await user.click(screen.getByRole('button', { name: 'Mark Piranesi as finished' }));
 
     await waitFor(() =>
-      expect(captured.body).toEqual({ status: 'finished', effective_on: localIsoDate() })
+      expect(captured.body).toEqual({
+        status: 'finished',
+        effective_on: localIsoDate(),
+        unit: 'minutes',
+      })
     );
   });
 

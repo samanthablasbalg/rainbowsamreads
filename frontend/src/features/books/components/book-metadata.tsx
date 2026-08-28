@@ -13,6 +13,7 @@ import {
   getEngagementsListEngagementsQueryKey,
   useEngagementsUpdateEngagementStatus,
 } from '@/api/generated/engagements/engagements';
+import { FinishReadSheet } from '@/components/common/finish-read-sheet';
 import { StarRating } from '@/components/common/star-rating';
 import { StartReadingSheet } from '@/components/common/start-reading-sheet';
 import { Button } from '@/components/ui/button';
@@ -68,6 +69,7 @@ export function BookMetadata({
 }) {
   const current = currentEngagement(engagements);
   const [addOpen, setAddOpen] = useState(false);
+  const [finishOpen, setFinishOpen] = useState(false);
 
   const queryClient = useQueryClient();
   const updateStatus = useEngagementsUpdateEngagementStatus({
@@ -104,15 +106,21 @@ export function BookMetadata({
               {Object.values(EngagementStatusUpdateStatus).map((status) => (
                 <DropdownMenuItem
                   key={status}
-                  onClick={() =>
-                    status === EngagementStatusUpdateStatus.reading &&
-                    ENDED.includes(current.status)
-                      ? setAddOpen(true)
-                      : updateStatus.mutate({
-                          engagementId: current.id,
-                          data: statusUpdateBody(status),
-                        })
-                  }
+                  onClick={() => {
+                    if (status === EngagementStatusUpdateStatus.finished) {
+                      setFinishOpen(true);
+                    } else if (
+                      status === EngagementStatusUpdateStatus.reading &&
+                      ENDED.includes(current.status)
+                    ) {
+                      setAddOpen(true);
+                    } else {
+                      updateStatus.mutate({
+                        engagementId: current.id,
+                        data: statusUpdateBody(status),
+                      });
+                    }
+                  }}
                 >
                   {STATUS_LABELS[status]}
                 </DropdownMenuItem>
@@ -132,7 +140,10 @@ export function BookMetadata({
         )}
 
         {current ? (
-          <StartReadingSheet book={book} open={addOpen} onOpenChange={setAddOpen} />
+          <>
+            <StartReadingSheet book={book} open={addOpen} onOpenChange={setAddOpen} />
+            <FinishReadSheet engagement={current} open={finishOpen} onOpenChange={setFinishOpen} />
+          </>
         ) : (
           <LogReadingSheet book={book} open={addOpen} onOpenChange={setAddOpen} />
         )}

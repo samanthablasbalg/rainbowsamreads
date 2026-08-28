@@ -3,6 +3,7 @@ import { BookPage } from '../../page-objects/book.page';
 import { CurrentlyReadingPage } from '../../page-objects/currently-reading.page';
 import { DnfBooksPage } from '../../page-objects/dnf-books.page';
 import { FinishedBooksPage } from '../../page-objects/finished-books.page';
+import { FinishReadSheetPage } from '../../page-objects/finish-read-sheet.page';
 import { ReadHistoryPage } from '../../page-objects/read-history.page';
 import { StartReadingSheetPage } from '../../page-objects/start-reading-sheet.page';
 
@@ -59,6 +60,7 @@ test('Switching an in-progress read to Finished from the book page shelves it as
   apiClient,
 }) => {
   const bookPage = new BookPage(page);
+  const finishSheet = new FinishReadSheetPage(page);
   const finishedBooks = new FinishedBooksPage(page);
   const readHistory = new ReadHistoryPage(page);
 
@@ -75,8 +77,11 @@ test('Switching an in-progress read to Finished from the book page shelves it as
     await expect(bookPage.getStatusButton('Reading')).toBeVisible();
   });
 
-  await test.step('Pick Finished from the status menu', async () => {
+  await test.step('Pick Finished and confirm the finish details', async () => {
     await bookPage.chooseStatus('Reading', 'Finished');
+    await expect(finishSheet.finishDateInput).toHaveValue(new Date().toISOString().slice(0, 10));
+    await finishSheet.getConfirmButton(TITLE).click();
+    await expect(finishSheet.sheet).toHaveCount(0);
   });
 
   await test.step('The status control flips in place, without navigating away', async () => {

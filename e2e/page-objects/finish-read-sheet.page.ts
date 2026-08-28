@@ -1,9 +1,10 @@
 import { Locator, Page } from '@playwright/test';
 
 /**
- * The sheet that Mark as finished opens from a currently-reading card. Renders as a
- * bottom drawer under a coarse pointer and a centred dialog under a fine one, so
- * everything here is scoped to the sheet rather than to whichever card opened it.
+ * The sheet that Mark as finished opens from a currently-reading card or a book page.
+ * Renders as a bottom drawer under a coarse pointer and a centred dialog under a fine
+ * one, so everything here is scoped to the sheet rather than to whichever control
+ * opened it.
  *
  * The ruler buttons only render for a read bound in both a page format and audio --
  * that is the case where the closing entry has two possible answers, so the sheet asks.

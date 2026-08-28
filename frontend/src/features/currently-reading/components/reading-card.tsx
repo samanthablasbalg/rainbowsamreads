@@ -21,6 +21,7 @@ import {
 } from '@/api/generated/readingTracker.schemas';
 import { BookRow } from '@/components/common/book-row';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
+import { FinishReadSheet } from '@/components/common/finish-read-sheet';
 import { FormatIcons } from '@/components/common/format-icons';
 import { ReadingProgress } from '@/components/common/reading-progress';
 import { Button } from '@/components/ui/button';
@@ -29,7 +30,6 @@ import { authorNames, coverSrc } from '@/utils/book';
 import { statusUpdateBody } from '@/utils/status';
 import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
 import { AddFormatSheet } from './add-format-sheet';
-import { FinishReadSheet } from './finish-read-sheet';
 
 const CONFIRMATIONS = {
   dnf: {
