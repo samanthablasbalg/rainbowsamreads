@@ -200,6 +200,12 @@ share `~/.codex` with the macOS app: that configuration contains MCP commands th
 is therefore the only skills tree to maintain; a collision with an independently installed Codex
 skill fails explicitly instead of silently replacing it.
 
+Docker is also Codex's sandbox boundary here. Docker Desktop does not permit Bubblewrap to create
+the nested Linux user namespace Codex normally uses for its own sandbox, so the wrapper starts Codex
+with `danger-full-access` **inside the container** and retains `on-request` approval prompts. This
+grants Codex access to the `workspace` container, not unrestricted access to the Mac; it avoids a
+broken nested sandbox rather than weakening the container boundary.
+
 ### Pushing from inside
 
 `origin` is an SSH remote and the keys live in 1Password rather than on disk — reachable only
