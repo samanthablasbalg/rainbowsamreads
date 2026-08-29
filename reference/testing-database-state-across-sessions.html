@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Testing Database State Across Sessions</title>
+    <link rel="stylesheet" href="../assets/learning.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Testing database state across sessions</h1>
+        <p class="lede">
+          Decide between <code>commit()</code>, <code>expire_all()</code>, and
+          <code>refresh()</code> by asking who wrote the state and who needs to see it.
+        </p>
+      </header>
+
+      <section class="callout" aria-label="Key idea">
+        <strong>Key idea:</strong> the test's <code>db</code> fixture and a
+        <code>TestClient</code> request use separate SQLAlchemy sessions. Sharing a database does
+        not give them a shared in-memory view.
+      </section>
+
+      <section>
+        <h2>The three phases</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Phase</th>
+              <th>Who writes?</th>
+              <th>What the test session does</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Arrange</td>
+              <td>The test directly mutates an ORM object</td>
+              <td><code>commit()</code> so the API session can see the setup</td>
+            </tr>
+            <tr>
+              <td>Act</td>
+              <td>The API request changes state</td>
+              <td>Nothing; the endpoint owns its transaction</td>
+            </tr>
+            <tr>
+              <td>Assert</td>
+              <td>The test reads what the API persisted</td>
+              <td><code>expire_all()</code>, <code>refresh()</code>, or query again</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Arrange: publish test-authored state</h2>
+        <pre><code>book_obj.default_audio_minutes = 600
+db.commit()  # make setup visible to the API's connection
+
+response = client.post(...)</code></pre>
+        <p>
+          An uncommitted ORM mutation belongs only to the transaction that made it. The commit is
+          correct here because the test—not the endpoint—authored the change.
+        </p>
+      </section>
+
+      <section>
+        <h2>Act: let the endpoint own its transaction</h2>
+        <pre><code>response = client.post(...)
+
+# Do not call db.commit() to commit the API's work.
+# db is a different session.</code></pre>
+        <p>
+          Calling <code>db.commit()</code> after the request commits the test session. SQLAlchemy
+          normally expires that session's objects on commit, so later access may reload them, but
+          using commit for that side effect hides the test's actual intent.
+        </p>
+      </section>
+
+      <section>
+        <h2>Assert: discard stale in-memory state</h2>
+        <pre><code>db.expire_all()
+book_obj = db.get(Book, book_id)
+edition_obj = db.get(Edition, edition_id)
+
+assert book_obj.default_page_count == 250
+assert edition_obj.page_count == 250</code></pre>
+        <p>
+          <code>expire_all()</code> marks everything currently loaded by the test session as stale;
+          the next attribute read reloads it. Use <code>refresh(object)</code> when only one object
+          needs an immediate reload.
+        </p>
+      </section>
+
+      <section>
+        <h2>A response dictionary is not an ORM object</h2>
+        <pre><code>book = response.json()  # snapshot at response time
+
+client.post(...)        # later database change
+
+# book still contains the old serialized values</code></pre>
+        <p>
+          JSON has no identity map, database connection, or automatic refresh. Make another API
+          request or reload through a session to observe later state.
+        </p>
+      </section>
+
+      <section>
+        <h2>Decision checklist</h2>
+        <ol class="checklist">
+          <li>Which session made the change?</li>
+          <li>Is this arrange, act, or assert?</li>
+          <li>Does another connection need to see test-authored setup? Commit it.</li>
+          <li>Did the endpoint author the change? Let the endpoint commit it.</li>
+          <li>Could the test session have cached the object? Expire, refresh, or query again.</li>
+          <li>Is the value only in an old JSON response? Fetch a new representation.</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Primary sources</h2>
+        <ul>
+          <li>
+            <a href="../backend/tests/conftest.py">Reading Tracker test fixtures</a>: shows that the
+            <code>db</code> fixture and API dependency override open separate sessions and
+            connections.
+          </li>
+          <li>
+            <a href="https://docs.sqlalchemy.org/en/20/orm/session_basics.html#committing"
+              >SQLAlchemy: Committing</a
+            >: documents commit behavior and expiration after commit.
+          </li>
+          <li>
+            <a
+              href="https://docs.sqlalchemy.org/en/20/orm/session_state_management.html#refreshing-expiring"
+              >SQLAlchemy: Refreshing and expiring</a
+            >: documents <code>expire()</code>, <code>expire_all()</code>, and
+            <code>refresh()</code>.
+          </li>
+          <li>
+            <a href="request-fields-and-persistence.html">Request fields are not database fields</a
+            >: the companion reference on commands, ownership, and persistence.
+          </li>
+        </ul>
+      </section>
+
+      <footer>
+        Ask the agent to identify the session boundaries in a specific test whenever a commit or
+        refresh feels ceremonial rather than necessary.
+      </footer>
+    </main>
+  </body>
+</html>

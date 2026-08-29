@@ -10,3 +10,6 @@
 - Keep reference documents aligned with the current implementation. When an implementation change
   makes their primary example historical, revise the example as part of that change and retain only
   the historical context needed to explain how the concept emerged.
+- When the user identifies the person or source that prompted an insight, preserve that attribution
+  in the learning record. Learning records document how understanding developed; they do not imply
+  that the learner originated every idea.
