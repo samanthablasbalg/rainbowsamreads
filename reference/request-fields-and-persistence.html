@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Request Fields Are Not Database Fields</title>
+    <link rel="stylesheet" href="../assets/learning.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Request fields are not database fields</h1>
+        <p class="lede">
+          A practical guide to separating an API command from the domain state it coordinates.
+        </p>
+      </header>
+
+      <section class="callout" aria-label="Key idea">
+        <strong>Key idea:</strong> a request schema says what an operation needs as input. It does
+        not say which object owns that information or whether the information is stored at all.
+      </section>
+
+      <section>
+        <h2>The Reading Tracker example</h2>
+        <p>
+          <code>audio_length_minutes</code> appears on the engagement-creation request. That makes
+          it look like an engagement property, but tracing the operation shows otherwise.
+        </p>
+
+        <pre aria-label="Audio length data flow"><code>EngagementCreate.audio_length_minutes
+        ↓
+engagement lifecycle service
+        ↓
+capture_audio_length(book, edition, length)
+        ↓
+Book.default_audio_minutes + Edition.audio_minutes</code></pre>
+
+        <p>
+          No <code>audio_length_minutes</code> column is stored on <code>Engagement</code>. The
+          create-engagement command carries a newly learned edition fact because starting the read
+          and capturing that fact need to succeed or fail together.
+        </p>
+      </section>
+
+      <section>
+        <h2>Three shapes that answer different questions</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Shape</th>
+              <th>Question it answers</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Request schema</td>
+              <td>What must the client provide for this operation?</td>
+              <td><code>EngagementCreate</code></td>
+            </tr>
+            <tr>
+              <td>Service command</td>
+              <td>Which domain changes must happen in one transaction?</td>
+              <td>Create a binding and capture a missing edition length</td>
+            </tr>
+            <tr>
+              <td>Persistence model</td>
+              <td>Which entity owns durable state?</td>
+              <td><code>Edition.audio_minutes</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Ownership versus coordination</h2>
+        <p>
+          ADR-0021 assigns real format and length to <code>Edition</code>. It assigns a personal
+          correction to <code>EngagementEdition.length_override</code>. An API operation may touch
+          both without moving either fact onto <code>Engagement</code>.
+        </p>
+
+        <pre aria-label="Ownership summary"><code>Edition.length                 shared edition fact
+Book.default_*                 shared format fallback
+EngagementEdition.override    this read differs
+EngagementCreate field        command input, not ownership</code></pre>
+
+        <p>
+          This is useful when one user action spans several entities. Sending two separate requests
+          could update the edition successfully and then fail to create the engagement. One command
+          lets the backend apply both changes in one database transaction.
+        </p>
+      </section>
+
+      <section>
+        <h2>How to determine whether a field is stored</h2>
+        <ol class="checklist">
+          <li>Find the request schema to establish where the value enters.</li>
+          <li>
+            Trace the API handler into the service instead of inferring ownership from the URL.
+          </li>
+          <li>Follow assignments and constructor arguments to see which domain objects change.</li>
+          <li>Check ORM models and migrations for the actual persisted columns.</li>
+          <li>
+            Read tests for observable behavior, while remembering that tests can encode accidents.
+          </li>
+          <li>Compare the result with the relevant ADR, which records intended ownership.</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Primary sources in this repository</h2>
+        <ul>
+          <li>
+            <a href="../docs/decisions/0021-editions-and-engagement-edition.md">ADR-0021</a>:
+            editions own format and real length; bindings own per-read overrides.
+          </li>
+          <li>
+            <a href="../backend/app/schemas/engagement.py">Engagement request schemas</a>: the
+            inputs accepted by engagement operations.
+          </li>
+          <li>
+            <a href="../backend/app/services/engagements/lifecycle.py"
+              >Engagement lifecycle service</a
+            >: how creation coordinates the binding and length capture.
+          </li>
+          <li>
+            <a href="../backend/app/models/engagement.py">Engagement model</a>: the length fallback
+            chain and evidence of what the domain object actually stores.
+          </li>
+        </ul>
+      </section>
+
+      <footer>
+        If any part of this distinction remains unclear, ask the agent to trace another field from
+        request to storage with you rather than relying on the endpoint name.
+      </footer>
+    </main>
+  </body>
+</html>
