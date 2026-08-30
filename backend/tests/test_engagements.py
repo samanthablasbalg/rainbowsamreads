@@ -17,7 +17,6 @@ from app.models.review import Review
 from app.models.user import User
 from tests.helpers import (
     _bind_edition,
-    _create_audio_engagement,
     _create_bare_book,
     _create_book,
     _create_edition,
@@ -231,7 +230,7 @@ def test_create_engagement_multiple_editions_of_format_returns_409(
     client: TestClient,
 ) -> None:
     book = _create_book(client)
-    _create_edition(client, book["id"], isbn="9781526622426")
+    _create_edition(client, book["id"], format="print", isbn="9781526622426")
     response = client.post(
         "/api/engagements", json={"book_id": book["id"], "edition_format": "print"}
     )
@@ -987,7 +986,12 @@ def test_list_dnf_orders_by_abandoned_on_not_last_touch(
 
 def test_cover_url_derived_from_bound_edition(client: TestClient) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], cover_url="https://covers.example/ed.jpg")
+    _create_edition(
+        client,
+        book["id"],
+        format="print",
+        cover_url="https://covers.example/ed.jpg",
+    )
     engagement = _create_engagement(client, book["id"])
 
     assert engagement["cover_url"] == "https://covers.example/ed.jpg"
@@ -1002,7 +1006,7 @@ def test_cover_url_falls_back_to_book_default_when_edition_has_no_cover(
     book_obj.default_cover_url = "https://covers.example/default.jpg"
     db.commit()
 
-    _create_edition(client, book["id"])
+    _create_edition(client, book["id"], format="print")
     engagement = _create_engagement(client, book["id"])
 
     assert engagement["cover_url"] == "https://covers.example/default.jpg"
@@ -1012,7 +1016,7 @@ def test_cover_url_is_null_when_edition_has_no_cover_and_book_has_no_default(
     client: TestClient,
 ) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"])
+    _create_edition(client, book["id"], format="print")
     engagement = _create_engagement(client, book["id"])
 
     assert engagement["cover_url"] is None
@@ -1029,7 +1033,7 @@ def test_formats_reflects_chosen_format_at_creation(client: TestClient) -> None:
 
 def test_formats_derived_from_bound_editions(client: TestClient) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"])
+    _create_edition(client, book["id"], format="print")
     digital_ed = _create_edition(client, book["id"], format="digital")
     engagement = _create_engagement(client, book["id"])
     _bind_edition(client, engagement["id"], digital_ed["id"])
@@ -1068,7 +1072,7 @@ def test_update_length_recomputes_completion(client: TestClient) -> None:
 def test_update_length_recomputes_audio_completion(client: TestClient) -> None:
     book = _create_bare_book(client)
     _create_edition(client, book["id"], format="audio", length=600)
-    engagement_id = _create_audio_engagement(client, book["id"])["id"]
+    engagement_id = _create_engagement(client, book["id"], edition_format="audio")["id"]
     _log_audio_progress(client, engagement_id, 300)
 
     response = client.patch(
@@ -1118,7 +1122,7 @@ def test_update_length_pulls_back_the_only_audio_entry_past_the_new_end(
 ) -> None:
     book = _create_bare_book(client)
     _create_edition(client, book["id"], format="audio", length=600)
-    engagement_id = _create_audio_engagement(client, book["id"])["id"]
+    engagement_id = _create_engagement(client, book["id"], edition_format="audio")["id"]
     _log_audio_progress(client, engagement_id, 300)
 
     response = client.patch(

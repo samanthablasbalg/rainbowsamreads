@@ -12,7 +12,6 @@ from app.models.book import Book
 from app.models.edition import Edition
 from app.models.enums import Format
 from tests.helpers import (
-    _create_audio_engagement,
     _create_bare_book,
     _create_edition,
     _create_engagement,
@@ -98,7 +97,7 @@ def test_create_edition_unknown_book_returns_404(client: TestClient) -> None:
 
 def test_get_edition_returns_200(client: TestClient) -> None:
     book = _create_bare_book(client)
-    edition = _create_edition(client, book["id"], isbn="9781526622426")
+    edition = _create_edition(client, book["id"], format="print", isbn="9781526622426")
 
     response = client.get(f"/api/editions/{edition['id']}")
     assert response.status_code == 200
@@ -154,7 +153,7 @@ def test_update_edition_empty_body_changes_nothing(client: TestClient) -> None:
 
 def test_update_edition_can_clear_isbn(client: TestClient) -> None:
     book = _create_bare_book(client)
-    edition = _create_edition(client, book["id"], isbn="9781526622426")
+    edition = _create_edition(client, book["id"], format="print", isbn="9781526622426")
 
     response = client.patch(f"/api/editions/{edition['id']}", json={"isbn": None})
     assert response.status_code == 200
@@ -292,7 +291,7 @@ def test_create_binding_captures_a_first_page_length(
     book = _create_bare_book(client)
     _create_edition(client, book["id"], format="audio", length=600)
     _create_edition(client, book["id"], format="print")
-    engagement = _create_audio_engagement(client, book["id"])
+    engagement = _create_engagement(client, book["id"], edition_format="audio")
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/editions",
@@ -329,7 +328,7 @@ def test_create_binding_by_format_finds_existing_edition(
     edition = _create_edition(
         client, book["id"], format="print", isbn="9781526622426", length=300
     )
-    engagement = _create_audio_engagement(client, book["id"])
+    engagement = _create_engagement(client, book["id"], edition_format="audio")
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/editions",
@@ -344,7 +343,7 @@ def test_create_binding_by_format_no_edition_returns_404(
 ) -> None:
     book = _create_bare_book(client)
     _create_edition(client, book["id"], format="audio", length=600)
-    engagement = _create_audio_engagement(client, book["id"])
+    engagement = _create_engagement(client, book["id"], edition_format="audio")
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/editions",
@@ -357,10 +356,10 @@ def test_create_binding_by_format_multiple_editions_returns_409(
     client: TestClient,
 ) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], isbn="9781111111111")
-    _create_edition(client, book["id"], isbn="9782222222222")
+    _create_edition(client, book["id"], format="print", isbn="9781111111111")
+    _create_edition(client, book["id"], format="print", isbn="9782222222222")
     _create_edition(client, book["id"], format="audio", length=600)
-    engagement = _create_audio_engagement(client, book["id"])
+    engagement = _create_engagement(client, book["id"], edition_format="audio")
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/editions",
@@ -387,7 +386,7 @@ def test_create_binding_unknown_engagement_returns_404(
     client: TestClient,
 ) -> None:
     book = _create_bare_book(client)
-    edition = _create_edition(client, book["id"], isbn="9781526622426")
+    edition = _create_edition(client, book["id"], format="print", isbn="9781526622426")
 
     response = client.post(
         f"/api/engagements/{uuid.uuid4()}/editions",
@@ -467,7 +466,7 @@ def test_list_bindings_returns_correct_editions(client: TestClient) -> None:
 
 def test_new_engagement_starts_with_chosen_format_bound(client: TestClient) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"])
+    _create_edition(client, book["id"], format="print")
     engagement = client.post(
         "/api/engagements",
         json={"book_id": book["id"], "edition_format": "print"},

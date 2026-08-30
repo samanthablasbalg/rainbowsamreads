@@ -36,9 +36,13 @@ def _create_bare_book(
 
 
 def _create_engagement(
-    client: TestClient, book_id: str, started_on: str | None = None
+    client: TestClient,
+    book_id: str,
+    started_on: str | None = None,
+    *,
+    edition_format: str = "print",
 ) -> dict[str, Any]:
-    body: dict[str, Any] = {"book_id": book_id, "edition_format": "print"}
+    body: dict[str, Any] = {"book_id": book_id, "edition_format": edition_format}
     if started_on is not None:
         body["started_on"] = started_on
     response = client.post("/api/engagements", json=body)
@@ -99,17 +103,6 @@ def _bind_edition(
         f"/api/engagements/{engagement_id}/editions",
         json={"edition_id": edition_id, **kwargs},
     )
-    assert response.status_code == 201
-    return cast(dict[str, Any], response.json())
-
-
-def _create_audio_engagement(
-    client: TestClient, book_id: str, started_on: str | None = None
-) -> dict[str, Any]:
-    body: dict[str, Any] = {"book_id": book_id, "edition_format": "audio"}
-    if started_on is not None:
-        body["started_on"] = started_on
-    response = client.post("/api/engagements", json=body)
     assert response.status_code == 201
     return cast(dict[str, Any], response.json())
 

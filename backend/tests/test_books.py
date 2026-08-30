@@ -219,7 +219,7 @@ def test_search_dedups_google_hit_matching_local_isbn(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     book = _create_bare_book(client, title="Piranesi", author="Susanna Clarke")
-    _create_edition(client, book["id"], isbn="9781526622426")
+    _create_edition(client, book["id"], format="print", isbn="9781526622426")
 
     volume = _fake_volume(id="differentid", authors=["Susanna Clarke"])
     volume["volumeInfo"]["industryIdentifiers"] = [
