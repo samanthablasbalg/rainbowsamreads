@@ -46,22 +46,6 @@ def _create_engagement(
     return cast(dict[str, Any], response.json())
 
 
-def _create_bare_engagement(client: TestClient, book_id: str) -> dict[str, Any]:
-    """Start a read, then clear its auto-bound edition so binding-endpoint
-    tests begin from an engagement with nothing bound. The throwaway uses
-    audio — the one format these tests never create for themselves."""
-    audio = client.post(
-        "/api/editions", json={"book_id": book_id, "format": "audio"}
-    ).json()
-    response = client.post(
-        "/api/engagements", json={"book_id": book_id, "edition_format": "audio"}
-    )
-    assert response.status_code == 201
-    engagement = cast(dict[str, Any], response.json())
-    client.delete(f"/api/engagements/{engagement['id']}/editions/{audio['id']}")
-    return engagement
-
-
 def _resume_from(client: TestClient, engagement_id: str, unit: LogUnit) -> int:
     """Where the sheet would prefill "From". A session names both its ends now, so a
     helper that takes only the position reached has to ask for the other one."""
