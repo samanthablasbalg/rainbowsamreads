@@ -42,8 +42,6 @@ def _reset_schema() -> None:
     with owner_engine.begin() as conn:
         conn.execute(text("DROP TABLE IF EXISTS alembic_version"))
     Base.metadata.drop_all(owner_engine)
-    with owner_engine.begin() as conn:
-        conn.execute(text("DROP FUNCTION IF EXISTS sync_edition_format_columns()"))
 
 
 def _truncate_all() -> None:

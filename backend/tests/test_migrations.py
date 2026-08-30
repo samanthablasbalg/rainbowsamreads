@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Generator
 
 import pytest
 from alembic import command
@@ -11,6 +12,17 @@ from sqlalchemy.exc import DBAPIError
 from tests.conftest import ALEMBIC_INI, owner_engine
 
 BEFORE_EDITION_FORMAT = "5bd2dac61e85"
+EDITION_FORMAT_EXPANDED = "a8f3c2d91e47"
+
+
+@pytest.fixture
+def expanded_edition_format_schema(seed_user: object) -> Generator[None]:
+    config = Config(str(ALEMBIC_INI))
+    command.downgrade(config, EDITION_FORMAT_EXPANDED)
+    try:
+        yield
+    finally:
+        command.upgrade(config, "head")
 
 
 def _insert_book(connection: Connection) -> uuid.UUID:
@@ -62,7 +74,7 @@ def test_edition_format_migration_backfills_existing_editions() -> None:
                 },
             )
 
-        command.upgrade(config, "head")
+        command.upgrade(config, EDITION_FORMAT_EXPANDED)
 
         with owner_engine.connect() as connection:
             formats = connection.execute(
@@ -83,7 +95,9 @@ def test_edition_format_migration_backfills_existing_editions() -> None:
         command.upgrade(config, "head")
 
 
-def test_edition_format_migration_syncs_legacy_inserts() -> None:
+def test_edition_format_migration_syncs_legacy_inserts(
+    expanded_edition_format_schema: None,
+) -> None:
     edition_id = uuid.uuid4()
 
     with owner_engine.begin() as connection:
@@ -123,7 +137,9 @@ def test_edition_format_migration_syncs_legacy_inserts() -> None:
         assert updated_canonical_format == "print"
 
 
-def test_edition_format_migration_syncs_canonical_writes() -> None:
+def test_edition_format_migration_syncs_canonical_writes(
+    expanded_edition_format_schema: None,
+) -> None:
     edition_id = uuid.uuid4()
 
     with owner_engine.begin() as connection:
@@ -163,7 +179,9 @@ def test_edition_format_migration_syncs_canonical_writes() -> None:
         assert updated_legacy_format == "digital"
 
 
-def test_edition_format_migration_rejects_conflicting_writes() -> None:
+def test_edition_format_migration_rejects_conflicting_writes(
+    expanded_edition_format_schema: None,
+) -> None:
     with owner_engine.begin() as connection:
         book_id = _insert_book(connection)
 
@@ -194,19 +212,41 @@ def test_edition_format_migration_rejects_conflicting_writes() -> None:
             )
 
 
-def test_edition_format_migration_indexes_the_canonical_format() -> None:
+def test_edition_format_contract_removes_legacy_schema() -> None:
     with owner_engine.connect() as connection:
+        legacy_column_count = connection.execute(
+            text(
+                """
+                SELECT count(*)
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                    AND table_name = 'editions'
+                    AND column_name = 'edition_format'
+                """
+            )
+        ).scalar_one()
+        sync_function_count = connection.execute(
+            text(
+                """
+                SELECT count(*)
+                FROM pg_proc
+                WHERE proname = 'sync_edition_format_columns'
+                """
+            )
+        ).scalar_one()
         index_definition = connection.execute(
             text(
                 """
                 SELECT indexdef
                 FROM pg_indexes
                 WHERE schemaname = 'public'
-                    AND indexname = 'ix_editions_book_format_canonical_generic'
+                    AND indexname = 'ix_editions_book_format_generic'
                 """
             )
         ).scalar_one()
 
+        assert legacy_column_count == 0
+        assert sync_function_count == 0
         assert "(book_id, format)" in index_definition
         assert "WHERE (isbn IS NULL)" in index_definition
 
