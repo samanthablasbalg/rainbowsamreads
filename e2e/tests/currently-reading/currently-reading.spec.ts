@@ -94,7 +94,7 @@ test('Audio log sheet shows HH:MM input instead of a page input', async ({ page,
 
   await test.step('Seed an audio read', async () => {
     const bookId = await apiClient.createBook('The Hobbit', 'J.R.R. Tolkien');
-    await apiClient.markAsReading(bookId, 'audio');
+    await apiClient.markAsReading(bookId, 'audio', 600);
   });
 
   await test.step('Navigate and open the log sheet', async () => {

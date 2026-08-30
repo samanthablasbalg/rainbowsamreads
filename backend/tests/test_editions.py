@@ -310,7 +310,7 @@ def test_create_binding_rejects_removed_legacy_length(
     client: TestClient,
 ) -> None:
     book = _create_bare_book(client)
-    edition = _create_edition(client, book["id"], isbn="9781526622426")
+    edition = _create_edition(client, book["id"], isbn="9781526622426", length=300)
     engagement = _create_engagement(client, book["id"])
 
     response = client.post(
@@ -467,10 +467,12 @@ def test_list_bindings_returns_correct_editions(client: TestClient) -> None:
 def test_new_engagement_starts_with_chosen_format_bound(client: TestClient) -> None:
     book = _create_bare_book(client)
     _create_edition(client, book["id"], format="print")
-    engagement = client.post(
+    response = client.post(
         "/api/engagements",
-        json={"book_id": book["id"], "edition_format": "print"},
-    ).json()
+        json={"book_id": book["id"], "edition_format": "print", "edition_length": 300},
+    )
+    assert response.status_code == 201
+    engagement = response.json()
 
     bindings = client.get(f"/api/engagements/{engagement['id']}/editions").json()
     assert len(bindings) == 1
@@ -534,7 +536,7 @@ def test_delete_binding_unknown_returns_404(client: TestClient) -> None:
     book = _create_bare_book(client)
     _create_edition(client, book["id"], format="print", length=300)
     edition = _create_edition(
-        client, book["id"], format="digital", isbn="9781526622426"
+        client, book["id"], format="digital", isbn="9781526622426", length=250
     )
     engagement = _create_engagement(client, book["id"])
 

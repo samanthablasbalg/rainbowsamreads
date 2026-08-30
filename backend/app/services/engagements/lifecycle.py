@@ -149,6 +149,14 @@ def create_engagement(
     if edition_length is not None:
         capture_edition_length(book, edition, edition_length)
 
+    if (
+        status == ReadingStatus.reading
+        and engagement.resolve_length(edition_format) is None
+    ):
+        raise InvalidOperationError(
+            "A reading engagement requires a length for its selected format."
+        )
+
     return engagement
 
 

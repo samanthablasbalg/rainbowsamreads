@@ -19,9 +19,21 @@ def _create_book(
     response = client.post("/api/books", json={"title": title, "author": author})
     assert response.status_code == 201
     book = cast(dict[str, Any], response.json())
-    client.post("/api/editions", json={"book_id": book["id"], "format": "print"})
-    client.post("/api/editions", json={"book_id": book["id"], "format": "digital"})
-    client.post("/api/editions", json={"book_id": book["id"], "format": "audio"})
+    print_response = client.post(
+        "/api/editions",
+        json={"book_id": book["id"], "format": "print", "length": 300},
+    )
+    assert print_response.status_code == 201
+    digital_response = client.post(
+        "/api/editions",
+        json={"book_id": book["id"], "format": "digital", "length": 250},
+    )
+    assert digital_response.status_code == 201
+    audio_response = client.post(
+        "/api/editions",
+        json={"book_id": book["id"], "format": "audio", "length": 600},
+    )
+    assert audio_response.status_code == 201
     return book
 
 

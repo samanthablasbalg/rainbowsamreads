@@ -32,7 +32,7 @@ def test_create_engagement_returns_201(client: TestClient) -> None:
     book = _create_book(client)
     response = client.post(
         "/api/engagements",
-        json={"book_id": book["id"], "edition_format": "print", "edition_length": 300},
+        json={"book_id": book["id"], "edition_format": "print"},
     )
     assert response.status_code == 201
     data = response.json()
@@ -134,6 +134,15 @@ def test_create_engagement_with_edition_length_when_edition_has_length_returns_4
             "edition_format": "print",
             "edition_length": 1000,
         },
+    )
+    assert response.status_code == 422
+
+
+def test_create_engagement_with_no_page_length_returns_422(client: TestClient) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], format="print")
+    response = client.post(
+        "/api/engagements", json={"book_id": book["id"], "edition_format": "print"}
     )
     assert response.status_code == 422
 
@@ -306,6 +315,25 @@ def test_create_engagement_at_finished_status(client: TestClient) -> None:
     assert data["started_on"] is None
 
 
+def test_create_lengthless_engagement_at_finished_status(client: TestClient) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], format="print")
+    response = client.post(
+        "/api/engagements",
+        json={"book_id": book["id"], "edition_format": "print", "status": "finished"},
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["status"] == "finished"
+    assert data["finished_on"] is None
+    # No invented start date: a read logged after the fact may not know when it began.
+    assert data["started_on"] is None
+    # No invented finished log when going straight to finished
+    logs_response = client.get(f"/api/engagements/{data['id']}/progress-logs")
+    assert logs_response.status_code == 200
+    assert logs_response.json() == []
+
+
 def test_create_engagement_at_dnf_status(client: TestClient) -> None:
     book = _create_book(client)
     response = client.post(
@@ -314,6 +342,21 @@ def test_create_engagement_at_dnf_status(client: TestClient) -> None:
     )
     assert response.status_code == 201
     assert response.json()["status"] == "dnf"
+
+
+def test_create_lengthless_engagement_at_dnf_status(client: TestClient) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], format="print")
+    response = client.post(
+        "/api/engagements",
+        json={"book_id": book["id"], "edition_format": "print", "status": "dnf"},
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["status"] == "dnf"
+    assert data["finished_on"] is None
+    # No invented start date: a read logged after the fact may not know when it began.
+    assert data["started_on"] is None
 
 
 def test_create_engagement_at_finished_stores_both_dates(client: TestClient) -> None:
@@ -712,12 +755,8 @@ def test_patch_to_dnf_does_not_create_progress_log(
     assert len(logs) == 1
 
 
-def test_patch_to_dnf_preserves_completion_pct(client: TestClient, db: Session) -> None:
+def test_patch_to_dnf_preserves_completion_pct(client: TestClient) -> None:
     book = _create_book(client)
-    book_obj = db.get(Book, uuid.UUID(book["id"]))
-    assert book_obj is not None
-    book_obj.default_page_count = 300
-    db.commit()
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 150)
 
@@ -991,6 +1030,7 @@ def test_cover_url_derived_from_bound_edition(client: TestClient) -> None:
         book["id"],
         format="print",
         cover_url="https://covers.example/ed.jpg",
+        length=300,
     )
     engagement = _create_engagement(client, book["id"])
 
@@ -1006,7 +1046,7 @@ def test_cover_url_falls_back_to_book_default_when_edition_has_no_cover(
     book_obj.default_cover_url = "https://covers.example/default.jpg"
     db.commit()
 
-    _create_edition(client, book["id"], format="print")
+    _create_edition(client, book["id"], format="print", length=300)
     engagement = _create_engagement(client, book["id"])
 
     assert engagement["cover_url"] == "https://covers.example/default.jpg"
@@ -1016,7 +1056,7 @@ def test_cover_url_is_null_when_edition_has_no_cover_and_book_has_no_default(
     client: TestClient,
 ) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], format="print")
+    _create_edition(client, book["id"], format="print", length=300)
     engagement = _create_engagement(client, book["id"])
 
     assert engagement["cover_url"] is None
@@ -1033,8 +1073,8 @@ def test_formats_reflects_chosen_format_at_creation(client: TestClient) -> None:
 
 def test_formats_derived_from_bound_editions(client: TestClient) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], format="print")
-    digital_ed = _create_edition(client, book["id"], format="digital")
+    _create_edition(client, book["id"], format="print", length=300)
+    digital_ed = _create_edition(client, book["id"], format="digital", length=250)
     engagement = _create_engagement(client, book["id"])
     _bind_edition(client, engagement["id"], digital_ed["id"])
 
@@ -1089,9 +1129,10 @@ def test_update_length_leaves_the_shared_edition_alone(
     client: TestClient, db: Session
 ) -> None:
     edition, engagement_id = _print_read_of_1100_pages(client)
-    client.patch(
+    response = client.patch(
         f"/api/engagements/{engagement_id}/length", json={"length_pages": 1000}
     )
+    assert response.status_code == 200
 
     db.expire_all()
     edition_obj = db.get(Edition, uuid.UUID(edition["id"]))
@@ -1103,17 +1144,18 @@ def test_update_length_pulls_back_the_only_entry_past_the_new_end(
     client: TestClient,
 ) -> None:
     _, engagement_id = _print_read_of_1100_pages(client)
-    _log_progress(client, engagement_id, 500)
+    for page in (300, 400, 500, 800):
+        _log_progress(client, engagement_id, page)
 
     response = client.patch(
-        f"/api/engagements/{engagement_id}/length", json={"length_pages": 400}
+        f"/api/engagements/{engagement_id}/length", json={"length_pages": 750}
     )
 
     assert response.status_code == 200
     data = response.json()
-    assert data["length_pages"] == 400
+    assert data["length_pages"] == 750
     # The entry that ran past the new end came back with it rather than being stranded.
-    assert data["resume_from_page"] == 400
+    assert data["resume_from_page"] == 750
     assert data["completion_pct"] == 100
 
 

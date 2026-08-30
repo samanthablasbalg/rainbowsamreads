@@ -10,7 +10,7 @@ test('DNF books support adding a review the same way finished books do', async (
   const sheet = new ReviewSheetPage(page);
 
   await test.step('Seed a DNF book with no review', async () => {
-    const bookId = await apiClient.createBook('Infinite Jest', 'David Foster Wallace');
+    const bookId = await apiClient.createBook('Infinite Jest', 'David Foster Wallace', 1079);
     const engId = await apiClient.markAsReading(bookId);
     await apiClient.markAsDnf(engId);
   });

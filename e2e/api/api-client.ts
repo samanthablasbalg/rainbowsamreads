@@ -18,11 +18,17 @@ export class ApiClient {
     const response = await this.request.post('/api/books', {
       data: { title, author, ...(pageCount != null && { page_count: pageCount }) },
     });
+    if (!response.ok()) {
+      throw new Error(`Failed to create book: ${await response.text()}`);
+    }
     const { id } = (await response.json()) as { id: string };
     for (const format of ['print', 'digital', 'audio']) {
-      await this.request.post('/api/editions', {
+      const editionResponse = await this.request.post('/api/editions', {
         data: { book_id: id, format },
       });
+      if (!editionResponse.ok()) {
+        throw new Error(`Failed to create ${format} edition: ${await editionResponse.text()}`);
+      }
     }
     return id;
   }
@@ -31,22 +37,25 @@ export class ApiClient {
    * Starts a reading engagement for a book.
    * @param bookId - The book to start reading.
    * @param editionFormat - The format of the edition to read.
-   * @param audioLengthMinutes - Optional total length in minutes; used to set the audio length for
-   *   audio reads so completion % can be computed.
+   * @param editionLength - Optional total length in the edition's unit; used to capture a missing
+   *   edition length when the read starts.
    * @returns The new engagement's id.
    */
   async markAsReading(
     bookId: string,
     editionFormat = 'print',
-    audioLengthMinutes?: number
+    editionLength?: number
   ): Promise<string> {
     const response = await this.request.post('/api/engagements', {
       data: {
         book_id: bookId,
         edition_format: editionFormat,
-        ...(audioLengthMinutes != null && { edition_length: audioLengthMinutes }),
+        ...(editionLength != null && { edition_length: editionLength }),
       },
     });
+    if (!response.ok()) {
+      throw new Error(`Failed to create engagement: ${await response.text()}`);
+    }
     const { id } = (await response.json()) as { id: string };
     return id;
   }
@@ -109,20 +118,23 @@ export class ApiClient {
    * format alone is enough to find one.
    * @param engagementId - The read to add the format to.
    * @param editionFormat - The format to add.
-   * @param audioLengthMinutes - Total length in minutes. The synthetic audio edition
-   *   carries no length of its own, so audio needs one before minutes can be logged.
+   * @param editionLength - Total length in the edition's unit. Synthetic editions carry no length
+   *   of their own, so one is needed before that format can be added to an active read.
    */
   async addFormat(
     engagementId: string,
     editionFormat: string,
-    audioLengthMinutes?: number
+    editionLength?: number
   ): Promise<void> {
-    await this.request.post(`/api/engagements/${engagementId}/editions`, {
+    const response = await this.request.post(`/api/engagements/${engagementId}/editions`, {
       data: {
         edition_format: editionFormat,
-        ...(audioLengthMinutes != null && { edition_length: audioLengthMinutes }),
+        ...(editionLength != null && { edition_length: editionLength }),
       },
     });
+    if (!response.ok()) {
+      throw new Error(`Failed to add engagement format: ${await response.text()}`);
+    }
   }
 
   /**
