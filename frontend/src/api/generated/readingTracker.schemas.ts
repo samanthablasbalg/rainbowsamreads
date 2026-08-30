@@ -100,7 +100,7 @@ export const Format = {
 
 export interface EditionCreate {
   book_id: string;
-  edition_format: Format;
+  format: Format;
   isbn?: string | null;
   page_count?: number | null;
   audio_minutes?: number | null;
@@ -110,7 +110,7 @@ export interface EditionCreate {
 export interface EditionRead {
   id: string;
   book_id: string;
-  edition_format: Format;
+  format: Format;
   isbn: string | null;
   publisher: string | null;
   page_count: number | null;

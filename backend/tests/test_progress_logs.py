@@ -1051,7 +1051,7 @@ def test_length_capture_writes_edition_audio_minutes(
     edition = db.execute(
         select(Edition).where(
             Edition.book_id == uuid.UUID(book["id"]),
-            Edition.edition_format == "audio",
+            Edition.format == "audio",
         )
     ).scalar_one()
     assert edition.audio_minutes == 480
@@ -1089,7 +1089,7 @@ def test_audio_completion_pct_uses_edition_audio_minutes(
     edition = db.execute(
         select(Edition).where(
             Edition.book_id == uuid.UUID(book["id"]),
-            Edition.edition_format == "audio",
+            Edition.format == "audio",
         )
     ).scalar_one()
     edition.audio_minutes = 480

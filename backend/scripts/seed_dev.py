@@ -89,13 +89,13 @@ def add_book(title: str, author: str, page_count: int, cover_url: str) -> str:
     _cover_urls[book_id] = cover_url
     post(
         "/editions",
-        {"book_id": book_id, "edition_format": "print", "page_count": page_count},
+        {"book_id": book_id, "format": "print", "page_count": page_count},
     )
     post(
         "/editions",
-        {"book_id": book_id, "edition_format": "digital", "page_count": page_count},
+        {"book_id": book_id, "format": "digital", "page_count": page_count},
     )
-    post("/editions", {"book_id": book_id, "edition_format": "audio"})
+    post("/editions", {"book_id": book_id, "format": "audio"})
     return book_id
 
 

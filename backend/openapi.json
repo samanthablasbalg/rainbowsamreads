@@ -1690,7 +1690,7 @@
             "format": "uuid",
             "title": "Book Id"
           },
-          "edition_format": {
+          "format": {
             "$ref": "#/components/schemas/Format"
           },
           "isbn": {
@@ -1741,7 +1741,7 @@
         "type": "object",
         "required": [
           "book_id",
-          "edition_format"
+          "format"
         ],
         "title": "EditionCreate"
       },
@@ -1757,7 +1757,7 @@
             "format": "uuid",
             "title": "Book Id"
           },
-          "edition_format": {
+          "format": {
             "$ref": "#/components/schemas/Format"
           },
           "isbn": {
@@ -1830,7 +1830,7 @@
         "required": [
           "id",
           "book_id",
-          "edition_format",
+          "format",
           "isbn",
           "publisher",
           "page_count",

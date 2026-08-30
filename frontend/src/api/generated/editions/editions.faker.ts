@@ -14,7 +14,7 @@ export const getEditionsCreateEditionResponseMock = (
 ): EditionRead => ({
   id: faker.string.uuid(),
   book_id: faker.string.uuid(),
-  edition_format: faker.helpers.arrayElement(Object.values(Format)),
+  format: faker.helpers.arrayElement(Object.values(Format)),
   isbn: faker.helpers.arrayElement([faker.string.alpha({ length: { min: 10, max: 20 } }), null]),
   publisher: faker.helpers.arrayElement([
     faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -36,7 +36,7 @@ export const getEditionsGetEditionResponseMock = (
 ): EditionRead => ({
   id: faker.string.uuid(),
   book_id: faker.string.uuid(),
-  edition_format: faker.helpers.arrayElement(Object.values(Format)),
+  format: faker.helpers.arrayElement(Object.values(Format)),
   isbn: faker.helpers.arrayElement([faker.string.alpha({ length: { min: 10, max: 20 } }), null]),
   publisher: faker.helpers.arrayElement([
     faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -58,7 +58,7 @@ export const getEditionsUpdateEditionResponseMock = (
 ): EditionRead => ({
   id: faker.string.uuid(),
   book_id: faker.string.uuid(),
-  edition_format: faker.helpers.arrayElement(Object.values(Format)),
+  format: faker.helpers.arrayElement(Object.values(Format)),
   isbn: faker.helpers.arrayElement([faker.string.alpha({ length: { min: 10, max: 20 } }), null]),
   publisher: faker.helpers.arrayElement([
     faker.string.alpha({ length: { min: 10, max: 20 } }),

@@ -19,9 +19,9 @@ export class ApiClient {
       data: { title, author, ...(pageCount != null && { page_count: pageCount }) },
     });
     const { id } = (await response.json()) as { id: string };
-    for (const edition_format of ['print', 'digital', 'audio']) {
+    for (const format of ['print', 'digital', 'audio']) {
       await this.request.post('/api/editions', {
-        data: { book_id: id, edition_format },
+        data: { book_id: id, format },
       });
     }
     return id;

@@ -26,7 +26,7 @@ def create_binding(
         edition = edition_crud.get_or_raise(db, edition_id)
     else:
         candidates = edition_crud.list_by(
-            db, book_id=engagement.book_id, edition_format=edition_format
+            db, book_id=engagement.book_id, format=edition_format
         )
         if len(candidates) == 0:
             raise NotFoundError(
@@ -57,7 +57,7 @@ def create_binding(
     # audiobook is. That is a fact about the edition rather than a correction to it
     # (ADR-0022), so it is captured rather than overridden -- and only on an audio
     # edition, since editions are shared across users.
-    if audio_length_minutes is not None and edition.edition_format == Format.audio:
+    if audio_length_minutes is not None and edition.format == Format.audio:
         capture_audio_length(engagement.book, edition, audio_length_minutes)
 
     return binding
