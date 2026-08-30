@@ -31,7 +31,7 @@ def _create_engagement(client: TestClient, book_id: str) -> dict[str, Any]:
     tests begin from an engagement with nothing bound. The throwaway uses
     audio — the one format these tests never create for themselves."""
     audio = client.post(
-        "/api/editions", json={"book_id": book_id, "edition_format": "audio"}
+        "/api/editions", json={"book_id": book_id, "format": "audio"}
     ).json()
     response = client.post(
         "/api/engagements", json={"book_id": book_id, "edition_format": "audio"}
@@ -45,10 +45,10 @@ def _create_engagement(client: TestClient, book_id: str) -> dict[str, Any]:
 def _create_edition(
     client: TestClient,
     book_id: str,
-    edition_format: str = "print",
+    format: str = "print",
     **kwargs: Any,
 ) -> dict[str, Any]:
-    body = {"book_id": book_id, "edition_format": edition_format, **kwargs}
+    body = {"book_id": book_id, "format": format, **kwargs}
     response = client.post("/api/editions", json=body)
     assert response.status_code == 201
     return cast(dict[str, Any], response.json())
@@ -94,7 +94,7 @@ def test_create_edition_returns_201(client: TestClient) -> None:
         "/api/editions",
         json={
             "book_id": book["id"],
-            "edition_format": "print",
+            "format": "print",
             "isbn": "9781526622426",
             "page_count": 272,
         },
@@ -102,7 +102,7 @@ def test_create_edition_returns_201(client: TestClient) -> None:
     assert response.status_code == 201
     data = response.json()
     assert data["book_id"] == book["id"]
-    assert data["edition_format"] == "print"
+    assert data["format"] == "print"
     assert data["isbn"] == "9781526622426"
     assert data["page_count"] == 272
     assert data["cover_url"] is None
@@ -114,7 +114,7 @@ def test_create_audio_edition_persists_audio_minutes(client: TestClient) -> None
     book = _create_book(client)
     response = client.post(
         "/api/editions",
-        json={"book_id": book["id"], "edition_format": "audio", "audio_minutes": 480},
+        json={"book_id": book["id"], "format": "audio", "audio_minutes": 480},
     )
     assert response.status_code == 201
     data = response.json()
@@ -125,7 +125,7 @@ def test_create_audio_edition_persists_audio_minutes(client: TestClient) -> None
 def test_create_edition_unknown_book_returns_404(client: TestClient) -> None:
     response = client.post(
         "/api/editions",
-        json={"book_id": str(uuid.uuid4()), "edition_format": "print"},
+        json={"book_id": str(uuid.uuid4()), "format": "print"},
     )
     assert response.status_code == 404
 
@@ -211,7 +211,7 @@ def test_import_creates_print_edition_with_real_data(
     )
 
     assert len(editions) == 3
-    ed = next(e for e in editions if e.edition_format == Format.print)
+    ed = next(e for e in editions if e.format == Format.print)
     assert ed.isbn == "9781526622426"
     assert ed.page_count == 272
     assert ed.cover_url == "https://example.com/cover.jpg"
@@ -237,7 +237,7 @@ def test_import_creates_edition_with_null_isbn_when_no_identifiers(
         db.execute(select(Edition).where(Edition.book_id == book_id)).scalars().all()
     )
     assert len(editions) == 3
-    print_ed = next(e for e in editions if e.edition_format == Format.print)
+    print_ed = next(e for e in editions if e.format == Format.print)
     assert print_ed.isbn is None
 
 
@@ -421,7 +421,7 @@ def test_list_bindings_returns_correct_editions(client: TestClient) -> None:
     book = _create_book(client)
     print_ed = _create_edition(client, book["id"], isbn="9781111111111")
     digital_ed = _create_edition(
-        client, book["id"], edition_format="digital", isbn="9782222222222"
+        client, book["id"], format="digital", isbn="9782222222222"
     )
     engagement = _create_engagement(client, book["id"])
     client.post(
@@ -460,7 +460,7 @@ def test_new_engagement_starts_with_chosen_format_bound(client: TestClient) -> N
 
     bindings = client.get(f"/api/engagements/{engagement['id']}/editions").json()
     assert len(bindings) == 1
-    assert bindings[0]["edition"]["edition_format"] == "print"
+    assert bindings[0]["edition"]["format"] == "print"
 
 
 def test_list_bindings_unknown_engagement_returns_404(
@@ -520,7 +520,7 @@ def test_multiple_bindings_per_engagement(client: TestClient) -> None:
     book = _create_book(client)
     print_ed = _create_edition(client, book["id"], isbn="9781111111111")
     digital_ed = _create_edition(
-        client, book["id"], edition_format="digital", isbn="9782222222222"
+        client, book["id"], format="digital", isbn="9782222222222"
     )
     engagement = _create_engagement(client, book["id"])
 

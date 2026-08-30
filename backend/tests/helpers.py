@@ -15,15 +15,9 @@ def _create_book(
     response = client.post("/api/books", json={"title": title, "author": author})
     assert response.status_code == 201
     book = cast(dict[str, Any], response.json())
-    client.post(
-        "/api/editions", json={"book_id": book["id"], "edition_format": "print"}
-    )
-    client.post(
-        "/api/editions", json={"book_id": book["id"], "edition_format": "digital"}
-    )
-    client.post(
-        "/api/editions", json={"book_id": book["id"], "edition_format": "audio"}
-    )
+    client.post("/api/editions", json={"book_id": book["id"], "format": "print"})
+    client.post("/api/editions", json={"book_id": book["id"], "format": "digital"})
+    client.post("/api/editions", json={"book_id": book["id"], "format": "audio"})
     return book
 
 
@@ -80,12 +74,12 @@ def _log_progress(
 def _create_edition(
     client: TestClient,
     book_id: str,
-    edition_format: str = "print",
+    format: str = "print",
     **kwargs: Any,
 ) -> dict[str, Any]:
     response = client.post(
         "/api/editions",
-        json={"book_id": book_id, "edition_format": edition_format, **kwargs},
+        json={"book_id": book_id, "format": format, **kwargs},
     )
     assert response.status_code == 201
     return cast(dict[str, Any], response.json())

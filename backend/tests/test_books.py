@@ -468,7 +468,7 @@ def test_import_seeds_three_editions(
     )
     assert len(editions) == 3
 
-    by_format = {e.edition_format: e for e in editions}
+    by_format = {e.format: e for e in editions}
     assert set(by_format.keys()) == {Format.print, Format.digital, Format.audio}
 
     print_ed = by_format[Format.print]
@@ -516,7 +516,7 @@ def test_import_stores_publisher_and_plain_text_description(
     editions = (
         db.execute(select(Edition).where(Edition.book_id == book_id)).scalars().all()
     )
-    by_format = {e.edition_format: e for e in editions}
+    by_format = {e.format: e for e in editions}
 
     # Publisher is an edition-level fact, so it lands on the real print edition and
     # nowhere else -- the synthetic siblings make no claim about who published them.

@@ -11,7 +11,7 @@ from app.models.enums import Format
 
 class EditionCreate(BaseModel):
     book_id: uuid.UUID
-    edition_format: Format
+    format: Format
     isbn: str | None = None
     page_count: int | None = None
     audio_minutes: int | None = None
@@ -28,7 +28,7 @@ class EditionUpdate(BaseModel):
 class EditionRead(BaseModel):
     id: uuid.UUID
     book_id: uuid.UUID
-    edition_format: Format
+    format: Format
     isbn: str | None
     publisher: str | None
     page_count: int | None

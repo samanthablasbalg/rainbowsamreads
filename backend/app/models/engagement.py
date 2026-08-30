@@ -77,7 +77,7 @@ class Engagement(TimestampMixin, Base):
 
     @property
     def formats(self) -> list[Format]:
-        return [ee.edition.edition_format for ee in self.engagement_editions]
+        return [ee.edition.format for ee in self.engagement_editions]
 
     @property
     def cover_url(self) -> str | None:
@@ -119,7 +119,7 @@ class Engagement(TimestampMixin, Base):
 
     def binding_for(self, fmt: Format) -> EngagementEdition | None:
         return next(
-            (ee for ee in self.engagement_editions if ee.edition.edition_format == fmt),
+            (ee for ee in self.engagement_editions if ee.edition.format == fmt),
             None,
         )
 
@@ -133,7 +133,7 @@ class Engagement(TimestampMixin, Base):
     # length, so a second binding in the same format can still answer.
     def resolve_length(self, fmt: Format) -> int | None:
         for ee in self.engagement_editions:
-            if ee.edition.edition_format == fmt:
+            if ee.edition.format == fmt:
                 if ee.length_override is not None:
                     return ee.length_override
                 candidate = (

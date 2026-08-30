@@ -139,9 +139,7 @@ def test_patch_log_page_exceeds_book_length_returns_409(client: TestClient) -> N
     )
     assert book_resp.status_code == 201
     book = book_resp.json()
-    client.post(
-        "/api/editions", json={"book_id": book["id"], "edition_format": "print"}
-    )
+    client.post("/api/editions", json={"book_id": book["id"], "format": "print"})
     engagement = _create_engagement(client, book["id"])
     latest = _log_progress(client, engagement["id"], 150)
 

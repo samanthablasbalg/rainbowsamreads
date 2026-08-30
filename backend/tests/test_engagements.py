@@ -944,7 +944,7 @@ def test_formats_reflects_chosen_format_at_creation(client: TestClient) -> None:
 def test_formats_derived_from_bound_editions(client: TestClient) -> None:
     book = _create_bare_book(client)
     _create_edition(client, book["id"])
-    digital_ed = _create_edition(client, book["id"], edition_format="digital")
+    digital_ed = _create_edition(client, book["id"], format="digital")
     engagement = _create_engagement(client, book["id"])
     _bind_edition(client, engagement["id"], digital_ed["id"])
 
@@ -981,7 +981,7 @@ def test_update_length_recomputes_completion(client: TestClient) -> None:
 
 def test_update_length_recomputes_audio_completion(client: TestClient) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], edition_format="audio", audio_minutes=600)
+    _create_edition(client, book["id"], format="audio", audio_minutes=600)
     engagement_id = _create_audio_engagement(client, book["id"])["id"]
     _log_audio_progress(client, engagement_id, 300)
 
@@ -1031,7 +1031,7 @@ def test_update_length_pulls_back_the_only_audio_entry_past_the_new_end(
     client: TestClient,
 ) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], edition_format="audio", audio_minutes=600)
+    _create_edition(client, book["id"], format="audio", audio_minutes=600)
     engagement_id = _create_audio_engagement(client, book["id"])["id"]
     _log_audio_progress(client, engagement_id, 300)
 

@@ -102,7 +102,7 @@ def create_engagement(
         .where(
             Engagement.book_id == book_id,
             Engagement.status == ReadingStatus.reading,
-            Edition.edition_format == edition_format,
+            Edition.format == edition_format,
         )
     ).scalar_one_or_none()
     if duplicate is not None:
@@ -125,9 +125,7 @@ def create_engagement(
         ),
     )
 
-    candidates = edition_crud.list_by(
-        db, book_id=book_id, edition_format=edition_format
-    )
+    candidates = edition_crud.list_by(db, book_id=book_id, format=edition_format)
     if len(candidates) == 0:
         raise NotFoundError(f"No {edition_format} edition exists for this book")
     if len(candidates) > 1:

@@ -46,7 +46,7 @@ def main() -> None:
             book.description = volume.description
 
             print_edition = next(
-                (e for e in book.editions if e.edition_format == Format.print), None
+                (e for e in book.editions if e.format == Format.print), None
             )
             if print_edition is not None:
                 print_edition.publisher = print_edition.publisher or volume.publisher

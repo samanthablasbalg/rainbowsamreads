@@ -147,7 +147,7 @@ def import_book_from_google(db: Session, *, google_books_id: str) -> tuple[Book,
         db,
         Edition(
             book_id=book.id,
-            edition_format=Format.print,
+            format=Format.print,
             isbn=volume.isbn,
             publisher=volume.publisher,
             page_count=volume.page_count,
@@ -158,16 +158,14 @@ def import_book_from_google(db: Session, *, google_books_id: str) -> tuple[Book,
         db,
         Edition(
             book_id=book.id,
-            edition_format=Format.digital,
+            format=Format.digital,
             page_count=volume.page_count,
             cover_url=volume.cover_url,
         ),
     )
     edition_crud.create(
         db,
-        Edition(
-            book_id=book.id, edition_format=Format.audio, cover_url=volume.cover_url
-        ),
+        Edition(book_id=book.id, format=Format.audio, cover_url=volume.cover_url),
     )
 
     return book, True
