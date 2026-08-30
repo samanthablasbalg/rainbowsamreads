@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.crud import author_crud, book_author_crud, book_crud, edition_crud
-from app.exceptions import ConflictError, NotFoundError
+from app.exceptions import ConflictError, InvalidOperationError, NotFoundError
 from app.models.author import Author
 from app.models.book import Book, BookAuthor
 from app.models.edition import Edition
@@ -189,10 +189,14 @@ def remove_book(db: Session, book: Book) -> None:
 
 
 def capture_edition_length(book: Book, edition: Edition, length: int) -> None:
+    if edition.length is not None:
+        raise InvalidOperationError(
+            "This edition already has a length. Use the length override to change it."
+        )
+    edition.length = length
     if edition.format == Format.audio:
         if book.default_audio_minutes is None:
             book.default_audio_minutes = length
-    elif book.default_page_count is None:
-        book.default_page_count = length
-    if edition.length is None:
-        edition.length = length
+    else:
+        if book.default_page_count is None:
+            book.default_page_count = length

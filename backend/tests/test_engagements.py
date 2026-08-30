@@ -32,7 +32,8 @@ from tests.helpers import (
 def test_create_engagement_returns_201(client: TestClient) -> None:
     book = _create_book(client)
     response = client.post(
-        "/api/engagements", json={"book_id": book["id"], "edition_format": "print"}
+        "/api/engagements",
+        json={"book_id": book["id"], "edition_format": "print", "edition_length": 300},
     )
     assert response.status_code == 201
     data = response.json()
@@ -42,6 +43,35 @@ def test_create_engagement_returns_201(client: TestClient) -> None:
     assert data["book"]["title"] == "Piranesi"
     assert data["book"]["authors"][0]["name"] == "Susanna Clarke"
     assert data["formats"] == ["print"]
+    assert data["length_pages"] == 300
+    assert data["length_minutes"] is None
+
+
+def test_create_engagement_for_lengthless_book_with_edition_length_returns_201(
+    client: TestClient, db: Session
+) -> None:
+    book = _create_bare_book(client)
+    edition = _create_edition(client, book["id"], format="print")
+    response = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "edition_format": "print",
+            "edition_length": 250,
+        },
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["length_pages"] == 250
+    assert data["length_minutes"] is None
+
+    db.expire_all()
+    book_obj = db.get(Book, uuid.UUID(book["id"]))
+    edition_obj = db.get(Edition, uuid.UUID(edition["id"]))
+    assert book_obj is not None
+    assert edition_obj is not None
+    assert book_obj.default_page_count == 250
+    assert edition_obj.length == 250
 
 
 def test_create_engagement_binds_chosen_non_print_format(client: TestClient) -> None:
@@ -90,6 +120,22 @@ def test_create_engagement_rejects_removed_legacy_length(
         },
     )
 
+    assert response.status_code == 422
+
+
+def test_create_engagement_with_edition_length_when_edition_has_length_returns_422(
+    client: TestClient,
+) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], format="print", length=300)
+    response = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "edition_format": "print",
+            "edition_length": 1000,
+        },
+    )
     assert response.status_code == 422
 
 
