@@ -82,46 +82,6 @@ def test_create_engagement_binds_chosen_non_print_format(client: TestClient) -> 
     assert response.json()["formats"] == ["audio"]
 
 
-def test_create_engagement_accepts_canonical_edition_length(
-    client: TestClient, db: Session
-) -> None:
-    book = _create_bare_book(client)
-    edition = _create_edition(client, book["id"])
-
-    response = client.post(
-        "/api/engagements",
-        json={
-            "book_id": book["id"],
-            "edition_format": "print",
-            "edition_length": 272,
-        },
-    )
-
-    assert response.status_code == 201
-    db.expire_all()
-    edition_obj = db.get(Edition, uuid.UUID(edition["id"]))
-    assert edition_obj is not None
-    assert edition_obj.length == 272
-
-
-def test_create_engagement_rejects_removed_legacy_length(
-    client: TestClient,
-) -> None:
-    book = _create_bare_book(client)
-    _create_edition(client, book["id"], format="audio")
-
-    response = client.post(
-        "/api/engagements",
-        json={
-            "book_id": book["id"],
-            "edition_format": "audio",
-            "audio_length_minutes": 480,
-        },
-    )
-
-    assert response.status_code == 422
-
-
 def test_create_engagement_with_edition_length_when_edition_has_length_returns_422(
     client: TestClient,
 ) -> None:

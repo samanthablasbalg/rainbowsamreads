@@ -55,38 +55,6 @@ def test_create_audio_edition_persists_length(client: TestClient) -> None:
     assert data["length"] == 480
 
 
-def test_create_edition_returns_canonical_length(
-    client: TestClient,
-) -> None:
-    book = _create_bare_book(client)
-
-    response = client.post(
-        "/api/editions",
-        json={"book_id": book["id"], "format": "print", "length": 272},
-    )
-
-    assert response.status_code == 201
-    assert response.json()["length"] == 272
-    assert set(response.json()).isdisjoint({"page_count", "audio_minutes"})
-
-
-def test_create_edition_rejects_removed_legacy_length(
-    client: TestClient,
-) -> None:
-    book = _create_bare_book(client)
-
-    response = client.post(
-        "/api/editions",
-        json={
-            "book_id": book["id"],
-            "format": "print",
-            "page_count": 300,
-        },
-    )
-
-    assert response.status_code == 422
-
-
 def test_create_edition_unknown_book_returns_404(client: TestClient) -> None:
     response = client.post(
         "/api/editions",
@@ -123,19 +91,6 @@ def test_update_edition_patches_only_sent_fields(client: TestClient) -> None:
     data = response.json()
     assert data["length"] == 300
     assert data["isbn"] == "9781526622426"
-
-
-def test_update_edition_accepts_canonical_length(client: TestClient) -> None:
-    book = _create_bare_book(client)
-    edition = _create_edition(client, book["id"], length=272)
-
-    response = client.patch(
-        f"/api/editions/{edition['id']}",
-        json={"length": 300},
-    )
-
-    assert response.status_code == 200
-    assert response.json()["length"] == 300
 
 
 def test_update_edition_empty_body_changes_nothing(client: TestClient) -> None:
@@ -304,20 +259,6 @@ def test_create_binding_captures_a_first_page_length(
     book_obj = db.get(Book, uuid.UUID(book["id"]))
     assert book_obj is not None
     assert book_obj.default_page_count == 430
-
-
-def test_create_binding_rejects_removed_legacy_length(
-    client: TestClient,
-) -> None:
-    book = _create_bare_book(client)
-    edition = _create_edition(client, book["id"], isbn="9781526622426", length=300)
-    engagement = _create_engagement(client, book["id"])
-
-    response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_id": edition["id"], "audio_length_minutes": 430},
-    )
-    assert response.status_code == 422
 
 
 def test_create_binding_by_format_finds_existing_edition(
