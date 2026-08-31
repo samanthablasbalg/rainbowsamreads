@@ -15,11 +15,12 @@ class EngagementCreate(BaseModel):
     """`finished_on` is the date the read ended, whichever way it ended: it lands in
     `abandoned_on` when the status is dnf."""
 
+    model_config = ConfigDict(extra="forbid")
+
     book_id: uuid.UUID
     edition_format: Format
     status: Literal["reading", "finished", "dnf"] = "reading"
     edition_length: int | None = Field(default=None, gt=0)
-    audio_length_minutes: int | None = Field(default=None, gt=0)
     length_override: int | None = Field(default=None, gt=0)
     started_on: datetime.date | None = None
     finished_on: datetime.date | None = None
@@ -28,17 +29,6 @@ class EngagementCreate(BaseModel):
     def check_finished_on_matches_status(self) -> Self:
         if self.finished_on is not None and self.status == "reading":
             raise ValueError("A read in progress cannot have an end date")
-        if (
-            self.audio_length_minutes is not None
-            and self.edition_format != Format.audio
-        ):
-            raise ValueError("audio_length_minutes requires an audio edition")
-        if (
-            self.edition_length is not None
-            and self.audio_length_minutes is not None
-            and self.edition_length != self.audio_length_minutes
-        ):
-            raise ValueError("Provide one consistent edition length")
         return self
 
 

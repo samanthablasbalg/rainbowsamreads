@@ -4,19 +4,20 @@ import datetime
 import uuid
 from typing import TYPE_CHECKING, Annotated, Literal, Self
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 if TYPE_CHECKING:
     from app.models.progress_log import ProgressLog
 
 
 class ProgressLogCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     page_start: int | None = Field(default=None, ge=0)
     page_end: int | None = Field(default=None, gt=0)
     minute_start: int | None = Field(default=None, ge=0)
     minute_end: int | None = Field(default=None, gt=0)
     edition_length: int | None = Field(default=None, gt=0)
-    audio_length_minutes: int | None = Field(default=None, gt=0)
     logged_on: datetime.date | None = None
     note: str | None = None
 
@@ -32,14 +33,6 @@ class ProgressLogCreate(BaseModel):
         minutes = self.minute_start is not None and self.minute_end is not None
         if pages == minutes:
             raise ValueError("Provide exactly one of a page span or a minute span")
-        if self.audio_length_minutes is not None and not minutes:
-            raise ValueError("audio_length_minutes requires a minute span")
-        if (
-            self.edition_length is not None
-            and self.audio_length_minutes is not None
-            and self.edition_length != self.audio_length_minutes
-        ):
-            raise ValueError("Provide one consistent edition length")
         return self
 
 

@@ -35,7 +35,6 @@ def create_binding(
         origin_id=payload.origin_id,
         length_override=payload.length_override,
         edition_length=payload.edition_length,
-        audio_length_minutes=payload.audio_length_minutes,
     )
     db.commit()
 

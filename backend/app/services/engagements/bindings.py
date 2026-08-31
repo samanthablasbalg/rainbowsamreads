@@ -21,7 +21,6 @@ def create_binding(
     origin_id: uuid.UUID | None,
     length_override: int | None,
     edition_length: int | None,
-    audio_length_minutes: int | None,
 ) -> EngagementEdition:
     if edition_id is not None:
         edition = edition_crud.get_or_raise(db, edition_id)
@@ -55,8 +54,6 @@ def create_binding(
 
     if edition_length is not None:
         capture_edition_length(engagement.book, edition, edition_length)
-    elif audio_length_minutes is not None and edition.format == Format.audio:
-        capture_edition_length(engagement.book, edition, audio_length_minutes)
 
     return binding
 

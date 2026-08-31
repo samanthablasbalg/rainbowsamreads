@@ -340,7 +340,7 @@ def test_completion_pct_uses_binding_length_override(
     client: TestClient, db: Session
 ) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=400)
+    _create_edition(client, book["id"], length=400)
     engagement = _create_engagement(client, book["id"])
 
     binding = db.execute(
@@ -361,7 +361,7 @@ def test_completion_pct_uses_edition_page_count_when_no_override(
     client: TestClient,
 ) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=400)
+    _create_edition(client, book["id"], length=400)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 200)
 
@@ -402,8 +402,8 @@ def test_page_frontier_converts_to_the_audio_ruler(client: TestClient) -> None:
     """Read half of a 440-page print copy, then bind the audiobook: the audio ruler
     resumes at the same point in the book, not at zero."""
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=440)
-    audio = _create_edition(client, book["id"], "audio", audio_minutes=430)
+    _create_edition(client, book["id"], length=440)
+    audio = _create_edition(client, book["id"], "audio", length=430)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 220)
     _bind_edition(client, engagement["id"], audio["id"])
@@ -416,8 +416,8 @@ def test_page_frontier_converts_to_the_audio_ruler(client: TestClient) -> None:
 
 def test_minute_frontier_converts_to_the_page_ruler(client: TestClient) -> None:
     book = _create_bare_book(client)
-    print_edition = _create_edition(client, book["id"], page_count=440)
-    _create_edition(client, book["id"], "audio", audio_minutes=430)
+    print_edition = _create_edition(client, book["id"], length=440)
+    _create_edition(client, book["id"], "audio", length=430)
     engagement = _create_audio_engagement(client, book["id"])
     _log_audio_progress(client, engagement["id"], 215)
     _bind_edition(client, engagement["id"], print_edition["id"])
@@ -435,8 +435,8 @@ def test_completion_follows_the_latest_entry_not_the_audio_binding(
     progress. Completion used to answer on the audio ruler whenever audio was bound,
     which read as no progress at all until the first minute was logged."""
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=400)
-    audio = _create_edition(client, book["id"], "audio", audio_minutes=600)
+    _create_edition(client, book["id"], length=400)
+    audio = _create_edition(client, book["id"], "audio", length=600)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 100)
     _bind_edition(client, engagement["id"], audio["id"])
@@ -463,8 +463,8 @@ def test_resume_falls_back_to_its_own_ruler_without_a_length(
 def _mixed_engagement(client: TestClient) -> dict[str, Any]:
     """A read of a 440-page book with its 430-minute audiobook bound alongside."""
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=440)
-    audio = _create_edition(client, book["id"], "audio", audio_minutes=430)
+    _create_edition(client, book["id"], length=440)
+    audio = _create_edition(client, book["id"], "audio", length=430)
     engagement = _create_engagement(client, book["id"])
     _bind_edition(client, engagement["id"], audio["id"])
     return engagement
@@ -510,8 +510,8 @@ def _catch_up_engagement(client: TestClient) -> tuple[dict[str, Any], str]:
     """An audiobook of 480 minutes with a 400-page digital copy alongside, so 2:00 sits
     exactly on p. 100. Returns the read and the digital edition's id, unbound."""
     book = _create_bare_book(client)
-    digital = _create_edition(client, book["id"], "digital", page_count=400)
-    _create_edition(client, book["id"], "audio", audio_minutes=480)
+    digital = _create_edition(client, book["id"], "digital", length=400)
+    _create_edition(client, book["id"], "audio", length=480)
     return _create_audio_engagement(client, book["id"]), digital["id"]
 
 
@@ -579,7 +579,7 @@ def test_a_session_crossing_the_frontier_is_stored_as_two_rows(
 ) -> None:
     """At p. 200, back up and read 180 to 250: 180-200 is re-read, 200-250 is new."""
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=400)
+    _create_edition(client, book["id"], length=400)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 200)
 
@@ -607,7 +607,7 @@ def test_a_split_session_puts_its_note_on_the_new_ground_row(
     client: TestClient,
 ) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=400)
+    _create_edition(client, book["id"], length=400)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 200)
 
@@ -715,7 +715,7 @@ def test_finish_a_multi_format_read_without_a_unit_returns_422(
 def test_finish_a_single_format_read_needs_no_unit(client: TestClient) -> None:
     """One ruler bound is not a choice, so finishing still works unasked."""
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=300)
+    _create_edition(client, book["id"], length=300)
     engagement = _create_engagement(client, book["id"])
 
     response = client.patch(
@@ -1033,7 +1033,7 @@ def test_length_capture_writes_book_default_audio_minutes(
     book = _create_book(client)
     engagement = _create_audio_engagement(client, book["id"])
 
-    _log_audio_progress(client, engagement["id"], 75, audio_length_minutes=480)
+    _log_audio_progress(client, engagement["id"], 75, edition_length=480)
 
     book_obj = db.get(Book, uuid.UUID(book["id"]))
     assert book_obj is not None
@@ -1044,7 +1044,7 @@ def test_length_capture_writes_edition_length(client: TestClient, db: Session) -
     book = _create_book(client)
     engagement = _create_audio_engagement(client, book["id"])
 
-    _log_audio_progress(client, engagement["id"], 75, audio_length_minutes=480)
+    _log_audio_progress(client, engagement["id"], 75, edition_length=480)
 
     edition = db.execute(
         select(Edition).where(
@@ -1065,7 +1065,7 @@ def test_length_capture_does_not_overwrite_existing_length(
     db.commit()
     engagement = _create_audio_engagement(client, book["id"])
 
-    _log_audio_progress(client, engagement["id"], 75, audio_length_minutes=480)
+    _log_audio_progress(client, engagement["id"], 75, edition_length=480)
 
     db.refresh(book_obj)
     assert book_obj.default_audio_minutes == 300
@@ -1074,7 +1074,7 @@ def test_length_capture_does_not_overwrite_existing_length(
 def test_audio_completion_pct_uses_captured_length(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_audio_engagement(client, book["id"])
-    _log_audio_progress(client, engagement["id"], 240, audio_length_minutes=480)
+    _log_audio_progress(client, engagement["id"], 240, edition_length=480)
 
     response = client.get("/api/engagements?status=reading")
     assert response.json()[0]["completion_pct"] == 50
@@ -1418,7 +1418,7 @@ def test_delete_a_split_session_removes_both_of_its_rows(client: TestClient) -> 
     """One session, so one delete -- the split is storage, not something the reader
     put there."""
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=400)
+    _create_edition(client, book["id"], length=400)
     engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
     _log_progress(client, engagement["id"], 200, logged_on="2026-01-10")
     session = _log_progress(
@@ -1440,7 +1440,7 @@ def test_delete_the_re_coverage_half_of_a_later_session_returns_409(
     """The most recent *group* is what can be deleted, so an earlier session's row is
     still refused even though its group is the latest one's neighbour."""
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=400)
+    _create_edition(client, book["id"], length=400)
     engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
     first = _log_progress(client, engagement["id"], 200, logged_on="2026-01-10")
     _log_progress(client, engagement["id"], 250, logged_on="2026-01-11", page_start=180)

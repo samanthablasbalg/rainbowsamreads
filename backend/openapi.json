@@ -1716,30 +1716,6 @@
             ],
             "title": "Length"
           },
-          "page_count": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Page Count"
-          },
-          "audio_minutes": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Audio Minutes"
-          },
           "cover_url": {
             "anyOf": [
               {
@@ -1752,6 +1728,7 @@
             "title": "Cover Url"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "book_id",
@@ -1807,28 +1784,6 @@
             ],
             "title": "Length"
           },
-          "page_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Page Count"
-          },
-          "audio_minutes": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Audio Minutes"
-          },
           "cover_url": {
             "anyOf": [
               {
@@ -1859,8 +1814,6 @@
           "isbn",
           "publisher",
           "length",
-          "page_count",
-          "audio_minutes",
           "cover_url",
           "created_at",
           "updated_at"
@@ -1892,30 +1845,6 @@
             ],
             "title": "Length"
           },
-          "page_count": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Page Count"
-          },
-          "audio_minutes": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Audio Minutes"
-          },
           "cover_url": {
             "anyOf": [
               {
@@ -1928,6 +1857,7 @@
             "title": "Cover Url"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "title": "EditionUpdate"
       },
@@ -1962,18 +1892,6 @@
               }
             ],
             "title": "Edition Length"
-          },
-          "audio_length_minutes": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Audio Length Minutes"
           },
           "length_override": {
             "anyOf": [
@@ -2012,6 +1930,7 @@
             "title": "Finished On"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "book_id",
@@ -2121,20 +2040,9 @@
               }
             ],
             "title": "Edition Length"
-          },
-          "audio_length_minutes": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Audio Length Minutes"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "title": "EngagementEditionCreate"
       },
@@ -2640,18 +2548,6 @@
             ],
             "title": "Edition Length"
           },
-          "audio_length_minutes": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Audio Length Minutes"
-          },
           "logged_on": {
             "anyOf": [
               {
@@ -2676,6 +2572,7 @@
             "title": "Note"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "title": "ProgressLogCreate"
       },

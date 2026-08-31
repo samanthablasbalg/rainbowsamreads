@@ -187,7 +187,7 @@ def test_patch_log_minute_at_or_below_start_returns_409(client: TestClient) -> N
 def test_patch_log_minute_exceeds_audio_length_returns_409(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_audio_engagement(client, book["id"])
-    _log_audio_progress(client, engagement["id"], 60, audio_length_minutes=200)
+    _log_audio_progress(client, engagement["id"], 60, edition_length=200)
     latest = _log_audio_progress(client, engagement["id"], 120)
 
     response = client.patch(
@@ -358,7 +358,7 @@ def test_patch_a_split_session_moves_the_new_ground_row(client: TestClient) -> N
     """The end position belongs to the half of the session that broke new ground; the
     re-read half in front of it is unchanged."""
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=400)
+    _create_edition(client, book["id"], length=400)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 200)
     session = _log_progress(client, engagement["id"], 250, page_start=180)
@@ -378,7 +378,7 @@ def test_patch_a_split_session_moves_the_new_ground_row(client: TestClient) -> N
 
 def test_patch_a_split_session_date_moves_both_rows(client: TestClient) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=400)
+    _create_edition(client, book["id"], length=400)
     engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
     _log_progress(client, engagement["id"], 200, logged_on="2026-01-10")
     session = _log_progress(
@@ -399,7 +399,7 @@ def test_patch_a_re_read_past_the_frontier_returns_409(client: TestClient) -> No
     """A re-read has no new-ground row to extend, so this would have to split a stored
     row -- refused, the way starting past the frontier is."""
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=400)
+    _create_edition(client, book["id"], length=400)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 200)
     re_read = _log_progress(client, engagement["id"], 150, page_start=100)
@@ -418,7 +418,7 @@ def test_patch_a_re_read_past_the_frontier_returns_409(client: TestClient) -> No
 
 def test_patch_a_re_read_within_the_frontier_is_allowed(client: TestClient) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=400)
+    _create_edition(client, book["id"], length=400)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 200)
     re_read = _log_progress(client, engagement["id"], 150, page_start=100)

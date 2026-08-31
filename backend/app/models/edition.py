@@ -41,16 +41,6 @@ class Edition(TimestampMixin, Base):
     length: Mapped[int | None]
     cover_url: Mapped[str | None]
 
-    @property
-    def page_count(self) -> int | None:
-        """Legacy API field retained through the length compatibility window."""
-        return self.length if self.format != Format.audio else None
-
-    @property
-    def audio_minutes(self) -> int | None:
-        """Legacy API field retained through the length compatibility window."""
-        return self.length if self.format == Format.audio else None
-
     book: Mapped[Book] = relationship(back_populates="editions")
     engagement_editions: Mapped[list[EngagementEdition]] = relationship(
         back_populates="edition", cascade="all, delete-orphan"

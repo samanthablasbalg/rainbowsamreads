@@ -49,7 +49,7 @@ def log_progress(
         minute_start=payload.minute_start,
         minute_end=payload.minute_end,
         logged_on=payload.logged_on,
-        edition_length=payload.edition_length or payload.audio_length_minutes,
+        edition_length=payload.edition_length,
         note=payload.note,
     )
     db.commit()
