@@ -215,10 +215,8 @@ def _transition_to_finished(
             user_id=engagement.user_id,
             logged_on=effective_on,
             unit=unit,
-            minute_start=position if is_audio else None,
-            minute_end=length if is_audio else None,
-            page_start=None if is_audio else position,
-            page_end=None if is_audio else length,
+            start=position,
+            end=length,
             new_ground=True,
         ),
     )

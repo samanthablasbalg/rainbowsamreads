@@ -60,8 +60,8 @@ def _seed_owned_graph(
             user_id=user_id,
             logged_on=datetime.date(2026, 1, 1),
             unit=LogUnit.pages,
-            page_start=0,
-            page_end=10,
+            start=0,
+            end=10,
         )
     )
     owner_db.add(

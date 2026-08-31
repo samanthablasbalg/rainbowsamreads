@@ -37,25 +37,9 @@ class ProgressLog(TimestampMixin, Base):
     user_id: Mapped[uuid.UUID]
     logged_on: Mapped[datetime.date]
     unit: Mapped[LogUnit] = mapped_column(SAEnum(LogUnit, name="log_unit"))
-    page_start: Mapped[int | None]
-    page_end: Mapped[int | None]
-    minute_start: Mapped[int | None]
-    minute_end: Mapped[int | None]
+    start: Mapped[int]
+    end: Mapped[int]
     new_ground: Mapped[bool] = mapped_column(default=True)
     note: Mapped[str | None] = mapped_column(Text)
 
     engagement: Mapped[Engagement] = relationship(back_populates="progress_logs")
-
-    # The span's ends on whichever ruler this entry was measured in, so a caller that
-    # already knows the unit doesn't pick the column itself. Callers that mean "on the
-    # *page* ruler" must still filter on `unit` -- these answer for the log, not for a
-    # format.
-    @property
-    def start(self) -> int:
-        return (
-            self.minute_start if self.unit == LogUnit.minutes else self.page_start
-        ) or 0
-
-    @property
-    def end(self) -> int | None:
-        return self.minute_end if self.unit == LogUnit.minutes else self.page_end

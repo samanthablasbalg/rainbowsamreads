@@ -84,11 +84,6 @@ def progress_log_read(
     flat, all-nullable object.
     """
     if log.unit == "pages":
-        # `unit == "pages"` is set only when page_start/page_end were populated
-        # (see log_progress in services/engagements/progress_logs.py) — the
-        # asserts narrow for mypy, not a runtime check of new information.
-        assert log.page_start is not None
-        assert log.page_end is not None
         return PageProgressLogRead(
             id=log.id,
             engagement_id=log.engagement_id,
@@ -96,11 +91,9 @@ def progress_log_read(
             created_at=log.created_at,
             new_ground=log.new_ground,
             note=log.note,
-            page_start=log.page_start,
-            page_end=log.page_end,
+            page_start=log.start,
+            page_end=log.end,
         )
-    assert log.minute_start is not None
-    assert log.minute_end is not None
     return MinuteProgressLogRead(
         id=log.id,
         engagement_id=log.engagement_id,
@@ -108,6 +101,6 @@ def progress_log_read(
         created_at=log.created_at,
         new_ground=log.new_ground,
         note=log.note,
-        minute_start=log.minute_start,
-        minute_end=log.minute_end,
+        minute_start=log.start,
+        minute_end=log.end,
     )

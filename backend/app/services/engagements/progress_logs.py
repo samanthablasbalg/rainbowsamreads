@@ -124,10 +124,8 @@ def log_progress(
                 user_id=engagement.user_id,
                 logged_on=resolved_on,
                 unit=unit,
-                minute_start=span_start if is_audio else None,
-                minute_end=span_end if is_audio else None,
-                page_start=None if is_audio else span_start,
-                page_end=None if is_audio else span_end,
+                start=span_start,
+                end=span_end,
                 new_ground=new_ground,
                 # The note is about the session, and goes on the row the client will
                 # address it by: the last, which is the new-ground half of a split.
@@ -191,7 +189,9 @@ def update_progress_log(
             raise ConflictError("Only the most recent entry's progress can be edited.")
 
     if page_end is not None:
-        if page_end <= (target.page_start or 0):
+        if target.unit != LogUnit.pages:
+            raise ConflictError("Cannot change a minute log with a page value.")
+        if page_end <= target.start:
             raise ConflictError(
                 "Page must be higher than this session's starting page."
             )
@@ -199,10 +199,12 @@ def update_progress_log(
         if book_length is not None and page_end > book_length:
             raise ConflictError("Page cannot exceed the book's length.")
         _reject_extending_a_re_read(engagement, target, page_end, LogUnit.pages)
-        target.page_end = page_end
+        target.end = page_end
 
     if minute_end is not None:
-        if minute_end <= (target.minute_start or 0):
+        if target.unit != LogUnit.minutes:
+            raise ConflictError("Cannot change a page log with a minute value.")
+        if minute_end <= target.start:
             raise ConflictError(
                 "Minute must be higher than this session's starting minute."
             )
@@ -210,7 +212,7 @@ def update_progress_log(
         if audio_length is not None and minute_end > audio_length:
             raise ConflictError("Minute cannot exceed the audio length.")
         _reject_extending_a_re_read(engagement, target, minute_end, LogUnit.minutes)
-        target.minute_end = minute_end
+        target.end = minute_end
 
     if note is not None:
         target.note = note or None

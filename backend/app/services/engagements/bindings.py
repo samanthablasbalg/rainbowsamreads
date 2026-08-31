@@ -119,7 +119,4 @@ def _pull_back_the_final_entry(
             "Edit those entries first."
         )
 
-    if is_audio:
-        log.minute_end = length
-    else:
-        log.page_end = length
+    log.end = length

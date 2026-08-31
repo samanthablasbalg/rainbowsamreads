@@ -667,7 +667,7 @@ def test_finish_closes_out_on_the_ruler_it_was_given(
     )
     final_log = max(logs, key=lambda log: (log.logged_on, log.created_at))
     assert final_log.unit == LogUnit.pages
-    assert (final_log.page_start, final_log.page_end) == (220, 440)
+    assert (final_log.start, final_log.end) == (220, 440)
 
 
 def test_finish_closes_out_on_the_other_ruler_when_told_to(
@@ -696,7 +696,7 @@ def test_finish_closes_out_on_the_other_ruler_when_told_to(
     )
     final_log = max(logs, key=lambda log: (log.logged_on, log.created_at))
     assert final_log.unit == LogUnit.minutes
-    assert (final_log.minute_start, final_log.minute_end) == (215, 430)
+    assert (final_log.start, final_log.end) == (215, 430)
 
 
 def test_finish_a_multi_format_read_without_a_unit_returns_422(
@@ -751,8 +751,8 @@ def test_finish_creates_final_progress_log(client: TestClient, db: Session) -> N
     )
     assert len(logs) == 2
     final_log = max(logs, key=lambda log: (log.logged_on, log.created_at))
-    assert final_log.page_start == 150
-    assert final_log.page_end == 300
+    assert final_log.start == 150
+    assert final_log.end == 300
 
 
 def test_finish_does_not_duplicate_log_when_already_at_page_count(
@@ -836,8 +836,8 @@ def test_finish_audio_creates_final_minutes_log(
     assert len(logs) == 2
     final_log = max(logs, key=lambda log: (log.logged_on, log.created_at))
     assert final_log.unit.value == "minutes"
-    assert final_log.minute_start == 240
-    assert final_log.minute_end == 480
+    assert final_log.start == 240
+    assert final_log.end == 480
 
 
 def test_finish_audio_does_not_duplicate_log_when_already_at_length(
