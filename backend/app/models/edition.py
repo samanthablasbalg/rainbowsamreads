@@ -23,13 +23,6 @@ class Edition(TimestampMixin, Base):
         Index(
             "ix_editions_book_format_generic",
             "book_id",
-            "edition_format",
-            unique=True,
-            postgresql_where=text("isbn IS NULL"),
-        ),
-        Index(
-            "ix_editions_book_format_canonical_generic",
-            "book_id",
             "format",
             unique=True,
             postgresql_where=text("isbn IS NULL"),
@@ -38,9 +31,6 @@ class Edition(TimestampMixin, Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     book_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("books.id"))
-    _legacy_format: Mapped[Format] = mapped_column(
-        "edition_format", SAEnum(Format, name="edition_format")
-    )
     format: Mapped[Format] = mapped_column(SAEnum(Format, name="edition_format"))
     isbn: Mapped[str | None]
     publisher: Mapped[str | None]
