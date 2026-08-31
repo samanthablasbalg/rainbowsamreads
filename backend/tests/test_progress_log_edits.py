@@ -101,7 +101,7 @@ def test_patch_log_page_on_most_recent_updates_page_end(
     assert response.status_code == 200
     updated = db.get(ProgressLog, uuid.UUID(latest["id"]))
     assert updated is not None
-    assert updated.page_end == 250
+    assert updated.end == 250
 
 
 def test_patch_log_page_on_non_recent_returns_409(client: TestClient) -> None:
@@ -167,7 +167,7 @@ def test_patch_log_minute_on_most_recent_updates_minute_end(
     assert response.status_code == 200
     updated = db.get(ProgressLog, uuid.UUID(latest["id"]))
     assert updated is not None
-    assert updated.minute_end == 150
+    assert updated.end == 150
 
 
 def test_patch_log_minute_at_or_below_start_returns_409(client: TestClient) -> None:

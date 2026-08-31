@@ -99,8 +99,8 @@ def test_progress_log_rejects_owner_mismatched_with_engagement(
             user_id=other_user.id,
             logged_on=datetime.date(2026, 1, 1),
             unit=LogUnit.pages,
-            page_start=0,
-            page_end=10,
+            start=0,
+            end=10,
         )
     )
     with pytest.raises(IntegrityError):
