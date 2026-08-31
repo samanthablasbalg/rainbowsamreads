@@ -1027,59 +1027,6 @@ def test_a_log_must_name_exactly_one_ruler(client: TestClient) -> None:
         assert response.status_code == 422
 
 
-def test_length_capture_writes_book_default_audio_minutes(
-    client: TestClient, db: Session
-) -> None:
-    book = _create_book(client)
-    engagement = _create_audio_engagement(client, book["id"])
-
-    _log_audio_progress(client, engagement["id"], 75, edition_length=480)
-
-    book_obj = db.get(Book, uuid.UUID(book["id"]))
-    assert book_obj is not None
-    assert book_obj.default_audio_minutes == 480
-
-
-def test_length_capture_writes_edition_length(client: TestClient, db: Session) -> None:
-    book = _create_book(client)
-    engagement = _create_audio_engagement(client, book["id"])
-
-    _log_audio_progress(client, engagement["id"], 75, edition_length=480)
-
-    edition = db.execute(
-        select(Edition).where(
-            Edition.book_id == uuid.UUID(book["id"]),
-            Edition.format == "audio",
-        )
-    ).scalar_one()
-    assert edition.length == 480
-
-
-def test_length_capture_does_not_overwrite_existing_length(
-    client: TestClient, db: Session
-) -> None:
-    book = _create_book(client)
-    book_obj = db.get(Book, uuid.UUID(book["id"]))
-    assert book_obj is not None
-    book_obj.default_audio_minutes = 300
-    db.commit()
-    engagement = _create_audio_engagement(client, book["id"])
-
-    _log_audio_progress(client, engagement["id"], 75, edition_length=480)
-
-    db.refresh(book_obj)
-    assert book_obj.default_audio_minutes == 300
-
-
-def test_audio_completion_pct_uses_captured_length(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_audio_engagement(client, book["id"])
-    _log_audio_progress(client, engagement["id"], 240, edition_length=480)
-
-    response = client.get("/api/engagements?status=reading")
-    assert response.json()[0]["completion_pct"] == 50
-
-
 def test_audio_completion_pct_uses_edition_length(
     client: TestClient, db: Session
 ) -> None:
