@@ -871,7 +871,7 @@ def test_progress_range_migration_rejects_conflicting_transition_write(
             )
 
 
-def test_progress_range_expand_keeps_compatible_schema() -> None:
+def test_progress_range_contract_removes_legacy_schema() -> None:
     with owner_engine.connect() as connection:
         columns = connection.execute(
             text(
@@ -909,13 +909,9 @@ def test_progress_range_expand_keeps_compatible_schema() -> None:
 
         assert [tuple(row) for row in columns] == [
             ("end", "NO"),
-            ("minute_end", "YES"),
-            ("minute_start", "YES"),
-            ("page_end", "YES"),
-            ("page_start", "YES"),
             ("start", "NO"),
         ]
-        assert sync_function_count == 1
+        assert sync_function_count == 0
         assert constraint_count == 1
 
 
