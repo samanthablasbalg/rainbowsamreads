@@ -131,7 +131,7 @@ describe('AddFormatSheet', () => {
     await user.click(add);
 
     await waitFor(() => expect(screen.getByText('closed')).toBeInTheDocument());
-    expect(captured.body).toEqual({ edition_format: 'audio', audio_length_minutes: 630 });
+    expect(captured.body).toEqual({ edition_format: 'audio', edition_length: 630 });
   });
 
   it('overrides rather than captures when the audio length is already known', async () => {

@@ -3,8 +3,8 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
+from sqlalchemy import CheckConstraint, ForeignKey, ForeignKeyConstraint, Index, text
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import ForeignKey, ForeignKeyConstraint, Index, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -27,6 +27,10 @@ class Edition(TimestampMixin, Base):
             unique=True,
             postgresql_where=text("isbn IS NULL"),
         ),
+        CheckConstraint(
+            "length IS NULL OR length > 0",
+            name="ck_editions_length_positive",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -34,9 +38,18 @@ class Edition(TimestampMixin, Base):
     format: Mapped[Format] = mapped_column(SAEnum(Format, name="edition_format"))
     isbn: Mapped[str | None]
     publisher: Mapped[str | None]
-    page_count: Mapped[int | None]
-    audio_minutes: Mapped[int | None]
+    length: Mapped[int | None]
     cover_url: Mapped[str | None]
+
+    @property
+    def page_count(self) -> int | None:
+        """Legacy API field retained through the length compatibility window."""
+        return self.length if self.format != Format.audio else None
+
+    @property
+    def audio_minutes(self) -> int | None:
+        """Legacy API field retained through the length compatibility window."""
+        return self.length if self.format == Format.audio else None
 
     book: Mapped[Book] = relationship(back_populates="editions")
     engagement_editions: Mapped[list[EngagementEdition]] = relationship(

@@ -9,7 +9,7 @@ from app.exceptions import ConflictError, NotFoundError
 from app.models.edition import EngagementEdition
 from app.models.engagement import Engagement
 from app.models.enums import Format, LogUnit
-from app.services.books import capture_audio_length
+from app.services.books import capture_edition_length
 
 
 def create_binding(
@@ -20,6 +20,7 @@ def create_binding(
     edition_format: Format | None,
     origin_id: uuid.UUID | None,
     length_override: int | None,
+    edition_length: int | None,
     audio_length_minutes: int | None,
 ) -> EngagementEdition:
     if edition_id is not None:
@@ -52,13 +53,10 @@ def create_binding(
         ),
     )
 
-    # Every book is created with a synthetic audio edition carrying no length, so adding
-    # audio to a read in progress is usually the first time anyone has said how long the
-    # audiobook is. That is a fact about the edition rather than a correction to it
-    # (ADR-0022), so it is captured rather than overridden -- and only on an audio
-    # edition, since editions are shared across users.
-    if audio_length_minutes is not None and edition.format == Format.audio:
-        capture_audio_length(engagement.book, edition, audio_length_minutes)
+    if edition_length is not None:
+        capture_edition_length(engagement.book, edition, edition_length)
+    elif audio_length_minutes is not None and edition.format == Format.audio:
+        capture_edition_length(engagement.book, edition, audio_length_minutes)
 
     return binding
 

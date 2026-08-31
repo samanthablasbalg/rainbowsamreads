@@ -13,6 +13,7 @@ from tests.conftest import ALEMBIC_INI, owner_engine
 
 BEFORE_EDITION_FORMAT = "5bd2dac61e85"
 EDITION_FORMAT_EXPANDED = "a8f3c2d91e47"
+BEFORE_EDITION_LENGTH = "c91e2a84f630"
 
 
 @pytest.fixture
@@ -294,5 +295,169 @@ def test_edition_format_migration_downgrade_preserves_canonical_writes() -> None
 
             assert legacy_format == "audio"
             assert canonical_column_count == 0
+    finally:
+        command.upgrade(config, "head")
+
+
+def test_edition_length_migration_backfills_existing_editions() -> None:
+    config = Config(str(ALEMBIC_INI))
+    command.downgrade(config, BEFORE_EDITION_LENGTH)
+    try:
+        with owner_engine.begin() as connection:
+            book_id = _insert_book(connection)
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO editions (
+                        id,
+                        book_id,
+                        format,
+                        page_count,
+                        audio_minutes,
+                        created_at,
+                        updated_at
+                    )
+                    VALUES
+                        (:print_id, :book_id, 'print', 272, NULL, now(), now()),
+                        (:audio_id, :book_id, 'audio', NULL, 480, now(), now())
+                    """
+                ),
+                {
+                    "audio_id": uuid.uuid4(),
+                    "book_id": book_id,
+                    "print_id": uuid.uuid4(),
+                },
+            )
+
+        command.upgrade(config, "head")
+
+        with owner_engine.connect() as connection:
+            lengths = connection.execute(
+                text("SELECT format::text, length FROM editions ORDER BY format::text")
+            ).all()
+            assert [tuple(row) for row in lengths] == [
+                ("audio", 480),
+                ("print", 272),
+            ]
+    finally:
+        command.upgrade(config, "head")
+
+
+def test_edition_length_migration_rejects_ambiguous_existing_data() -> None:
+    config = Config(str(ALEMBIC_INI))
+    command.downgrade(config, BEFORE_EDITION_LENGTH)
+    edition_id = uuid.uuid4()
+    try:
+        with owner_engine.begin() as connection:
+            book_id = _insert_book(connection)
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO editions (
+                        id,
+                        book_id,
+                        format,
+                        page_count,
+                        created_at,
+                        updated_at
+                    )
+                    VALUES (:edition_id, :book_id, 'audio', 272, now(), now())
+                    """
+                ),
+                {"book_id": book_id, "edition_id": edition_id},
+            )
+
+        with pytest.raises(RuntimeError, match="invalid edition lengths"):
+            command.upgrade(config, "head")
+    finally:
+        with owner_engine.begin() as connection:
+            connection.execute(
+                text("DELETE FROM editions WHERE id = :edition_id"),
+                {"edition_id": edition_id},
+            )
+        command.upgrade(config, "head")
+
+
+def test_edition_length_migration_syncs_legacy_and_canonical_writes() -> None:
+    with owner_engine.begin() as connection:
+        book_id = _insert_book(connection)
+        legacy_id = uuid.uuid4()
+        canonical_id = uuid.uuid4()
+        connection.execute(
+            text(
+                """
+                INSERT INTO editions (
+                    id,
+                    book_id,
+                    format,
+                    page_count,
+                    created_at,
+                    updated_at
+                )
+                VALUES (:edition_id, :book_id, 'print', 272, now(), now())
+                """
+            ),
+            {"book_id": book_id, "edition_id": legacy_id},
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO editions (
+                    id,
+                    book_id,
+                    format,
+                    length,
+                    created_at,
+                    updated_at
+                )
+                VALUES (:edition_id, :book_id, 'audio', 480, now(), now())
+                """
+            ),
+            {"book_id": book_id, "edition_id": canonical_id},
+        )
+
+        legacy_row = connection.execute(
+            text("SELECT page_count, length FROM editions WHERE id = :edition_id"),
+            {"edition_id": legacy_id},
+        ).one()
+        canonical_row = connection.execute(
+            text("SELECT audio_minutes, length FROM editions WHERE id = :edition_id"),
+            {"edition_id": canonical_id},
+        ).one()
+
+        assert tuple(legacy_row) == (272, 272)
+        assert tuple(canonical_row) == (480, 480)
+
+
+def test_edition_length_migration_downgrade_preserves_canonical_writes() -> None:
+    config = Config(str(ALEMBIC_INI))
+    edition_id = uuid.uuid4()
+    with owner_engine.begin() as connection:
+        book_id = _insert_book(connection)
+        connection.execute(
+            text(
+                """
+                INSERT INTO editions (
+                    id,
+                    book_id,
+                    format,
+                    length,
+                    created_at,
+                    updated_at
+                )
+                VALUES (:edition_id, :book_id, 'print', 272, now(), now())
+                """
+            ),
+            {"book_id": book_id, "edition_id": edition_id},
+        )
+
+    command.downgrade(config, BEFORE_EDITION_LENGTH)
+    try:
+        with owner_engine.connect() as connection:
+            page_count = connection.execute(
+                text("SELECT page_count FROM editions WHERE id = :edition_id"),
+                {"edition_id": edition_id},
+            ).scalar_one()
+            assert page_count == 272
     finally:
         command.upgrade(config, "head")

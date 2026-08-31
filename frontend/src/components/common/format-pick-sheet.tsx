@@ -214,7 +214,7 @@ function useFormatPickForm(
         edition_format: format,
         status,
         started_on: localIsoDate(),
-        ...(audioLengthMinutes != null && { audio_length_minutes: audioLengthMinutes }),
+        ...(audioLengthMinutes != null && { edition_length: audioLengthMinutes }),
       },
     });
   }

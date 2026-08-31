@@ -122,6 +122,40 @@ def test_create_audio_edition_persists_audio_minutes(client: TestClient) -> None
     assert data["page_count"] is None
 
 
+def test_create_edition_accepts_canonical_length_and_returns_legacy_shape(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+
+    response = client.post(
+        "/api/editions",
+        json={"book_id": book["id"], "format": "print", "length": 272},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["length"] == 272
+    assert response.json()["page_count"] == 272
+    assert response.json()["audio_minutes"] is None
+
+
+def test_create_edition_rejects_conflicting_canonical_and_legacy_lengths(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+
+    response = client.post(
+        "/api/editions",
+        json={
+            "book_id": book["id"],
+            "format": "print",
+            "length": 272,
+            "page_count": 300,
+        },
+    )
+
+    assert response.status_code == 422
+
+
 def test_create_edition_unknown_book_returns_404(client: TestClient) -> None:
     response = client.post(
         "/api/editions",
@@ -156,6 +190,20 @@ def test_update_edition_patches_only_sent_fields(client: TestClient) -> None:
     data = response.json()
     assert data["page_count"] == 300
     assert data["isbn"] == "9781526622426"
+
+
+def test_update_edition_accepts_canonical_length(client: TestClient) -> None:
+    book = _create_book(client)
+    edition = _create_edition(client, book["id"], page_count=272)
+
+    response = client.patch(
+        f"/api/editions/{edition['id']}",
+        json={"length": 300},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["length"] == 300
+    assert response.json()["page_count"] == 300
 
 
 def test_update_edition_empty_body_changes_nothing(client: TestClient) -> None:
@@ -213,7 +261,7 @@ def test_import_creates_print_edition_with_real_data(
     assert len(editions) == 3
     ed = next(e for e in editions if e.format == Format.print)
     assert ed.isbn == "9781526622426"
-    assert ed.page_count == 272
+    assert ed.length == 272
     assert ed.cover_url == "https://example.com/cover.jpg"
 
 
@@ -291,6 +339,21 @@ def test_create_binding_captures_a_first_audio_length(
     assert book_obj.default_audio_minutes == 430
 
 
+def test_create_binding_captures_a_canonical_page_length(client: TestClient) -> None:
+    book = _create_book(client)
+    edition = _create_edition(client, book["id"], isbn="9781526622426")
+    engagement = _create_engagement(client, book["id"])
+
+    response = client.post(
+        f"/api/engagements/{engagement['id']}/editions",
+        json={"edition_id": edition["id"], "edition_length": 272},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["edition"]["length"] == 272
+    assert response.json()["edition"]["page_count"] == 272
+
+
 def test_create_binding_ignores_an_audio_length_on_a_page_edition(
     client: TestClient,
 ) -> None:
@@ -304,6 +367,7 @@ def test_create_binding_ignores_an_audio_length_on_a_page_edition(
     )
     assert response.status_code == 201
     assert response.json()["edition"]["audio_minutes"] is None
+    assert response.json()["edition"]["length"] is None
 
 
 def test_create_binding_by_format_finds_existing_edition(

@@ -150,7 +150,7 @@ def import_book_from_google(db: Session, *, google_books_id: str) -> tuple[Book,
             format=Format.print,
             isbn=volume.isbn,
             publisher=volume.publisher,
-            page_count=volume.page_count,
+            length=volume.page_count,
             cover_url=volume.cover_url,
         ),
     )
@@ -159,7 +159,7 @@ def import_book_from_google(db: Session, *, google_books_id: str) -> tuple[Book,
         Edition(
             book_id=book.id,
             format=Format.digital,
-            page_count=volume.page_count,
+            length=volume.page_count,
             cover_url=volume.cover_url,
         ),
     )
@@ -188,8 +188,11 @@ def remove_book(db: Session, book: Book) -> None:
         raise ConflictError("This book still has reads attached to it.") from exc
 
 
-def capture_audio_length(book: Book, edition: Edition, length: int) -> None:
-    if book.default_audio_minutes is None:
-        book.default_audio_minutes = length
-    if edition.audio_minutes is None:
-        edition.audio_minutes = length
+def capture_edition_length(book: Book, edition: Edition, length: int) -> None:
+    if edition.format == Format.audio:
+        if book.default_audio_minutes is None:
+            book.default_audio_minutes = length
+    elif book.default_page_count is None:
+        book.default_page_count = length
+    if edition.length is None:
+        edition.length = length

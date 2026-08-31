@@ -129,7 +129,7 @@ describe('FormatPickSheet', () => {
       status: 'reading',
       edition_format: 'audio',
       started_on: localIsoDate(),
-      audio_length_minutes: 630,
+      edition_length: 630,
     });
   });
 

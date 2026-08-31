@@ -136,11 +136,7 @@ class Engagement(TimestampMixin, Base):
             if ee.edition.format == fmt:
                 if ee.length_override is not None:
                     return ee.length_override
-                candidate = (
-                    ee.edition.audio_minutes
-                    if fmt == Format.audio
-                    else ee.edition.page_count
-                )
+                candidate = ee.edition.length
                 if candidate is not None:
                     return candidate
         if fmt == Format.audio:

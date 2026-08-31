@@ -102,6 +102,7 @@ export interface EditionCreate {
   book_id: string;
   format: Format;
   isbn?: string | null;
+  length?: number | null;
   page_count?: number | null;
   audio_minutes?: number | null;
   cover_url?: string | null;
@@ -113,6 +114,7 @@ export interface EditionRead {
   format: Format;
   isbn: string | null;
   publisher: string | null;
+  length: number | null;
   page_count: number | null;
   audio_minutes: number | null;
   cover_url: string | null;
@@ -122,6 +124,7 @@ export interface EditionRead {
 
 export interface EditionUpdate {
   isbn?: string | null;
+  length?: number | null;
   page_count?: number | null;
   audio_minutes?: number | null;
   cover_url?: string | null;
@@ -144,6 +147,7 @@ export interface EngagementCreate {
   book_id: string;
   edition_format: Format;
   status?: EngagementCreateStatus;
+  edition_length?: number | null;
   audio_length_minutes?: number | null;
   length_override?: number | null;
   started_on?: string | null;
@@ -165,6 +169,7 @@ export interface EngagementEditionCreate {
   edition_format?: Format | null;
   origin_id?: string | null;
   length_override?: number | null;
+  edition_length?: number | null;
   audio_length_minutes?: number | null;
 }
 
@@ -290,6 +295,7 @@ export interface ProgressLogCreate {
   page_end?: number | null;
   minute_start?: number | null;
   minute_end?: number | null;
+  edition_length?: number | null;
   audio_length_minutes?: number | null;
   logged_on?: string | null;
   note?: string | null;

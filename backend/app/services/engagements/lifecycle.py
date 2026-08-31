@@ -18,7 +18,7 @@ from app.models.edition import Edition, EngagementEdition
 from app.models.engagement import Engagement
 from app.models.enums import Format, LogUnit, ReadingStatus
 from app.models.progress_log import ProgressLog
-from app.services.books import capture_audio_length
+from app.services.books import capture_edition_length
 from app.services.engagements._shared import ENGAGEMENT_READ_OPTIONS
 from app.services.engagements.progress_logs import latest_log, reject_future_date
 
@@ -83,7 +83,7 @@ def create_engagement(
     edition_format: Format,
     status: ReadingStatus,
     user_id: uuid.UUID,
-    audio_length_minutes: int | None = None,
+    edition_length: int | None = None,
     length_override: int | None = None,
     started_on: datetime.date | None = None,
     finished_on: datetime.date | None = None,
@@ -146,8 +146,8 @@ def create_engagement(
         ),
     )
 
-    if audio_length_minutes is not None:
-        capture_audio_length(book, edition, audio_length_minutes)
+    if edition_length is not None:
+        capture_edition_length(book, edition, edition_length)
 
     return engagement
 

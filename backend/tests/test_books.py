@@ -472,16 +472,16 @@ def test_import_seeds_three_editions(
     assert set(by_format.keys()) == {Format.print, Format.digital, Format.audio}
 
     print_ed = by_format[Format.print]
-    assert print_ed.page_count == 272
+    assert print_ed.length == 272
     assert print_ed.cover_url == "https://example.com/cover.jpg"
 
     digital_ed = by_format[Format.digital]
-    assert digital_ed.page_count == 272
+    assert digital_ed.length == 272
     assert digital_ed.cover_url == "https://example.com/cover.jpg"
     assert digital_ed.isbn is None
 
     audio_ed = by_format[Format.audio]
-    assert audio_ed.page_count is None
+    assert audio_ed.length is None
     assert audio_ed.cover_url == "https://example.com/cover.jpg"
     assert audio_ed.isbn is None
 
