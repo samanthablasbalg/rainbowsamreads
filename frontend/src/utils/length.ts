@@ -8,10 +8,8 @@ export function formatLength(isAudio: boolean, value: number): string {
   return isAudio ? formatMinutesAsHhmm(value) : String(value);
 }
 
-export function lengthField(isAudio: boolean, knownLength: number | null, value: number) {
-  return isAudio && knownLength === null
-    ? { audio_length_minutes: value }
-    : { length_override: value };
+export function lengthField(knownLength: number | null, value: number) {
+  return knownLength === null ? { edition_length: value } : { length_override: value };
 }
 
 function parsePages(value: string): number | null {

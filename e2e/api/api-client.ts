@@ -44,7 +44,7 @@ export class ApiClient {
       data: {
         book_id: bookId,
         edition_format: editionFormat,
-        ...(audioLengthMinutes != null && { audio_length_minutes: audioLengthMinutes }),
+        ...(audioLengthMinutes != null && { edition_length: audioLengthMinutes }),
       },
     });
     const { id } = (await response.json()) as { id: string };
@@ -120,7 +120,7 @@ export class ApiClient {
     await this.request.post(`/api/engagements/${engagementId}/editions`, {
       data: {
         edition_format: editionFormat,
-        ...(audioLengthMinutes != null && { audio_length_minutes: audioLengthMinutes }),
+        ...(audioLengthMinutes != null && { edition_length: audioLengthMinutes }),
       },
     });
   }

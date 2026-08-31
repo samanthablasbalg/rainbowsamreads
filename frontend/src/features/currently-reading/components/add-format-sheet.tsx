@@ -250,7 +250,7 @@ function useAddFormatForm(engagement: EngagementRead, onClose: () => void) {
       engagementId: engagement.id,
       data: {
         edition_format: format,
-        ...(typed && parsedLength !== null && lengthField(isAudio, knownLength, parsedLength)),
+        ...(typed && parsedLength !== null && lengthField(knownLength, parsedLength)),
       },
     });
   }

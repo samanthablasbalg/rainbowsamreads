@@ -281,7 +281,7 @@ function useStartReadingForm(
         status,
         ...(startedOn && { started_on: startedOn }),
         ...(finishedOn && { finished_on: finishedOn }),
-        ...(typed && parsedLength !== null && lengthField(isAudio, knownLength, parsedLength)),
+        ...(typed && parsedLength !== null && lengthField(knownLength, parsedLength)),
       },
     });
   }
