@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import functools
 import uuid
-from collections.abc import Callable
-from typing import Any, cast
 
 import httpx2
 import pytest
@@ -14,76 +11,17 @@ from sqlalchemy.orm import Session
 from app.models.book import Book
 from app.models.edition import Edition
 from app.models.enums import Format
-
-
-def _create_book(
-    client: TestClient,
-    title: str = "Piranesi",
-    author: str = "Susanna Clarke",
-) -> dict[str, Any]:
-    response = client.post("/api/books", json={"title": title, "author": author})
-    assert response.status_code == 201
-    return cast(dict[str, Any], response.json())
-
-
-def _create_engagement(client: TestClient, book_id: str) -> dict[str, Any]:
-    """Start a read, then clear its auto-bound edition so binding-endpoint
-    tests begin from an engagement with nothing bound. The throwaway uses
-    audio — the one format these tests never create for themselves."""
-    audio = client.post(
-        "/api/editions", json={"book_id": book_id, "format": "audio"}
-    ).json()
-    response = client.post(
-        "/api/engagements", json={"book_id": book_id, "edition_format": "audio"}
-    )
-    assert response.status_code == 201
-    engagement = cast(dict[str, Any], response.json())
-    client.delete(f"/api/engagements/{engagement['id']}/editions/{audio['id']}")
-    return engagement
-
-
-def _create_edition(
-    client: TestClient,
-    book_id: str,
-    format: str = "print",
-    **kwargs: Any,
-) -> dict[str, Any]:
-    body = {"book_id": book_id, "format": format, **kwargs}
-    response = client.post("/api/editions", json=body)
-    assert response.status_code == 201
-    return cast(dict[str, Any], response.json())
-
-
-def _fake_volume(
-    *,
-    id: str = "abc123",
-    title: str = "Piranesi",
-    isbn_13: str | None = "9781526622426",
-    page_count: int | None = 272,
-    cover_url: str | None = "https://example.com/cover.jpg",
-) -> dict[str, Any]:
-    info: dict[str, Any] = {
-        "title": title,
-        "authors": ["Susanna Clarke"],
-    }
-    if isbn_13:
-        info["industryIdentifiers"] = [{"type": "ISBN_13", "identifier": isbn_13}]
-    if page_count is not None:
-        info["pageCount"] = page_count
-    if cover_url:
-        info["imageLinks"] = {"thumbnail": cover_url}
-    return {"id": id, "volumeInfo": info}
-
-
-def _patch_google(
-    monkeypatch: pytest.MonkeyPatch,
-    handler: Callable[[httpx2.Request], httpx2.Response],
-) -> None:
-    monkeypatch.setattr(
-        "app.services.google_books.httpx2.Client",
-        functools.partial(httpx2.Client, transport=httpx2.MockTransport(handler)),
-    )
-
+from tests.helpers import (
+    _create_bare_book as _create_book,
+)
+from tests.helpers import (
+    _create_bare_engagement as _create_engagement,
+)
+from tests.helpers import (
+    _create_edition,
+    _fake_volume,
+    _patch_google,
+)
 
 # --- Edition CRUD ---
 
