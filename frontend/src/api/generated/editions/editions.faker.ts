@@ -20,6 +20,7 @@ export const getEditionsCreateEditionResponseMock = (
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
+  length: faker.helpers.arrayElement([faker.number.int(), null]),
   page_count: faker.helpers.arrayElement([faker.number.int(), null]),
   audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
   cover_url: faker.helpers.arrayElement([
@@ -42,6 +43,7 @@ export const getEditionsGetEditionResponseMock = (
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
+  length: faker.helpers.arrayElement([faker.number.int(), null]),
   page_count: faker.helpers.arrayElement([faker.number.int(), null]),
   audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
   cover_url: faker.helpers.arrayElement([
@@ -64,6 +66,7 @@ export const getEditionsUpdateEditionResponseMock = (
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
+  length: faker.helpers.arrayElement([faker.number.int(), null]),
   page_count: faker.helpers.arrayElement([faker.number.int(), null]),
   audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
   cover_url: faker.helpers.arrayElement([

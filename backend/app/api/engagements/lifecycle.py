@@ -37,7 +37,7 @@ def create_engagement(
         edition_format=payload.edition_format,
         status=ReadingStatus(payload.status),
         user_id=current_user.id,
-        audio_length_minutes=payload.audio_length_minutes,
+        edition_length=payload.edition_length or payload.audio_length_minutes,
         length_override=payload.length_override,
         started_on=payload.started_on,
         finished_on=payload.finished_on,

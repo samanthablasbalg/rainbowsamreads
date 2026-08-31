@@ -1040,9 +1040,7 @@ def test_length_capture_writes_book_default_audio_minutes(
     assert book_obj.default_audio_minutes == 480
 
 
-def test_length_capture_writes_edition_audio_minutes(
-    client: TestClient, db: Session
-) -> None:
+def test_length_capture_writes_edition_length(client: TestClient, db: Session) -> None:
     book = _create_book(client)
     engagement = _create_audio_engagement(client, book["id"])
 
@@ -1054,7 +1052,7 @@ def test_length_capture_writes_edition_audio_minutes(
             Edition.format == "audio",
         )
     ).scalar_one()
-    assert edition.audio_minutes == 480
+    assert edition.length == 480
 
 
 def test_length_capture_does_not_overwrite_existing_length(
@@ -1082,7 +1080,7 @@ def test_audio_completion_pct_uses_captured_length(client: TestClient) -> None:
     assert response.json()[0]["completion_pct"] == 50
 
 
-def test_audio_completion_pct_uses_edition_audio_minutes(
+def test_audio_completion_pct_uses_edition_length(
     client: TestClient, db: Session
 ) -> None:
     book = _create_book(client)
@@ -1092,7 +1090,7 @@ def test_audio_completion_pct_uses_edition_audio_minutes(
             Edition.format == "audio",
         )
     ).scalar_one()
-    edition.audio_minutes = 480
+    edition.length = 480
     db.commit()
     engagement = _create_audio_engagement(client, book["id"])
     _log_audio_progress(client, engagement["id"], 240)

@@ -89,11 +89,11 @@ def add_book(title: str, author: str, page_count: int, cover_url: str) -> str:
     _cover_urls[book_id] = cover_url
     post(
         "/editions",
-        {"book_id": book_id, "format": "print", "page_count": page_count},
+        {"book_id": book_id, "format": "print", "length": page_count},
     )
     post(
         "/editions",
-        {"book_id": book_id, "format": "digital", "page_count": page_count},
+        {"book_id": book_id, "format": "digital", "length": page_count},
     )
     post("/editions", {"book_id": book_id, "format": "audio"})
     return book_id
@@ -109,12 +109,10 @@ def apply_cover_urls() -> None:
                 )
 
 
-def start_reading(
-    book_id: str, fmt: str, audio_length_minutes: int | None = None
-) -> str:
+def start_reading(book_id: str, fmt: str, edition_length: int | None = None) -> str:
     body: dict[str, object] = {"book_id": book_id, "edition_format": fmt}
-    if audio_length_minutes is not None:
-        body["audio_length_minutes"] = audio_length_minutes
+    if edition_length is not None:
+        body["edition_length"] = edition_length
     return str(post("/engagements", body)["id"])
 
 
@@ -222,7 +220,7 @@ eng = start_reading(
         "http://books.google.com/books/content?id=O0iSDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
     ),
     "audio",
-    audio_length_minutes=600,
+    edition_length=600,
 )
 log_audio_progress(eng, 180)
 

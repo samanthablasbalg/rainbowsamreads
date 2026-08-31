@@ -1704,10 +1704,23 @@
             ],
             "title": "Isbn"
           },
+          "length": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length"
+          },
           "page_count": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "exclusiveMinimum": 0.0
               },
               {
                 "type": "null"
@@ -1718,7 +1731,8 @@
           "audio_minutes": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "exclusiveMinimum": 0.0
               },
               {
                 "type": "null"
@@ -1782,6 +1796,17 @@
             ],
             "title": "Publisher"
           },
+          "length": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length"
+          },
           "page_count": {
             "anyOf": [
               {
@@ -1833,6 +1858,7 @@
           "format",
           "isbn",
           "publisher",
+          "length",
           "page_count",
           "audio_minutes",
           "cover_url",
@@ -1854,10 +1880,23 @@
             ],
             "title": "Isbn"
           },
+          "length": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length"
+          },
           "page_count": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "exclusiveMinimum": 0.0
               },
               {
                 "type": "null"
@@ -1868,7 +1907,8 @@
           "audio_minutes": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "exclusiveMinimum": 0.0
               },
               {
                 "type": "null"
@@ -1910,6 +1950,18 @@
             ],
             "title": "Status",
             "default": "reading"
+          },
+          "edition_length": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edition Length"
           },
           "audio_length_minutes": {
             "anyOf": [
@@ -2057,6 +2109,18 @@
               }
             ],
             "title": "Length Override"
+          },
+          "edition_length": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edition Length"
           },
           "audio_length_minutes": {
             "anyOf": [
@@ -2563,6 +2627,18 @@
               }
             ],
             "title": "Minute End"
+          },
+          "edition_length": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edition Length"
           },
           "audio_length_minutes": {
             "anyOf": [
