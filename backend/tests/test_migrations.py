@@ -14,12 +14,23 @@ from tests.conftest import ALEMBIC_INI, owner_engine
 BEFORE_EDITION_FORMAT = "5bd2dac61e85"
 EDITION_FORMAT_EXPANDED = "a8f3c2d91e47"
 BEFORE_EDITION_LENGTH = "c91e2a84f630"
+EDITION_LENGTH_EXPANDED = "e4b2f10c7d59"
 
 
 @pytest.fixture
 def expanded_edition_format_schema(seed_user: object) -> Generator[None]:
     config = Config(str(ALEMBIC_INI))
     command.downgrade(config, EDITION_FORMAT_EXPANDED)
+    try:
+        yield
+    finally:
+        command.upgrade(config, "head")
+
+
+@pytest.fixture
+def expanded_edition_length_schema(seed_user: object) -> Generator[None]:
+    config = Config(str(ALEMBIC_INI))
+    command.downgrade(config, EDITION_LENGTH_EXPANDED)
     try:
         yield
     finally:
@@ -329,7 +340,7 @@ def test_edition_length_migration_backfills_existing_editions() -> None:
                 },
             )
 
-        command.upgrade(config, "head")
+        command.upgrade(config, EDITION_LENGTH_EXPANDED)
 
         with owner_engine.connect() as connection:
             lengths = connection.execute(
@@ -368,7 +379,7 @@ def test_edition_length_migration_rejects_ambiguous_existing_data() -> None:
             )
 
         with pytest.raises(RuntimeError, match="invalid edition lengths"):
-            command.upgrade(config, "head")
+            command.upgrade(config, EDITION_LENGTH_EXPANDED)
     finally:
         with owner_engine.begin() as connection:
             connection.execute(
@@ -378,7 +389,9 @@ def test_edition_length_migration_rejects_ambiguous_existing_data() -> None:
         command.upgrade(config, "head")
 
 
-def test_edition_length_migration_syncs_legacy_and_canonical_writes() -> None:
+def test_edition_length_migration_syncs_legacy_and_canonical_writes(
+    expanded_edition_length_schema: None,
+) -> None:
     with owner_engine.begin() as connection:
         book_id = _insert_book(connection)
         legacy_id = uuid.uuid4()
@@ -427,6 +440,43 @@ def test_edition_length_migration_syncs_legacy_and_canonical_writes() -> None:
 
         assert tuple(legacy_row) == (272, 272)
         assert tuple(canonical_row) == (480, 480)
+
+
+def test_edition_length_contract_removes_legacy_schema() -> None:
+    with owner_engine.connect() as connection:
+        legacy_columns = connection.execute(
+            text(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                    AND table_name = 'editions'
+                    AND column_name IN ('page_count', 'audio_minutes')
+                """
+            )
+        ).scalars()
+        sync_function_count = connection.execute(
+            text(
+                """
+                SELECT count(*)
+                FROM pg_proc
+                WHERE proname = 'sync_edition_length_columns'
+                """
+            )
+        ).scalar_one()
+        constraint_count = connection.execute(
+            text(
+                """
+                SELECT count(*)
+                FROM pg_constraint
+                WHERE conname = 'ck_editions_length_positive'
+                """
+            )
+        ).scalar_one()
+
+        assert list(legacy_columns) == []
+        assert sync_function_count == 0
+        assert constraint_count == 1
 
 
 def test_edition_length_migration_downgrade_preserves_canonical_writes() -> None:

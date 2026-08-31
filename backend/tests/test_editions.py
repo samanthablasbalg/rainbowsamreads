@@ -96,7 +96,7 @@ def test_create_edition_returns_201(client: TestClient) -> None:
             "book_id": book["id"],
             "format": "print",
             "isbn": "9781526622426",
-            "page_count": 272,
+            "length": 272,
         },
     )
     assert response.status_code == 201
@@ -104,25 +104,24 @@ def test_create_edition_returns_201(client: TestClient) -> None:
     assert data["book_id"] == book["id"]
     assert data["format"] == "print"
     assert data["isbn"] == "9781526622426"
-    assert data["page_count"] == 272
+    assert data["length"] == 272
     assert data["cover_url"] is None
     assert "id" in data
     assert "created_at" in data
 
 
-def test_create_audio_edition_persists_audio_minutes(client: TestClient) -> None:
+def test_create_audio_edition_persists_length(client: TestClient) -> None:
     book = _create_book(client)
     response = client.post(
         "/api/editions",
-        json={"book_id": book["id"], "format": "audio", "audio_minutes": 480},
+        json={"book_id": book["id"], "format": "audio", "length": 480},
     )
     assert response.status_code == 201
     data = response.json()
-    assert data["audio_minutes"] == 480
-    assert data["page_count"] is None
+    assert data["length"] == 480
 
 
-def test_create_edition_accepts_canonical_length_and_returns_legacy_shape(
+def test_create_edition_returns_canonical_length(
     client: TestClient,
 ) -> None:
     book = _create_book(client)
@@ -134,11 +133,10 @@ def test_create_edition_accepts_canonical_length_and_returns_legacy_shape(
 
     assert response.status_code == 201
     assert response.json()["length"] == 272
-    assert response.json()["page_count"] == 272
-    assert response.json()["audio_minutes"] is None
+    assert set(response.json()).isdisjoint({"page_count", "audio_minutes"})
 
 
-def test_create_edition_rejects_conflicting_canonical_and_legacy_lengths(
+def test_create_edition_rejects_removed_legacy_length(
     client: TestClient,
 ) -> None:
     book = _create_book(client)
@@ -148,7 +146,6 @@ def test_create_edition_rejects_conflicting_canonical_and_legacy_lengths(
         json={
             "book_id": book["id"],
             "format": "print",
-            "length": 272,
             "page_count": 300,
         },
     )
@@ -180,21 +177,21 @@ def test_get_edition_unknown_returns_404(client: TestClient) -> None:
 
 def test_update_edition_patches_only_sent_fields(client: TestClient) -> None:
     book = _create_book(client)
-    edition = _create_edition(client, book["id"], isbn="9781526622426", page_count=272)
+    edition = _create_edition(client, book["id"], isbn="9781526622426", length=272)
 
     response = client.patch(
         f"/api/editions/{edition['id']}",
-        json={"page_count": 300},
+        json={"length": 300},
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["page_count"] == 300
+    assert data["length"] == 300
     assert data["isbn"] == "9781526622426"
 
 
 def test_update_edition_accepts_canonical_length(client: TestClient) -> None:
     book = _create_book(client)
-    edition = _create_edition(client, book["id"], page_count=272)
+    edition = _create_edition(client, book["id"], length=272)
 
     response = client.patch(
         f"/api/editions/{edition['id']}",
@@ -203,18 +200,18 @@ def test_update_edition_accepts_canonical_length(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json()["length"] == 300
-    assert response.json()["page_count"] == 300
+    assert response.json()["length"] == 300
 
 
 def test_update_edition_empty_body_changes_nothing(client: TestClient) -> None:
     book = _create_book(client)
-    edition = _create_edition(client, book["id"], isbn="9781526622426", page_count=272)
+    edition = _create_edition(client, book["id"], isbn="9781526622426", length=272)
 
     response = client.patch(f"/api/editions/{edition['id']}", json={})
     assert response.status_code == 200
     data = response.json()
     assert data["isbn"] == "9781526622426"
-    assert data["page_count"] == 272
+    assert data["length"] == 272
 
 
 def test_update_edition_can_clear_isbn(client: TestClient) -> None:
@@ -227,7 +224,7 @@ def test_update_edition_can_clear_isbn(client: TestClient) -> None:
 
 
 def test_update_edition_unknown_returns_404(client: TestClient) -> None:
-    response = client.patch(f"/api/editions/{uuid.uuid4()}", json={"page_count": 100})
+    response = client.patch(f"/api/editions/{uuid.uuid4()}", json={"length": 100})
     assert response.status_code == 404
 
 
@@ -329,10 +326,10 @@ def test_create_binding_captures_a_first_audio_length(
 
     response = client.post(
         f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_format": "audio", "audio_length_minutes": 430},
+        json={"edition_format": "audio", "edition_length": 430},
     )
     assert response.status_code == 201
-    assert response.json()["edition"]["audio_minutes"] == 430
+    assert response.json()["edition"]["length"] == 430
 
     book_obj = db.get(Book, uuid.UUID(book["id"]))
     assert book_obj is not None
@@ -351,10 +348,10 @@ def test_create_binding_captures_a_canonical_page_length(client: TestClient) -> 
 
     assert response.status_code == 201
     assert response.json()["edition"]["length"] == 272
-    assert response.json()["edition"]["page_count"] == 272
+    assert response.json()["edition"]["length"] == 272
 
 
-def test_create_binding_ignores_an_audio_length_on_a_page_edition(
+def test_create_binding_rejects_removed_legacy_length(
     client: TestClient,
 ) -> None:
     book = _create_book(client)
@@ -365,9 +362,7 @@ def test_create_binding_ignores_an_audio_length_on_a_page_edition(
         f"/api/engagements/{engagement['id']}/editions",
         json={"edition_id": edition["id"], "audio_length_minutes": 430},
     )
-    assert response.status_code == 201
-    assert response.json()["edition"]["audio_minutes"] is None
-    assert response.json()["edition"]["length"] is None
+    assert response.status_code == 422
 
 
 def test_create_binding_by_format_finds_existing_edition(

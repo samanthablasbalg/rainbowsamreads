@@ -75,7 +75,7 @@ def test_create_engagement_accepts_canonical_edition_length(
     assert edition_obj.length == 272
 
 
-def test_create_engagement_accepts_consistent_legacy_and_canonical_lengths(
+def test_create_engagement_rejects_removed_legacy_length(
     client: TestClient,
 ) -> None:
     book = _create_bare_book(client)
@@ -86,27 +86,7 @@ def test_create_engagement_accepts_consistent_legacy_and_canonical_lengths(
         json={
             "book_id": book["id"],
             "edition_format": "audio",
-            "edition_length": 480,
             "audio_length_minutes": 480,
-        },
-    )
-
-    assert response.status_code == 201
-
-
-def test_create_engagement_rejects_conflicting_length_fields(
-    client: TestClient,
-) -> None:
-    book = _create_bare_book(client)
-    _create_edition(client, book["id"], format="audio")
-
-    response = client.post(
-        "/api/engagements",
-        json={
-            "book_id": book["id"],
-            "edition_format": "audio",
-            "edition_length": 480,
-            "audio_length_minutes": 500,
         },
     )
 
@@ -117,7 +97,7 @@ def test_create_engagement_length_override_drives_completion(
     client: TestClient,
 ) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=1100)
+    _create_edition(client, book["id"], length=1100)
     response = client.post(
         "/api/engagements",
         json={
@@ -139,7 +119,7 @@ def test_engagement_read_reports_the_overridden_length(
     client: TestClient, db: Session
 ) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=1100)
+    _create_edition(client, book["id"], length=1100)
     # A book default for the format this read isn't in must not leak into the response.
     book_obj = db.get(Book, uuid.UUID(book["id"]))
     assert book_obj is not None
@@ -163,7 +143,7 @@ def test_create_engagement_length_override_leaves_edition_alone(
     client: TestClient, db: Session
 ) -> None:
     book = _create_bare_book(client)
-    edition = _create_edition(client, book["id"], page_count=1100)
+    edition = _create_edition(client, book["id"], length=1100)
     client.post(
         "/api/engagements",
         json={
@@ -471,7 +451,7 @@ def test_patch_to_finished_catches_up_to_the_corrected_length(
     client: TestClient,
 ) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], page_count=1100)
+    _create_edition(client, book["id"], length=1100)
     engagement = client.post(
         "/api/engagements",
         json={
@@ -1017,7 +997,7 @@ def test_formats_derived_from_bound_editions(client: TestClient) -> None:
 
 def _print_read_of_1100_pages(client: TestClient) -> tuple[dict[str, Any], str]:
     book = _create_bare_book(client)
-    edition = _create_edition(client, book["id"], page_count=1100)
+    edition = _create_edition(client, book["id"], length=1100)
     engagement = _create_engagement(client, book["id"])
     return edition, engagement["id"]
 
@@ -1041,7 +1021,7 @@ def test_update_length_recomputes_completion(client: TestClient) -> None:
 
 def test_update_length_recomputes_audio_completion(client: TestClient) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], format="audio", audio_minutes=600)
+    _create_edition(client, book["id"], format="audio", length=600)
     engagement_id = _create_audio_engagement(client, book["id"])["id"]
     _log_audio_progress(client, engagement_id, 300)
 
@@ -1091,7 +1071,7 @@ def test_update_length_pulls_back_the_only_audio_entry_past_the_new_end(
     client: TestClient,
 ) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], format="audio", audio_minutes=600)
+    _create_edition(client, book["id"], format="audio", length=600)
     engagement_id = _create_audio_engagement(client, book["id"])["id"]
     _log_audio_progress(client, engagement_id, 300)
 

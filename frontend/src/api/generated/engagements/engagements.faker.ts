@@ -631,8 +631,6 @@ export const getEngagementsCreateBindingResponseMock = (
       null,
     ]),
     length: faker.helpers.arrayElement([faker.number.int(), null]),
-    page_count: faker.helpers.arrayElement([faker.number.int(), null]),
-    audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
     cover_url: faker.helpers.arrayElement([
       faker.string.alpha({ length: { min: 10, max: 20 } }),
       null,
@@ -660,8 +658,6 @@ export const getEngagementsListBindingsResponseMock = (): EngagementEditionRead[
         null,
       ]),
       length: faker.helpers.arrayElement([faker.number.int(), null]),
-      page_count: faker.helpers.arrayElement([faker.number.int(), null]),
-      audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
       cover_url: faker.helpers.arrayElement([
         faker.string.alpha({ length: { min: 10, max: 20 } }),
         null,
