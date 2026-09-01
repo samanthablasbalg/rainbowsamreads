@@ -257,6 +257,10 @@ def update_status(
 
     if new_status == ReadingStatus.reading:
         _reject_duplicate_reading(db, engagement)
+        if not engagement.progress_logs:
+            raise InvalidOperationError(
+                "An engagement without progress logs cannot be returned to reading."
+            )
 
     resolved_on = effective_on or datetime.date.today()
     reject_future_date(resolved_on)
