@@ -196,9 +196,11 @@ Codex follows the same boundary as Claude: its CLI runs in `workspace`, while it
 container-side login persist in the Mac's `~/.codex-docker` directory. It deliberately does **not**
 share `~/.codex` with the macOS app: that configuration contains MCP commands that point into
 `/Applications` and cannot run in Linux. `scripts/codex` links each checked-in
-`.claude/skills/<name>` directory into Codex's skill directory before launching it. The Claude tree
-is therefore the only skills tree to maintain; a collision with an independently installed Codex
-skill fails explicitly instead of silently replacing it.
+`.claude/skills/<name>` directory, plus any Codex-specific `.codex/skills/<name>` directory, into
+Codex's skill directory before launching it. Shared skills remain canonical in the Claude tree; the
+Codex tree holds only compatibility or orchestration that does not work as a shared skill. A
+collision with an independently installed Codex skill fails explicitly instead of silently replacing
+it.
 
 Docker is also Codex's sandbox boundary here. Docker Desktop does not permit Bubblewrap to create
 the nested Linux user namespace Codex normally uses for its own sandbox, so the wrapper starts Codex
