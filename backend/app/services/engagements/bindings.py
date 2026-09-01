@@ -5,10 +5,10 @@ import uuid
 from sqlalchemy.orm import Session
 
 from app.crud import edition_crud, engagement_edition_crud
-from app.exceptions import ConflictError, NotFoundError
+from app.exceptions import ConflictError, InvalidOperationError, NotFoundError
 from app.models.edition import EngagementEdition
 from app.models.engagement import Engagement
-from app.models.enums import Format, LogUnit
+from app.models.enums import Format, LogUnit, ReadingStatus
 from app.services.books import capture_edition_length
 
 
@@ -40,6 +40,16 @@ def create_binding(
 
     if engagement_edition_crud.get(db, (engagement.id, edition.id)) is not None:
         raise ConflictError("This edition is already bound to this engagement.")
+
+    if (
+        engagement.status == ReadingStatus.reading
+        and length_override is None
+        and edition_length is None
+        and edition.length is None
+    ):
+        raise InvalidOperationError(
+            "A reading engagement requires a length for its selected format."
+        )
 
     binding = engagement_edition_crud.create(
         db,

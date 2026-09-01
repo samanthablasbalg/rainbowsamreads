@@ -517,3 +517,20 @@ def test_multiple_bindings_per_engagement(client: TestClient) -> None:
         print_ed["id"],
         digital_ed["id"],
     }
+
+
+def test_add_lengthless_format_to_reading_engagement_returns_422(
+    client: TestClient,
+) -> None:
+    book = _create_bare_book(client)
+    _create_edition(
+        client, book["id"], format="print", isbn="9781111111111", length=300
+    )
+    _create_edition(client, book["id"], format="audio")
+    engagement = _create_engagement(client, book["id"], edition_format="print")
+
+    response = client.post(
+        f"/api/engagements/{engagement['id']}/editions",
+        json={"edition_format": "audio"},
+    )
+    assert response.status_code == 422
