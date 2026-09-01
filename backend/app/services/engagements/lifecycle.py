@@ -187,6 +187,15 @@ def _closing_unit(engagement: Engagement, unit: LogUnit | None) -> LogUnit:
     )
 
 
+def _transition_to_reading(db: Session, engagement: Engagement) -> None:
+    latest = latest_log(engagement.progress_logs)
+    if latest is not None and latest.generated_by_finish:
+        progress_log_crud.delete(db, latest)
+
+    engagement.finished_on = None
+    engagement.abandoned_on = None
+
+
 def _transition_to_finished(
     db: Session,
     engagement: Engagement,
@@ -226,6 +235,7 @@ def _transition_to_finished(
             start=position,
             end=length,
             new_ground=True,
+            generated_by_finish=True,
         ),
     )
 
@@ -268,8 +278,7 @@ def update_status(
     engagement.status = new_status
     match new_status:
         case ReadingStatus.reading:
-            engagement.finished_on = None
-            engagement.abandoned_on = None
+            _transition_to_reading(db, engagement)
         case ReadingStatus.finished:
             _transition_to_finished(db, engagement, resolved_on, unit)
         case ReadingStatus.dnf:

@@ -287,14 +287,9 @@ def test_engagement_completion_pct_after_logging(
     assert response.json()[0]["completion_pct"] == 50
 
 
-# --- Landmine: status cycle must not touch progress_logs ---
-
-
-@pytest.mark.xfail(
-    reason="Issue #103: undoing finish must remove the generated closing log",
-    strict=True,
-)
-def test_progress_logs_preserved_through_status_cycle(client: TestClient) -> None:
+def test_generated_finish_log_removed_transitioning_back_to_reading(
+    client: TestClient,
+) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 100)
@@ -307,6 +302,21 @@ def test_progress_logs_preserved_through_status_cycle(client: TestClient) -> Non
 
     second = _log_progress(client, engagement["id"], 200)
     assert second["page_start"] == 100
+
+
+def test_manual_final_log_maintained_transitioning_back_to_reading(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 300)
+
+    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "finished"})
+    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "reading"})
+
+    response = client.get("/api/engagements?status=reading")
+    assert response.json()[0]["resume_from_page"] == 300
+    assert response.json()[0]["completion_pct"] == 100
 
 
 # --- completion_pct via binding ---
