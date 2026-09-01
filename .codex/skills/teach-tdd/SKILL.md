@@ -55,11 +55,12 @@ Use this loop:
 6. Let the result determine the next slice. A test matrix may map the intended coverage, but drive
    its cells through separate red-green cycles rather than implementing the whole matrix at once.
 
-A **progressive nudge** meets the user at their current attempt. Start with the missing concept or a
-focused question. If they remain stuck, identify the relevant interface or code region; then offer a
-structural sketch. Provide exact edit instructions or code when the user asks for them or delegates
-the change. Pause for the user's response between levels so they retain the reasoning and editing
-work.
+A **progressive nudge** meets the user at their current attempt. At the first level, name the
+behavioral boundary or investigation direction, then ask the user to locate the relevant code and
+articulate the rule, placement, or ordering. Reserve file and function names, enumerated conditions,
+and structural sketches for a later hint after the user responds or asks for more. Provide exact
+edit instructions or code when the user asks for them or delegates the change. Pause for the user's
+response between levels so they retain the reasoning and editing work.
 
 Keep the feedback conversational rather than turning ordinary feature work into formal lessons.
 Create or revise learning artifacts only when the teaching skill and learning workspace indicate
