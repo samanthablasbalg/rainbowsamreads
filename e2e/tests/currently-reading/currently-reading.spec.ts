@@ -165,7 +165,7 @@ test('Catching the pages up to the audio re-reads without moving completion', as
     const bookId = await apiClient.createBook('The Fifth Season', 'N. K. Jemisin', 400);
     const engId = await apiClient.markAsReading(bookId, 'audio', 480);
     await apiClient.logAudioProgress(engId, 120);
-    await apiClient.addFormat(engId, 'digital');
+    await apiClient.addFormat(engId, 'digital', 400);
   });
 
   await test.step('Open the log sheet on a read that stands a quarter of the way through', async () => {
