@@ -927,11 +927,11 @@ def test_progress_range_migration_downgrade_preserves_canonical_writes(
                 """
                 INSERT INTO progress_logs (
                     id, engagement_id, user_id, logged_on, unit, start, "end",
-                    new_ground, note, created_at, updated_at
+                    new_ground, note, generated_by_finish, created_at, updated_at
                 )
                 VALUES (
                     :log_id, :engagement_id, :user_id, '2026-08-01', 'minutes',
-                    30, 75, false, 'preserve me', now(), now()
+                    30, 75, false, 'preserve me', false, now(), now()
                 )
                 """
             ),

@@ -10,23 +10,26 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
-# Codex expects each skill directly under its own skills directory. The project keeps
-# the canonical copies in .claude/skills, so link each one on every launch instead of
-# maintaining a second tree. Refuse to replace a real Codex skill with the same name.
+# Codex expects each skill directly under its own skills directory. Most canonical copies live in
+# .claude/skills; Codex-specific skills live in .codex/skills. Link both on every launch and refuse
+# to replace a real Codex skill with the same name.
 sync_skills='set -eu
 skills_dir="$CODEX_HOME/skills"
 mkdir -p "$skills_dir"
-for skill in "$PWD"/.claude/skills/*; do
-  [ -d "$skill" ] || continue
-  link="$skills_dir/${skill##*/}"
-  if [ -L "$link" ] && [ "$(readlink "$link")" = "$skill" ]; then
-    continue
-  fi
-  if [ -e "$link" ] || [ -L "$link" ]; then
-    echo "Codex skill collision: $link is not this project'"'"'s link." >&2
-    exit 1
-  fi
-  ln -s "$skill" "$link"
+for skill_root in "$PWD"/.claude/skills "$PWD"/.codex/skills; do
+  [ -d "$skill_root" ] || continue
+  for skill in "$skill_root"/*; do
+    [ -d "$skill" ] || continue
+    link="$skills_dir/${skill##*/}"
+    if [ -L "$link" ] && [ "$(readlink "$link")" = "$skill" ]; then
+      continue
+    fi
+    if [ -e "$link" ] || [ -L "$link" ]; then
+      echo "Codex skill collision: $link is not this project'"'"'s link." >&2
+      exit 1
+    fi
+    ln -s "$skill" "$link"
+  done
 done
 exec codex "$@"'
 

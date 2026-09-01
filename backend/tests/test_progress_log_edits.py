@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 from app.models.engagement import Engagement
 from app.models.progress_log import ProgressLog
 from tests.helpers import (
-    _create_audio_engagement,
     _create_bare_book,
     _create_book,
     _create_edition,
@@ -155,7 +154,7 @@ def test_patch_log_minute_on_most_recent_updates_minute_end(
     client: TestClient, db: Session
 ) -> None:
     book = _create_book(client)
-    engagement = _create_audio_engagement(client, book["id"])
+    engagement = _create_engagement(client, book["id"], edition_format="audio")
     _log_audio_progress(client, engagement["id"], 60)
     latest = _log_audio_progress(client, engagement["id"], 120)
 
@@ -172,7 +171,7 @@ def test_patch_log_minute_on_most_recent_updates_minute_end(
 
 def test_patch_log_minute_at_or_below_start_returns_409(client: TestClient) -> None:
     book = _create_book(client)
-    engagement = _create_audio_engagement(client, book["id"])
+    engagement = _create_engagement(client, book["id"], edition_format="audio")
     _log_audio_progress(client, engagement["id"], 60)
     latest = _log_audio_progress(client, engagement["id"], 120)
 
@@ -185,9 +184,10 @@ def test_patch_log_minute_at_or_below_start_returns_409(client: TestClient) -> N
 
 
 def test_patch_log_minute_exceeds_audio_length_returns_409(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_audio_engagement(client, book["id"])
-    _log_audio_progress(client, engagement["id"], 60, edition_length=200)
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], format="audio", length=200)
+    engagement = _create_engagement(client, book["id"], edition_format="audio")
+    _log_audio_progress(client, engagement["id"], 60)
     latest = _log_audio_progress(client, engagement["id"], 120)
 
     response = client.patch(

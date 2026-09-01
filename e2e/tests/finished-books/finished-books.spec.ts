@@ -10,7 +10,7 @@ test('Finished books page shows "Add rating" for a finished book without a revie
   const finishedBooks = new FinishedBooksPage(page);
 
   await test.step('Seed a finished book with no review', async () => {
-    const bookId = await apiClient.createBook('Dune', 'Frank Herbert');
+    const bookId = await apiClient.createBook('Dune', 'Frank Herbert', 412);
     const engId = await apiClient.markAsReading(bookId);
     await apiClient.markAsFinished(engId);
   });
@@ -32,7 +32,7 @@ test('Saving a rating and review text shows the rating on the card but not the t
   const sheet = new ReviewSheetPage(page);
 
   await test.step('Seed a finished book with no review', async () => {
-    const bookId = await apiClient.createBook('Normal People', 'Sally Rooney');
+    const bookId = await apiClient.createBook('Normal People', 'Sally Rooney', 273);
     const engId = await apiClient.markAsReading(bookId);
     await apiClient.markAsFinished(engId);
   });
@@ -71,7 +71,7 @@ test('Saving a rating without review text shows the rating on the card', async (
   const sheet = new ReviewSheetPage(page);
 
   await test.step('Seed a finished book with no review', async () => {
-    const bookId = await apiClient.createBook('Piranesi', 'Susanna Clarke');
+    const bookId = await apiClient.createBook('Piranesi', 'Susanna Clarke', 272);
     const engId = await apiClient.markAsReading(bookId);
     await apiClient.markAsFinished(engId);
   });
@@ -100,7 +100,7 @@ test('An existing review opens as static text and edits from the row menu', asyn
   const sheet = new ReviewSheetPage(page);
 
   await test.step('Seed a finished book with an existing review', async () => {
-    const bookId = await apiClient.createBook('Babel', 'R.F. Kuang');
+    const bookId = await apiClient.createBook('Babel', 'R.F. Kuang', 546);
     const engId = await apiClient.markAsReading(bookId);
     await apiClient.markAsFinished(engId);
     await apiClient.upsertReview(engId, 3.0, 'Good but dense.');
@@ -146,7 +146,7 @@ test('Clearing the rating returns the card to its Add rating button', async ({
   const sheet = new ReviewSheetPage(page);
 
   await test.step('Seed a finished book with an existing rating', async () => {
-    const bookId = await apiClient.createBook('Circe', 'Madeline Miller');
+    const bookId = await apiClient.createBook('Circe', 'Madeline Miller', 400);
     const engId = await apiClient.markAsReading(bookId);
     await apiClient.markAsFinished(engId);
     await apiClient.upsertReview(engId, 4.0, null);
@@ -177,7 +177,7 @@ test('Deleting a finished engagement with a review removes it and leaves the boo
   const catalog = new CatalogPage(page);
 
   await test.step('Seed a finished book with a review', async () => {
-    const bookId = await apiClient.createBook('Babel', 'R.F. Kuang');
+    const bookId = await apiClient.createBook('Babel', 'R.F. Kuang', 546);
     const engId = await apiClient.markAsReading(bookId);
     await apiClient.markAsFinished(engId);
     await apiClient.upsertReview(engId, 3.0, 'Good but dense.');

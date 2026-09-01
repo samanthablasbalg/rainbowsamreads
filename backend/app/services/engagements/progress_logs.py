@@ -11,7 +11,6 @@ from app.exceptions import ConflictError, InvalidOperationError
 from app.models.engagement import Engagement
 from app.models.enums import Format, LogUnit, ReadingStatus
 from app.models.progress_log import ProgressLog, log_sort_key
-from app.services.books import capture_edition_length
 
 
 def reject_future_date(value: datetime.date | None) -> None:
@@ -51,7 +50,6 @@ def log_progress(
     minute_start: int | None,
     minute_end: int | None,
     logged_on: datetime.date | None,
-    edition_length: int | None,
     note: str | None,
 ) -> ProgressLog:
     """Stores one session, and returns the row the client addresses it by.
@@ -134,12 +132,6 @@ def log_progress(
         )
         for index, (span_start, span_end, new_ground) in enumerate(spans)
     ]
-
-    if edition_length is not None:
-        fmt = Format.audio if is_audio else engagement.page_format
-        binding = engagement.binding_for(fmt) if fmt is not None else None
-        if binding is not None:
-            capture_edition_length(engagement.book, binding.edition, edition_length)
 
     return logs[-1]
 

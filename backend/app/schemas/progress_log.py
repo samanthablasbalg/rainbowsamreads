@@ -17,7 +17,6 @@ class ProgressLogCreate(BaseModel):
     page_end: int | None = Field(default=None, gt=0)
     minute_start: int | None = Field(default=None, ge=0)
     minute_end: int | None = Field(default=None, gt=0)
-    edition_length: int | None = Field(default=None, gt=0)
     logged_on: datetime.date | None = None
     note: str | None = None
 

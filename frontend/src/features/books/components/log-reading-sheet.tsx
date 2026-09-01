@@ -1,5 +1,5 @@
 import { EngagementCreateStatus, type BookRead } from '@/api/generated/readingTracker.schemas';
-import { FormatPickSheet } from '@/components/common/format-pick-sheet';
+import { StartReadingSheet } from '@/components/common/start-reading-sheet';
 
 export function LogReadingSheet({
   book,
@@ -11,12 +11,9 @@ export function LogReadingSheet({
   onOpenChange: (open: boolean) => void;
 }) {
   return (
-    <FormatPickSheet
-      bookId={book.id}
-      title={book.title}
-      audioMinutes={book.default_audio_minutes}
+    <StartReadingSheet
+      book={book}
       statuses={Object.values(EngagementCreateStatus)}
-      redirectOnCreate={false}
       open={open}
       onOpenChange={onOpenChange}
     />

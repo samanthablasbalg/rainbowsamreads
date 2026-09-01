@@ -149,6 +149,14 @@ def create_engagement(
     if edition_length is not None:
         capture_edition_length(book, edition, edition_length)
 
+    if (
+        status == ReadingStatus.reading
+        and engagement.resolve_length(edition_format) is None
+    ):
+        raise InvalidOperationError(
+            "A reading engagement requires a length for its selected format."
+        )
+
     return engagement
 
 
@@ -177,6 +185,15 @@ def _closing_unit(engagement: Engagement, unit: LogUnit | None) -> LogUnit:
     raise InvalidOperationError(
         "This read is going in more than one format, so finishing it needs a unit."
     )
+
+
+def _transition_to_reading(db: Session, engagement: Engagement) -> None:
+    latest = latest_log(engagement.progress_logs)
+    if latest is not None and latest.generated_by_finish:
+        progress_log_crud.delete(db, latest)
+
+    engagement.finished_on = None
+    engagement.abandoned_on = None
 
 
 def _transition_to_finished(
@@ -218,6 +235,7 @@ def _transition_to_finished(
             start=position,
             end=length,
             new_ground=True,
+            generated_by_finish=True,
         ),
     )
 
@@ -249,6 +267,10 @@ def update_status(
 
     if new_status == ReadingStatus.reading:
         _reject_duplicate_reading(db, engagement)
+        if not engagement.progress_logs:
+            raise InvalidOperationError(
+                "An engagement without progress logs cannot be returned to reading."
+            )
 
     resolved_on = effective_on or datetime.date.today()
     reject_future_date(resolved_on)
@@ -256,8 +278,7 @@ def update_status(
     engagement.status = new_status
     match new_status:
         case ReadingStatus.reading:
-            engagement.finished_on = None
-            engagement.abandoned_on = None
+            _transition_to_reading(db, engagement)
         case ReadingStatus.finished:
             _transition_to_finished(db, engagement, resolved_on, unit)
         case ReadingStatus.dnf:

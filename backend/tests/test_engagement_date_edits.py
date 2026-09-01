@@ -192,10 +192,11 @@ def test_patch_dates_start_past_the_second_log_returns_409(client: TestClient) -
     assert "2026-01-05" in response.json()["detail"]
 
 
-def test_patch_dates_start_past_the_end_date_returns_409(client: TestClient) -> None:
+def test_patch_start_past_end_date_returns_409_with_only_closing_log(
+    client: TestClient,
+) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
-    _log_progress(client, engagement["id"], 40, logged_on="2026-01-01")
     _finish_on(client, engagement["id"], "2026-01-05")
 
     response = client.patch(
@@ -229,6 +230,7 @@ def test_patch_dates_finish_moved_onto_the_last_log_drags_it(
         "2026-01-02",
         "2026-01-05",
         "2026-01-07",
+        "2026-01-07",
     ]
 
 
@@ -248,7 +250,11 @@ def test_patch_dates_finish_moved_later_drags_a_log_sitting_on_it(
 
     assert response.status_code == 200
     assert response.json()["finished_on"] == "2026-01-09"
-    assert _log_dates(client, engagement["id"]) == ["2026-01-05", "2026-01-09"]
+    assert _log_dates(client, engagement["id"]) == [
+        "2026-01-05",
+        "2026-01-09",
+        "2026-01-09",
+    ]
 
 
 def test_patch_dates_finish_moved_later_leaves_an_earlier_last_log(
@@ -266,24 +272,25 @@ def test_patch_dates_finish_moved_later_leaves_an_earlier_last_log(
 
     assert response.status_code == 200
     assert response.json()["finished_on"] == "2026-01-09"
-    assert _log_dates(client, engagement["id"]) == ["2026-01-05"]
+    assert _log_dates(client, engagement["id"]) == ["2026-01-05", "2026-01-09"]
 
 
-def test_patch_dates_finish_moved_before_an_earlier_last_log_drags_it(
+def test_patch_dates_finish_moved_between_last_two_logs_drags_the_last(
     client: TestClient,
 ) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
     _log_progress(client, engagement["id"], 90, logged_on="2026-01-05")
+    _log_progress(client, engagement["id"], 300, logged_on="2026-01-09")
     _finish_on(client, engagement["id"], "2026-01-13")
 
     response = client.patch(
         f"/api/engagements/{engagement['id']}/dates",
-        json={"finished_on": "2026-01-04"},
+        json={"finished_on": "2026-01-07"},
     )
 
     assert response.status_code == 200
-    assert _log_dates(client, engagement["id"]) == ["2026-01-04"]
+    assert _log_dates(client, engagement["id"]) == ["2026-01-05", "2026-01-07"]
 
 
 def test_patch_dates_finish_before_the_penultimate_log_returns_409(

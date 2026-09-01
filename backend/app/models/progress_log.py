@@ -43,3 +43,4 @@ class ProgressLog(TimestampMixin, Base):
     note: Mapped[str | None] = mapped_column(Text)
 
     engagement: Mapped[Engagement] = relationship(back_populates="progress_logs")
+    generated_by_finish: Mapped[bool] = mapped_column(default=False)

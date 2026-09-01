@@ -212,6 +212,26 @@ describe('BookDetail', () => {
     expect(await screen.findByRole('button', { name: 'Add Piranesi as Reading' })).toBeVisible();
   });
 
+  it('requires the missing page length when starting an untracked book', async () => {
+    const user = userEvent.setup();
+    server.use(
+      getBooksGetBookMockHandler(buildBook({ default_page_count: null })),
+      getBooksListBookEngagementsMockHandler([])
+    );
+
+    render(<BookDetail bookId="book-Piranesi" />);
+
+    await user.click(await screen.findByRole('button', { name: /Not tracked/ }));
+    await user.click(await screen.findByRole('button', { name: 'Add Piranesi as Reading' }));
+
+    const start = screen.getByRole('button', { name: 'Start reading Piranesi' });
+    expect(start).toBeDisabled();
+
+    await user.type(screen.getByLabelText('Pages'), '300');
+
+    expect(start).toBeEnabled();
+  });
+
   it('logs another reading from the reading history', async () => {
     const user = userEvent.setup();
     server.use(
