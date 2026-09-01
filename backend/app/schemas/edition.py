@@ -47,7 +47,7 @@ class EngagementEditionCreate(BaseModel):
     edition_id: uuid.UUID | None = None
     edition_format: Format | None = None
     origin_id: uuid.UUID | None = None
-    length_override: int | None = None
+    length_override: int | None = Field(default=None, gt=0)
     edition_length: int | None = Field(default=None, gt=0)
 
     @model_validator(mode="after")
