@@ -287,7 +287,6 @@ export interface ProgressLogCreate {
   page_end?: number | null;
   minute_start?: number | null;
   minute_end?: number | null;
-  edition_length?: number | null;
   logged_on?: string | null;
   note?: string | null;
 }

@@ -2537,18 +2537,6 @@
             ],
             "title": "Minute End"
           },
-          "edition_length": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Edition Length"
-          },
           "logged_on": {
             "anyOf": [
               {
