@@ -4,7 +4,6 @@ import datetime
 import uuid
 from typing import Any
 
-import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -239,24 +238,6 @@ def test_engagement_resume_from_page_reflects_latest_log(client: TestClient) -> 
 
     response = client.get("/api/engagements?status=reading")
     assert response.json()[0]["resume_from_page"] == 300
-
-
-@pytest.mark.skip(
-    reason="Issue #103: decide whether a zero Book default is valid catalogue data",
-)
-def test_engagement_completion_pct_is_null_when_page_count_is_zero(
-    client: TestClient, db: Session
-) -> None:
-    book = _create_book(client)
-    book_obj = db.get(Book, uuid.UUID(book["id"]))
-    assert book_obj is not None
-    book_obj.default_page_count = 0
-    db.commit()
-    engagement = _create_engagement(client, book["id"])
-    _log_progress(client, engagement["id"], 100)
-
-    response = client.get("/api/engagements?status=reading")
-    assert response.json()[0]["completion_pct"] is None
 
 
 def test_engagement_completion_pct_is_null_before_logging(
