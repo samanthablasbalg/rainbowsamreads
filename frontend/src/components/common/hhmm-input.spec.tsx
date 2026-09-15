@@ -3,13 +3,26 @@ import userEvent from '@testing-library/user-event';
 import { act, render, screen } from '@/test/render';
 import { HhmmInput } from './hhmm-input';
 
-function ControlledHhmmInput({ initial = '' }: { initial?: string }) {
+function ControlledHhmmInput({
+  initial = '',
+  emptyAsZero = false,
+}: {
+  initial?: string;
+  emptyAsZero?: boolean;
+}) {
   const [value, setValue] = useState(initial);
-  return <HhmmInput aria-label="Position" value={value} onValueChange={setValue} />;
+  return (
+    <HhmmInput
+      aria-label="Position"
+      emptyAsZero={emptyAsZero}
+      value={value}
+      onValueChange={setValue}
+    />
+  );
 }
 
-function renderInput(initial?: string) {
-  render(<ControlledHhmmInput initial={initial} />);
+function renderInput(initial?: string, emptyAsZero = false) {
+  render(<ControlledHhmmInput initial={initial} emptyAsZero={emptyAsZero} />);
   return screen.getByRole<HTMLInputElement>('textbox', { name: 'Position' });
 }
 
@@ -108,6 +121,17 @@ describe('HhmmInput', () => {
     act(() => field.blur());
 
     expect(field).toHaveValue('');
+  });
+
+  it('keeps the displayed zero mask as the value when an empty value means zero', async () => {
+    const field = renderInput('02:05', true);
+
+    await userEvent.clear(field);
+    expect(field).toHaveValue('00:00');
+
+    act(() => field.blur());
+
+    expect(field).toHaveValue('00:00');
   });
 
   it('lets an invalid minute be typed, leaving the error to the caller', async () => {

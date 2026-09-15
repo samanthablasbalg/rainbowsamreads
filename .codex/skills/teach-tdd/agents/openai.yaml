@@ -2,5 +2,3 @@ interface:
   display_name: 'Teach + TDD'
   short_description: 'Drive feature work with teaching and TDD'
   default_prompt: 'Use $teach-tdd to help me resume this feature as the primary coding driver.'
-policy:
-  allow_implicit_invocation: false
