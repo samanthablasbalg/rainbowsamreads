@@ -2,7 +2,7 @@
 name: teach-tdd
 description:
   Guide the user through repository feature work as a teaching-oriented TDD pairing session. Use
-  only when the user explicitly invokes $teach-tdd.
+  only when the user explicitly names teach-tdd, with or without the $ prefix.
 ---
 
 # Teaching TDD Pairing
