@@ -7,13 +7,22 @@ type PositionInputProps = Omit<
   'value' | 'onChange' | 'type' | 'inputMode'
 > & {
   isAudio: boolean;
+  emptyAsZero?: boolean;
   value: string;
   onValueChange: (value: string) => void;
 };
 
-export function PositionInput({ isAudio, value, onValueChange, ...props }: PositionInputProps) {
+export function PositionInput({
+  isAudio,
+  emptyAsZero,
+  value,
+  onValueChange,
+  ...props
+}: PositionInputProps) {
   if (isAudio) {
-    return <HhmmInput value={value} onValueChange={onValueChange} {...props} />;
+    return (
+      <HhmmInput emptyAsZero={emptyAsZero} value={value} onValueChange={onValueChange} {...props} />
+    );
   }
 
   return (

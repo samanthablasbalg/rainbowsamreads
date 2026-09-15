@@ -189,6 +189,7 @@ function ProgressLogFields({ form }: { form: ProgressLogForm }) {
             autoFocus
             className={cn('col-start-1 row-start-2', FROM_INPUT_CLASS)}
             isAudio={form.isAudio}
+            emptyAsZero
             aria-label="start position"
             aria-invalid={!!form.from.error}
             value={form.from.value}

@@ -5,6 +5,7 @@ type HhmmInputProps = Omit<
   ComponentProps<typeof Input>,
   'value' | 'onChange' | 'type' | 'inputMode'
 > & {
+  emptyAsZero?: boolean;
   value: string;
   onValueChange: (value: string) => void;
 };
@@ -15,7 +16,14 @@ function pinCaretToEnd(input: HTMLInputElement | null, force = false) {
   input.setSelectionRange(input.value.length, input.value.length);
 }
 
-export function HhmmInput({ value, onValueChange, onFocus, onBlur, ...props }: HhmmInputProps) {
+export function HhmmInput({
+  emptyAsZero = false,
+  value,
+  onValueChange,
+  onFocus,
+  onBlur,
+  ...props
+}: HhmmInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [focused, setFocused] = useState(false);
 
@@ -25,7 +33,9 @@ export function HhmmInput({ value, onValueChange, onFocus, onBlur, ...props }: H
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const digits = event.target.value.replace(/\D/g, '').slice(-4).padStart(4, '0');
-    onValueChange(digits === '0000' ? '' : `${digits.slice(0, 2)}:${digits.slice(2)}`);
+    onValueChange(
+      digits === '0000' && !emptyAsZero ? '' : `${digits.slice(0, 2)}:${digits.slice(2)}`
+    );
   }
 
   return (
