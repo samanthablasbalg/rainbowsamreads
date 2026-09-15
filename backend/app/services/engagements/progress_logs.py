@@ -99,7 +99,11 @@ def log_progress(
     reject_future_date(resolved_on)
     if engagement.started_on is not None and resolved_on < engagement.started_on:
         raise ConflictError("Log date cannot be before the engagement's start date.")
-    if any(log.logged_on > resolved_on for log in engagement.progress_logs):
+    later_log_exists = any(
+        log.logged_on > resolved_on for log in engagement.progress_logs
+    )
+    is_re_coverage = start < frontier and end <= frontier
+    if later_log_exists and not is_re_coverage:
         raise ConflictError(
             "A log already exists on a later day; you can only correct the most"
             " recent day."

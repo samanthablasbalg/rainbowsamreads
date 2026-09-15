@@ -1099,6 +1099,33 @@ def test_log_backdated_behind_later_day_returns_409(client: TestClient) -> None:
     assert response.status_code == 409
 
 
+def test_cross_format_re_coverage_can_be_backdated_behind_a_later_day(
+    client: TestClient,
+) -> None:
+    book = _create_bare_book(client)
+    digital = _create_edition(client, book["id"], format="digital", length=400)
+    _create_edition(client, book["id"], format="audio", length=480)
+    engagement = _create_engagement(
+        client, book["id"], started_on="2026-01-01", edition_format="audio"
+    )
+    _log_audio_progress(client, engagement["id"], 60, logged_on="2026-01-10")
+    _log_audio_progress(client, engagement["id"], 120, logged_on="2026-01-20")
+    _bind_edition(client, engagement["id"], digital["id"])
+
+    response = client.post(
+        f"/api/engagements/{engagement['id']}/progress-logs",
+        json={
+            "page_start": 0,
+            "page_end": 20,
+            "logged_on": "2026-01-15",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["new_ground"] is False
+    assert response.json()["logged_on"] == "2026-01-15"
+
+
 def test_log_backdated_to_day_with_existing_log_and_higher_page_is_allowed(
     client: TestClient,
 ) -> None:
