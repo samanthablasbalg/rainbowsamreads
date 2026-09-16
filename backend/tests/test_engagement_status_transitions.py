@@ -111,6 +111,24 @@ def test_transition_to_reading_sets_started_on(client: TestClient) -> None:
     assert data["tbr_added_on"] == "2026-06-01"
 
 
+def test_transition_to_reading_with_no_edition_returns_422(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "status": "tbr",
+            "tbr_added_on": "2026-09-15",
+        },
+    ).json()
+
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading"},
+    )
+    assert response.status_code == 422
+
+
 @pytest.mark.parametrize("completion", COMPLETIONS)
 def test_transition_completed_engagement_with_logs_back_to_reading_clears_end_date(
     client: TestClient, completion: Completion
