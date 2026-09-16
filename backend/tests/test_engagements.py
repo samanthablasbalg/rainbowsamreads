@@ -565,6 +565,22 @@ def test_create_formatless_engagement_at_tbr_status(client: TestClient) -> None:
 # --- Transition ---
 
 
+def test_patch_to_tbr_clears_started_on(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], started_on="2026-06-01")
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}",
+        json={"status": "tbr", "effective_on": datetime.date.today().isoformat()},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "tbr"
+    assert data["finished_on"] is None
+    assert data["started_on"] is None
+    assert data["tbr_added_on"] == datetime.date.today().isoformat()
+
+
 def test_patch_to_finished_stamps_finished_on(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])

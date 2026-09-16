@@ -204,6 +204,14 @@ def _closing_unit(engagement: Engagement, unit: LogUnit | None) -> LogUnit:
     )
 
 
+def _transition_to_tbr(
+    effective_on: datetime.date | None, engagement: Engagement
+) -> None:
+    if engagement.tbr_added_on is None:
+        engagement.tbr_added_on = effective_on
+    engagement.started_on = None
+
+
 def _transition_to_reading(db: Session, engagement: Engagement) -> None:
     latest = latest_log(engagement.progress_logs)
     if latest is not None and latest.generated_by_finish:
@@ -294,6 +302,8 @@ def update_status(
 
     engagement.status = new_status
     match new_status:
+        case ReadingStatus.tbr:
+            _transition_to_tbr(effective_on, engagement)
         case ReadingStatus.reading:
             _transition_to_reading(db, engagement)
         case ReadingStatus.finished:
