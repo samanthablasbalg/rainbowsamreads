@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from tests.helpers import (
     MINUTES,
     PAGES,
+    RULERS,
     Ruler,
     _create_bare_book,
     _create_book,
@@ -324,6 +325,28 @@ def test_write_engagement_binding_tbr_status_succeeds(client: TestClient) -> Non
     assert response.status_code == 200
     data = response.json()
     assert data["formats"] == ["audio"]
+
+
+@pytest.mark.parametrize("ruler", RULERS)
+def test_write_engagement_lengthless_binding_for_tbr_succeeds(
+    client: TestClient,
+    ruler: Ruler,
+) -> None:
+    book = _create_bare_book(client)
+    edition = _create_edition(client, book["id"], format=ruler.edition_format)
+    engagement = _create_engagement(
+        client,
+        book["id"],
+        edition_format=None,
+        status="tbr",
+    )
+
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "tbr", "edition_id": edition["id"]},
+    )
+
+    assert response.status_code == 200
 
 
 @pytest.mark.parametrize("status", ["finished", "dnf"])
