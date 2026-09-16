@@ -65,7 +65,7 @@ def test_search_returns_catalog_book_without_engagement(
     assert data[0]["status"] is None
 
 
-@pytest.mark.parametrize("status", ["reading", "finished", "dnf"])
+@pytest.mark.parametrize("status", ["tbr", "reading", "finished", "dnf"])
 def test_search_returns_library_book_with_engagement_status(
     client: TestClient,
     monkeypatch: pytest.MonkeyPatch,

@@ -32,7 +32,7 @@ class BookSearchResult(BaseModel):
     categories: list[str]
     cover_url: str | None
     language: str | None
-    status: Literal["reading", "finished", "dnf"] | None
+    status: Literal["tbr", "reading", "finished", "dnf"] | None
 
 
 class AuthorRead(BaseModel):
