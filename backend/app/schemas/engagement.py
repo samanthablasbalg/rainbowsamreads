@@ -18,17 +18,24 @@ class EngagementCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     book_id: uuid.UUID
-    edition_format: Format
-    status: Literal["reading", "finished", "dnf"] = "reading"
+    edition_format: Format | None = None
+    status: Literal["tbr", "reading", "finished", "dnf"] = "reading"
     edition_length: int | None = Field(default=None, gt=0)
     length_override: int | None = Field(default=None, gt=0)
     started_on: datetime.date | None = None
     finished_on: datetime.date | None = None
+    tbr_added_on: datetime.date | None = None
 
     @model_validator(mode="after")
     def check_finished_on_matches_status(self) -> Self:
         if self.finished_on is not None and self.status == "reading":
             raise ValueError("A read in progress cannot have an end date")
+        return self
+
+    @model_validator(mode="after")
+    def check_format_matches_status(self) -> Self:
+        if self.edition_format is None and self.status != "tbr":
+            raise ValueError("A read must have a format")
         return self
 
 
@@ -70,6 +77,7 @@ class EngagementRead(BaseModel):
     formats: list[Format]
     cover_url: str | None
     status: ReadingStatus
+    tbr_added_on: datetime.date | None
     started_on: datetime.date | None
     finished_on: datetime.date | None
     abandoned_on: datetime.date | None

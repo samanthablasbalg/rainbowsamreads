@@ -1869,11 +1869,19 @@
             "title": "Book Id"
           },
           "edition_format": {
-            "$ref": "#/components/schemas/Format"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Format"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "status": {
             "type": "string",
             "enum": [
+              "tbr",
               "reading",
               "finished",
               "dnf"
@@ -1928,13 +1936,24 @@
               }
             ],
             "title": "Finished On"
+          },
+          "tbr_added_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tbr Added On"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "book_id",
-          "edition_format"
+          "book_id"
         ],
         "title": "EngagementCreate",
         "description": "`finished_on` is the date the read ended, whichever way it ended: it lands in\n`abandoned_on` when the status is dnf."
@@ -2146,6 +2165,18 @@
           "status": {
             "$ref": "#/components/schemas/ReadingStatus"
           },
+          "tbr_added_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tbr Added On"
+          },
           "started_on": {
             "anyOf": [
               {
@@ -2269,6 +2300,7 @@
           "formats",
           "cover_url",
           "status",
+          "tbr_added_on",
           "started_on",
           "finished_on",
           "abandoned_on",

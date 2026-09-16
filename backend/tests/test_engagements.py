@@ -461,7 +461,7 @@ def test_create_engagement_invalid_status_returns_422(client: TestClient) -> Non
     book = _create_book(client)
     response = client.post(
         "/api/engagements",
-        json={"book_id": book["id"], "edition_format": "print", "status": "tbr"},
+        json={"book_id": book["id"], "edition_format": "print", "status": "bogus"},
     )
     assert response.status_code == 422
 
@@ -476,6 +476,25 @@ def test_create_engagement_at_finished_still_blocked_by_active_read(
         json={"book_id": book["id"], "edition_format": "print", "status": "finished"},
     )
     assert response.status_code == 409
+
+
+def test_create_formatless_engagement_at_tbr_status(client: TestClient) -> None:
+    book = _create_book(client)
+    response = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "status": "tbr",
+            "tbr_added_on": "2026-09-15",
+        },
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["status"] == "tbr"
+    assert data["finished_on"] is None
+    assert data["started_on"] is None
+    assert data["formats"] == []
+    assert data["tbr_added_on"] == "2026-09-15"
 
 
 # --- Transition ---

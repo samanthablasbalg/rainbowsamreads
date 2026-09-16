@@ -80,16 +80,18 @@ def create_engagement(
     db: Session,
     *,
     book_id: uuid.UUID,
-    edition_format: Format,
+    edition_format: Format | None = None,
     status: ReadingStatus,
     user_id: uuid.UUID,
     edition_length: int | None = None,
     length_override: int | None = None,
+    tbr_added_on: datetime.date | None = None,
     started_on: datetime.date | None = None,
     finished_on: datetime.date | None = None,
 ) -> Engagement:
     book = book_crud.get_or_raise(db, book_id)
 
+    reject_future_date(tbr_added_on)
     reject_future_date(started_on)
     reject_future_date(finished_on)
     if finished_on is not None and started_on is not None and finished_on < started_on:
@@ -122,40 +124,45 @@ def create_engagement(
             or (datetime.date.today() if status == ReadingStatus.reading else None),
             finished_on=finished_on if status == ReadingStatus.finished else None,
             abandoned_on=finished_on if status == ReadingStatus.dnf else None,
+            tbr_added_on=tbr_added_on
+            or (datetime.date.today() if status == ReadingStatus.tbr else None),
         ),
     )
 
-    candidates = edition_crud.list_by(db, book_id=book_id, format=edition_format)
-    if len(candidates) == 0:
-        raise NotFoundError(f"No {edition_format} edition exists for this book")
-    if len(candidates) > 1:
-        raise ConflictError(
-            f"This book has more than one {edition_format} edition, so the app"
-            " can't tell which one to start reading. Choosing a specific edition"
-            " when starting a read isn't supported yet."
+    if edition_format is None and status != ReadingStatus.tbr:
+        raise InvalidOperationError("Only a TBR engagement may omit its format.")
+    if edition_format is not None:
+        candidates = edition_crud.list_by(db, book_id=book_id, format=edition_format)
+        if len(candidates) == 0:
+            raise NotFoundError(f"No {edition_format} edition exists for this book")
+        if len(candidates) > 1:
+            raise ConflictError(
+                f"This book has more than one {edition_format} edition, so the app"
+                " can't tell which one to start reading. Choosing a specific edition"
+                " when starting a read isn't supported yet."
+            )
+        edition = candidates[0]
+
+        engagement_edition_crud.create(
+            db,
+            EngagementEdition(
+                engagement_id=engagement.id,
+                edition_id=edition.id,
+                user_id=engagement.user_id,
+                length_override=length_override,
+            ),
         )
-    edition = candidates[0]
 
-    engagement_edition_crud.create(
-        db,
-        EngagementEdition(
-            engagement_id=engagement.id,
-            edition_id=edition.id,
-            user_id=engagement.user_id,
-            length_override=length_override,
-        ),
-    )
+        if edition_length is not None:
+            capture_edition_length(book, edition, edition_length)
 
-    if edition_length is not None:
-        capture_edition_length(book, edition, edition_length)
-
-    if (
-        status == ReadingStatus.reading
-        and engagement.resolve_length(edition_format) is None
-    ):
-        raise InvalidOperationError(
-            "A reading engagement requires a length for its selected format."
-        )
+        if (
+            status == ReadingStatus.reading
+            and engagement.resolve_length(edition_format) is None
+        ):
+            raise InvalidOperationError(
+                "A reading engagement requires a length for its selected format."
+            )
 
     return engagement
 

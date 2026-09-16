@@ -39,6 +39,7 @@ def create_engagement(
         user_id=current_user.id,
         edition_length=payload.edition_length,
         length_override=payload.length_override,
+        tbr_added_on=payload.tbr_added_on,
         started_on=payload.started_on,
         finished_on=payload.finished_on,
     )
