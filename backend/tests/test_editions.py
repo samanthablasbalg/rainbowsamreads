@@ -377,6 +377,23 @@ def test_create_binding_no_resolver_returns_422(client: TestClient) -> None:
     assert response.status_code == 422
 
 
+def test_create_binding_tbr_status_succeeds(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = client.post(
+        "/api/engagements",
+        json={"book_id": book["id"], "edition_format": None, "status": "tbr"},
+    ).json()
+
+    response = client.post(
+        f"/api/engagements/{engagement['id']}/editions",
+        json={"edition_format": "audio"},
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["edition"]["format"] == "audio"
+
+
 def test_create_binding_completed_status_returns_422(client: TestClient) -> None:
     book = _create_book(client)
     engagement = client.post(
