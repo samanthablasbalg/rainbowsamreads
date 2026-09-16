@@ -582,6 +582,7 @@ def test_post_same_status_is_idempotent(client: TestClient) -> None:
     "old_status, new_status",
     [
         ("finished", "reading"),
+        ("reading", "tbr"),
     ],
 )
 def test_post_engagement_backwards_conflicts_when_another_active_engagement_exists(
