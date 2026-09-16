@@ -209,17 +209,22 @@ def _transition_to_tbr(
     engagement.started_on = None
 
 
-def _transition_to_reading(db: Session, engagement: Engagement) -> None:
+def _transition_to_reading(
+    db: Session, engagement: Engagement, effective_on: datetime.date
+) -> None:
     if engagement.status == ReadingStatus.tbr:
         if not engagement.engagement_editions:
             raise InvalidOperationError(
                 "A TBR engagement without a format cannot be progressed to reading."
             )
-        if engagement.engagement_editions[0].edition.length is None:
+        if any(
+            engagement.resolve_length(binding.edition.format) is None
+            for binding in engagement.engagement_editions
+        ):
             raise InvalidOperationError(
                 "A TBR engagement without a length cannot be progressed to reading."
             )
-        engagement.started_on = datetime.date.today()
+        engagement.started_on = effective_on
     else:
         latest = latest_log(engagement.progress_logs)
         if latest is not None and latest.generated_by_finish:
@@ -335,7 +340,7 @@ def update_status(
         case ReadingStatus.tbr:
             _transition_to_tbr(resolved_on, engagement)
         case ReadingStatus.reading:
-            _transition_to_reading(db, engagement)
+            _transition_to_reading(db, engagement, resolved_on)
         case ReadingStatus.finished:
             _transition_to_finished(db, engagement, resolved_on, unit)
         case ReadingStatus.dnf:
