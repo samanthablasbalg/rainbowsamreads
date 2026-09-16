@@ -210,14 +210,17 @@ def _transition_to_tbr(
 
 
 def _transition_to_reading(db: Session, engagement: Engagement) -> None:
+    if engagement.status == ReadingStatus.tbr:
+        engagement.started_on = datetime.date.today()
+    else:
+        latest = latest_log(engagement.progress_logs)
+        if latest is not None and latest.generated_by_finish:
+            progress_log_crud.delete(db, latest)
+
+        engagement.finished_on = None
+        engagement.abandoned_on = None
+
     engagement.status = ReadingStatus.reading
-
-    latest = latest_log(engagement.progress_logs)
-    if latest is not None and latest.generated_by_finish:
-        progress_log_crud.delete(db, latest)
-
-    engagement.finished_on = None
-    engagement.abandoned_on = None
 
 
 def _transition_to_finished(
@@ -310,6 +313,10 @@ def update_engagement(
     reject_future_date(resolved_on)
 
     match engagement.status:
+        case ReadingStatus.tbr:
+            if new_status == ReadingStatus.reading:
+                _reject_duplicate_reading(db, engagement)
+                _transition_to_reading(db, engagement)
         case ReadingStatus.reading:
             if new_status == ReadingStatus.tbr:
                 _transition_to_tbr(resolved_on, engagement)

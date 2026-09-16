@@ -94,6 +94,23 @@ def test_transition_completed_engagement_back_to_tbr_returns_422(
 # --- Transition to reading ---
 
 
+def test_transition_to_reading_sets_started_on(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(
+        client, book["id"], status="tbr", tbr_added_on="2026-06-01"
+    )
+
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "reading"
+    assert data["started_on"] == datetime.date.today().isoformat()
+    assert data["tbr_added_on"] == "2026-06-01"
+
+
 @pytest.mark.parametrize("completion", COMPLETIONS)
 def test_transition_completed_engagement_with_logs_back_to_reading_clears_end_date(
     client: TestClient, completion: Completion
