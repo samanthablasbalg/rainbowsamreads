@@ -57,6 +57,20 @@ def test_transition_to_tbr_sets_tbr_added_on_and_clears_started_on(
     assert data["tbr_added_on"] == expected_tbr_added_on
 
 
+def test_patch_engagement_with_logs_back_to_tbr_returns_422(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 100)
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}", json={"status": "tbr"}
+    )
+
+    assert response.status_code == 422
+
+
 # --- Transition to reading ---
 
 
