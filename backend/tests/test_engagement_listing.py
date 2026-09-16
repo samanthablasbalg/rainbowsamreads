@@ -27,7 +27,7 @@ COMPLETED_SHELVES = [
 # --- Filtering and response ---
 
 
-@pytest.mark.parametrize("requested_status", ["reading", "finished", "dnf"])
+@pytest.mark.parametrize("requested_status", ["tbr", "reading", "finished", "dnf"])
 def test_list_includes_only_the_requested_status(
     client: TestClient, requested_status: str
 ) -> None:
@@ -35,8 +35,9 @@ def test_list_includes_only_the_requested_status(
         status: _create_book(
             client, title=f"{status.title()} Book", author=f"{status.title()} Author"
         )
-        for status in ("reading", "finished", "dnf")
+        for status in ("tbr", "reading", "finished", "dnf")
     }
+    _create_engagement(client, books["tbr"]["id"], status="tbr")
     _create_engagement(client, books["reading"]["id"])
     _create_engagement(client, books["finished"]["id"], status="finished")
     _create_engagement(client, books["dnf"]["id"], status="dnf")
@@ -123,6 +124,30 @@ def _set_end_date(
     assert engagement is not None
     setattr(engagement, field, when)
     db.commit()
+
+
+def test_list_tbr_orders_by_date_added(client: TestClient) -> None:
+    older_book = _create_book(client, title="Older", author="Author A")
+    newer_book = _create_book(client, title="Newer", author="Author B")
+    _create_engagement(
+        client,
+        older_book["id"],
+        edition_format=None,
+        status="tbr",
+        tbr_added_on="2026-01-01",
+    )
+    _create_engagement(
+        client,
+        newer_book["id"],
+        edition_format=None,
+        status="tbr",
+        tbr_added_on="2026-06-01",
+    )
+
+    response = client.get("/api/engagements?status=tbr")
+
+    assert response.status_code == 200
+    assert [item["book"]["title"] for item in response.json()] == ["Newer", "Older"]
 
 
 def test_list_reading_orders_more_recently_marked_first(

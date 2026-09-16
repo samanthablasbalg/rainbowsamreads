@@ -148,11 +148,13 @@ def _create_engagement(
     edition_format: str = "print",
     status: str = "reading",
     length_override: int | None = None,
+    tbr_added_on: str | None = None,
 ) -> dict[str, Any]:
     body: dict[str, Any] = {
         "book_id": book_id,
         "status": status,
         "edition_format": edition_format,
+        "tbr_added_on": tbr_added_on,
     }
     if started_on is not None:
         body["started_on"] = started_on
