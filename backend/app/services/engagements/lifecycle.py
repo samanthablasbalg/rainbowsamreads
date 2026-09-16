@@ -177,18 +177,6 @@ def create_engagement(
     return engagement
 
 
-def _reject_duplicate_reading(db: Session, engagement: Engagement) -> None:
-    duplicate = db.execute(
-        select(Engagement).where(
-            Engagement.book_id == engagement.book_id,
-            Engagement.status == ReadingStatus.reading,
-            Engagement.id != engagement.id,
-        )
-    ).scalar_one_or_none()
-    if duplicate is not None:
-        raise ConflictError("Already reading another engagement for this book.")
-
-
 def _closing_unit(engagement: Engagement, unit: LogUnit | None) -> LogUnit:
     """Which ruler the closing span is measured on. A read going in one format has only
     one answer; a read going in both has to be told which, which is what the finish
@@ -310,13 +298,35 @@ def update_status(
     if new_status == engagement.status:
         return
 
-    if new_status == ReadingStatus.reading:
-        _reject_duplicate_reading(db, engagement)
-        if engagement.status != ReadingStatus.tbr and not engagement.progress_logs:
+    if new_status == ReadingStatus.reading and engagement.status != ReadingStatus.tbr:
+        duplicate = db.execute(
+            select(Engagement).where(
+                Engagement.book_id == engagement.book_id,
+                Engagement.status == ReadingStatus.reading,
+                Engagement.id != engagement.id,
+            )
+        ).scalar_one_or_none()
+        if duplicate is not None:
+            raise ConflictError(
+                "A completed engagement cannot be"
+                " returned to reading if another is already in progress."
+            )
+        if not engagement.progress_logs:
             raise InvalidOperationError(
                 "A finished engagement without progress logs cannot be"
                 " returned to reading."
             )
+
+    if new_status == ReadingStatus.tbr:
+        duplicate = db.execute(
+            select(Engagement).where(
+                Engagement.book_id == engagement.book_id,
+                Engagement.status == ReadingStatus.tbr,
+                Engagement.id != engagement.id,
+            )
+        ).scalar_one_or_none()
+        if duplicate is not None:
+            raise ConflictError("Already another tbr engagement for this book.")
 
     resolved_on = effective_on or datetime.date.today()
     reject_future_date(resolved_on)

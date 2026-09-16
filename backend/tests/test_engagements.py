@@ -822,16 +822,24 @@ def test_patch_finished_to_finished_does_not_overwrite_date(
     assert second["finished_on"] == original_date
 
 
-def test_patch_back_to_reading_conflicts_when_another_active_read_exists(
-    client: TestClient,
+@pytest.mark.parametrize(
+    "old_status, new_status",
+    [
+        ("finished", "reading"),
+        ("reading", "tbr"),
+    ],
+)
+def test_patch_engagement_backwards_conflicts_when_another_active_engagement_exists(
+    client: TestClient, old_status: str, new_status: str
 ) -> None:
     book = _create_book(client)
-    eng_a = _create_engagement(client, book["id"])
-    client.patch(f"/api/engagements/{eng_a['id']}", json={"status": "finished"})
-    _create_engagement(client, book["id"])
+    eng_a = _create_engagement(
+        client, book["id"], edition_format="print", status=old_status
+    )
+    _create_engagement(client, book["id"], edition_format="print", status=new_status)
 
     response = client.patch(
-        f"/api/engagements/{eng_a['id']}", json={"status": "reading"}
+        f"/api/engagements/{eng_a['id']}", json={"status": new_status}
     )
     assert response.status_code == 409
 
