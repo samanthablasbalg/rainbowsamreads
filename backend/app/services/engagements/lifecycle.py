@@ -100,20 +100,29 @@ def create_engagement(
     if finished_on is not None and started_on is not None and finished_on < started_on:
         raise ConflictError("finished_on cannot be before started_on.")
 
-    duplicate = db.execute(
-        select(Engagement)
-        .join(EngagementEdition)
-        .join(Edition)
-        .where(
-            Engagement.book_id == book_id,
-            Engagement.status == ReadingStatus.reading,
-            Edition.format == edition_format,
+    if status == ReadingStatus.tbr:
+        tbr_duplicate = engagement_crud.get_by(
+            db,
+            book_id=book_id,
+            status=ReadingStatus.tbr,
         )
-    ).scalar_one_or_none()
-    if duplicate is not None:
-        raise ConflictError(
-            f"Already have a {edition_format} engagement in progress for this book."
-        )
+        if tbr_duplicate is not None:
+            raise ConflictError("Already have a TBR engagement for this book.")
+    else:
+        reading_duplicate = db.execute(
+            select(Engagement)
+            .join(EngagementEdition)
+            .join(Edition)
+            .where(
+                Engagement.book_id == book_id,
+                Engagement.status == ReadingStatus.reading,
+                Edition.format == edition_format,
+            )
+        ).scalar_one_or_none()
+        if reading_duplicate is not None:
+            raise ConflictError(
+                f"Already have a {edition_format} engagement in progress for this book."
+            )
 
     engagement = engagement_crud.create(
         db,

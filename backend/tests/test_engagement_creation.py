@@ -25,6 +25,30 @@ from tests.helpers import (
 # --- TBR ---
 
 
+@pytest.mark.parametrize("ruler", RULERS)
+def test_create_tbr_engagement_with_format_returns_201(
+    client: TestClient, ruler: Ruler
+) -> None:
+    book = _create_book(client)
+
+    response = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "status": "tbr",
+            "edition_format": ruler.edition_format,
+        },
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["status"] == "tbr"
+    assert data["tbr_added_on"] == datetime.date.today().isoformat()
+    assert data["started_on"] is None
+    assert data["finished_on"] is None
+    assert data["formats"] == [ruler.edition_format]
+    
+
 def test_create_tbr_engagement_without_format_returns_201(client: TestClient) -> None:
     book = _create_book(client)
     response = client.post(
