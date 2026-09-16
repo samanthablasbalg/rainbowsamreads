@@ -807,6 +807,29 @@ def test_patch_dnf_with_no_logs_back_to_reading_returns_422(client: TestClient) 
 # --- List views ---
 
 
+def test_list_tbr_excludes_reading_and_finished(client: TestClient) -> None:
+    book_a = _create_book(client, title="Book A", author="Author A")
+    book_b = _create_book(client, title="Book B", author="Author B")
+    book_c = _create_book(client, title="Book C", author="Author C")
+    client.post(
+        "/api/engagements",
+        json={
+            "book_id": book_a["id"],
+            "status": "tbr",
+            "tbr_added_on": "2026-09-15",
+        },
+    )
+    _create_engagement(client, book_b["id"])
+    finished_eng = _create_engagement(client, book_c["id"])
+    client.patch(f"/api/engagements/{finished_eng['id']}", json={"status": "finished"})
+
+    response = client.get("/api/engagements?status=tbr")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["book"]["title"] == "Book A"
+
+
 def test_list_reading_excludes_finished(client: TestClient) -> None:
     book_a = _create_book(client, title="Book A", author="Author A")
     book_b = _create_book(client, title="Book B", author="Author B")

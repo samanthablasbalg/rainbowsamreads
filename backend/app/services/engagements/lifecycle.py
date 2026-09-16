@@ -43,11 +43,11 @@ def list_for_book(db: Session, book_id: uuid.UUID) -> list[Engagement]:
 
 
 def list_by_status(db: Session, status: ReadingStatus) -> list[Engagement]:
-    """A shelf, most recent first. Each status has its own notion of recency: a read in
-    progress is ranked by its last sign of life, which includes logging progress without
-    touching the engagement itself; a finished or abandoned one by the date it ended,
-    with an undated read sinking to the bottom rather than to Postgres' NULLs-first
-    top."""
+    """A shelf, most recent first. Each status has its own notion of recency: a book in
+    TBR by the date it was added, a read in progress is ranked by its last sign of life,
+    which includes logging progress without touching the engagement itself; a finished
+    or abandoned one by the date it ended, with an undated read sinking to the bottom
+    rather than to Postgres' NULLs-first top."""
     latest_log_sq = (
         select(
             ProgressLog.engagement_id,
@@ -57,6 +57,7 @@ def list_by_status(db: Session, status: ReadingStatus) -> list[Engagement]:
         .subquery()
     )
     order_key = {
+        ReadingStatus.tbr: Engagement.tbr_added_on,
         ReadingStatus.reading: func.greatest(
             Engagement.updated_at, latest_log_sq.c.max_created_at
         ),
