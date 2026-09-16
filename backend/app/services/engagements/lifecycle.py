@@ -209,6 +209,10 @@ def _transition_to_tbr(
 ) -> None:
     if engagement.tbr_added_on is None:
         engagement.tbr_added_on = effective_on
+    if engagement.progress_logs:
+        raise InvalidOperationError(
+            "A read with progress logs cannot be returned to TBR."
+        )
     engagement.started_on = None
 
 

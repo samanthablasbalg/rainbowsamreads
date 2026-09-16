@@ -648,6 +648,20 @@ def test_patch_to_finished_before_started_on_with_no_logs_returns_409(
     assert response.status_code == 409
 
 
+def test_patch_engagement_with_logs_back_to_tbr_returns_422(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 100)
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}", json={"status": "tbr"}
+    )
+
+    assert response.status_code == 422
+
+
 def test_patch_engagement_with_logs_back_to_reading_clears_finished_on(
     client: TestClient,
 ) -> None:
