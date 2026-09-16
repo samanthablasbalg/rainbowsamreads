@@ -626,6 +626,22 @@ def test_patch_to_reading_with_no_edition_returns_422(client: TestClient) -> Non
     assert response.status_code == 422
 
 
+def test_patch_lengthless_engagement_to_reading_returns_422(client: TestClient) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], format="print")
+    engagement = client.post(
+        "/api/engagements",
+        json={"book_id": book["id"], "edition_format": "print", "status": "tbr"},
+    ).json()
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}",
+        json={"status": "reading"},
+    )
+
+    assert response.status_code == 422
+
+
 def test_patch_to_finished_stamps_finished_on(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
