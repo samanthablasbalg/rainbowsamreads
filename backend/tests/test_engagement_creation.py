@@ -47,7 +47,7 @@ def test_create_tbr_engagement_with_format_returns_201(
     assert data["started_on"] is None
     assert data["finished_on"] is None
     assert data["formats"] == [ruler.edition_format]
-    
+
 
 def test_create_tbr_engagement_without_format_returns_201(client: TestClient) -> None:
     book = _create_book(client)
@@ -288,7 +288,7 @@ def test_create_reading_engagement_in_different_format_from_active_read_succeeds
     assert data["formats"] == [new_ruler.edition_format]
 
 
-@pytest.mark.parametrize("new_status", ["reading"])
+@pytest.mark.parametrize("new_status", ["tbr", "reading"])
 def test_create_tbr_or_reading_engagement_after_finished_read_succeeds(
     client: TestClient, new_status: str
 ) -> None:
