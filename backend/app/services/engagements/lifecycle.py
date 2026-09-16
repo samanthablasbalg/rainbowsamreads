@@ -222,12 +222,15 @@ def _transition_to_tbr(
 
 
 def _transition_to_reading(db: Session, engagement: Engagement) -> None:
-    latest = latest_log(engagement.progress_logs)
-    if latest is not None and latest.generated_by_finish:
-        progress_log_crud.delete(db, latest)
+    if engagement.status == ReadingStatus.tbr:
+        engagement.started_on = datetime.date.today()
+    else:
+        latest = latest_log(engagement.progress_logs)
+        if latest is not None and latest.generated_by_finish:
+            progress_log_crud.delete(db, latest)
 
-    engagement.finished_on = None
-    engagement.abandoned_on = None
+        engagement.finished_on = None
+        engagement.abandoned_on = None
 
 
 def _transition_to_finished(
@@ -301,9 +304,10 @@ def update_status(
 
     if new_status == ReadingStatus.reading:
         _reject_duplicate_reading(db, engagement)
-        if not engagement.progress_logs:
+        if engagement.status != ReadingStatus.tbr and not engagement.progress_logs:
             raise InvalidOperationError(
-                "An engagement without progress logs cannot be returned to reading."
+                "A finished engagement without progress logs cannot be"
+                " returned to reading."
             )
 
     resolved_on = effective_on or datetime.date.today()
