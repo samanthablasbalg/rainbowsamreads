@@ -316,15 +316,24 @@ def test_create_engagement_same_book_different_format_succeeds(
     assert response.status_code == 201
 
 
-def test_create_engagement_on_finished_book_succeeds(client: TestClient) -> None:
+@pytest.mark.parametrize(
+    "status",
+    [
+        ("tbr"),
+        ("reading"),
+    ],
+)
+def test_create_same_format_engagement_on_finished_book_succeeds(
+    client: TestClient, status: str
+) -> None:
     book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "finished"})
+    _create_engagement(client, book["id"], status="finished", edition_format="print")
     response = client.post(
-        "/api/engagements", json={"book_id": book["id"], "edition_format": "print"}
+        "/api/engagements",
+        json={"book_id": book["id"], "edition_format": "print", "status": status},
     )
     assert response.status_code == 201
-    assert response.json()["status"] == "reading"
+    assert response.json()["status"] == status
 
 
 def test_create_engagement_at_finished_status(client: TestClient) -> None:
