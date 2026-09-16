@@ -191,14 +191,21 @@ def _closing_unit(engagement: Engagement, unit: LogUnit | None) -> LogUnit:
 def _transition_to_tbr(
     effective_on: datetime.date | None, engagement: Engagement
 ) -> None:
-    engagement.status = ReadingStatus.tbr
 
-    if engagement.tbr_added_on is None:
-        engagement.tbr_added_on = effective_on
     if engagement.progress_logs:
         raise InvalidOperationError(
             "A read with progress logs cannot be returned to TBR."
         )
+    if (
+        engagement.status == ReadingStatus.finished
+        or engagement.status == ReadingStatus.dnf
+    ):
+        raise InvalidOperationError("A completed engagement cannot be returned to TBR.")
+
+    engagement.status = ReadingStatus.tbr
+    
+    if engagement.tbr_added_on is None:
+        engagement.tbr_added_on = effective_on
     engagement.started_on = None
 
 
@@ -326,6 +333,8 @@ def update_engagement(
                 )
 
     return engagement
+
+    engagement.status = new_status
 
 
 def apply_date_change(
