@@ -309,6 +309,23 @@ def test_write_engagement_with_both_edition_id_and_format_returns_422(
     assert response.status_code == 422
 
 
+def test_write_engagement_binding_tbr_status_succeeds(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = client.post(
+        "/api/engagements",
+        json={"book_id": book["id"], "edition_format": None, "status": "tbr"},
+    ).json()
+
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "tbr", "edition_format": "audio"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["formats"] == ["audio"]
+
+
 @pytest.mark.parametrize("status", ["finished", "dnf"])
 def test_write_engagement_binding_on_completed_engagement_returns_422(
     client: TestClient,

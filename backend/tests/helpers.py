@@ -148,6 +148,8 @@ def _create_engagement(
     edition_format: str | None = "print",
     status: str = "reading",
     tbr_added_on: str | None = None,
+    edition_length: int | None = None,
+    length_override: int | None = None,
 ) -> dict[str, Any]:
     body: dict[str, Any] = {
         "book_id": book_id,
@@ -155,6 +157,8 @@ def _create_engagement(
         "edition_format": edition_format,
         "tbr_added_on": tbr_added_on,
         "started_on": started_on,
+        "edition_length": edition_length,
+        "length_override": length_override,
     }
     response = client.post("/api/engagements", json=body)
     assert response.status_code == 201
