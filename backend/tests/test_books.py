@@ -118,11 +118,20 @@ def test_search_book_in_catalog_not_in_library(
     assert data[0]["status"] is None
 
 
+@pytest.mark.parametrize(
+    "status",
+    [
+        ("tbr"),
+        ("reading"),
+        ("finished"),
+        ("dnf"),
+    ],
+)
 def test_search_book_in_library_shows_status(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, status: str
 ) -> None:
     book = _create_book(client, title="Piranesi", author="Susanna Clarke")
-    _create_engagement(client, book["id"])
+    _create_engagement(client, book["id"], status=status)
 
     def handler(request: httpx2.Request) -> httpx2.Response:
         return httpx2.Response(200, json={})
@@ -134,7 +143,7 @@ def test_search_book_in_library_shows_status(
     data = response.json()
     assert len(data) == 1
     assert data[0]["state"] == "in_library"
-    assert data[0]["status"] == "reading"
+    assert data[0]["status"] == status
 
 
 def test_search_matches_local_book_by_author_name(
