@@ -23,6 +23,40 @@ from tests.helpers import (
     _read_with_length,
 )
 
+# --- Transition to TBR ---
+
+
+@pytest.mark.parametrize(
+    "payload, expected_tbr_added_on",
+    [
+        ({"status": "tbr"}, datetime.date.today().isoformat()),
+        (
+            {"status": "tbr", "effective_on": "2026-06-01"},
+            "2026-06-01",
+        ),
+    ],
+    ids=["defaults-to-today", "uses-effective-on"],
+)
+def test_transition_to_tbr_sets_tbr_added_on_and_clears_started_on(
+    client: TestClient,
+    payload: dict[str, str],
+    expected_tbr_added_on: str,
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], started_on="2026-05-01")
+
+    response = client.post(
+        f"/api/engagements",
+        json={**payload, "id": engagement["id"]},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "tbr"
+    assert data["finished_on"] is None
+    assert data["started_on"] is None
+    assert data["tbr_added_on"] == expected_tbr_added_on
+
+
 # --- Transition to reading ---
 
 

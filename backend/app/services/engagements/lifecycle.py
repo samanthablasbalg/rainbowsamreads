@@ -188,6 +188,16 @@ def _closing_unit(engagement: Engagement, unit: LogUnit | None) -> LogUnit:
     )
 
 
+def _transition_to_tbr(
+    effective_on: datetime.date | None, engagement: Engagement
+) -> None:
+    engagement.status = ReadingStatus.tbr
+
+    if engagement.tbr_added_on is None:
+        engagement.tbr_added_on = effective_on
+    engagement.started_on = None
+
+
 def _transition_to_reading(db: Session, engagement: Engagement) -> None:
     engagement.status = ReadingStatus.reading
 
@@ -290,7 +300,9 @@ def update_engagement(
 
     match engagement.status:
         case ReadingStatus.reading:
-            if new_status == ReadingStatus.finished:
+            if new_status == ReadingStatus.tbr:
+                _transition_to_tbr(resolved_on, engagement)
+            elif new_status == ReadingStatus.finished:
                 _transition_to_finished(db, engagement, resolved_on, unit)
             elif new_status == ReadingStatus.dnf:
                 _transition_to_dnf(engagement, effective_on, resolved_on)
