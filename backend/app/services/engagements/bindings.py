@@ -49,7 +49,12 @@ def create_binding(
             "An engagement must be in tbr or in progress to get an edition bound."
         )
 
-    if length_override is None and edition_length is None and edition.length is None:
+    if (
+        length_override is None
+        and edition_length is None
+        and edition.length is None
+        and engagement.status == ReadingStatus.reading
+    ):
         raise InvalidOperationError(
             "A reading engagement requires a length for its selected format."
         )
