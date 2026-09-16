@@ -323,7 +323,7 @@ def update_status(
 
     match new_status:
         case ReadingStatus.tbr:
-            _transition_to_tbr(effective_on, engagement)
+            _transition_to_tbr(resolved_on, engagement)
         case ReadingStatus.reading:
             _transition_to_reading(db, engagement)
         case ReadingStatus.finished:

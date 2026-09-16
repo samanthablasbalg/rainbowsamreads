@@ -56,27 +56,10 @@ def test_create_tbr_engagement_with_format_returns_201(client: TestClient) -> No
     assert response.status_code == 201
     data = response.json()
     assert data["status"] == "tbr"
-    assert data["tbr_added_on"] is not None
+    assert data["tbr_added_on"] == datetime.date.today().isoformat()
     assert data["started_on"] is None
     assert data["finished_on"] is None
     assert data["formats"] == ["print"]
-
-
-def test_create_tbr_without_added_on_defaults_to_today(
-    client: TestClient,
-) -> None:
-    book = _create_book(client)
-
-    response = client.post(
-        "/api/engagements",
-        json={
-            "book_id": book["id"],
-            "status": "tbr",
-        },
-    )
-
-    assert response.status_code == 201
-    assert response.json()["tbr_added_on"] == datetime.date.today().isoformat()
 
 
 def test_create_engagement_for_lengthless_book_with_edition_length_returns_201(
@@ -581,7 +564,7 @@ def test_patch_to_tbr_clears_started_on(client: TestClient) -> None:
 
     response = client.patch(
         f"/api/engagements/{engagement['id']}",
-        json={"status": "tbr", "effective_on": datetime.date.today().isoformat()},
+        json={"status": "tbr"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -589,6 +572,20 @@ def test_patch_to_tbr_clears_started_on(client: TestClient) -> None:
     assert data["finished_on"] is None
     assert data["started_on"] is None
     assert data["tbr_added_on"] == datetime.date.today().isoformat()
+
+
+def test_patch_to_tbr_sets_started_on(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], started_on="2026-06-01")
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}",
+        json={"status": "tbr", "effective_on": "2026-06-01"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "tbr"
+    assert data["tbr_added_on"] == "2026-06-01"
 
 
 def test_patch_to_reading_sets_started_on(client: TestClient) -> None:
