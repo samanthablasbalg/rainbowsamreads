@@ -52,11 +52,17 @@ def _create_engagement(
     book_id: str,
     started_on: str | None = None,
     *,
-    edition_format: str = "print",
+    edition_format: str | None = "print",
+    status: str = "reading",
+    tbr_added_on: str | None = None,
 ) -> dict[str, Any]:
-    body: dict[str, Any] = {"book_id": book_id, "edition_format": edition_format}
-    if started_on is not None:
-        body["started_on"] = started_on
+    body: dict[str, Any] = {
+        "book_id": book_id,
+        "status": status,
+        "edition_format": edition_format,
+        "tbr_added_on": tbr_added_on,
+        "started_on": started_on,
+    }
     response = client.post("/api/engagements", json=body)
     assert response.status_code == 201
     return cast(dict[str, Any], response.json())

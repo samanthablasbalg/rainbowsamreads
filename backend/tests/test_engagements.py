@@ -46,6 +46,38 @@ def test_create_engagement_returns_201(client: TestClient) -> None:
     assert data["length_minutes"] is None
 
 
+def test_create_tbr_engagement_with_format_returns_201(client: TestClient) -> None:
+    book = _create_book(client)
+    response = client.post(
+        "/api/engagements",
+        json={"book_id": book["id"], "status": "tbr", "edition_format": "print"},
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["status"] == "tbr"
+    assert data["tbr_added_on"] is not None
+    assert data["started_on"] is None
+    assert data["finished_on"] is None
+    assert data["formats"] == ["print"]
+
+
+def test_create_tbr_without_added_on_defaults_to_today(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+
+    response = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "status": "tbr",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["tbr_added_on"] == datetime.date.today().isoformat()
+
+
 def test_create_engagement_for_lengthless_book_with_edition_length_returns_201(
     client: TestClient, db: Session
 ) -> None:
@@ -228,6 +260,17 @@ def test_create_engagement_unknown_book_returns_404(client: TestClient) -> None:
     assert response.status_code == 404
 
 
+def test_create_engagement_duplicate_tbr_returns_409(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+    _create_engagement(client, book["id"], status="tbr", edition_format=None)
+    response = client.post(
+        "/api/engagements", json={"book_id": book["id"], "status": "tbr"}
+    )
+    assert response.status_code == 409
+
+
 def test_create_engagement_duplicate_active_read_returns_409(
     client: TestClient,
 ) -> None:
@@ -237,6 +280,28 @@ def test_create_engagement_duplicate_active_read_returns_409(
         "/api/engagements", json={"book_id": book["id"], "edition_format": "print"}
     )
     assert response.status_code == 409
+
+
+def test_finished_print_book_can_be_added_to_tbr_in_audio(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+    _create_engagement(
+        client,
+        book["id"],
+        status="finished",
+        edition_format="print",
+        tbr_added_on="2026-08-01",
+    )
+    response = client.post(
+        "/api/engagements",
+        json={"book_id": book["id"], "status": "tbr", "edition_format": "audio"},
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["status"] == "tbr"
+    assert data["tbr_added_on"] == datetime.date.today().isoformat()
+    assert data["formats"] == ["audio"]
 
 
 def test_create_engagement_same_book_different_format_succeeds(
