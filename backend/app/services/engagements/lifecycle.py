@@ -82,16 +82,18 @@ def create_engagement(
     db: Session,
     *,
     book_id: uuid.UUID,
-    edition_format: Format,
+    edition_format: Format | None = None,
     status: ReadingStatus,
     user_id: uuid.UUID,
     edition_length: int | None = None,
     length_override: int | None = None,
+    tbr_added_on: datetime.date | None = None,
     started_on: datetime.date | None = None,
     finished_on: datetime.date | None = None,
 ) -> Engagement:
     book_crud.get_or_raise(db, book_id)
 
+    reject_future_date(tbr_added_on)
     reject_future_date(started_on)
     reject_future_date(finished_on)
     if finished_on is not None and started_on is not None and finished_on < started_on:
@@ -124,16 +126,19 @@ def create_engagement(
             or (datetime.date.today() if status == ReadingStatus.reading else None),
             finished_on=finished_on if status == ReadingStatus.finished else None,
             abandoned_on=finished_on if status == ReadingStatus.dnf else None,
+            tbr_added_on=tbr_added_on
+            or (datetime.date.today() if status == ReadingStatus.tbr else None),
         ),
     )
 
-    create_binding(
-        db,
-        engagement,
-        edition_for_format(db, engagement, edition_format),
-        length_override=length_override,
-        edition_length=edition_length,
-    )
+    if edition_format is not None:
+        create_binding(
+            db,
+            engagement,
+            edition_for_format(db, engagement, edition_format),
+            length_override=length_override,
+            edition_length=edition_length,
+        )
 
     if (
         status == ReadingStatus.reading

@@ -41,10 +41,6 @@ def write_engagement(
     current_user: User = Depends(get_current_user),
 ) -> EngagementRead:
     if payload.id is None:
-        if payload.book_id is None or payload.edition_format is None:
-            raise InvalidOperationError(
-                "Creating a read needs a book_id and edition_format."
-            )
         engagement = lifecycle_service.create_engagement(
             db,
             book_id=payload.book_id,
@@ -53,6 +49,7 @@ def write_engagement(
             user_id=current_user.id,
             edition_length=payload.edition_length,
             length_override=payload.length_override,
+            tbr_added_on=payload.tbr_added_on,
             started_on=payload.started_on,
             finished_on=payload.finished_on,
         )
@@ -73,6 +70,7 @@ def write_engagement(
         db.commit()
         response.status_code = status.HTTP_200_OK
         return EngagementRead.model_validate(reload(db, engagement.id))
+
 
 
 @router.patch("/{engagement_id}/dates", response_model=EngagementRead)
