@@ -15,7 +15,9 @@ from tests.helpers import (
     Ruler,
     _bind_edition,
     _catch_up_engagement,
+    _create_bare_book,
     _create_book,
+    _create_edition,
     _create_engagement,
     _log_audio_progress,
     _log_progress,
@@ -126,6 +128,22 @@ def test_transition_to_reading_with_no_edition_returns_422(client: TestClient) -
         "/api/engagements",
         json={"id": engagement["id"], "status": "reading"},
     )
+    assert response.status_code == 422
+
+
+def test_patch_lengthless_engagement_to_reading_returns_422(client: TestClient) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], format="print")
+    engagement = client.post(
+        "/api/engagements",
+        json={"book_id": book["id"], "edition_format": "print", "status": "tbr"},
+    ).json()
+
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading"},
+    )
+
     assert response.status_code == 422
 
 

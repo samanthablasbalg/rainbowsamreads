@@ -215,6 +215,10 @@ def _transition_to_reading(db: Session, engagement: Engagement) -> None:
             raise InvalidOperationError(
                 "A TBR engagement without a format cannot be progressed to reading."
             )
+        if engagement.engagement_editions[0].edition.length is None:
+            raise InvalidOperationError(
+                "A TBR engagement without a length cannot be progressed to reading."
+            )
         engagement.started_on = datetime.date.today()
     else:
         latest = latest_log(engagement.progress_logs)
