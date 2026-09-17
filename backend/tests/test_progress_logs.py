@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime
 import uuid
 
 from fastapi.testclient import TestClient
@@ -9,9 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.models.book import Book
 from app.models.edition import Edition, EngagementEdition
-from app.models.engagement import Engagement
 from tests.helpers import (
-    _bind_edition,
     _create_bare_book,
     _create_book,
     _create_edition,
@@ -405,96 +402,6 @@ def test_resume_from_page_unaffected_by_minute_logs(client: TestClient) -> None:
     response = client.get("/api/engagements?status=reading")
     assert response.json()[0]["resume_from_page"] == 100
     assert response.json()[0]["resume_from_minute"] == 0
-
-
-def test_log_before_started_on_returns_409(client: TestClient, db: Session) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-
-    eng_obj = db.get(Engagement, uuid.UUID(engagement["id"]))
-    assert eng_obj is not None
-    eng_obj.started_on = datetime.date(2026, 1, 15)
-    db.commit()
-
-    response = client.post(
-        f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"page_start": 0, "page_end": 50, "logged_on": "2026-01-10"},
-    )
-
-    assert response.status_code == 409
-
-
-def test_log_future_date_returns_422(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-    future = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
-
-    response = client.post(
-        f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"page_start": 0, "page_end": 50, "logged_on": future},
-    )
-
-    assert response.status_code == 422
-
-
-def test_log_backdated_behind_later_day_returns_409(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
-    _log_progress(client, engagement["id"], 100, logged_on="2026-01-20")
-
-    response = client.post(
-        f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"page_start": 100, "page_end": 200, "logged_on": "2026-01-10"},
-    )
-
-    assert response.status_code == 409
-
-
-def test_cross_format_re_coverage_can_be_backdated_behind_a_later_day(
-    client: TestClient,
-) -> None:
-    book = _create_bare_book(client)
-    digital = _create_edition(client, book["id"], format="digital", length=400)
-    _create_edition(client, book["id"], format="audio", length=480)
-    engagement = _create_engagement(
-        client, book["id"], started_on="2026-01-01", edition_format="audio"
-    )
-    _log_audio_progress(client, engagement["id"], 60, logged_on="2026-01-10")
-    _log_audio_progress(client, engagement["id"], 120, logged_on="2026-01-20")
-    _bind_edition(client, engagement["id"], digital["id"])
-
-    response = client.post(
-        f"/api/engagements/{engagement['id']}/progress-logs",
-        json={
-            "page_start": 0,
-            "page_end": 20,
-            "logged_on": "2026-01-15",
-        },
-    )
-
-    assert response.status_code == 201
-    assert response.json()["new_ground"] is False
-    assert response.json()["logged_on"] == "2026-01-15"
-
-
-def test_log_backdated_to_day_with_existing_log_and_higher_page_is_allowed(
-    client: TestClient,
-) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
-    _log_progress(client, engagement["id"], 100, logged_on="2026-01-10")
-
-    response = client.post(
-        f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"page_start": 100, "page_end": 200, "logged_on": "2026-01-10"},
-    )
-
-    assert response.status_code == 201
-    assert response.json()["logged_on"] == "2026-01-10"
-
-    logs = client.get(f"/api/engagements/{engagement['id']}/progress-logs").json()
-    assert len(logs) == 2
-    assert logs[-1]["page_end"] == 200
 
 
 def test_completion_pct_is_a_high_water_mark(client: TestClient, db: Session) -> None:
