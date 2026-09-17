@@ -7,11 +7,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests.helpers import (
-    _create_bare_book,
+    RULERS,
+    Ruler,
     _create_book,
-    _create_edition,
     _create_engagement,
     _log_progress,
+    _read_with_length,
 )
 
 # --- Transition to reading ---
@@ -47,14 +48,7 @@ def test_patch_engagement_with_no_logs_back_to_reading_returns_422(
     client: TestClient, status: str
 ) -> None:
     book = _create_book(client)
-    engagement = client.post(
-        "/api/engagements",
-        json={
-            "book_id": book["id"],
-            "edition_format": "print",
-            "status": status,
-        },
-    ).json()
+    engagement = _create_engagement(client, book["id"], status=status)
 
     response = client.patch(
         f"/api/engagements/{engagement['id']}", json={"status": "reading"}
@@ -79,27 +73,19 @@ def test_patch_to_finished_stamps_finished_on(client: TestClient) -> None:
     assert data["started_on"] == engagement["started_on"]
 
 
+@pytest.mark.parametrize("ruler", RULERS)
 def test_patch_to_finished_catches_up_to_the_corrected_length(
-    client: TestClient,
+    client: TestClient, ruler: Ruler
 ) -> None:
-    book = _create_bare_book(client)
-    _create_edition(client, book["id"], length=1100)
-    engagement = client.post(
-        "/api/engagements",
-        json={
-            "book_id": book["id"],
-            "edition_format": "print",
-            "length_override": 1000,
-        },
-    ).json()
-    _log_progress(client, engagement["id"], 500)
+    _, engagement_id = _read_with_length(client, ruler, 1100, length_override=1000)
+    ruler.log_progress(client, engagement_id, 500)
 
     response = client.patch(
-        f"/api/engagements/{engagement['id']}", json={"status": "finished"}
+        f"/api/engagements/{engagement_id}", json={"status": "finished"}
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["resume_from_page"] == 1000
+    assert data[ruler.resume_field] == 1000
     assert data["completion_pct"] == 100
 
 
@@ -275,10 +261,8 @@ def test_patch_engagement_backwards_conflicts_when_another_active_engagement_exi
     client: TestClient, old_status: str, new_status: str
 ) -> None:
     book = _create_book(client)
-    eng_a = _create_engagement(
-        client, book["id"], edition_format="print", status=old_status
-    )
-    _create_engagement(client, book["id"], edition_format="print", status=new_status)
+    eng_a = _create_engagement(client, book["id"], status=old_status)
+    _create_engagement(client, book["id"], status=new_status)
 
     response = client.patch(
         f"/api/engagements/{eng_a['id']}", json={"status": new_status}
