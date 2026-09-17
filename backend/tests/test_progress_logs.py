@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import uuid
-from typing import Any
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
@@ -11,16 +10,16 @@ from sqlalchemy.orm import Session
 from app.models.book import Book
 from app.models.edition import Edition, EngagementEdition
 from app.models.engagement import Engagement
-from app.models.enums import LogUnit
-from app.models.progress_log import ProgressLog
 from tests.helpers import (
     _bind_edition,
+    _catch_up_engagement,
     _create_bare_book,
     _create_book,
     _create_edition,
     _create_engagement,
     _log_audio_progress,
     _log_progress,
+    _mixed_engagement,
 )
 
 # --- Progress logging ---
@@ -268,38 +267,6 @@ def test_engagement_completion_pct_after_logging(
     assert response.json()[0]["completion_pct"] == 50
 
 
-def test_generated_finish_log_removed_transitioning_back_to_reading(
-    client: TestClient,
-) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-    _log_progress(client, engagement["id"], 100)
-
-    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "finished"})
-    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "reading"})
-
-    response = client.get("/api/engagements?status=reading")
-    assert response.json()[0]["resume_from_page"] == 100
-
-    second = _log_progress(client, engagement["id"], 200)
-    assert second["page_start"] == 100
-
-
-def test_manual_final_log_maintained_transitioning_back_to_reading(
-    client: TestClient,
-) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-    _log_progress(client, engagement["id"], 300)
-
-    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "finished"})
-    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "reading"})
-
-    response = client.get("/api/engagements?status=reading")
-    assert response.json()[0]["resume_from_page"] == 300
-    assert response.json()[0]["completion_pct"] == 100
-
-
 # --- completion_pct via binding ---
 
 
@@ -412,16 +379,6 @@ def test_completion_follows_the_latest_entry_not_the_audio_binding(
     assert data["completion_pct"] == 25
 
 
-def _mixed_engagement(client: TestClient) -> dict[str, Any]:
-    """A read of a 440-page book with its 430-minute audiobook bound alongside."""
-    book = _create_bare_book(client)
-    _create_edition(client, book["id"], length=440)
-    audio = _create_edition(client, book["id"], "audio", length=430)
-    engagement = _create_engagement(client, book["id"])
-    _bind_edition(client, engagement["id"], audio["id"])
-    return engagement
-
-
 def test_alternating_rulers_tile_without_a_gap(client: TestClient) -> None:
     """Print to p.220, then listen on to 5:00: the audio session starts at the page
     frontier converted (3:35), not at zero, and the next print session picks up from
@@ -456,15 +413,6 @@ def test_a_ruler_can_start_behind_the_shared_frontier(client: TestClient) -> Non
 
 
 # --- Re-coverage: sessions behind the frontier ---
-
-
-def _catch_up_engagement(client: TestClient) -> tuple[dict[str, Any], str]:
-    """An audiobook of 480 minutes with a 400-page digital copy alongside, so 2:00 sits
-    exactly on p. 100. Returns the read and the digital edition's id, unbound."""
-    book = _create_bare_book(client)
-    digital = _create_edition(client, book["id"], format="digital", length=400)
-    _create_edition(client, book["id"], format="audio", length=480)
-    return _create_engagement(client, book["id"], edition_format="audio"), digital["id"]
 
 
 def test_catching_up_a_second_format_leaves_the_read_where_it_was(
@@ -570,243 +518,6 @@ def test_a_split_session_puts_its_note_on_the_new_ground_row(
     logs = client.get(f"/api/engagements/{engagement['id']}/progress-logs").json()
     assert logs[-2]["note"] is None
     assert logs[-1]["note"] == "Worth rereading."
-
-
-def test_re_coverage_does_not_move_a_finished_read_past_the_frontier(
-    client: TestClient,
-) -> None:
-    """Finishing closes out from the frontier, not from where a catch-up stopped."""
-    engagement, digital_id = _catch_up_engagement(client)
-    _log_audio_progress(client, engagement["id"], 120)
-    _bind_edition(client, engagement["id"], digital_id)
-    _log_progress(client, engagement["id"], 75, page_start=50)
-
-    client.patch(
-        f"/api/engagements/{engagement['id']}",
-        json={"status": "finished", "unit": "minutes"},
-    )
-
-    logs = client.get(f"/api/engagements/{engagement['id']}/progress-logs").json()
-    assert (logs[-1]["minute_start"], logs[-1]["minute_end"]) == (120, 480)
-
-
-# --- Finish log ---
-
-
-def test_finish_closes_out_on_the_ruler_it_was_given(
-    client: TestClient, db: Session
-) -> None:
-    """Both rulers are bound, so finishing says which one it ends on -- here pages, so
-    the closing log is the rest of the pages, not the rest of the audiobook."""
-    engagement = _mixed_engagement(client)
-    _log_progress(client, engagement["id"], 220)
-
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}",
-        json={"status": "finished", "unit": "pages"},
-    )
-    assert response.status_code == 200
-    assert response.json()["completion_pct"] == 100
-
-    logs = (
-        db.execute(
-            select(ProgressLog).where(
-                ProgressLog.engagement_id == uuid.UUID(engagement["id"])
-            )
-        )
-        .scalars()
-        .all()
-    )
-    final_log = max(logs, key=lambda log: (log.logged_on, log.created_at))
-    assert final_log.unit == LogUnit.pages
-    assert (final_log.start, final_log.end) == (220, 440)
-
-
-def test_finish_closes_out_on_the_other_ruler_when_told_to(
-    client: TestClient, db: Session
-) -> None:
-    """Same read, same sessions, minutes asked for instead: the closing log runs out the
-    audiobook from the shared frontier, 220/440 pages being 215 of 430 minutes."""
-    engagement = _mixed_engagement(client)
-    _log_progress(client, engagement["id"], 220)
-
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}",
-        json={"status": "finished", "unit": "minutes"},
-    )
-    assert response.status_code == 200
-    assert response.json()["completion_pct"] == 100
-
-    logs = (
-        db.execute(
-            select(ProgressLog).where(
-                ProgressLog.engagement_id == uuid.UUID(engagement["id"])
-            )
-        )
-        .scalars()
-        .all()
-    )
-    final_log = max(logs, key=lambda log: (log.logged_on, log.created_at))
-    assert final_log.unit == LogUnit.minutes
-    assert (final_log.start, final_log.end) == (215, 430)
-
-
-def test_finish_a_multi_format_read_without_a_unit_returns_422(
-    client: TestClient,
-) -> None:
-    """Nothing logged, so there is no ruler to read off and two to choose between. The
-    sheet asks; an API call that doesn't is refused rather than guessed at."""
-    engagement = _mixed_engagement(client)
-
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}", json={"status": "finished"}
-    )
-    assert response.status_code == 422
-
-
-def test_finish_a_single_format_read_needs_no_unit(client: TestClient) -> None:
-    """One ruler bound is not a choice, so finishing still works unasked."""
-    book = _create_bare_book(client)
-    _create_edition(client, book["id"], format="print", length=300)
-    engagement = _create_engagement(client, book["id"])
-
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}", json={"status": "finished"}
-    )
-    assert response.status_code == 200
-    assert response.json()["completion_pct"] == 100
-
-
-def test_finish_creates_final_progress_log(client: TestClient, db: Session) -> None:
-    book = _create_book(client)
-    book_obj = db.get(Book, uuid.UUID(book["id"]))
-    assert book_obj is not None
-    book_obj.default_page_count = 300
-    db.commit()
-    engagement = _create_engagement(client, book["id"])
-    _log_progress(client, engagement["id"], 150)
-
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}", json={"status": "finished"}
-    )
-    assert response.status_code == 200
-    assert response.json()["completion_pct"] == 100
-
-    logs = (
-        db.execute(
-            select(ProgressLog).where(
-                ProgressLog.engagement_id == uuid.UUID(engagement["id"])
-            )
-        )
-        .scalars()
-        .all()
-    )
-    assert len(logs) == 2
-    final_log = max(logs, key=lambda log: (log.logged_on, log.created_at))
-    assert final_log.start == 150
-    assert final_log.end == 300
-
-
-def test_finish_does_not_duplicate_log_when_already_at_page_count(
-    client: TestClient, db: Session
-) -> None:
-    book = _create_book(client)
-    book_obj = db.get(Book, uuid.UUID(book["id"]))
-    assert book_obj is not None
-    book_obj.default_page_count = 300
-    db.commit()
-    engagement = _create_engagement(client, book["id"])
-    _log_progress(client, engagement["id"], 300)
-
-    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "finished"})
-
-    logs = (
-        db.execute(
-            select(ProgressLog).where(
-                ProgressLog.engagement_id == uuid.UUID(engagement["id"])
-            )
-        )
-        .scalars()
-        .all()
-    )
-    assert len(logs) == 1
-
-
-# --- Audio finish log ---
-
-
-def test_finish_audio_creates_final_minutes_log(
-    client: TestClient, db: Session
-) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"], edition_format="audio")
-    _log_audio_progress(client, engagement["id"], 240)
-
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}", json={"status": "finished"}
-    )
-    assert response.status_code == 200
-    assert response.json()["completion_pct"] == 100
-
-    logs = (
-        db.execute(
-            select(ProgressLog).where(
-                ProgressLog.engagement_id == uuid.UUID(engagement["id"])
-            )
-        )
-        .scalars()
-        .all()
-    )
-    assert len(logs) == 2
-    final_log = max(logs, key=lambda log: (log.logged_on, log.created_at))
-    assert final_log.unit.value == "minutes"
-    assert final_log.start == 240
-    assert final_log.end == 600
-
-
-def test_finish_audio_does_not_duplicate_log_when_already_at_length(
-    client: TestClient, db: Session
-) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"], edition_format="audio")
-    _log_audio_progress(client, engagement["id"], 600)
-
-    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "finished"})
-
-    logs = (
-        db.execute(
-            select(ProgressLog).where(
-                ProgressLog.engagement_id == uuid.UUID(engagement["id"])
-            )
-        )
-        .scalars()
-        .all()
-    )
-    assert len(logs) == 1
-
-
-def test_finish_audio_does_not_create_page_log(client: TestClient, db: Session) -> None:
-    book = _create_book(client)
-    book_obj = db.get(Book, uuid.UUID(book["id"]))
-    assert book_obj is not None
-    book_obj.default_page_count = 300
-    book_obj.default_audio_minutes = 480
-    db.commit()
-    engagement = _create_engagement(client, book["id"], edition_format="audio")
-    _log_audio_progress(client, engagement["id"], 240)
-
-    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "finished"})
-
-    logs = (
-        db.execute(
-            select(ProgressLog).where(
-                ProgressLog.engagement_id == uuid.UUID(engagement["id"])
-            )
-        )
-        .scalars()
-        .all()
-    )
-    assert all(log.unit.value == "minutes" for log in logs)
 
 
 # --- Audio progress logging ---
@@ -1144,53 +855,6 @@ def test_log_backdated_to_day_with_existing_log_and_higher_page_is_allowed(
     logs = client.get(f"/api/engagements/{engagement['id']}/progress-logs").json()
     assert len(logs) == 2
     assert logs[-1]["page_end"] == 200
-
-
-def test_finish_uses_effective_on_for_finished_on_and_completion_log(
-    client: TestClient, db: Session
-) -> None:
-    book = _create_book(client)
-    book_obj = db.get(Book, uuid.UUID(book["id"]))
-    assert book_obj is not None
-    book_obj.default_page_count = 300
-    db.commit()
-    engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
-    _log_progress(client, engagement["id"], 150, logged_on="2026-01-10")
-
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}",
-        json={"status": "finished", "effective_on": "2026-01-15"},
-    )
-
-    assert response.status_code == 200
-    assert response.json()["finished_on"] == "2026-01-15"
-
-    logs = (
-        db.execute(
-            select(ProgressLog).where(
-                ProgressLog.engagement_id == uuid.UUID(engagement["id"])
-            )
-        )
-        .scalars()
-        .all()
-    )
-    completion_log = max(logs, key=lambda log: log.created_at)
-    assert completion_log.logged_on == datetime.date(2026, 1, 15)
-
-
-def test_finish_effective_on_before_latest_log_returns_409(
-    client: TestClient,
-) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
-    _log_progress(client, engagement["id"], 150, logged_on="2026-01-20")
-
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}",
-        json={"status": "finished", "effective_on": "2026-01-15"},
-    )
-
-    assert response.status_code == 409
 
 
 def test_completion_pct_is_a_high_water_mark(client: TestClient, db: Session) -> None:

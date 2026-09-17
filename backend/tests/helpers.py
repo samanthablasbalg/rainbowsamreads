@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any, Protocol, cast
 
 import httpx2
 import pytest
@@ -35,14 +35,29 @@ COMPLETIONS = [
 ]
 
 
+class LogProgress(Protocol):
+    def __call__(
+        self,
+        client: TestClient,
+        engagement_id: str,
+        current_position: int,
+        /,
+        logged_on: str | None = None,
+    ) -> dict[str, Any]: ...
+
+
 @dataclass(frozen=True)
 class Ruler:
     edition_format: str
+    unit: LogUnit
     length_field: str
     other_length_field: str
     book_length_field: str
     resume_field: str
-    log_progress: Callable[[TestClient, str, int], dict[str, Any]]
+    log_type: str
+    log_start_field: str
+    log_end_field: str
+    log_progress: LogProgress
 
 
 def _create_book(
@@ -186,18 +201,26 @@ def _log_audio_progress(
 
 PAGES = Ruler(
     edition_format="print",
+    unit=LogUnit.pages,
     length_field="length_pages",
     other_length_field="length_minutes",
     book_length_field="default_page_count",
     resume_field="resume_from_page",
+    log_type="page",
+    log_start_field="page_start",
+    log_end_field="page_end",
     log_progress=_log_progress,
 )
 MINUTES = Ruler(
     edition_format="audio",
+    unit=LogUnit.minutes,
     length_field="length_minutes",
     other_length_field="length_pages",
     book_length_field="default_audio_minutes",
     resume_field="resume_from_minute",
+    log_type="minute",
+    log_start_field="minute_start",
+    log_end_field="minute_end",
     log_progress=_log_audio_progress,
 )
 RULERS = [pytest.param(PAGES, id="pages"), pytest.param(MINUTES, id="audio")]
@@ -209,6 +232,7 @@ def _read_with_length(
     length: int,
     *,
     length_override: int | None = None,
+    started_on: str | None = None,
 ) -> tuple[dict[str, Any], str]:
     book = _create_bare_book(client)
     edition = _create_edition(
@@ -217,10 +241,30 @@ def _read_with_length(
     engagement = _create_engagement(
         client,
         book["id"],
+        started_on=started_on,
         edition_format=ruler.edition_format,
         length_override=length_override,
     )
     return edition, cast(str, engagement["id"])
+
+
+def _mixed_engagement(client: TestClient) -> dict[str, Any]:
+    """Create a 440-page read with its 430-minute audiobook also bound."""
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], length=440)
+    audio = _create_edition(client, book["id"], "audio", length=430)
+    engagement = _create_engagement(client, book["id"])
+    _bind_edition(client, engagement["id"], audio["id"])
+    return engagement
+
+
+def _catch_up_engagement(client: TestClient) -> tuple[dict[str, Any], str]:
+    """Create a 480-minute read with an unbound 400-page digital edition."""
+    book = _create_bare_book(client)
+    digital = _create_edition(client, book["id"], format="digital", length=400)
+    _create_edition(client, book["id"], format="audio", length=480)
+    engagement = _create_engagement(client, book["id"], edition_format="audio")
+    return engagement, cast(str, digital["id"])
 
 
 def _fake_volume(
