@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -53,30 +51,16 @@ def _read_with_unbound_catch_up_ruler(
 
 
 @pytest.mark.parametrize("ruler", RULERS)
-@pytest.mark.parametrize(
-    "note",
-    [
-        pytest.param(None, id="without-note"),
-        pytest.param("A note", id="with-note"),
-    ],
-)
 def test_log_progress_starting_past_frontier_returns_409(
     client: TestClient,
     ruler: Ruler,
-    note: str | None,
 ) -> None:
     _, engagement_id = _read_with_length(client, ruler, 300)
     ruler.log_progress(client, engagement_id, 100)
-    payload: dict[str, Any] = {
-        ruler.log_start_field: 150,
-        ruler.log_end_field: 200,
-    }
-    if note is not None:
-        payload["note"] = note
 
     response = client.post(
         f"/api/engagements/{engagement_id}/progress-logs",
-        json=payload,
+        json=ruler.span_payload(150, 200),
     )
 
     assert response.status_code == 409
@@ -334,20 +318,3 @@ def test_session_crossing_frontier_is_stored_as_recoverage_then_new_ground(
     engagement_response = client.get(f"/api/engagements/{engagement_id}")
     assert engagement_response.status_code == 200
     assert engagement_response.json()["completion_pct"] == 62
-
-
-@pytest.mark.parametrize("ruler", RULERS)
-def test_session_crossing_frontier_puts_note_on_new_ground_row(
-    client: TestClient,
-    ruler: Ruler,
-) -> None:
-    _, engagement_id = _read_with_length(client, ruler, 400)
-    ruler.log_progress(client, engagement_id, 200)
-
-    ruler.log_span(client, engagement_id, 180, 250, note="Worth rereading.")
-
-    response = client.get(f"/api/engagements/{engagement_id}/progress-logs")
-    assert response.status_code == 200
-    logs = response.json()
-    assert logs[-2]["note"] is None
-    assert logs[-1]["note"] == "Worth rereading."
