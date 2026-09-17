@@ -13,6 +13,29 @@ from app.models.enums import LogUnit
 
 
 @dataclass(frozen=True)
+class Completion:
+    status: str
+    end_date_field: str
+    other_end_date_field: str
+
+
+FINISHED = Completion(
+    status="finished",
+    end_date_field="finished_on",
+    other_end_date_field="abandoned_on",
+)
+DNF = Completion(
+    status="dnf",
+    end_date_field="abandoned_on",
+    other_end_date_field="finished_on",
+)
+COMPLETIONS = [
+    pytest.param(FINISHED, id="finished"),
+    pytest.param(DNF, id="dnf"),
+]
+
+
+@dataclass(frozen=True)
 class Ruler:
     edition_format: str
     length_field: str
