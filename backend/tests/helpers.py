@@ -60,10 +60,8 @@ class Ruler:
     log_end_field: str
     log_progress: LogProgress
 
-    def log_span(
+    def span_payload(
         self,
-        client: TestClient,
-        engagement_id: str,
         start: int,
         end: int,
         *,
@@ -78,8 +76,26 @@ class Ruler:
             body["logged_on"] = logged_on
         if note is not None:
             body["note"] = note
+        return body
+
+    def log_span(
+        self,
+        client: TestClient,
+        engagement_id: str,
+        start: int,
+        end: int,
+        *,
+        logged_on: str | None = None,
+        note: str | None = None,
+    ) -> dict[str, Any]:
         response = client.post(
-            f"/api/engagements/{engagement_id}/progress-logs", json=body
+            f"/api/engagements/{engagement_id}/progress-logs",
+            json=self.span_payload(
+                start,
+                end,
+                logged_on=logged_on,
+                note=note,
+            ),
         )
         assert response.status_code == 201
         return cast(dict[str, Any], response.json())
@@ -274,12 +290,14 @@ def _read_with_length(
     return edition, cast(str, engagement["id"])
 
 
-def _mixed_engagement(client: TestClient) -> dict[str, Any]:
+def _mixed_engagement(
+    client: TestClient, *, started_on: str | None = None
+) -> dict[str, Any]:
     """Create a 440-page read with its 430-minute audiobook also bound."""
     book = _create_bare_book(client)
     _create_edition(client, book["id"], length=440)
     audio = _create_edition(client, book["id"], "audio", length=430)
-    engagement = _create_engagement(client, book["id"])
+    engagement = _create_engagement(client, book["id"], started_on=started_on)
     _bind_edition(client, engagement["id"], audio["id"])
     return engagement
 
