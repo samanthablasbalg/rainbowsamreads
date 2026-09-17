@@ -51,6 +51,8 @@ def test_create_reading_engagement_with_selected_format_returns_201(
     assert data["formats"] == [ruler.edition_format]
     assert data[ruler.length_field] == expected_length
     assert data[ruler.other_length_field] is None
+    assert data[ruler.resume_field] == 0
+    assert data["completion_pct"] is None
 
 
 # --- Edition selection and length ---

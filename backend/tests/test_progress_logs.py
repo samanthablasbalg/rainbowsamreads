@@ -220,15 +220,6 @@ def test_log_progress_without_note_has_null_note(client: TestClient) -> None:
 # --- Derived engagement fields ---
 
 
-def test_engagement_resume_from_page_is_zero_before_logging(
-    client: TestClient,
-) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-
-    assert engagement["resume_from_page"] == 0
-
-
 def test_engagement_resume_from_page_reflects_latest_log(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
@@ -237,19 +228,6 @@ def test_engagement_resume_from_page_reflects_latest_log(client: TestClient) -> 
 
     response = client.get("/api/engagements?status=reading")
     assert response.json()[0]["resume_from_page"] == 300
-
-
-def test_engagement_completion_pct_is_null_before_logging(
-    client: TestClient, db: Session
-) -> None:
-    book = _create_book(client)
-    book_obj = db.get(Book, uuid.UUID(book["id"]))
-    assert book_obj is not None
-    book_obj.default_page_count = 300
-    db.commit()
-    engagement = _create_engagement(client, book["id"])
-
-    assert engagement["completion_pct"] is None
 
 
 def test_engagement_completion_pct_after_logging(
@@ -548,15 +526,6 @@ def test_audio_log_stores_the_span_it_was_given(client: TestClient) -> None:
     assert second["minute_end"] == 150
 
 
-def test_audio_engagement_resume_from_minute_is_zero_before_logging(
-    client: TestClient,
-) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"], edition_format="audio")
-
-    assert engagement["resume_from_minute"] == 0
-
-
 def test_audio_engagement_resume_from_minute_reflects_latest_log(
     client: TestClient,
 ) -> None:
@@ -670,13 +639,6 @@ def test_audio_completion_pct_falls_back_to_book_default_audio_minutes(
 
     response = client.get("/api/engagements?status=reading")
     assert response.json()[0]["completion_pct"] == 50
-
-
-def test_audio_completion_pct_null_before_logging(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"], edition_format="audio")
-
-    assert engagement["completion_pct"] is None
 
 
 def test_resume_from_page_unaffected_by_minute_logs(client: TestClient) -> None:
