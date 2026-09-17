@@ -16,6 +16,8 @@ from app.models.enums import LogUnit
 class Ruler:
     edition_format: str
     length_field: str
+    other_length_field: str
+    book_length_field: str
     resume_field: str
     log_progress: Callable[[TestClient, str, int], dict[str, Any]]
 
@@ -159,8 +161,22 @@ def _log_audio_progress(
     return cast(dict[str, Any], response.json())
 
 
-PAGES = Ruler("print", "length_pages", "resume_from_page", _log_progress)
-MINUTES = Ruler("audio", "length_minutes", "resume_from_minute", _log_audio_progress)
+PAGES = Ruler(
+    edition_format="print",
+    length_field="length_pages",
+    other_length_field="length_minutes",
+    book_length_field="default_page_count",
+    resume_field="resume_from_page",
+    log_progress=_log_progress,
+)
+MINUTES = Ruler(
+    edition_format="audio",
+    length_field="length_minutes",
+    other_length_field="length_pages",
+    book_length_field="default_audio_minutes",
+    resume_field="resume_from_minute",
+    log_progress=_log_audio_progress,
+)
 RULERS = [pytest.param(PAGES, id="pages"), pytest.param(MINUTES, id="audio")]
 
 
