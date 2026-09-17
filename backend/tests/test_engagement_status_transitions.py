@@ -7,7 +7,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests.helpers import (
+    COMPLETIONS,
     RULERS,
+    Completion,
     Ruler,
     _create_bare_book,
     _create_book,
@@ -65,15 +67,12 @@ def test_patch_engagement_with_logs_back_to_tbr_returns_422(
     assert response.status_code == 422
 
 
-@pytest.mark.parametrize(
-    "status",
-    ["finished", "dnf"],
-)
+@pytest.mark.parametrize("completion", COMPLETIONS)
 def test_patch_completed_engagement_back_to_tbr_returns_422(
-    client: TestClient, status: str
+    client: TestClient, completion: Completion
 ) -> None:
     book = _create_book(client)
-    engagement = _create_engagement(client, book["id"], status=status)
+    engagement = _create_engagement(client, book["id"], status=completion.status)
 
     response = client.patch(
         f"/api/engagements/{engagement['id']}", json={"status": "tbr"}
@@ -133,20 +132,18 @@ def test_patch_lengthless_engagement_to_reading_returns_422(client: TestClient) 
     assert response.status_code == 422
 
 
-@pytest.mark.parametrize(
-    "status, closing_date_field",
-    [("finished", "finished_on"), ("dnf", "abandoned_on")],
-)
+@pytest.mark.parametrize("completion", COMPLETIONS)
 def test_patch_completed_engagement_with_logs_back_to_reading_clears_end_date(
-    client: TestClient, status: str, closing_date_field: str
+    client: TestClient, completion: Completion
 ) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 100)
     completed = client.patch(
-        f"/api/engagements/{engagement['id']}", json={"status": status}
+        f"/api/engagements/{engagement['id']}",
+        json={"status": completion.status},
     ).json()
-    assert completed[closing_date_field] is not None
+    assert completed[completion.end_date_field] is not None
 
     response = client.patch(
         f"/api/engagements/{engagement['id']}", json={"status": "reading"}
@@ -155,15 +152,15 @@ def test_patch_completed_engagement_with_logs_back_to_reading_clears_end_date(
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "reading"
-    assert data[closing_date_field] is None
+    assert data[completion.end_date_field] is None
 
 
-@pytest.mark.parametrize("status", ["finished", "dnf"])
+@pytest.mark.parametrize("completion", COMPLETIONS)
 def test_patch_engagement_with_no_logs_back_to_reading_returns_422(
-    client: TestClient, status: str
+    client: TestClient, completion: Completion
 ) -> None:
     book = _create_book(client)
-    engagement = _create_engagement(client, book["id"], status=status)
+    engagement = _create_engagement(client, book["id"], status=completion.status)
 
     response = client.patch(
         f"/api/engagements/{engagement['id']}", json={"status": "reading"}

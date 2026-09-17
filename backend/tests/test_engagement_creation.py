@@ -9,21 +9,17 @@ from sqlalchemy.orm import Session
 
 from app.models.book import Book
 from tests.helpers import (
+    COMPLETIONS,
     MINUTES,
     PAGES,
     RULERS,
+    Completion,
     Ruler,
     _create_bare_book,
     _create_book,
     _create_edition,
     _create_engagement,
 )
-
-COMPLETED_STATUSES = [
-    pytest.param("finished", "finished_on", "abandoned_on", id="finished"),
-    pytest.param("dnf", "abandoned_on", "finished_on", id="dnf"),
-]
-
 
 # --- Reading and TBR ---
 
@@ -309,18 +305,14 @@ def test_create_tbr_or_reading_engagement_after_finished_read_succeeds(
 # --- Completed reads ---
 
 
-@pytest.mark.parametrize(
-    "status, end_date_field, other_end_date_field", COMPLETED_STATUSES
-)
+@pytest.mark.parametrize("completion", COMPLETIONS)
 @pytest.mark.parametrize(
     "edition_length",
     [pytest.param(300, id="with-length"), pytest.param(None, id="without-length")],
 )
 def test_create_completed_engagement_without_dates_succeeds(
     client: TestClient,
-    status: str,
-    end_date_field: str,
-    other_end_date_field: str,
+    completion: Completion,
     edition_length: int | None,
 ) -> None:
     book = _create_bare_book(client)
@@ -328,24 +320,26 @@ def test_create_completed_engagement_without_dates_succeeds(
 
     response = client.post(
         "/api/engagements",
-        json={"book_id": book["id"], "edition_format": "print", "status": status},
+        json={
+            "book_id": book["id"],
+            "edition_format": "print",
+            "status": completion.status,
+        },
     )
 
     assert response.status_code == 201
     data = response.json()
-    assert data["status"] == status
+    assert data["status"] == completion.status
     assert data["started_on"] is None
-    assert data[end_date_field] is None
-    assert data[other_end_date_field] is None
+    assert data[completion.end_date_field] is None
+    assert data[completion.other_end_date_field] is None
 
     logs_response = client.get(f"/api/engagements/{data['id']}/progress-logs")
     assert logs_response.status_code == 200
     assert logs_response.json() == []
 
 
-@pytest.mark.parametrize(
-    "status, end_date_field, other_end_date_field", COMPLETED_STATUSES
-)
+@pytest.mark.parametrize("completion", COMPLETIONS)
 @pytest.mark.parametrize(
     "started_on",
     [
@@ -355,9 +349,7 @@ def test_create_completed_engagement_without_dates_succeeds(
 )
 def test_create_completed_engagement_stores_its_dates(
     client: TestClient,
-    status: str,
-    end_date_field: str,
-    other_end_date_field: str,
+    completion: Completion,
     started_on: str | None,
 ) -> None:
     book = _create_book(client)
@@ -367,7 +359,7 @@ def test_create_completed_engagement_stores_its_dates(
         json={
             "book_id": book["id"],
             "edition_format": "print",
-            "status": status,
+            "status": completion.status,
             "started_on": started_on,
             "finished_on": "2026-03-20",
         },
@@ -376,8 +368,8 @@ def test_create_completed_engagement_stores_its_dates(
     assert response.status_code == 201
     data = response.json()
     assert data["started_on"] == started_on
-    assert data[end_date_field] == "2026-03-20"
-    assert data[other_end_date_field] is None
+    assert data[completion.end_date_field] == "2026-03-20"
+    assert data[completion.other_end_date_field] is None
 
 
 # --- Derived cover ---
