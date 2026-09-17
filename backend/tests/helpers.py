@@ -53,8 +53,13 @@ def _create_engagement(
     started_on: str | None = None,
     *,
     edition_format: str = "print",
+    status: str = "reading",
 ) -> dict[str, Any]:
-    body: dict[str, Any] = {"book_id": book_id, "edition_format": edition_format}
+    body: dict[str, Any] = {
+        "book_id": book_id,
+        "status": status,
+        "edition_format": edition_format,
+    }
     if started_on is not None:
         body["started_on"] = started_on
     response = client.post("/api/engagements", json=body)
