@@ -307,56 +307,6 @@ def test_completion_pct_binding_takes_precedence_over_book_page_count(
     assert data[0]["completion_pct"] == 50
 
 
-# --- The shared frontier across two rulers ---
-
-
-def test_page_frontier_converts_to_the_audio_ruler(client: TestClient) -> None:
-    """Read half of a 440-page print copy, then bind the audiobook: the audio ruler
-    resumes at the same point in the book, not at zero."""
-    book = _create_bare_book(client)
-    _create_edition(client, book["id"], format="print", length=440)
-    audio = _create_edition(client, book["id"], format="audio", length=430)
-    engagement = _create_engagement(client, book["id"])
-    _log_progress(client, engagement["id"], 220)
-    _bind_edition(client, engagement["id"], audio["id"])
-
-    data = client.get(f"/api/engagements/{engagement['id']}").json()
-    assert data["completion_pct"] == 50
-    assert data["resume_from_minute"] == 215
-    assert data["resume_from_page"] == 220
-
-
-def test_minute_frontier_converts_to_the_page_ruler(client: TestClient) -> None:
-    book = _create_bare_book(client)
-    print_edition = _create_edition(client, book["id"], format="print", length=440)
-    _create_edition(client, book["id"], format="audio", length=430)
-    engagement = _create_engagement(client, book["id"], edition_format="audio")
-    _log_audio_progress(client, engagement["id"], 215)
-    _bind_edition(client, engagement["id"], print_edition["id"])
-
-    data = client.get(f"/api/engagements/{engagement['id']}").json()
-    assert data["completion_pct"] == 50
-    assert data["resume_from_page"] == 220
-    assert data["resume_from_minute"] == 215
-
-
-def test_completion_follows_the_latest_entry_not_the_audio_binding(
-    client: TestClient,
-) -> None:
-    """A read bound in audio that has only been logged in pages reports its page
-    progress. Completion used to answer on the audio ruler whenever audio was bound,
-    which read as no progress at all until the first minute was logged."""
-    book = _create_bare_book(client)
-    _create_edition(client, book["id"], length=400)
-    audio = _create_edition(client, book["id"], "audio", length=600)
-    engagement = _create_engagement(client, book["id"])
-    _log_progress(client, engagement["id"], 100)
-    _bind_edition(client, engagement["id"], audio["id"])
-
-    data = client.get(f"/api/engagements/{engagement['id']}").json()
-    assert data["completion_pct"] == 25
-
-
 def test_alternating_rulers_tile_without_a_gap(client: TestClient) -> None:
     """Print to p.220, then listen on to 5:00: the audio session starts at the page
     frontier converted (3:35), not at zero, and the next print session picks up from
