@@ -59,6 +59,30 @@ class Ruler:
     log_end_field: str
     log_progress: LogProgress
 
+    def log_span(
+        self,
+        client: TestClient,
+        engagement_id: str,
+        start: int,
+        end: int,
+        *,
+        logged_on: str | None = None,
+        note: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            self.log_start_field: start,
+            self.log_end_field: end,
+        }
+        if logged_on is not None:
+            body["logged_on"] = logged_on
+        if note is not None:
+            body["note"] = note
+        response = client.post(
+            f"/api/engagements/{engagement_id}/progress-logs", json=body
+        )
+        assert response.status_code == 201
+        return cast(dict[str, Any], response.json())
+
 
 def _create_book(
     client: TestClient,
