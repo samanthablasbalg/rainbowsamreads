@@ -8,12 +8,18 @@ from fastapi.testclient import TestClient
 
 from tests.helpers import (
     COMPLETIONS,
+    MINUTES,
+    PAGES,
     RULERS,
     Completion,
     Ruler,
+    _bind_edition,
+    _catch_up_engagement,
     _create_book,
     _create_engagement,
+    _log_audio_progress,
     _log_progress,
+    _mixed_engagement,
     _read_with_length,
 )
 
@@ -56,6 +62,56 @@ def test_patch_engagement_with_no_logs_back_to_reading_returns_422(
     assert response.status_code == 422
 
 
+@pytest.mark.parametrize("ruler", RULERS)
+def test_generated_finish_log_removed_transitioning_back_to_reading(
+    client: TestClient, ruler: Ruler
+) -> None:
+    _, engagement_id = _read_with_length(client, ruler, 300)
+    original_log = ruler.log_progress(client, engagement_id, 100)
+
+    finished = client.patch(
+        f"/api/engagements/{engagement_id}", json={"status": "finished"}
+    )
+    assert finished.status_code == 200
+    finished_logs = client.get(f"/api/engagements/{engagement_id}/progress-logs").json()
+    assert len(finished_logs) == 2
+    assert finished_logs[-1][ruler.log_end_field] == 300
+
+    response = client.patch(
+        f"/api/engagements/{engagement_id}", json={"status": "reading"}
+    )
+    assert response.status_code == 200
+    assert response.json()[ruler.resume_field] == 100
+
+    reopened_logs = client.get(f"/api/engagements/{engagement_id}/progress-logs").json()
+    assert [log["id"] for log in reopened_logs] == [original_log["id"]]
+    next_log = ruler.log_progress(client, engagement_id, 200)
+    assert next_log[ruler.log_start_field] == 100
+
+
+@pytest.mark.parametrize("ruler", RULERS)
+def test_manual_final_log_maintained_transitioning_back_to_reading(
+    client: TestClient, ruler: Ruler
+) -> None:
+    _, engagement_id = _read_with_length(client, ruler, 300)
+    manual_final_log = ruler.log_progress(client, engagement_id, 300)
+
+    finished = client.patch(
+        f"/api/engagements/{engagement_id}", json={"status": "finished"}
+    )
+    assert finished.status_code == 200
+
+    response = client.patch(
+        f"/api/engagements/{engagement_id}", json={"status": "reading"}
+    )
+    assert response.status_code == 200
+    assert response.json()[ruler.resume_field] == 300
+    assert response.json()["completion_pct"] == 100
+
+    reopened_logs = client.get(f"/api/engagements/{engagement_id}/progress-logs").json()
+    assert [log["id"] for log in reopened_logs] == [manual_final_log["id"]]
+
+
 # --- Transition to finished ---
 
 
@@ -87,6 +143,143 @@ def test_patch_to_finished_catches_up_to_the_corrected_length(
     data = response.json()
     assert data[ruler.resume_field] == 1000
     assert data["completion_pct"] == 100
+
+
+@pytest.mark.parametrize(
+    "ruler, expected_start, expected_end",
+    [
+        pytest.param(PAGES, 220, 440, id="pages"),
+        pytest.param(MINUTES, 215, 430, id="minutes"),
+    ],
+)
+def test_finish_closes_out_on_the_ruler_it_was_given(
+    client: TestClient,
+    ruler: Ruler,
+    expected_start: int,
+    expected_end: int,
+) -> None:
+    engagement = _mixed_engagement(client)
+    _log_progress(client, engagement["id"], 220)
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}",
+        json={"status": "finished", "unit": ruler.unit},
+    )
+    assert response.status_code == 200
+    assert response.json()["completion_pct"] == 100
+
+    logs = client.get(f"/api/engagements/{engagement['id']}/progress-logs").json()
+    final_log = logs[-1]
+    assert final_log["type"] == ruler.log_type
+    assert final_log[ruler.log_start_field] == expected_start
+    assert final_log[ruler.log_end_field] == expected_end
+
+
+def test_finish_a_multi_format_read_without_a_unit_returns_422(
+    client: TestClient,
+) -> None:
+    engagement = _mixed_engagement(client)
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}", json={"status": "finished"}
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("ruler", RULERS)
+def test_finish_creates_final_progress_log(client: TestClient, ruler: Ruler) -> None:
+    _, engagement_id = _read_with_length(client, ruler, 300)
+    ruler.log_progress(client, engagement_id, 150)
+
+    response = client.patch(
+        f"/api/engagements/{engagement_id}", json={"status": "finished"}
+    )
+    assert response.status_code == 200
+    assert response.json()["completion_pct"] == 100
+
+    logs = client.get(f"/api/engagements/{engagement_id}/progress-logs").json()
+    assert len(logs) == 2
+    final_log = logs[-1]
+    assert final_log["type"] == ruler.log_type
+    assert final_log[ruler.log_start_field] == 150
+    assert final_log[ruler.log_end_field] == 300
+
+
+@pytest.mark.parametrize("ruler", RULERS)
+def test_finish_does_not_duplicate_log_when_already_at_length(
+    client: TestClient, ruler: Ruler
+) -> None:
+    _, engagement_id = _read_with_length(client, ruler, 300)
+    original_log = ruler.log_progress(client, engagement_id, 300)
+
+    response = client.patch(
+        f"/api/engagements/{engagement_id}", json={"status": "finished"}
+    )
+    assert response.status_code == 200
+
+    logs = client.get(f"/api/engagements/{engagement_id}/progress-logs").json()
+    assert [log["id"] for log in logs] == [original_log["id"]]
+
+
+def test_finish_after_cross_format_recoverage_closes_out_from_the_frontier(
+    client: TestClient,
+) -> None:
+    engagement, digital_id = _catch_up_engagement(client)
+    _log_audio_progress(client, engagement["id"], 120)
+    _bind_edition(client, engagement["id"], digital_id)
+    _log_progress(client, engagement["id"], 75, page_start=50)
+
+    state_response = client.get(f"/api/engagements/{engagement['id']}")
+    assert state_response.status_code == 200
+    state = state_response.json()
+    assert state["resume_from_page"] == 75
+    assert state["frontier_page"] == 100
+    assert state["frontier_minute"] == 120
+
+    response = client.patch(
+        f"/api/engagements/{engagement['id']}",
+        json={"status": "finished", "unit": "minutes"},
+    )
+    assert response.status_code == 200
+
+    logs = client.get(f"/api/engagements/{engagement['id']}/progress-logs").json()
+    assert logs[-1]["type"] == "minute"
+    assert (logs[-1]["minute_start"], logs[-1]["minute_end"]) == (120, 480)
+
+
+@pytest.mark.parametrize("ruler", RULERS)
+def test_finish_uses_effective_on_for_finished_on_and_completion_log(
+    client: TestClient, ruler: Ruler
+) -> None:
+    _, engagement_id = _read_with_length(client, ruler, 300, started_on="2026-01-01")
+    ruler.log_progress(client, engagement_id, 150, logged_on="2026-01-10")
+
+    response = client.patch(
+        f"/api/engagements/{engagement_id}",
+        json={"status": "finished", "effective_on": "2026-01-15"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["finished_on"] == "2026-01-15"
+
+    logs = client.get(f"/api/engagements/{engagement_id}/progress-logs").json()
+    assert logs[-1]["logged_on"] == "2026-01-15"
+
+
+@pytest.mark.parametrize("ruler", RULERS)
+def test_finish_effective_on_before_latest_log_returns_409(
+    client: TestClient, ruler: Ruler
+) -> None:
+    _, engagement_id = _read_with_length(client, ruler, 300, started_on="2026-01-01")
+    ruler.log_progress(client, engagement_id, 150, logged_on="2026-01-20")
+
+    response = client.patch(
+        f"/api/engagements/{engagement_id}",
+        json={"status": "finished", "effective_on": "2026-01-15"},
+    )
+
+    assert response.status_code == 409
 
 
 def test_patch_to_finished_before_started_on_with_no_logs_returns_409(
