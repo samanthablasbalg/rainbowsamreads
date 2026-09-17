@@ -1,47 +1,17 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Callable
-from dataclasses import dataclass
-from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 
 from tests.helpers import (
-    _create_bare_book,
-    _create_edition,
-    _create_engagement,
-    _log_audio_progress,
-    _log_progress,
+    MINUTES,
+    PAGES,
+    RULERS,
+    Ruler,
+    _read_with_length,
 )
-
-
-@dataclass(frozen=True)
-class Ruler:
-    edition_format: str
-    length_field: str
-    resume_field: str
-    log_progress: Callable[[TestClient, str, int], dict[str, Any]]
-
-
-PAGES = Ruler("print", "length_pages", "resume_from_page", _log_progress)
-MINUTES = Ruler("audio", "length_minutes", "resume_from_minute", _log_audio_progress)
-RULERS = [pytest.param(PAGES, id="pages"), pytest.param(MINUTES, id="audio")]
-
-
-def _read_with_length(
-    client: TestClient, ruler: Ruler, length: int
-) -> tuple[dict[str, Any], str]:
-    book = _create_bare_book(client)
-    edition = _create_edition(
-        client, book["id"], format=ruler.edition_format, length=length
-    )
-    engagement = _create_engagement(
-        client, book["id"], edition_format=ruler.edition_format
-    )
-    return edition, engagement["id"]
-
 
 # --- Successful corrections ---
 

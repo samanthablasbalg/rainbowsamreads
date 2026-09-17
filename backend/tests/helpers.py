@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import functools
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any, cast
 
 import httpx2
@@ -9,6 +10,14 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.models.enums import LogUnit
+
+
+@dataclass(frozen=True)
+class Ruler:
+    edition_format: str
+    length_field: str
+    resume_field: str
+    log_progress: Callable[[TestClient, str, int], dict[str, Any]]
 
 
 def _create_book(
@@ -54,6 +63,7 @@ def _create_engagement(
     *,
     edition_format: str | None = "print",
     status: str = "reading",
+    length_override: int | None = None,
     tbr_added_on: str | None = None,
 ) -> dict[str, Any]:
     body: dict[str, Any] = {
@@ -63,6 +73,8 @@ def _create_engagement(
         "tbr_added_on": tbr_added_on,
         "started_on": started_on,
     }
+    if length_override is not None:
+        body["length_override"] = length_override
     response = client.post("/api/engagements", json=body)
     assert response.status_code == 201
     return cast(dict[str, Any], response.json())
@@ -145,6 +157,31 @@ def _log_audio_progress(
     response = client.post(f"/api/engagements/{engagement_id}/progress-logs", json=body)
     assert response.status_code == 201
     return cast(dict[str, Any], response.json())
+
+
+PAGES = Ruler("print", "length_pages", "resume_from_page", _log_progress)
+MINUTES = Ruler("audio", "length_minutes", "resume_from_minute", _log_audio_progress)
+RULERS = [pytest.param(PAGES, id="pages"), pytest.param(MINUTES, id="audio")]
+
+
+def _read_with_length(
+    client: TestClient,
+    ruler: Ruler,
+    length: int,
+    *,
+    length_override: int | None = None,
+) -> tuple[dict[str, Any], str]:
+    book = _create_bare_book(client)
+    edition = _create_edition(
+        client, book["id"], format=ruler.edition_format, length=length
+    )
+    engagement = _create_engagement(
+        client,
+        book["id"],
+        edition_format=ruler.edition_format,
+        length_override=length_override,
+    )
+    return edition, cast(str, engagement["id"])
 
 
 def _fake_volume(
