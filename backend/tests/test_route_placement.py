@@ -31,7 +31,11 @@ def _url_space(route: APIRoute) -> str:
     return route.path.removeprefix("/api/").split("/")[0]
 
 
-@pytest.mark.parametrize("route", _api_routes(), ids=lambda r: f"{r.path}")
+def _route_id(route: APIRoute) -> str:
+    return f"{','.join(sorted(route.methods))} {route.path}"
+
+
+@pytest.mark.parametrize("route", _api_routes(), ids=_route_id)
 def test_route_is_served_from_the_package_that_owns_its_url(route: APIRoute) -> None:
     segment = _url_space(route)
     assert segment == _owner(route), (
@@ -40,7 +44,7 @@ def test_route_is_served_from_the_package_that_owns_its_url(route: APIRoute) -> 
     )
 
 
-@pytest.mark.parametrize("route", _api_routes(), ids=lambda r: f"{r.path}")
+@pytest.mark.parametrize("route", _api_routes(), ids=_route_id)
 def test_route_is_tagged_for_its_url_space(route: APIRoute) -> None:
     segment = _url_space(route)
     assert route.tags == [segment], (
