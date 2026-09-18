@@ -1,9 +1,9 @@
 import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
-import { EngagementShelf } from '@/features/library/components/engagement-shelf';
+import { EndedReadList } from '@/features/library/components/ended-read-list';
 
 export function ToRead() {
   return (
-    <EngagementShelf
+    <EndedReadList
       status={ReadingStatus.tbr}
       heading="To Read"
       emptyTitle="Nothing to read yet"

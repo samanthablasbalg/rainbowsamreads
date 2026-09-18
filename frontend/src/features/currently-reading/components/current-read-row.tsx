@@ -48,7 +48,7 @@ const CONFIRMATIONS = {
 
 type ConfirmAction = keyof typeof CONFIRMATIONS;
 
-export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
+export function CurrentReadRow({ engagement }: { engagement: EngagementRead }) {
   const { book, formats, completion_pct } = engagement;
   const queryClient = useQueryClient();
   const [logOpen, setLogOpen] = useState(false);

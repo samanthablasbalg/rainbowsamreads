@@ -1,9 +1,9 @@
 import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
-import { EngagementShelf } from '@/features/library/components/engagement-shelf';
+import { EndedReadList } from '@/features/library/components/ended-read-list';
 
 export function Dnf() {
   return (
-    <EngagementShelf
+    <EndedReadList
       status={ReadingStatus.dnf}
       heading="DNF"
       emptyTitle="Nothing abandoned"

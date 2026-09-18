@@ -1,5 +1,5 @@
-import { CurrentlyReading } from '@/features/currently-reading/components/currently-reading';
+import { CurrentlyReadingList } from '@/features/currently-reading/components/currently-reading-list';
 
 export function Home() {
-  return <CurrentlyReading />;
+  return <CurrentlyReadingList />;
 }

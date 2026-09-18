@@ -3,7 +3,7 @@ import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { render, screen } from '@/test/render';
 import { buildEngagement } from '@/test/data-generators';
-import { CurrentlyReading } from './currently-reading';
+import { CurrentlyReadingList } from './currently-reading-list';
 
 function reading(title: string) {
   return buildEngagement({
@@ -16,11 +16,11 @@ function reading(title: string) {
   });
 }
 
-describe('CurrentlyReading', () => {
+describe('CurrentlyReadingList', () => {
   it('renders a card per engagement in the order the API returns them', async () => {
     server.use(getEngagementsListEngagementsMockHandler([reading('Dune'), reading('Piranesi')]));
 
-    render(<CurrentlyReading />);
+    render(<CurrentlyReadingList />);
 
     expect(await screen.findByRole('listitem', { name: 'Dune' })).toBeVisible();
     const cards = screen.getAllByRole('listitem');
@@ -30,7 +30,7 @@ describe('CurrentlyReading', () => {
   it('shows an empty state when there are no engagements', async () => {
     server.use(getEngagementsListEngagementsMockHandler([]));
 
-    render(<CurrentlyReading />);
+    render(<CurrentlyReadingList />);
 
     expect(await screen.findByText('Nothing in progress')).toBeVisible();
   });
@@ -38,7 +38,7 @@ describe('CurrentlyReading', () => {
   it('shows a pending state while the list loads', () => {
     server.use(getEngagementsListEngagementsMockHandler([]));
 
-    render(<CurrentlyReading />);
+    render(<CurrentlyReadingList />);
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading');
   });

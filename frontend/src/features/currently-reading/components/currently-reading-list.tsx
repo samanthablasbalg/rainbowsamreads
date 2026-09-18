@@ -1,9 +1,9 @@
 import { useEngagementsListEngagementsSuspense } from '@/api/generated/engagements/engagements';
 import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
 import { EmptyState } from '@/components/common/empty-state';
-import { ReadingCard } from './reading-card';
+import { CurrentReadRow } from './current-read-row';
 
-export function CurrentlyReading() {
+export function CurrentlyReadingList() {
   const { data: engagements } = useEngagementsListEngagementsSuspense({
     status: ReadingStatus.reading,
   });
@@ -24,7 +24,7 @@ export function CurrentlyReading() {
       ) : (
         <ul className="flex flex-col gap-3">
           {engagements.map((engagement) => (
-            <ReadingCard key={engagement.id} engagement={engagement} />
+            <CurrentReadRow key={engagement.id} engagement={engagement} />
           ))}
         </ul>
       )}
