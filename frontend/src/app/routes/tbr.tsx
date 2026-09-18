@@ -1,6 +1,13 @@
-import { ComingSoon } from '@/components/common/coming-soon';
+import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
+import { EngagementShelf } from '@/features/library/components/engagement-shelf';
 
-// The backend has no to-read list yet, so this is not an empty shelf.
 export function ToRead() {
-  return <ComingSoon title="To Read" />;
+  return (
+    <EngagementShelf
+      status={ReadingStatus.tbr}
+      heading="To Read"
+      emptyTitle="Nothing to read yet"
+      emptyDescription="Books you want to read will show up here."
+    />
+  );
 }
