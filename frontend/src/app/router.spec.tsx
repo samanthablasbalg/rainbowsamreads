@@ -138,11 +138,11 @@ describe('the route tree', () => {
     expect(await screen.findByText('No books yet')).toBeVisible();
   });
 
-  it('sends /library to the catalog, since it has no screen of its own', async () => {
-    server.use(getAuthMeMockHandler(), getBooksListBooksMockHandler());
+  it('/library redirects to tbr', async () => {
+    server.use(getAuthMeMockHandler(), getEngagementsListEngagementsMockHandler());
 
     renderRoute('/library');
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Catalog' })).toBeVisible();
+    expect(await screen.findByRole('heading', { level: 1, name: 'To Read' })).toBeVisible();
   });
 });
