@@ -128,6 +128,7 @@ export type EngagementCreateStatus =
   (typeof EngagementCreateStatus)[keyof typeof EngagementCreateStatus];
 
 export const EngagementCreateStatus = {
+  tbr: 'tbr',
   reading: 'reading',
   finished: 'finished',
   dnf: 'dnf',
@@ -139,12 +140,13 @@ export const EngagementCreateStatus = {
  */
 export interface EngagementCreate {
   book_id: string;
-  edition_format: Format;
+  edition_format?: Format | null;
   status?: EngagementCreateStatus;
   edition_length?: number | null;
   length_override?: number | null;
   started_on?: string | null;
   finished_on?: string | null;
+  tbr_added_on?: string | null;
 }
 
 /**
@@ -209,6 +211,7 @@ export interface EngagementRead {
   formats: Format[];
   cover_url: string | null;
   status: ReadingStatus;
+  tbr_added_on: string | null;
   started_on: string | null;
   finished_on: string | null;
   abandoned_on: string | null;

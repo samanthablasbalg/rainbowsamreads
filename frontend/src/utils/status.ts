@@ -5,9 +5,10 @@ import {
 } from '@/api/generated/readingTracker.schemas';
 import { localIsoDate } from './local-date';
 
-type ShelvedStatus = Extract<ReadingStatus, 'reading' | 'finished' | 'dnf'>;
+type ShelvedStatus = Extract<ReadingStatus, 'tbr' | 'reading' | 'finished' | 'dnf'>;
 
 export const STATUSES: Record<ShelvedStatus, { label: string; to: string }> = {
+  tbr: { label: 'To Be Read', to: '/library/tbr' },
   reading: { label: 'Reading', to: '/home' },
   finished: { label: 'Finished', to: '/library/finished' },
   dnf: { label: 'DNF', to: '/library/dnf' },
