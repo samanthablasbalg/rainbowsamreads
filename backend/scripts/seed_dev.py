@@ -109,6 +109,11 @@ def apply_cover_urls() -> None:
                 )
 
 
+def tbr(book_id: str) -> None:
+    body: dict[str, object] = {"book_id": book_id, "status": "tbr"}
+    post("/engagements", body)
+
+
 def start_reading(book_id: str, fmt: str, edition_length: int | None = None) -> str:
     body: dict[str, object] = {"book_id": book_id, "edition_format": fmt}
     if edition_length is not None:
@@ -164,16 +169,20 @@ add_book(
     "http://books.google.com/books/content?id=MSurBex2xcUC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
 )
 add_book(
-    "Mexican Gothic",
-    "Silvia Moreno-Garcia",
-    320,
-    "http://books.google.com/books/content?id=ksKyDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-)
-add_book(
     "Educated",
     "Tara Westover",
     352,
     "http://books.google.com/books/content?id=JZwpDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+)
+
+# TBR
+tbr(
+    add_book(
+        "Mexican Gothic",
+        "Silvia Moreno-Garcia",
+        320,
+        "http://books.google.com/books/content?id=ksKyDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    )
 )
 
 # Currently reading — with progress
