@@ -2,354 +2,308 @@ from __future__ import annotations
 
 import uuid
 
+import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.book import Book
-from app.models.edition import Edition, EngagementEdition
 from tests.helpers import (
+    MINUTES,
+    PAGES,
+    RULERS,
+    Ruler,
     _create_bare_book,
-    _create_book,
     _create_edition,
     _create_engagement,
-    _log_audio_progress,
-    _log_progress,
+    _read_with_length,
 )
 
-# --- Progress logging ---
 
+@pytest.mark.parametrize("ruler", RULERS)
+def test_log_progress_returns_201_with_correct_fields(
+    client: TestClient,
+    ruler: Ruler,
+) -> None:
+    _, engagement_id = _read_with_length(client, ruler, 300)
 
-def test_log_progress_returns_201_with_correct_fields(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
+    log = ruler.log_span(client, engagement_id, 0, 100)
 
-    log = _log_progress(client, engagement["id"], 100)
-
-    assert log["engagement_id"] == engagement["id"]
-    assert log["page_start"] == 0
-    assert log["page_end"] == 100
-    assert log["type"] == "page"
+    assert log["engagement_id"] == engagement_id
+    assert log[ruler.log_start_field] == 0
+    assert log[ruler.log_end_field] == 100
+    assert log["type"] == ruler.log_type
     assert log["new_ground"] is True
+    assert ruler.other_log_start_field not in log
+    assert ruler.other_log_end_field not in log
 
 
-def test_log_progress_stores_the_span_it_was_given(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-    _log_progress(client, engagement["id"], 100)
+@pytest.mark.parametrize("ruler", RULERS)
+def test_log_progress_stores_the_span_it_was_given(
+    client: TestClient,
+    ruler: Ruler,
+) -> None:
+    _, engagement_id = _read_with_length(client, ruler, 300)
+    ruler.log_progress(client, engagement_id, 100)
 
-    second = _log_progress(client, engagement["id"], 250, page_start=100)
+    second = ruler.log_span(client, engagement_id, 100, 250)
 
-    assert second["page_start"] == 100
-    assert second["page_end"] == 250
+    assert second[ruler.log_start_field] == 100
+    assert second[ruler.log_end_field] == 250
 
 
 def test_log_progress_unknown_engagement_returns_404(client: TestClient) -> None:
     response = client.post(
         f"/api/engagements/{uuid.uuid4()}/progress-logs",
-        json={"page_start": 0, "page_end": 50},
+        json=PAGES.span_payload(0, 50),
     )
+
     assert response.status_code == 404
 
 
 def test_log_progress_finished_engagement_returns_409(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "finished"})
+    _, engagement_id = _read_with_length(client, PAGES, 300)
+    finish_response = client.patch(
+        f"/api/engagements/{engagement_id}",
+        json={"status": "finished"},
+    )
+    assert finish_response.status_code == 200
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"page_start": 0, "page_end": 50},
+        f"/api/engagements/{engagement_id}/progress-logs",
+        json=PAGES.span_payload(0, 50),
     )
+
     assert response.status_code == 409
 
 
-def test_log_progress_ending_before_it_started_returns_409(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-    _log_progress(client, engagement["id"], 100)
+@pytest.mark.parametrize("ruler", RULERS)
+def test_log_progress_ending_before_it_started_returns_409(
+    client: TestClient,
+    ruler: Ruler,
+) -> None:
+    _, engagement_id = _read_with_length(client, ruler, 300)
+    ruler.log_progress(client, engagement_id, 100)
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"page_start": 80, "page_end": 50},
+        f"/api/engagements/{engagement_id}/progress-logs",
+        json=ruler.span_payload(80, 50),
     )
+
     assert response.status_code == 409
     assert response.json()["detail"] == "A session can't end before it started."
 
 
-def test_log_progress_zero_page_returns_422(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-
-    response = client.post(
-        f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"page_start": 0, "page_end": 0},
-    )
-    assert response.status_code == 422
-
-
-def test_log_progress_negative_page_returns_422(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-
-    response = client.post(
-        f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"page_start": 0, "page_end": -10},
-    )
-    assert response.status_code == 422
-
-
-def test_log_progress_half_a_span_returns_422(client: TestClient) -> None:
-    """A start with no end names no session."""
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-
-    response = client.post(
-        f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"page_start": 0},
-    )
-    assert response.status_code == 422
-
-
-# --- Derived engagement fields ---
-
-
-def test_engagement_resume_from_page_reflects_latest_log(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-    _log_progress(client, engagement["id"], 150)
-    _log_progress(client, engagement["id"], 300)
-
-    response = client.get("/api/engagements?status=reading")
-    assert response.json()[0]["resume_from_page"] == 300
-
-
-def test_engagement_completion_pct_after_logging(
-    client: TestClient, db: Session
-) -> None:
-    book = _create_book(client)
-    book_obj = db.get(Book, uuid.UUID(book["id"]))
-    assert book_obj is not None
-    book_obj.default_page_count = 300
-    db.commit()
-    engagement = _create_engagement(client, book["id"])
-    _log_progress(client, engagement["id"], 150)
-
-    response = client.get("/api/engagements?status=reading")
-    assert response.json()[0]["completion_pct"] == 50
-
-
-# --- completion_pct via binding ---
-
-
-def test_completion_pct_uses_binding_length_override(
-    client: TestClient, db: Session
-) -> None:
-    book = _create_bare_book(client)
-    _create_edition(client, book["id"], length=400)
-    engagement = _create_engagement(client, book["id"])
-
-    binding = db.execute(
-        select(EngagementEdition).where(
-            EngagementEdition.engagement_id == uuid.UUID(engagement["id"])
-        )
-    ).scalar_one()
-    binding.length_override = 200
-    db.commit()
-
-    _log_progress(client, engagement["id"], 100)
-
-    data = client.get("/api/engagements?status=reading").json()
-    assert data[0]["completion_pct"] == 50
-
-
-def test_completion_pct_uses_edition_page_count_when_no_override(
+@pytest.mark.parametrize("ruler", RULERS)
+@pytest.mark.parametrize(
+    "end",
+    [
+        pytest.param(0, id="zero"),
+        pytest.param(-10, id="negative"),
+    ],
+)
+def test_log_progress_non_positive_end_returns_422(
     client: TestClient,
+    ruler: Ruler,
+    end: int,
 ) -> None:
-    book = _create_bare_book(client)
-    _create_edition(client, book["id"], length=400)
-    engagement = _create_engagement(client, book["id"])
-    _log_progress(client, engagement["id"], 200)
+    _, engagement_id = _read_with_length(client, ruler, 300)
 
-    data = client.get("/api/engagements?status=reading").json()
-    assert data[0]["completion_pct"] == 50
+    response = client.post(
+        f"/api/engagements/{engagement_id}/progress-logs",
+        json=ruler.span_payload(0, end),
+    )
 
-
-def test_completion_pct_binding_takes_precedence_over_book_page_count(
-    client: TestClient, db: Session
-) -> None:
-    book = _create_bare_book(client)
-    book_obj = db.get(Book, uuid.UUID(book["id"]))
-    assert book_obj is not None
-    book_obj.default_page_count = 400
-    db.commit()
-
-    _create_edition(client, book["id"], format="print")
-    engagement = _create_engagement(client, book["id"])
-
-    binding = db.execute(
-        select(EngagementEdition).where(
-            EngagementEdition.engagement_id == uuid.UUID(engagement["id"])
-        )
-    ).scalar_one()
-    binding.length_override = 200
-    db.commit()
-
-    _log_progress(client, engagement["id"], 100)
-
-    data = client.get("/api/engagements?status=reading").json()
-    assert data[0]["completion_pct"] == 50
+    assert response.status_code == 422
 
 
-# --- Audio progress logging ---
-
-
-def test_audio_log_returns_201_with_minutes_fields(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"], edition_format="audio")
-
-    log = _log_audio_progress(client, engagement["id"], 75)
-
-    assert log["type"] == "minute"
-    assert log["minute_start"] == 0
-    assert log["minute_end"] == 75
-    assert "page_start" not in log
-    assert "page_end" not in log
-    assert log["new_ground"] is True
-
-
-def test_audio_log_stores_the_span_it_was_given(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"], edition_format="audio")
-    _log_audio_progress(client, engagement["id"], 75)
-
-    second = _log_audio_progress(client, engagement["id"], 150, minute_start=75)
-
-    assert second["minute_start"] == 75
-    assert second["minute_end"] == 150
-
-
-def test_audio_engagement_resume_from_minute_reflects_latest_log(
+@pytest.mark.parametrize(
+    "payload",
+    [
+        pytest.param({}, id="no-span"),
+        pytest.param({"page_start": 0}, id="page-start-only"),
+        pytest.param({"page_end": 100}, id="page-end-only"),
+        pytest.param({"minute_start": 0}, id="minute-start-only"),
+        pytest.param({"minute_end": 100}, id="minute-end-only"),
+        pytest.param(
+            {
+                "page_start": 0,
+                "page_end": 100,
+                "minute_start": 0,
+                "minute_end": 100,
+            },
+            id="both-spans",
+        ),
+    ],
+)
+def test_log_progress_requires_exactly_one_complete_span(
     client: TestClient,
+    payload: dict[str, int],
 ) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"], edition_format="audio")
-    _log_audio_progress(client, engagement["id"], 75)
-    _log_audio_progress(client, engagement["id"], 150)
-
-    response = client.get("/api/engagements?status=reading")
-    assert response.json()[0]["resume_from_minute"] == 150
-
-
-def test_pages_rejected_on_a_read_with_no_page_format(client: TestClient) -> None:
-    """The payload picks the ruler, so this is a well-formed request the read can't
-    honour -- it is bound in audio only."""
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"], edition_format="audio")
+    _, engagement_id = _read_with_length(client, PAGES, 300)
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"page_start": 0, "page_end": 100},
-    )
-    assert response.status_code == 409
-    assert (
-        response.json()["detail"]
-        == "This read is audio only. Add a format to log pages."
+        f"/api/engagements/{engagement_id}/progress-logs",
+        json=payload,
     )
 
+    assert response.status_code == 422
 
-def test_minutes_rejected_on_a_read_with_no_audio_format(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
+
+@pytest.mark.parametrize(
+    "requested_ruler, bound_ruler, expected_detail",
+    [
+        pytest.param(
+            PAGES,
+            MINUTES,
+            "This read is audio only. Add a format to log pages.",
+            id="pages-on-audio-read",
+        ),
+        pytest.param(
+            MINUTES,
+            PAGES,
+            "This read has no audio format. Add one to log time.",
+            id="minutes-on-page-read",
+        ),
+    ],
+)
+def test_log_progress_in_unbound_ruler_returns_409(
+    client: TestClient,
+    requested_ruler: Ruler,
+    bound_ruler: Ruler,
+    expected_detail: str,
+) -> None:
+    _, engagement_id = _read_with_length(client, bound_ruler, 300)
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/progress-logs",
-        json={"minute_start": 0, "minute_end": 75},
+        f"/api/engagements/{engagement_id}/progress-logs",
+        json=requested_ruler.span_payload(0, 100),
     )
+
     assert response.status_code == 409
-    assert (
-        response.json()["detail"]
-        == "This read has no audio format. Add one to log time."
-    )
+    assert response.json()["detail"] == expected_detail
 
 
-def test_a_log_must_name_exactly_one_ruler(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-
-    both = {"page_start": 0, "page_end": 100, "minute_start": 0, "minute_end": 75}
-    for payload in ({}, both):
-        response = client.post(
-            f"/api/engagements/{engagement['id']}/progress-logs", json=payload
-        )
-        assert response.status_code == 422
-
-
-def test_audio_completion_pct_uses_edition_length(
-    client: TestClient, db: Session
+@pytest.mark.parametrize("ruler", RULERS)
+def test_log_progress_updates_resume_position(
+    client: TestClient,
+    ruler: Ruler,
 ) -> None:
-    book = _create_book(client)
-    edition = db.execute(
-        select(Edition).where(
-            Edition.book_id == uuid.UUID(book["id"]),
-            Edition.format == "audio",
-        )
-    ).scalar_one()
-    edition.length = 480
-    db.commit()
-    engagement = _create_engagement(client, book["id"], edition_format="audio")
-    _log_audio_progress(client, engagement["id"], 240)
+    _, engagement_id = _read_with_length(client, ruler, 300)
+    ruler.log_progress(client, engagement_id, 150)
+    ruler.log_progress(client, engagement_id, 300)
 
-    response = client.get("/api/engagements?status=reading")
-    assert response.json()[0]["completion_pct"] == 50
+    response = client.get(f"/api/engagements/{engagement_id}")
+
+    assert response.status_code == 200
+    assert response.json()[ruler.resume_field] == 300
 
 
-def test_audio_completion_pct_falls_back_to_book_default_audio_minutes(
-    client: TestClient, db: Session
+@pytest.mark.parametrize("ruler", RULERS)
+def test_log_progress_completion_uses_edition_length(
+    client: TestClient,
+    ruler: Ruler,
+) -> None:
+    _, engagement_id = _read_with_length(client, ruler, 400)
+
+    ruler.log_progress(client, engagement_id, 200)
+
+    response = client.get(f"/api/engagements/{engagement_id}")
+    assert response.status_code == 200
+    assert response.json()["completion_pct"] == 50
+
+
+@pytest.mark.parametrize("ruler", RULERS)
+def test_log_progress_completion_falls_back_to_book_length(
+    client: TestClient,
+    db: Session,
+    ruler: Ruler,
 ) -> None:
     book = _create_bare_book(client)
     book_obj = db.get(Book, uuid.UUID(book["id"]))
     assert book_obj is not None
-    book_obj.default_audio_minutes = 400
+    setattr(book_obj, ruler.book_length_field, 400)
     db.commit()
-    _create_edition(client, book["id"], format="audio")
-    engagement = _create_engagement(client, book["id"], edition_format="audio")
-    _log_audio_progress(client, engagement["id"], 200)
+    _create_edition(client, book["id"], format=ruler.edition_format)
+    engagement = _create_engagement(
+        client,
+        book["id"],
+        edition_format=ruler.edition_format,
+    )
 
-    response = client.get("/api/engagements?status=reading")
-    assert response.json()[0]["completion_pct"] == 50
+    ruler.log_progress(client, engagement["id"], 200)
 
-
-def test_resume_from_page_unaffected_by_minute_logs(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-    _log_progress(client, engagement["id"], 100)
-
-    response = client.get("/api/engagements?status=reading")
-    assert response.json()[0]["resume_from_page"] == 100
-    assert response.json()[0]["resume_from_minute"] == 0
+    response = client.get(f"/api/engagements/{engagement['id']}")
+    assert response.status_code == 200
+    assert response.json()["completion_pct"] == 50
 
 
-def test_completion_pct_is_a_high_water_mark(client: TestClient, db: Session) -> None:
-    book = _create_book(client)
+@pytest.mark.parametrize("ruler", RULERS)
+def test_log_progress_completion_prefers_binding_override_to_book_length(
+    client: TestClient,
+    db: Session,
+    ruler: Ruler,
+) -> None:
+    book = _create_bare_book(client)
     book_obj = db.get(Book, uuid.UUID(book["id"]))
     assert book_obj is not None
-    book_obj.default_page_count = 300
+    setattr(book_obj, ruler.book_length_field, 400)
     db.commit()
-    engagement = _create_engagement(client, book["id"], started_on="2026-01-01")
-    # Retarget dates via PATCH so the page-100 log ends up canonical latest (Jan 30)
-    # ahead of the page-200 log (Jan 20). Page 200 was still reached, so completion
-    # holds at 67 rather than falling back to the latest entry's 33.
-    first = _log_progress(client, engagement["id"], 100)
-    second = _log_progress(client, engagement["id"], 200)
-    client.patch(
-        f"/api/engagements/{engagement['id']}/progress-logs/{first['id']}",
+    _create_edition(client, book["id"], format=ruler.edition_format)
+    engagement = _create_engagement(
+        client,
+        book["id"],
+        edition_format=ruler.edition_format,
+        length_override=200,
+    )
+
+    ruler.log_progress(client, engagement["id"], 100)
+
+    response = client.get(f"/api/engagements/{engagement['id']}")
+    assert response.status_code == 200
+    assert response.json()["completion_pct"] == 50
+
+
+@pytest.mark.parametrize("ruler", RULERS)
+def test_log_progress_leaves_other_ruler_resume_at_zero(
+    client: TestClient,
+    ruler: Ruler,
+) -> None:
+    _, engagement_id = _read_with_length(client, ruler, 300)
+
+    ruler.log_progress(client, engagement_id, 100)
+
+    response = client.get(f"/api/engagements/{engagement_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data[ruler.resume_field] == 100
+    assert data[ruler.other_resume_field] == 0
+
+
+@pytest.mark.parametrize("ruler", RULERS)
+def test_completion_pct_is_a_high_water_mark(
+    client: TestClient,
+    ruler: Ruler,
+) -> None:
+    _, engagement_id = _read_with_length(
+        client,
+        ruler,
+        300,
+        started_on="2026-01-01",
+    )
+    first = ruler.log_progress(client, engagement_id, 100)
+    second = ruler.log_progress(client, engagement_id, 200)
+    first_patch = client.patch(
+        f"/api/engagements/{engagement_id}/progress-logs/{first['id']}",
         json={"logged_on": "2026-01-30"},
     )
-    client.patch(
-        f"/api/engagements/{engagement['id']}/progress-logs/{second['id']}",
+    assert first_patch.status_code == 200
+    second_patch = client.patch(
+        f"/api/engagements/{engagement_id}/progress-logs/{second['id']}",
         json={"logged_on": "2026-01-20"},
     )
+    assert second_patch.status_code == 200
 
-    response = client.get("/api/engagements?status=reading")
-    assert response.json()[0]["completion_pct"] == 67
+    response = client.get(f"/api/engagements/{engagement_id}")
+
+    assert response.status_code == 200
+    assert response.json()["completion_pct"] == 67
