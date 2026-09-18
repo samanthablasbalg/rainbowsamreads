@@ -325,20 +325,35 @@ def _fake_volume(
     *,
     id: str = "abc123",
     title: str = "Piranesi",
-    isbn_13: str | None = "9781526622426",
+    authors: list[str] | None = None,
+    isbn_13: str | None = None,
+    published_date: str | None = "2020-09-15",
     page_count: int | None = 272,
+    categories: list[str] | None = None,
     cover_url: str | None = "https://example.com/cover.jpg",
+    language: str | None = "en",
+    publisher: str | None = None,
+    description: str | None = None,
 ) -> dict[str, Any]:
-    info: dict[str, Any] = {
-        "title": title,
-        "authors": ["Susanna Clarke"],
-    }
+    info: dict[str, Any] = {"title": title}
+    if authors is not None:
+        info["authors"] = authors
     if isbn_13:
         info["industryIdentifiers"] = [{"type": "ISBN_13", "identifier": isbn_13}]
+    if published_date is not None:
+        info["publishedDate"] = published_date
     if page_count is not None:
         info["pageCount"] = page_count
+    if categories is not None:
+        info["categories"] = categories
     if cover_url:
         info["imageLinks"] = {"thumbnail": cover_url}
+    if language is not None:
+        info["language"] = language
+    if publisher is not None:
+        info["publisher"] = publisher
+    if description is not None:
+        info["description"] = description
     return {"id": id, "volumeInfo": info}
 
 
