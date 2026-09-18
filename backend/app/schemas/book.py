@@ -6,7 +6,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
-from app.models.enums import DatePrecision
+from app.models.enums import DatePrecision, ReadingStatus
 
 NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
@@ -32,7 +32,7 @@ class BookSearchResult(BaseModel):
     categories: list[str]
     cover_url: str | None
     language: str | None
-    status: Literal["reading", "finished", "dnf"] | None
+    status: ReadingStatus | None
 
 
 class AuthorRead(BaseModel):

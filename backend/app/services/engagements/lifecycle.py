@@ -43,11 +43,11 @@ def list_for_book(db: Session, book_id: uuid.UUID) -> list[Engagement]:
 
 
 def list_by_status(db: Session, status: ReadingStatus) -> list[Engagement]:
-    """A shelf, most recent first. Each status has its own notion of recency: a read in
-    progress is ranked by its last sign of life, which includes logging progress without
-    touching the engagement itself; a finished or abandoned one by the date it ended,
-    with an undated read sinking to the bottom rather than to Postgres' NULLs-first
-    top."""
+    """A shelf, most recent first. Each status has its own notion of recency: a book in
+    TBR by the date it was added, a read in progress is ranked by its last sign of life,
+    which includes logging progress without touching the engagement itself; a finished
+    or abandoned one by the date it ended, with an undated read sinking to the bottom
+    rather than to Postgres' NULLs-first top."""
     latest_log_sq = (
         select(
             ProgressLog.engagement_id,
@@ -57,6 +57,7 @@ def list_by_status(db: Session, status: ReadingStatus) -> list[Engagement]:
         .subquery()
     )
     order_key = {
+        ReadingStatus.tbr: Engagement.tbr_added_on,
         ReadingStatus.reading: func.greatest(
             Engagement.updated_at, latest_log_sq.c.max_created_at
         ),
@@ -80,35 +81,46 @@ def create_engagement(
     db: Session,
     *,
     book_id: uuid.UUID,
-    edition_format: Format,
+    edition_format: Format | None = None,
     status: ReadingStatus,
     user_id: uuid.UUID,
     edition_length: int | None = None,
     length_override: int | None = None,
+    tbr_added_on: datetime.date | None = None,
     started_on: datetime.date | None = None,
     finished_on: datetime.date | None = None,
 ) -> Engagement:
     book = book_crud.get_or_raise(db, book_id)
 
+    reject_future_date(tbr_added_on)
     reject_future_date(started_on)
     reject_future_date(finished_on)
     if finished_on is not None and started_on is not None and finished_on < started_on:
         raise ConflictError("finished_on cannot be before started_on.")
 
-    duplicate = db.execute(
-        select(Engagement)
-        .join(EngagementEdition)
-        .join(Edition)
-        .where(
-            Engagement.book_id == book_id,
-            Engagement.status == ReadingStatus.reading,
-            Edition.format == edition_format,
+    if status == ReadingStatus.tbr:
+        tbr_duplicate = engagement_crud.get_by(
+            db,
+            book_id=book_id,
+            status=ReadingStatus.tbr,
         )
-    ).scalar_one_or_none()
-    if duplicate is not None:
-        raise ConflictError(
-            f"Already have a {edition_format} engagement in progress for this book."
-        )
+        if tbr_duplicate is not None:
+            raise ConflictError("Already have a TBR engagement for this book.")
+    else:
+        reading_duplicate = db.execute(
+            select(Engagement)
+            .join(EngagementEdition)
+            .join(Edition)
+            .where(
+                Engagement.book_id == book_id,
+                Engagement.status == ReadingStatus.reading,
+                Edition.format == edition_format,
+            )
+        ).scalar_one_or_none()
+        if reading_duplicate is not None:
+            raise ConflictError(
+                f"Already have a {edition_format} engagement in progress for this book."
+            )
 
     engagement = engagement_crud.create(
         db,
@@ -122,54 +134,47 @@ def create_engagement(
             or (datetime.date.today() if status == ReadingStatus.reading else None),
             finished_on=finished_on if status == ReadingStatus.finished else None,
             abandoned_on=finished_on if status == ReadingStatus.dnf else None,
+            tbr_added_on=tbr_added_on
+            or (datetime.date.today() if status == ReadingStatus.tbr else None),
         ),
     )
 
-    candidates = edition_crud.list_by(db, book_id=book_id, format=edition_format)
-    if len(candidates) == 0:
-        raise NotFoundError(f"No {edition_format} edition exists for this book")
-    if len(candidates) > 1:
-        raise ConflictError(
-            f"This book has more than one {edition_format} edition, so the app"
-            " can't tell which one to start reading. Choosing a specific edition"
-            " when starting a read isn't supported yet."
+    if edition_format is None and status != ReadingStatus.tbr:
+        raise InvalidOperationError("Only a TBR engagement may omit its format.")
+    if edition_format is not None:
+        candidates = edition_crud.list_by(db, book_id=book_id, format=edition_format)
+        if len(candidates) == 0:
+            raise NotFoundError(f"No {edition_format} edition exists for this book")
+        if len(candidates) > 1:
+            raise ConflictError(
+                f"This book has more than one {edition_format} edition, so the app"
+                " can't tell which one to start reading. Choosing a specific edition"
+                " when starting a read isn't supported yet."
+            )
+        edition = candidates[0]
+
+        engagement_edition_crud.create(
+            db,
+            EngagementEdition(
+                engagement_id=engagement.id,
+                edition_id=edition.id,
+                user_id=engagement.user_id,
+                length_override=length_override,
+            ),
         )
-    edition = candidates[0]
 
-    engagement_edition_crud.create(
-        db,
-        EngagementEdition(
-            engagement_id=engagement.id,
-            edition_id=edition.id,
-            user_id=engagement.user_id,
-            length_override=length_override,
-        ),
-    )
+        if edition_length is not None:
+            capture_edition_length(book, edition, edition_length)
 
-    if edition_length is not None:
-        capture_edition_length(book, edition, edition_length)
-
-    if (
-        status == ReadingStatus.reading
-        and engagement.resolve_length(edition_format) is None
-    ):
-        raise InvalidOperationError(
-            "A reading engagement requires a length for its selected format."
-        )
+        if (
+            status == ReadingStatus.reading
+            and engagement.resolve_length(edition_format) is None
+        ):
+            raise InvalidOperationError(
+                "A reading engagement requires a length for its selected format."
+            )
 
     return engagement
-
-
-def _reject_duplicate_reading(db: Session, engagement: Engagement) -> None:
-    duplicate = db.execute(
-        select(Engagement).where(
-            Engagement.book_id == engagement.book_id,
-            Engagement.status == ReadingStatus.reading,
-            Engagement.id != engagement.id,
-        )
-    ).scalar_one_or_none()
-    if duplicate is not None:
-        raise ConflictError("Already reading another engagement for this book.")
 
 
 def _closing_unit(engagement: Engagement, unit: LogUnit | None) -> LogUnit:
@@ -187,13 +192,46 @@ def _closing_unit(engagement: Engagement, unit: LogUnit | None) -> LogUnit:
     )
 
 
-def _transition_to_reading(db: Session, engagement: Engagement) -> None:
-    latest = latest_log(engagement.progress_logs)
-    if latest is not None and latest.generated_by_finish:
-        progress_log_crud.delete(db, latest)
+def _transition_to_tbr(
+    effective_on: datetime.date | None, engagement: Engagement
+) -> None:
+    if engagement.progress_logs:
+        raise InvalidOperationError(
+            "A read with progress logs cannot be returned to TBR."
+        )
+    if (
+        engagement.status == ReadingStatus.finished
+        or engagement.status == ReadingStatus.dnf
+    ):
+        raise InvalidOperationError("A completed engagement cannot be returned to TBR.")
+    if engagement.tbr_added_on is None:
+        engagement.tbr_added_on = effective_on
+    engagement.started_on = None
 
-    engagement.finished_on = None
-    engagement.abandoned_on = None
+
+def _transition_to_reading(
+    db: Session, engagement: Engagement, effective_on: datetime.date
+) -> None:
+    if engagement.status == ReadingStatus.tbr:
+        if not engagement.engagement_editions:
+            raise InvalidOperationError(
+                "A TBR engagement without a format cannot be progressed to reading."
+            )
+        if any(
+            engagement.resolve_length(binding.edition.format) is None
+            for binding in engagement.engagement_editions
+        ):
+            raise InvalidOperationError(
+                "A TBR engagement without a length cannot be progressed to reading."
+            )
+        engagement.started_on = effective_on
+    else:
+        latest = latest_log(engagement.progress_logs)
+        if latest is not None and latest.generated_by_finish:
+            progress_log_crud.delete(db, latest)
+
+        engagement.finished_on = None
+        engagement.abandoned_on = None
 
 
 def _transition_to_finished(
@@ -265,24 +303,50 @@ def update_status(
     if new_status == engagement.status:
         return
 
-    if new_status == ReadingStatus.reading:
-        _reject_duplicate_reading(db, engagement)
+    if new_status == ReadingStatus.reading and engagement.status != ReadingStatus.tbr:
+        duplicate = db.execute(
+            select(Engagement).where(
+                Engagement.book_id == engagement.book_id,
+                Engagement.status == ReadingStatus.reading,
+                Engagement.id != engagement.id,
+            )
+        ).scalar_one_or_none()
+        if duplicate is not None:
+            raise ConflictError(
+                "A completed engagement cannot be"
+                " returned to reading if another is already in progress."
+            )
         if not engagement.progress_logs:
             raise InvalidOperationError(
-                "An engagement without progress logs cannot be returned to reading."
+                "A finished engagement without progress logs cannot be"
+                " returned to reading."
             )
+
+    if new_status == ReadingStatus.tbr:
+        duplicate = db.execute(
+            select(Engagement).where(
+                Engagement.book_id == engagement.book_id,
+                Engagement.status == ReadingStatus.tbr,
+                Engagement.id != engagement.id,
+            )
+        ).scalar_one_or_none()
+        if duplicate is not None:
+            raise ConflictError("Already another tbr engagement for this book.")
 
     resolved_on = effective_on or datetime.date.today()
     reject_future_date(resolved_on)
 
-    engagement.status = new_status
     match new_status:
+        case ReadingStatus.tbr:
+            _transition_to_tbr(resolved_on, engagement)
         case ReadingStatus.reading:
-            _transition_to_reading(db, engagement)
+            _transition_to_reading(db, engagement, resolved_on)
         case ReadingStatus.finished:
             _transition_to_finished(db, engagement, resolved_on, unit)
         case ReadingStatus.dnf:
             _transition_to_dnf(engagement, effective_on, resolved_on)
+
+    engagement.status = new_status
 
 
 def apply_date_change(

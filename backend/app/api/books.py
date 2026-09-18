@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
-from typing import Literal, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session, selectinload
@@ -55,12 +54,10 @@ def _format_published_date(book: Book) -> str | None:
 
 def _pick_status(
     engagements: list[Engagement],
-) -> Literal["reading", "finished", "dnf"]:
+) -> ReadingStatus:
     reading = next((e for e in engagements if e.status == ReadingStatus.reading), None)
-    if reading is not None:
-        return cast(Literal["reading", "finished", "dnf"], reading.status.value)
-    latest = max(engagements, key=lambda e: e.updated_at)
-    return cast(Literal["reading", "finished", "dnf"], latest.status.value)
+    selected = reading or max(engagements, key=lambda e: e.updated_at)
+    return selected.status
 
 
 @router.post("", response_model=BookRead, status_code=status.HTTP_201_CREATED)

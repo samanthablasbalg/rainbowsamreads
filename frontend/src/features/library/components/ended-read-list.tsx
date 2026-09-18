@@ -1,9 +1,9 @@
 import { useEngagementsListEngagementsSuspense } from '@/api/generated/engagements/engagements';
 import type { ReadingStatus } from '@/api/generated/readingTracker.schemas';
 import { EmptyState } from '@/components/common/empty-state';
-import { EngagementRow } from './engagement-row';
+import { EndedReadRow } from './ended-read-row';
 
-export function EngagementShelf({
+export function EndedReadList({
   status,
   heading,
   emptyTitle,
@@ -25,7 +25,7 @@ export function EngagementShelf({
       ) : (
         <ul className="flex flex-col gap-3">
           {engagements.map((engagement) => (
-            <EngagementRow key={engagement.id} engagement={engagement} />
+            <EndedReadRow key={engagement.id} engagement={engagement} />
           ))}
         </ul>
       )}

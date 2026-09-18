@@ -41,12 +41,20 @@ def create_binding(
     if engagement_edition_crud.get(db, (engagement.id, edition.id)) is not None:
         raise ConflictError("This edition is already bound to this engagement.")
 
-    if engagement.status != ReadingStatus.reading:
+    if (
+        engagement.status != ReadingStatus.reading
+        and engagement.status != ReadingStatus.tbr
+    ):
         raise InvalidOperationError(
-            "An engagement must be in progress to get an edition bound."
+            "An engagement must be in tbr or in progress to get an edition bound."
         )
 
-    if length_override is None and edition_length is None and edition.length is None:
+    if (
+        length_override is None
+        and edition_length is None
+        and edition.length is None
+        and engagement.status == ReadingStatus.reading
+    ):
         raise InvalidOperationError(
             "A reading engagement requires a length for its selected format."
         )

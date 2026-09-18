@@ -247,6 +247,7 @@ export const getBooksListBookEngagementsResponseMock = (): EngagementRead[] =>
       null,
     ]),
     status: faker.helpers.arrayElement(Object.values(ReadingStatus)),
+    tbr_added_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
     started_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
     finished_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
     abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),

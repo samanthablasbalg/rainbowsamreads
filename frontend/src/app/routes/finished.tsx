@@ -1,9 +1,9 @@
 import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
-import { EngagementShelf } from '@/features/library/components/engagement-shelf';
+import { EndedReadList } from '@/features/library/components/ended-read-list';
 
 export function Finished() {
   return (
-    <EngagementShelf
+    <EndedReadList
       status={ReadingStatus.finished}
       heading="Finished"
       emptyTitle="Nothing finished yet"

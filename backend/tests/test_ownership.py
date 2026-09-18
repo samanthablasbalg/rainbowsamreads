@@ -27,6 +27,7 @@ def test_create_engagement_stamps_current_user(
         "/api/engagements", json={"book_id": book["id"], "edition_format": "print"}
     )
 
+    assert response.status_code == 201
     engagement = db.get(Engagement, uuid.UUID(response.json()["id"]))
     assert engagement is not None
     assert engagement.user_id == seed_user.id

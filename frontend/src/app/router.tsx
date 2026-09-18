@@ -31,8 +31,7 @@ export const routes = [
                 path: '/library',
                 Component: Library,
                 children: [
-                  // Catalog, not the first shelf: To Read is still a stub.
-                  { index: true, loader: () => redirect('/library/catalog') },
+                  { index: true, loader: () => redirect('/library/tbr') },
                   {
                     Component: ContentBoundary,
                     HydrateFallback: Pending,

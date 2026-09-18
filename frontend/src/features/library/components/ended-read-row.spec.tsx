@@ -4,7 +4,7 @@ import { ReadingStatus, type EngagementRead } from '@/api/generated/readingTrack
 import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
 import { buildEngagement } from '@/test/data-generators';
-import { EngagementRow } from './engagement-row';
+import { EndedReadRow } from './ended-read-row';
 
 function buildDnf(overrides: Partial<EngagementRead> = {}): EngagementRead {
   return buildEngagement({
@@ -19,7 +19,7 @@ function buildDnf(overrides: Partial<EngagementRead> = {}): EngagementRead {
 function renderInList(engagement: EngagementRead) {
   return render(
     <ul>
-      <EngagementRow engagement={engagement} />
+      <EndedReadRow engagement={engagement} />
     </ul>
   );
 }
@@ -29,7 +29,7 @@ async function openOverflowMenuAndChoose(user: ReturnType<typeof userEvent.setup
   await user.click(await screen.findByRole('menuitem', { name: item }));
 }
 
-describe('EngagementRow', () => {
+describe('EndedReadRow', () => {
   it('renders the title and author on a listitem named for the book', () => {
     renderInList(buildEngagement());
 
