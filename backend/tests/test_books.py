@@ -5,18 +5,29 @@ import uuid
 import httpx2
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
-from sqlalchemy.orm import Session
 
-from app.models.author import Author
-from tests.conftest import owner_engine
 from tests.helpers import _create_book, _fake_volume, _patch_google
 
 
-def test_create_book_returns_created(client: TestClient) -> None:
+@pytest.mark.parametrize(
+    ("extra_fields", "expected_page_count"),
+    [
+        pytest.param({}, None, id="without-page-count"),
+        pytest.param({"page_count": 440}, 440, id="with-page-count"),
+    ],
+)
+def test_create_book_returns_created_with_optional_page_count(
+    client: TestClient,
+    extra_fields: dict[str, int],
+    expected_page_count: int | None,
+) -> None:
     response = client.post(
         "/api/books",
-        json={"title": "A Desolation Called Peace", "author": "Arkady Martine"},
+        json={
+            "title": "A Desolation Called Peace",
+            "author": "Arkady Martine",
+            **extra_fields,
+        },
     )
     assert response.status_code == 201
     data = response.json()
@@ -27,7 +38,7 @@ def test_create_book_returns_created(client: TestClient) -> None:
     assert "created_at" in data
     assert data["google_books_id"] is None
     assert data["default_cover_url"] is None
-    assert data["default_page_count"] is None
+    assert data["default_page_count"] == expected_page_count
     assert data["original_language"] is None
     assert data["genres"] == []
     assert data["publication_date"] is None
@@ -61,9 +72,9 @@ def test_create_book_reuses_existing_author(client: TestClient) -> None:
     )
     assert second.status_code == 201
 
-    with Session(owner_engine) as db:
-        authors = db.execute(select(Author)).scalars().all()
-    assert len(authors) == 1
+    first_author = first.json()["authors"][0]
+    second_author = second.json()["authors"][0]
+    assert first_author["id"] == second_author["id"]
 
 
 def test_list_books_returns_all(client: TestClient) -> None:
