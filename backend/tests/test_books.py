@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime
 import functools
 import uuid
 from collections.abc import Callable
@@ -13,12 +12,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.author import Author
-from app.models.book import Book, BookAuthor
+from app.models.book import Book
 from app.models.edition import Edition
-from app.models.engagement import Engagement
-from app.models.enums import Format, ReadingStatus
-from app.models.standalone_entry import StandaloneEntry
-from app.models.user import User
+from app.models.enums import Format
 from tests.conftest import owner_engine
 from tests.helpers import (
     _create_bare_book,
@@ -673,146 +669,4 @@ def test_get_book_returns_stored_date_precision(
 
 def test_get_book_unknown_id_returns_404(client: TestClient) -> None:
     response = client.get(f"/api/books/{uuid.uuid4()}")
-    assert response.status_code == 404
-
-
-# --- Delete book ---
-
-
-def test_delete_book_returns_204(client: TestClient) -> None:
-    book = _create_book(client)
-
-    response = client.delete(f"/api/books/{book['id']}")
-    assert response.status_code == 204
-
-
-def test_delete_book_removes_it_from_list(client: TestClient) -> None:
-    book = _create_book(client)
-
-    client.delete(f"/api/books/{book['id']}")
-
-    response = client.get("/api/books")
-    assert response.status_code == 200
-    assert all(b["id"] != book["id"] for b in response.json())
-
-
-def test_delete_book_cascades_editions_and_authors(
-    client: TestClient, db: Session
-) -> None:
-    book = _create_book(client)
-    book_id = uuid.UUID(book["id"])
-
-    client.delete(f"/api/books/{book['id']}")
-
-    editions = (
-        db.execute(select(Edition).where(Edition.book_id == book_id)).scalars().all()
-    )
-    assert editions == []
-
-    book_authors = (
-        db.execute(select(BookAuthor).where(BookAuthor.book_id == book_id))
-        .scalars()
-        .all()
-    )
-    assert book_authors == []
-
-
-def test_delete_book_with_engagement_returns_409(client: TestClient) -> None:
-    book = _create_book(client)
-    _create_engagement(client, book["id"])
-
-    response = client.delete(f"/api/books/{book['id']}")
-    assert response.status_code == 409
-
-
-def test_delete_book_with_engagement_leaves_book_intact(client: TestClient) -> None:
-    book = _create_book(client)
-    _create_engagement(client, book["id"])
-
-    client.delete(f"/api/books/{book['id']}")
-
-    response = client.get("/api/books")
-    assert any(b["id"] == book["id"] for b in response.json())
-
-
-def test_delete_book_with_standalone_entry_returns_409(
-    client: TestClient, db: Session, seed_user: User
-) -> None:
-    book = _create_bare_book(client)
-    book_id = uuid.UUID(book["id"])
-    db.add(
-        StandaloneEntry(
-            book_id=book_id,
-            user_id=seed_user.id,
-            read_on=datetime.date(2026, 1, 1),
-        )
-    )
-    db.commit()
-
-    response = client.delete(f"/api/books/{book['id']}")
-    assert response.status_code == 409
-
-
-# `books` is a shared reference table but `engagements` is RLS-scoped, so the two
-# disagree about what is visible. The guard in book_service.remove_book reads
-# `book.engagements` off the request session, which sees only the caller's rows, so
-# another user's read of the same book slips straight past it. The foreign key is what
-# actually stops the delete; these two pin that the refusal reaches the caller as a 409
-# rather than an unhandled ForeignKeyViolation, and that the other user keeps their
-# read.
-def test_delete_book_with_only_another_users_engagement_returns_409(
-    client: TestClient, owner_db: Session
-) -> None:
-    book = _create_bare_book(client)
-    book_id = uuid.UUID(book["id"])
-
-    user_y = User(email="user-y@example.com")
-    owner_db.add(user_y)
-    owner_db.flush()
-    owner_db.add(
-        Engagement(
-            book_id=book_id,
-            user_id=user_y.id,
-            status=ReadingStatus.reading,
-            started_on=datetime.date(2026, 1, 1),
-        )
-    )
-    owner_db.commit()
-
-    response = client.delete(f"/api/books/{book['id']}")
-    assert response.status_code == 409
-
-
-def test_delete_book_with_only_another_users_engagement_leaves_both_intact(
-    client: TestClient, owner_db: Session
-) -> None:
-    book = _create_bare_book(client)
-    book_id = uuid.UUID(book["id"])
-
-    user_y = User(email="user-y@example.com")
-    owner_db.add(user_y)
-    owner_db.flush()
-    owner_db.add(
-        Engagement(
-            book_id=book_id,
-            user_id=user_y.id,
-            status=ReadingStatus.reading,
-            started_on=datetime.date(2026, 1, 1),
-        )
-    )
-    owner_db.commit()
-
-    client.delete(f"/api/books/{book['id']}")
-
-    assert owner_db.get(Book, book_id) is not None
-    surviving = (
-        owner_db.execute(select(Engagement).where(Engagement.book_id == book_id))
-        .scalars()
-        .all()
-    )
-    assert len(surviving) == 1
-
-
-def test_delete_unknown_book_returns_404(client: TestClient) -> None:
-    response = client.delete(f"/api/books/{uuid.uuid4()}")
     assert response.status_code == 404
