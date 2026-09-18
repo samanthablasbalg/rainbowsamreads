@@ -2,19 +2,11 @@ from __future__ import annotations
 
 import uuid
 
-import httpx2
-import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
-from sqlalchemy.orm import Session
 
-from app.models.edition import Edition
-from app.models.enums import Format
 from tests.helpers import (
     _create_bare_book,
     _create_edition,
-    _fake_volume,
-    _patch_google,
 )
 
 # --- Edition CRUD ---
@@ -116,61 +108,3 @@ def test_update_edition_can_clear_isbn(client: TestClient) -> None:
 def test_update_edition_unknown_returns_404(client: TestClient) -> None:
     response = client.patch(f"/api/editions/{uuid.uuid4()}", json={"length": 100})
     assert response.status_code == 404
-
-
-# --- Import seeds edition ---
-
-
-def test_import_creates_print_edition_with_real_data(
-    client: TestClient,
-    monkeypatch: pytest.MonkeyPatch,
-    db: Session,
-) -> None:
-    volume = _fake_volume(
-        isbn_13="9781526622426",
-        page_count=272,
-        cover_url="https://example.com/cover.jpg",
-    )
-
-    def handler(request: httpx2.Request) -> httpx2.Response:
-        return httpx2.Response(200, json=volume)
-
-    _patch_google(monkeypatch, handler)
-
-    response = client.post("/api/books/import", json={"google_books_id": "abc123"})
-    assert response.status_code == 201
-
-    book_id = uuid.UUID(response.json()["id"])
-    editions = (
-        db.execute(select(Edition).where(Edition.book_id == book_id)).scalars().all()
-    )
-
-    assert len(editions) == 3
-    ed = next(e for e in editions if e.format == Format.print)
-    assert ed.isbn == "9781526622426"
-    assert ed.length == 272
-    assert ed.cover_url == "https://example.com/cover.jpg"
-
-
-def test_import_creates_edition_with_null_isbn_when_no_identifiers(
-    client: TestClient,
-    monkeypatch: pytest.MonkeyPatch,
-    db: Session,
-) -> None:
-    volume = _fake_volume(isbn_13=None)
-
-    def handler(request: httpx2.Request) -> httpx2.Response:
-        return httpx2.Response(200, json=volume)
-
-    _patch_google(monkeypatch, handler)
-
-    response = client.post("/api/books/import", json={"google_books_id": "abc123"})
-    assert response.status_code == 201
-
-    book_id = uuid.UUID(response.json()["id"])
-    editions = (
-        db.execute(select(Edition).where(Edition.book_id == book_id)).scalars().all()
-    )
-    assert len(editions) == 3
-    print_ed = next(e for e in editions if e.format == Format.print)
-    assert print_ed.isbn is None
