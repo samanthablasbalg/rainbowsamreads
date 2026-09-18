@@ -54,10 +54,13 @@ class Ruler:
     other_length_field: str
     book_length_field: str
     resume_field: str
+    other_resume_field: str
     frontier_field: str
     log_type: str
     log_start_field: str
     log_end_field: str
+    other_log_start_field: str
+    other_log_end_field: str
     log_progress: LogProgress
 
     def span_payload(
@@ -247,10 +250,13 @@ PAGES = Ruler(
     other_length_field="length_minutes",
     book_length_field="default_page_count",
     resume_field="resume_from_page",
+    other_resume_field="resume_from_minute",
     frontier_field="frontier_page",
     log_type="page",
     log_start_field="page_start",
     log_end_field="page_end",
+    other_log_start_field="minute_start",
+    other_log_end_field="minute_end",
     log_progress=_log_progress,
 )
 MINUTES = Ruler(
@@ -260,10 +266,13 @@ MINUTES = Ruler(
     other_length_field="length_pages",
     book_length_field="default_audio_minutes",
     resume_field="resume_from_minute",
+    other_resume_field="resume_from_page",
     frontier_field="frontier_minute",
     log_type="minute",
     log_start_field="minute_start",
     log_end_field="minute_end",
+    other_log_start_field="page_start",
+    other_log_end_field="page_end",
     log_progress=_log_audio_progress,
 )
 RULERS = [pytest.param(PAGES, id="pages"), pytest.param(MINUTES, id="audio")]
