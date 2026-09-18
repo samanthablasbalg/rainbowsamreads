@@ -18,7 +18,7 @@ import { authorNames, coverSrc } from '@/utils/book';
 import { formatIsoDate } from '@/utils/format-date';
 import { ReviewSheet } from './review-sheet';
 
-export function EngagementRow({ engagement }: { engagement: EngagementRead }) {
+export function EndedReadRow({ engagement }: { engagement: EngagementRead }) {
   const { book, formats, status, finished_on, abandoned_on, completion_pct, review } = engagement;
   const isDnf = status === ReadingStatus.dnf;
   const endedOn = isDnf ? abandoned_on : finished_on;

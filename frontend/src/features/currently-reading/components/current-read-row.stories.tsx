@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Format, ReadingStatus } from '@/api/generated/readingTracker.schemas';
 import { buildBook, buildEngagement } from '@/test/data-generators';
-import { ReadingCard } from './reading-card';
+import { CurrentReadRow } from './current-read-row';
 
 const baseEngagement = buildEngagement({
   id: 'engagement-1',
@@ -13,16 +13,16 @@ const baseEngagement = buildEngagement({
 });
 
 const meta = {
-  component: ReadingCard,
+  component: CurrentReadRow,
   args: {
     engagement: baseEngagement,
   },
   render: (args) => (
     <ul>
-      <ReadingCard {...args} />
+      <CurrentReadRow {...args} />
     </ul>
   ),
-} satisfies Meta<typeof ReadingCard>;
+} satisfies Meta<typeof CurrentReadRow>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

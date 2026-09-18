@@ -2,17 +2,17 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, within } from 'storybook/test';
 import { Format, ReadingStatus } from '@/api/generated/readingTracker.schemas';
 import { buildEngagement } from '@/test/data-generators';
-import { EngagementRow } from './engagement-row';
+import { EndedReadRow } from './ended-read-row';
 
 const meta = {
-  component: EngagementRow,
+  component: EndedReadRow,
   args: { engagement: buildEngagement() },
   render: (args) => (
     <ul>
-      <EngagementRow {...args} />
+      <EndedReadRow {...args} />
     </ul>
   ),
-} satisfies Meta<typeof EngagementRow>;
+} satisfies Meta<typeof EndedReadRow>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
