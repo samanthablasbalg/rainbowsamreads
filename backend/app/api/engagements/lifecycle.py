@@ -72,7 +72,6 @@ def write_engagement(
         return EngagementRead.model_validate(reload(db, engagement.id))
 
 
-
 @router.patch("/{engagement_id}/dates", response_model=EngagementRead)
 def update_engagement_dates(
     engagement_id: uuid.UUID,

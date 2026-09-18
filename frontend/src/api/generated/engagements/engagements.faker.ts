@@ -64,6 +64,10 @@ export const getEngagementsWriteEngagementResponseMock = (
         null,
       ]),
       status: faker.helpers.arrayElement(Object.values(ReadingStatus)),
+      tbr_added_on: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 10),
+        null,
+      ]),
       started_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
       finished_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
       abandoned_on: faker.helpers.arrayElement([
@@ -144,6 +148,10 @@ export const getEngagementsWriteEngagementResponseMock = (
         null,
       ]),
       status: faker.helpers.arrayElement(Object.values(ReadingStatus)),
+      tbr_added_on: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 10),
+        null,
+      ]),
       started_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
       finished_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
       abandoned_on: faker.helpers.arrayElement([
@@ -227,6 +235,7 @@ export const getEngagementsListEngagementsResponseMock = (): EngagementRead[] =>
       null,
     ]),
     status: faker.helpers.arrayElement(Object.values(ReadingStatus)),
+    tbr_added_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
     started_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
     finished_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
     abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
@@ -306,6 +315,7 @@ export const getEngagementsUpdateEngagementDatesResponseMock = (
     null,
   ]),
   status: faker.helpers.arrayElement(Object.values(ReadingStatus)),
+  tbr_added_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   started_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   finished_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
@@ -386,6 +396,7 @@ export const getEngagementsGetEngagementResponseMock = (
     null,
   ]),
   status: faker.helpers.arrayElement(Object.values(ReadingStatus)),
+  tbr_added_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   started_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   finished_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
@@ -618,6 +629,7 @@ export const getEngagementsUpsertReviewResponseMock = (
     null,
   ]),
   status: faker.helpers.arrayElement(Object.values(ReadingStatus)),
+  tbr_added_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   started_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   finished_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
   abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),

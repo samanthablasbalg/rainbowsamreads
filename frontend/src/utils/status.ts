@@ -1,12 +1,21 @@
 import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
 import { localIsoDate } from './local-date';
 
-export type ShelvedStatus = Extract<ReadingStatus, 'reading' | 'finished' | 'dnf'>;
+export type ShelvedStatus = Extract<ReadingStatus, 'tbr' | 'reading' | 'finished' | 'dnf'>;
+
+export const STATUS_LABELS: Record<ReadingStatus, string> = {
+  tbr: 'To Be Read',
+  reading: 'Reading',
+  finished: 'Finished',
+  paused: 'Paused',
+  dnf: 'DNF',
+};
 
 export const STATUSES: Record<ShelvedStatus, { label: string; to: string }> = {
-  reading: { label: 'Reading', to: '/home' },
-  finished: { label: 'Finished', to: '/library/finished' },
-  dnf: { label: 'DNF', to: '/library/dnf' },
+  tbr: { label: STATUS_LABELS.tbr, to: '/library/tbr' },
+  reading: { label: STATUS_LABELS.reading, to: '/home' },
+  finished: { label: STATUS_LABELS.finished, to: '/library/finished' },
+  dnf: { label: STATUS_LABELS.dnf, to: '/library/dnf' },
 };
 
 export const SHELVED_STATUSES = Object.keys(STATUSES) as ShelvedStatus[];

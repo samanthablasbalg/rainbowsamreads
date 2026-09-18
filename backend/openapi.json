@@ -1467,18 +1467,12 @@
           "status": {
             "anyOf": [
               {
-                "type": "string",
-                "enum": [
-                  "reading",
-                  "finished",
-                  "dnf"
-                ]
+                "$ref": "#/components/schemas/ReadingStatus"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Status"
+            ]
           }
         },
         "type": "object",

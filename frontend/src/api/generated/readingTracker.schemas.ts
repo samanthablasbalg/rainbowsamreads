@@ -55,12 +55,13 @@ export const BookSearchResultState = {
   not_in_app: 'not_in_app',
 } as const;
 
-export type BookSearchResultStatus =
-  (typeof BookSearchResultStatus)[keyof typeof BookSearchResultStatus] | null;
+export type ReadingStatus = (typeof ReadingStatus)[keyof typeof ReadingStatus];
 
-export const BookSearchResultStatus = {
+export const ReadingStatus = {
+  tbr: 'tbr',
   reading: 'reading',
   finished: 'finished',
+  paused: 'paused',
   dnf: 'dnf',
 } as const;
 
@@ -75,7 +76,7 @@ export interface BookSearchResult {
   categories: string[];
   cover_url: string | null;
   language: string | null;
-  status: BookSearchResultStatus;
+  status: ReadingStatus | null;
 }
 
 /**
@@ -140,16 +141,6 @@ export interface EngagementEditionRead {
   length_override: number | null;
 }
 
-export type ReadingStatus = (typeof ReadingStatus)[keyof typeof ReadingStatus];
-
-export const ReadingStatus = {
-  tbr: 'tbr',
-  reading: 'reading',
-  finished: 'finished',
-  paused: 'paused',
-  dnf: 'dnf',
-} as const;
-
 export type LogUnit = (typeof LogUnit)[keyof typeof LogUnit];
 
 export const LogUnit = {
@@ -168,6 +159,7 @@ export interface EngagementRead {
   formats: Format[];
   cover_url: string | null;
   status: ReadingStatus;
+  tbr_added_on: string | null;
   started_on: string | null;
   finished_on: string | null;
   abandoned_on: string | null;
@@ -195,6 +187,7 @@ export interface EngagementWrite {
   edition_format?: Format | null;
   edition_length?: number | null;
   length_override?: number | null;
+  tbr_added_on?: string | null;
   started_on?: string | null;
   finished_on?: string | null;
   effective_on?: string | null;

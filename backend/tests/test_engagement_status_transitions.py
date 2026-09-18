@@ -66,8 +66,8 @@ def test_transition_engagement_with_logs_back_to_tbr_returns_422(
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 100)
 
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}", json={"status": "tbr"}
+    response = client.post(
+        "/api/engagements", json={"id": engagement["id"], "status": "tbr"}
     )
 
     assert response.status_code == 422
@@ -86,8 +86,8 @@ def test_transition_completed_engagement_back_to_tbr_returns_422(
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"], status=status)
 
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}", json={"status": "tbr"}
+    response = client.post(
+        "/api/engagements", json={"id": engagement["id"], "status": "tbr"}
     )
 
     assert response.status_code == 422

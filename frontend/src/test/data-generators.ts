@@ -43,6 +43,7 @@ export function buildEngagement({
     formats: [Format.print],
     cover_url: null,
     status: ReadingStatus.finished,
+    tbr_added_on: '2024-12-01',
     started_on: '2025-01-01',
     finished_on: '2025-03-12',
     abandoned_on: null,
