@@ -62,9 +62,9 @@ def test_log_progress_unknown_engagement_returns_404(client: TestClient) -> None
 
 def test_log_progress_finished_engagement_returns_409(client: TestClient) -> None:
     _, engagement_id = _read_with_length(client, PAGES, 300)
-    finish_response = client.patch(
-        f"/api/engagements/{engagement_id}",
-        json={"status": "finished"},
+    finish_response = client.post(
+        "/api/engagements",
+        json={"id": engagement_id, "status": "finished"},
     )
     assert finish_response.status_code == 200
 

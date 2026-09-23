@@ -19,14 +19,22 @@ def test_list_book_engagements_orders_by_started_on_not_finished_on(
 ) -> None:
     book = _create_book(client)
     earlier_start = _create_engagement(client, book["id"], started_on="2019-03-01")
-    client.patch(
-        f"/api/engagements/{earlier_start['id']}",
-        json={"status": "finished", "effective_on": "2026-06-01"},
+    client.post(
+        "/api/engagements",
+        json={
+            "id": earlier_start["id"],
+            "status": "finished",
+            "effective_on": "2026-06-01",
+        },
     )
     later_start = _create_engagement(client, book["id"], started_on="2023-08-01")
-    client.patch(
-        f"/api/engagements/{later_start['id']}",
-        json={"status": "finished", "effective_on": "2024-01-01"},
+    client.post(
+        "/api/engagements",
+        json={
+            "id": later_start["id"],
+            "status": "finished",
+            "effective_on": "2024-01-01",
+        },
     )
 
     response = client.get(f"/api/books/{book['id']}/engagements")
@@ -43,9 +51,9 @@ def test_list_book_engagements_puts_an_undated_read_last(
 ) -> None:
     book = _create_book(client)
     dated = _create_engagement(client, book["id"], started_on="2019-03-01")
-    client.patch(
-        f"/api/engagements/{dated['id']}",
-        json={"status": "finished", "effective_on": "2019-03-20"},
+    client.post(
+        "/api/engagements",
+        json={"id": dated["id"], "status": "finished", "effective_on": "2019-03-20"},
     )
     undated = _create_engagement(client, book["id"], status="finished")
 
@@ -136,7 +144,7 @@ def test_list_book_engagements_unknown_book_returns_404(client: TestClient) -> N
 def test_list_book_engagements_includes_rating_and_review(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
-    client.patch(f"/api/engagements/{engagement['id']}", json={"status": "finished"})
+    client.post("/api/engagements", json={"id": engagement["id"], "status": "finished"})
     upsert = client.put(
         f"/api/engagements/{engagement['id']}/review",
         json={"rating": 4.5, "body": "Better the second time."},

@@ -37,8 +37,8 @@ def test_delete_engagement_cascades_progress_logs_bindings_and_review(
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 100)
-    finish_response = client.patch(
-        f"/api/engagements/{engagement['id']}", json={"status": "finished"}
+    finish_response = client.post(
+        "/api/engagements", json={"id": engagement["id"], "status": "finished"}
     )
     assert finish_response.status_code == 200
     review_response = client.put(

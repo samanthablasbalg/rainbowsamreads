@@ -28,9 +28,9 @@ def _complete_on(
     completion: Completion,
     on: str,
 ) -> None:
-    response = client.patch(
-        f"/api/engagements/{engagement_id}",
-        json={"status": completion.status, "effective_on": on},
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement_id, "status": completion.status, "effective_on": on},
     )
     assert response.status_code == 200
     assert response.json()[completion.end_date_field] == on

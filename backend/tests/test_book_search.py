@@ -111,8 +111,8 @@ def test_search_prefers_reading_status_when_book_has_multiple_engagements(
 ) -> None:
     book = _create_book(client, title="Piranesi", author="Susanna Clarke")
     finished = _create_engagement(client, book["id"])
-    finish_response = client.patch(
-        f"/api/engagements/{finished['id']}", json={"status": "finished"}
+    finish_response = client.post(
+        "/api/engagements", json={"id": finished["id"], "status": "finished"}
     )
     assert finish_response.status_code == 200
     _create_engagement(client, book["id"], edition_format="audio")
@@ -134,13 +134,13 @@ def test_search_uses_most_recent_status_when_book_has_no_reading_engagement(
 ) -> None:
     book = _create_book(client, title="Piranesi", author="Susanna Clarke")
     first = _create_engagement(client, book["id"])
-    dnf_response = client.patch(
-        f"/api/engagements/{first['id']}", json={"status": "dnf"}
+    dnf_response = client.post(
+        "/api/engagements", json={"id": first["id"], "status": "dnf"}
     )
     assert dnf_response.status_code == 200
     second = _create_engagement(client, book["id"], edition_format="audio")
-    finish_response = client.patch(
-        f"/api/engagements/{second['id']}", json={"status": "finished"}
+    finish_response = client.post(
+        "/api/engagements", json={"id": second["id"], "status": "finished"}
     )
     assert finish_response.status_code == 200
 

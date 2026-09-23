@@ -95,8 +95,8 @@ def test_update_length_below_a_finished_reads_catch_up_entry_succeeds(
 ) -> None:
     _, engagement_id = _read_with_length(client, ruler, 1100)
     ruler.log_progress(client, engagement_id, 500)
-    finish_response = client.patch(
-        f"/api/engagements/{engagement_id}", json={"status": "finished"}
+    finish_response = client.post(
+        "/api/engagements", json={"id": engagement_id, "status": "finished"}
     )
     assert finish_response.status_code == 200
 

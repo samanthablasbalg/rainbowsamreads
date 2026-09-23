@@ -27,7 +27,7 @@ from tests.helpers import (
 
 
 @pytest.mark.parametrize("completion", COMPLETIONS)
-def test_patch_completed_engagement_with_logs_back_to_reading_clears_end_date(
+def test_transition_completed_engagement_with_logs_back_to_reading_clears_end_date(
     client: TestClient, completion: Completion
 ) -> None:
     book = _create_book(client)
@@ -50,7 +50,7 @@ def test_patch_completed_engagement_with_logs_back_to_reading_clears_end_date(
 
 
 @pytest.mark.parametrize("completion", COMPLETIONS)
-def test_patch_engagement_with_no_logs_back_to_reading_returns_422(
+def test_transition_engagement_with_no_logs_back_to_reading_returns_422(
     client: TestClient, completion: Completion
 ) -> None:
     book = _create_book(client)
@@ -342,7 +342,7 @@ def test_post_finished_to_finished_does_not_overwrite_date(
     ],
     ids=["uses-last-log", "uses-effective-on"],
 )
-def test_patch_to_dnf_with_log_sets_abandoned_on(
+def test_dnf_with_log_sets_abandoned_on(
     client: TestClient,
     payload: dict[str, str],
     expected_abandoned_on: str,
@@ -358,7 +358,7 @@ def test_patch_to_dnf_with_log_sets_abandoned_on(
     assert data["abandoned_on"] == expected_abandoned_on
 
 
-def test_patch_to_dnf_sets_abandoned_on_to_today_when_no_logs(
+def test_dnf_with_no_logs_sets_abandoned_on_to_today(
     client: TestClient,
 ) -> None:
     book = _create_book(client)
@@ -373,7 +373,7 @@ def test_patch_to_dnf_sets_abandoned_on_to_today_when_no_logs(
     assert data["abandoned_on"] == datetime.date.today().isoformat()
 
 
-def test_patch_to_dnf_with_effective_on_before_last_log_returns_409(
+def test_dnf_with_effective_on_before_last_log_returns_409(
     client: TestClient,
 ) -> None:
     book = _create_book(client)
@@ -387,7 +387,7 @@ def test_patch_to_dnf_with_effective_on_before_last_log_returns_409(
     assert response.status_code == 409
 
 
-def test_patch_to_dnf_does_not_create_progress_log(client: TestClient) -> None:
+def test_dnf_does_not_create_progress_log(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
     original_log = _log_progress(client, engagement["id"], 50)
@@ -399,7 +399,7 @@ def test_patch_to_dnf_does_not_create_progress_log(client: TestClient) -> None:
     assert [log["id"] for log in logs_response.json()] == [original_log["id"]]
 
 
-def test_patch_to_dnf_preserves_completion_pct(client: TestClient) -> None:
+def test_dnf_preserves_completion_pct(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 150)
