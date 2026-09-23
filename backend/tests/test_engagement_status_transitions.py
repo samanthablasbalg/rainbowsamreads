@@ -256,9 +256,9 @@ def test_finish_uses_effective_on_for_finished_on_and_completion_log(
     _, engagement_id = _read_with_length(client, ruler, 300, started_on="2026-01-01")
     ruler.log_progress(client, engagement_id, 150, logged_on="2026-01-10")
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}",
-        json={"status": "finished", "effective_on": "2026-01-15"},
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement_id, "status": "finished", "effective_on": "2026-01-15"},
     )
 
     assert response.status_code == 200

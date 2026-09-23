@@ -51,6 +51,7 @@ def create_engagement(
         engagement = lifecycle_service.update_engagement(
             db,
             engagement_id=payload.id,
+            effective_on=payload.effective_on,
             new_status=ReadingStatus(payload.status),
         )
         db.commit()
