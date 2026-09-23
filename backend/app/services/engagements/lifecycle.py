@@ -246,6 +246,8 @@ def _transition_to_dnf(
     effective_on: datetime.date | None,
     resolved_on: datetime.date,
 ) -> None:
+    engagement.status = ReadingStatus.dnf
+
     latest = latest_log(engagement.progress_logs)
     if latest is None:
         engagement.abandoned_on = resolved_on
