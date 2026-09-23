@@ -26,7 +26,17 @@ from ._shared import reload
 router = APIRouter()
 
 
-@router.post("", response_model=EngagementRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=EngagementRead,
+    responses={
+        200: {
+            "model": EngagementRead,
+            "description": "Engagement status updated successfully.",
+        },
+    },
+    status_code=status.HTTP_201_CREATED,
+)
 def create_engagement(
     response: Response,
     payload: EngagementCreate | EngagementTransitionRequest,

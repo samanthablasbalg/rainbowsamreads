@@ -583,6 +583,16 @@
               }
             }
           },
+          "200": {
+            "description": "Engagement status updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementRead"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation Error",
             "content": {

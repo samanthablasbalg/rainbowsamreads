@@ -61,7 +61,7 @@ export const getEngagementsCreateEngagementMockHandler = (
             ? await overrideResponse(info)
             : overrideResponse
           : getEngagementsCreateEngagementResponseMock(),
-        { status: 201 }
+        { status: 200 }
       );
     },
     options
