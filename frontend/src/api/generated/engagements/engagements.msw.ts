@@ -23,7 +23,6 @@ import {
   getEngagementsLogProgressResponseMock,
   getEngagementsUpdateEngagementDatesResponseMock,
   getEngagementsUpdateEngagementLengthResponseMock,
-  getEngagementsUpdateEngagementStatusResponseMock,
   getEngagementsUpdateProgressLogResponseMock,
   getEngagementsUpsertReviewResponseMock,
   getEngagementsWriteEngagementResponseMock,
@@ -32,10 +31,9 @@ import {
 export {
   getEngagementsWriteEngagementResponseMock,
   getEngagementsListEngagementsResponseMock,
-  getEngagementsUpdateEngagementStatusResponseMock,
-  getEngagementsGetEngagementResponseMock,
   getEngagementsUpdateEngagementDatesResponseMock,
   getEngagementsUpdateEngagementLengthResponseMock,
+  getEngagementsGetEngagementResponseMock,
   getEngagementsLogProgressResponseMock,
   getEngagementsListProgressLogsResponseMock,
   getEngagementsUpdateProgressLogResponseMock,
@@ -92,7 +90,7 @@ export const getEngagementsListEngagementsMockHandler = (
   );
 };
 
-export const getEngagementsUpdateEngagementStatusMockHandler = (
+export const getEngagementsUpdateEngagementDatesMockHandler = (
   overrideResponse?:
     | EngagementRead
     | ((
@@ -101,14 +99,38 @@ export const getEngagementsUpdateEngagementStatusMockHandler = (
   options?: RequestHandlerOptions
 ) => {
   return http.patch(
-    '*/api/engagements/:engagementId',
+    '*/api/engagements/:engagementId/dates',
     async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
             ? await overrideResponse(info)
             : overrideResponse
-          : getEngagementsUpdateEngagementStatusResponseMock(),
+          : getEngagementsUpdateEngagementDatesResponseMock(),
+        { status: 200 }
+      );
+    },
+    options
+  );
+};
+
+export const getEngagementsUpdateEngagementLengthMockHandler = (
+  overrideResponse?:
+    | EngagementRead
+    | ((
+        info: Parameters<Parameters<typeof http.patch>[1]>[0]
+      ) => Promise<EngagementRead> | EngagementRead),
+  options?: RequestHandlerOptions
+) => {
+  return http.patch(
+    '*/api/engagements/:engagementId/length',
+    async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === 'function'
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getEngagementsUpdateEngagementLengthResponseMock(),
         { status: 200 }
       );
     },
@@ -153,54 +175,6 @@ export const getEngagementsDeleteEngagementMockHandler = (
       }
 
       return new HttpResponse(null, { status: 204 });
-    },
-    options
-  );
-};
-
-export const getEngagementsUpdateEngagementDatesMockHandler = (
-  overrideResponse?:
-    | EngagementRead
-    | ((
-        info: Parameters<Parameters<typeof http.patch>[1]>[0]
-      ) => Promise<EngagementRead> | EngagementRead),
-  options?: RequestHandlerOptions
-) => {
-  return http.patch(
-    '*/api/engagements/:engagementId/dates',
-    async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getEngagementsUpdateEngagementDatesResponseMock(),
-        { status: 200 }
-      );
-    },
-    options
-  );
-};
-
-export const getEngagementsUpdateEngagementLengthMockHandler = (
-  overrideResponse?:
-    | EngagementRead
-    | ((
-        info: Parameters<Parameters<typeof http.patch>[1]>[0]
-      ) => Promise<EngagementRead> | EngagementRead),
-  options?: RequestHandlerOptions
-) => {
-  return http.patch(
-    '*/api/engagements/:engagementId/length',
-    async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getEngagementsUpdateEngagementLengthResponseMock(),
-        { status: 200 }
-      );
     },
     options
   );
@@ -398,11 +372,10 @@ export const getEngagementsUpsertReviewMockHandler = (
 export const getEngagementsMock = () => [
   getEngagementsWriteEngagementMockHandler(),
   getEngagementsListEngagementsMockHandler(),
-  getEngagementsUpdateEngagementStatusMockHandler(),
-  getEngagementsGetEngagementMockHandler(),
-  getEngagementsDeleteEngagementMockHandler(),
   getEngagementsUpdateEngagementDatesMockHandler(),
   getEngagementsUpdateEngagementLengthMockHandler(),
+  getEngagementsGetEngagementMockHandler(),
+  getEngagementsDeleteEngagementMockHandler(),
   getEngagementsLogProgressMockHandler(),
   getEngagementsListProgressLogsMockHandler(),
   getEngagementsUpdateProgressLogMockHandler(),

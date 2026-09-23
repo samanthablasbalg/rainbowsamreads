@@ -14,11 +14,7 @@ import {
   useEngagementsDeleteEngagement,
   useEngagementsWriteEngagement,
 } from '@/api/generated/engagements/engagements';
-import {
-  EngagementStatusUpdateStatus,
-  Format,
-  type EngagementRead,
-} from '@/api/generated/readingTracker.schemas';
+import { Format, ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { BookRow } from '@/components/common/book-row';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { FinishReadSheet } from '@/components/common/finish-read-sheet';
@@ -74,7 +70,7 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
       updateStatus.mutate({
         data: {
           id: engagement.id,
-          ...statusUpdateBody(EngagementStatusUpdateStatus[pendingAction]),
+          ...statusUpdateBody(ReadingStatus[pendingAction]),
         },
       });
     }

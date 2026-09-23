@@ -16,7 +16,6 @@ from app.schemas import (
     EngagementLengthUpdate,
     EngagementRead,
     EngagementStatusUpdate,
-    EngagementTransitionRequest,
 )
 from app.services.engagements import bindings as bindings_service
 from app.services.engagements import lifecycle as lifecycle_service
@@ -39,7 +38,7 @@ router = APIRouter()
 )
 def write_engagement(
     response: Response,
-    payload: EngagementCreate | EngagementTransitionRequest,
+    payload: EngagementCreate | EngagementStatusUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> EngagementRead:
@@ -58,7 +57,7 @@ def write_engagement(
         db.commit()
         return EngagementRead.model_validate(reload(db, engagement.id))
     else:
-        engagement = lifecycle_service.update_engagement(
+        engagement = lifecycle_service.update_engagement_status(
             db,
             engagement_id=payload.id,
             effective_on=payload.effective_on,
@@ -68,24 +67,6 @@ def write_engagement(
         db.commit()
         response.status_code = status.HTTP_200_OK
         return EngagementRead.model_validate(reload(db, engagement.id))
-
-
-@router.patch("/{engagement_id}", response_model=EngagementRead)
-def update_engagement_status(
-    engagement_id: uuid.UUID,
-    payload: EngagementStatusUpdate,
-    db: Session = Depends(get_db),
-) -> EngagementRead:
-    engagement = engagement_crud.get_or_raise(db, engagement_id)
-    lifecycle_service.update_status(
-        db,
-        engagement,
-        new_status=ReadingStatus(payload.status),
-        effective_on=payload.effective_on,
-        unit=payload.unit,
-    )
-    db.commit()
-    return EngagementRead.model_validate(reload(db, engagement_id))
 
 
 @router.patch("/{engagement_id}/dates", response_model=EngagementRead)

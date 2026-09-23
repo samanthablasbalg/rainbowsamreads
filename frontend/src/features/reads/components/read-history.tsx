@@ -10,7 +10,6 @@ import {
   useEngagementsWriteEngagement,
 } from '@/api/generated/engagements/engagements';
 import {
-  EngagementStatusUpdateStatus,
   Format,
   ReadingStatus,
   type EngagementDatesUpdate,
@@ -134,7 +133,7 @@ function ReadHeader({
       ? finishRead.mutateAsync({
           data: {
             id: engagement.id,
-            status: EngagementStatusUpdateStatus.finished,
+            status: ReadingStatus.finished,
             effective_on: value,
           },
         })

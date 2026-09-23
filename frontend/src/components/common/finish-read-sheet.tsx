@@ -8,9 +8,9 @@ import {
   useEngagementsWriteEngagement,
 } from '@/api/generated/engagements/engagements';
 import {
-  EngagementStatusUpdateStatus,
   Format,
   LogUnit,
+  ReadingStatus,
   type EngagementRead,
 } from '@/api/generated/readingTracker.schemas';
 import { CoverImage } from '@/components/common/cover-image';
@@ -195,7 +195,7 @@ function useFinishReadForm(engagement: EngagementRead, onClose: () => void) {
     updateStatus.mutate({
       data: {
         id: engagement.id,
-        status: EngagementStatusUpdateStatus.finished,
+        status: ReadingStatus.finished,
         effective_on: finishedOn,
         ...(unit !== null && { unit }),
       },

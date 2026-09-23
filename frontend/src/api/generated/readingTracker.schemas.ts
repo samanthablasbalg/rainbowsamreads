@@ -225,26 +225,7 @@ export interface EngagementRead {
   updated_at: string;
 }
 
-export type EngagementStatusUpdateStatus =
-  (typeof EngagementStatusUpdateStatus)[keyof typeof EngagementStatusUpdateStatus];
-
-export const EngagementStatusUpdateStatus = {
-  reading: 'reading',
-  finished: 'finished',
-  dnf: 'dnf',
-} as const;
-
-/**
- * `unit` picks the ruler the closing log is written on when finishing a read that
- * has been going in more than one. Defaults to the one the read is already on.
- */
 export interface EngagementStatusUpdate {
-  status: EngagementStatusUpdateStatus;
-  effective_on?: string | null;
-  unit?: LogUnit | null;
-}
-
-export interface EngagementTransitionRequest {
   id: string;
   status: ReadingStatus;
   effective_on?: string | null;

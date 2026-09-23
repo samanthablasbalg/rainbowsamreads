@@ -259,8 +259,7 @@ def _transition_to_dnf(
     engagement.abandoned_on = effective_on or latest.logged_on
 
 
-# Temporary name. Will rename to update_status once refactor is complete.
-def update_engagement(
+def update_engagement_status(
     db: Session,
     engagement_id: uuid.UUID,
     new_status: ReadingStatus,
@@ -296,37 +295,6 @@ def update_engagement(
                 )
 
     return engagement
-
-
-def update_status(
-    db: Session,
-    engagement: Engagement,
-    *,
-    new_status: ReadingStatus,
-    effective_on: datetime.date | None,
-    unit: LogUnit | None = None,
-) -> None:
-    if new_status == engagement.status:
-        return
-
-    if new_status == ReadingStatus.reading:
-        _reject_duplicate_reading(db, engagement)
-        if not engagement.progress_logs:
-            raise InvalidOperationError(
-                "An engagement without progress logs cannot be returned to reading."
-            )
-
-    resolved_on = effective_on or datetime.date.today()
-    reject_future_date(resolved_on)
-
-    engagement.status = new_status
-    match new_status:
-        case ReadingStatus.reading:
-            _transition_to_reading(db, engagement)
-        case ReadingStatus.finished:
-            _transition_to_finished(db, engagement, resolved_on, unit)
-        case ReadingStatus.dnf:
-            _transition_to_dnf(engagement, effective_on, resolved_on)
 
 
 def apply_date_change(

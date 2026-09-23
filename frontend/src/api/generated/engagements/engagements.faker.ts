@@ -258,166 +258,6 @@ export const getEngagementsListEngagementsResponseMock = (): EngagementRead[] =>
     updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
   }));
 
-export const getEngagementsUpdateEngagementStatusResponseMock = (
-  overrideResponse: Partial<Extract<EngagementRead, object>> = {}
-): EngagementRead => ({
-  id: faker.string.uuid(),
-  book: {
-    id: faker.string.uuid(),
-    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    authors: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
-      () => ({
-        id: faker.string.uuid(),
-        name: faker.string.alpha({ length: { min: 10, max: 20 } }),
-      })
-    ),
-    google_books_id: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      null,
-    ]),
-    default_cover_url: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      null,
-    ]),
-    default_page_count: faker.helpers.arrayElement([faker.number.int(), null]),
-    default_audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
-    original_language: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      null,
-    ]),
-    description: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      null,
-    ]),
-    genres: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
-      faker.string.alpha({ length: { min: 10, max: 20 } })
-    ),
-    publication_date: faker.helpers.arrayElement([
-      faker.date.past().toISOString().slice(0, 10),
-      null,
-    ]),
-    publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
-    created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-    updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  },
-  formats: faker.helpers.arrayElements(Object.values(Format)),
-  cover_url: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  status: faker.helpers.arrayElement(Object.values(ReadingStatus)),
-  started_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
-  finished_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
-  abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
-  resume_from_page: faker.number.int(),
-  resume_from_minute: faker.number.int(),
-  frontier_page: faker.number.int(),
-  frontier_minute: faker.number.int(),
-  resume_unit: faker.helpers.arrayElement([
-    faker.helpers.arrayElement(Object.values(LogUnit)),
-    null,
-  ]),
-  length_pages: faker.helpers.arrayElement([faker.number.int(), null]),
-  length_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
-  completion_pct: faker.helpers.arrayElement([faker.number.int(), null]),
-  review: faker.helpers.arrayElement([
-    {
-      rating: faker.helpers.arrayElement([
-        faker.helpers.fromRegExp('^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'),
-        null,
-      ]),
-      body: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-    },
-    null,
-  ]),
-  created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  ...overrideResponse,
-});
-
-export const getEngagementsGetEngagementResponseMock = (
-  overrideResponse: Partial<Extract<EngagementRead, object>> = {}
-): EngagementRead => ({
-  id: faker.string.uuid(),
-  book: {
-    id: faker.string.uuid(),
-    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    authors: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
-      () => ({
-        id: faker.string.uuid(),
-        name: faker.string.alpha({ length: { min: 10, max: 20 } }),
-      })
-    ),
-    google_books_id: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      null,
-    ]),
-    default_cover_url: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      null,
-    ]),
-    default_page_count: faker.helpers.arrayElement([faker.number.int(), null]),
-    default_audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
-    original_language: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      null,
-    ]),
-    description: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      null,
-    ]),
-    genres: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
-      faker.string.alpha({ length: { min: 10, max: 20 } })
-    ),
-    publication_date: faker.helpers.arrayElement([
-      faker.date.past().toISOString().slice(0, 10),
-      null,
-    ]),
-    publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
-    created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-    updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  },
-  formats: faker.helpers.arrayElements(Object.values(Format)),
-  cover_url: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  status: faker.helpers.arrayElement(Object.values(ReadingStatus)),
-  started_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
-  finished_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
-  abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
-  resume_from_page: faker.number.int(),
-  resume_from_minute: faker.number.int(),
-  frontier_page: faker.number.int(),
-  frontier_minute: faker.number.int(),
-  resume_unit: faker.helpers.arrayElement([
-    faker.helpers.arrayElement(Object.values(LogUnit)),
-    null,
-  ]),
-  length_pages: faker.helpers.arrayElement([faker.number.int(), null]),
-  length_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
-  completion_pct: faker.helpers.arrayElement([faker.number.int(), null]),
-  review: faker.helpers.arrayElement([
-    {
-      rating: faker.helpers.arrayElement([
-        faker.helpers.fromRegExp('^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'),
-        null,
-      ]),
-      body: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-    },
-    null,
-  ]),
-  created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  ...overrideResponse,
-});
-
 export const getEngagementsUpdateEngagementDatesResponseMock = (
   overrideResponse: Partial<Extract<EngagementRead, object>> = {}
 ): EngagementRead => ({
@@ -499,6 +339,86 @@ export const getEngagementsUpdateEngagementDatesResponseMock = (
 });
 
 export const getEngagementsUpdateEngagementLengthResponseMock = (
+  overrideResponse: Partial<Extract<EngagementRead, object>> = {}
+): EngagementRead => ({
+  id: faker.string.uuid(),
+  book: {
+    id: faker.string.uuid(),
+    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    authors: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+      () => ({
+        id: faker.string.uuid(),
+        name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      })
+    ),
+    google_books_id: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    default_cover_url: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    default_page_count: faker.helpers.arrayElement([faker.number.int(), null]),
+    default_audio_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
+    original_language: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    description: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    genres: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
+      faker.string.alpha({ length: { min: 10, max: 20 } })
+    ),
+    publication_date: faker.helpers.arrayElement([
+      faker.date.past().toISOString().slice(0, 10),
+      null,
+    ]),
+    publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
+    created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+    updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+  },
+  formats: faker.helpers.arrayElements(Object.values(Format)),
+  cover_url: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  status: faker.helpers.arrayElement(Object.values(ReadingStatus)),
+  started_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
+  finished_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
+  abandoned_on: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]),
+  resume_from_page: faker.number.int(),
+  resume_from_minute: faker.number.int(),
+  frontier_page: faker.number.int(),
+  frontier_minute: faker.number.int(),
+  resume_unit: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(LogUnit)),
+    null,
+  ]),
+  length_pages: faker.helpers.arrayElement([faker.number.int(), null]),
+  length_minutes: faker.helpers.arrayElement([faker.number.int(), null]),
+  completion_pct: faker.helpers.arrayElement([faker.number.int(), null]),
+  review: faker.helpers.arrayElement([
+    {
+      rating: faker.helpers.arrayElement([
+        faker.helpers.fromRegExp('^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'),
+        null,
+      ]),
+      body: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+    },
+    null,
+  ]),
+  created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+  updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+  ...overrideResponse,
+});
+
+export const getEngagementsGetEngagementResponseMock = (
   overrideResponse: Partial<Extract<EngagementRead, object>> = {}
 ): EngagementRead => ({
   id: faker.string.uuid(),

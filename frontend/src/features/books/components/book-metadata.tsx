@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowDown01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
 import {
-  EngagementStatusUpdateStatus,
   ReadingStatus,
   type BookRead,
   type EngagementRead,
@@ -40,6 +39,7 @@ const STATUS_LABELS: Record<ReadingStatus, string> = {
 // not a correction to the last one, so it starts a new engagement through the sheet
 // instead of reopening the one that already ended.
 const ENDED: ReadingStatus[] = [ReadingStatus.finished, ReadingStatus.dnf];
+const STATUS_OPTIONS = [ReadingStatus.reading, ReadingStatus.finished, ReadingStatus.dnf] as const;
 
 function currentEngagement(engagements: EngagementRead[]): EngagementRead | null {
   if (engagements.length === 0) {
@@ -103,16 +103,13 @@ export function BookMetadata({
               }
             />
             <DropdownMenuContent>
-              {Object.values(EngagementStatusUpdateStatus).map((status) => (
+              {STATUS_OPTIONS.map((status) => (
                 <DropdownMenuItem
                   key={status}
                   onClick={() => {
-                    if (status === EngagementStatusUpdateStatus.finished) {
+                    if (status === ReadingStatus.finished) {
                       setFinishOpen(true);
-                    } else if (
-                      status === EngagementStatusUpdateStatus.reading &&
-                      ENDED.includes(current.status)
-                    ) {
+                    } else if (status === ReadingStatus.reading && ENDED.includes(current.status)) {
                       setAddOpen(true);
                     } else {
                       updateStatus.mutate({
