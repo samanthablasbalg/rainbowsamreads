@@ -61,9 +61,9 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
 };
 
 /**
- * @summary Create Engagement
+ * @summary Write Engagement
  */
-export const engagementsCreateEngagement = (
+export const engagementsWriteEngagement = (
   engagementCreateEngagementTransitionRequest: EngagementCreate | EngagementTransitionRequest,
   options?: SecondParameter<typeof customInstance>,
   signal?: AbortSignal
@@ -80,24 +80,24 @@ export const engagementsCreateEngagement = (
   );
 };
 
-export const getEngagementsCreateEngagementMutationOptions = <
+export const getEngagementsWriteEngagementMutationOptions = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof engagementsCreateEngagement>>,
+    Awaited<ReturnType<typeof engagementsWriteEngagement>>,
     TError,
     { data: EngagementCreate | EngagementTransitionRequest },
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof engagementsCreateEngagement>>,
+  Awaited<ReturnType<typeof engagementsWriteEngagement>>,
   TError,
   { data: EngagementCreate | EngagementTransitionRequest },
   TContext
 > => {
-  const mutationKey = ['engagementsCreateEngagement'];
+  const mutationKey = ['engagementsWriteEngagement'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
@@ -105,34 +105,33 @@ export const getEngagementsCreateEngagementMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof engagementsCreateEngagement>>,
+    Awaited<ReturnType<typeof engagementsWriteEngagement>>,
     { data: EngagementCreate | EngagementTransitionRequest }
   > = (props) => {
     const { data } = props ?? {};
 
-    return engagementsCreateEngagement(data, requestOptions);
+    return engagementsWriteEngagement(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type EngagementsCreateEngagementMutationResult = NonNullable<
-  Awaited<ReturnType<typeof engagementsCreateEngagement>>
+export type EngagementsWriteEngagementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof engagementsWriteEngagement>>
 >;
-export type EngagementsCreateEngagementMutationBody =
-  EngagementCreate | EngagementTransitionRequest;
-export type EngagementsCreateEngagementMutationError = ErrorType<HTTPValidationError>;
+export type EngagementsWriteEngagementMutationBody = EngagementCreate | EngagementTransitionRequest;
+export type EngagementsWriteEngagementMutationError = ErrorType<HTTPValidationError>;
 
 /**
- * @summary Create Engagement
+ * @summary Write Engagement
  */
-export const useEngagementsCreateEngagement = <
+export const useEngagementsWriteEngagement = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof engagementsCreateEngagement>>,
+      Awaited<ReturnType<typeof engagementsWriteEngagement>>,
       TError,
       { data: EngagementCreate | EngagementTransitionRequest },
       TContext
@@ -141,12 +140,12 @@ export const useEngagementsCreateEngagement = <
   },
   queryClient?: QueryClient
 ): UseMutationResult<
-  Awaited<ReturnType<typeof engagementsCreateEngagement>>,
+  Awaited<ReturnType<typeof engagementsWriteEngagement>>,
   TError,
   { data: EngagementCreate | EngagementTransitionRequest },
   TContext
 > => {
-  return useMutation(getEngagementsCreateEngagementMutationOptions(options), queryClient);
+  return useMutation(getEngagementsWriteEngagementMutationOptions(options), queryClient);
 };
 /**
  * @summary List Engagements

@@ -3,8 +3,8 @@ import { HttpResponse, http } from 'msw';
 import { useLocation, useNavigate } from 'react-router';
 import userEvent from '@testing-library/user-event';
 import {
-  getEngagementsCreateEngagementMockHandler,
-  getEngagementsCreateEngagementResponseMock,
+  getEngagementsWriteEngagementMockHandler,
+  getEngagementsWriteEngagementResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
 import { EngagementCreateStatus, type BookRead } from '@/api/generated/readingTracker.schemas';
 import { buildBook } from '@/test/data-generators';
@@ -56,9 +56,9 @@ function renderAddSheet(overrides: Partial<BookRead> = {}) {
 function captureCreateBody() {
   const captured: { body?: unknown } = {};
   server.use(
-    getEngagementsCreateEngagementMockHandler(async (info) => {
+    getEngagementsWriteEngagementMockHandler(async (info) => {
       captured.body = await info.request.json();
-      return getEngagementsCreateEngagementResponseMock();
+      return getEngagementsWriteEngagementResponseMock();
     })
   );
   return captured;

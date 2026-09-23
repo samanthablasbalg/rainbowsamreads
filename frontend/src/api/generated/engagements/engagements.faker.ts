@@ -14,7 +14,7 @@ import type {
   PageProgressLogRead,
 } from '../readingTracker.schemas';
 
-export const getEngagementsCreateEngagementResponseMock = (
+export const getEngagementsWriteEngagementResponseMock = (
   overrideResponse: Partial<Extract<EngagementRead, object>> = {}
 ): EngagementRead =>
   faker.helpers.arrayElement([

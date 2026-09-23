@@ -37,7 +37,7 @@ router = APIRouter()
     },
     status_code=status.HTTP_201_CREATED,
 )
-def create_engagement(
+def write_engagement(
     response: Response,
     payload: EngagementCreate | EngagementTransitionRequest,
     db: Session = Depends(get_db),

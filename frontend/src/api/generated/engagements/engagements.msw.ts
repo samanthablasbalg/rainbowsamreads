@@ -16,7 +16,6 @@ import type {
 
 import {
   getEngagementsCreateBindingResponseMock,
-  getEngagementsCreateEngagementResponseMock,
   getEngagementsGetEngagementResponseMock,
   getEngagementsListBindingsResponseMock,
   getEngagementsListEngagementsResponseMock,
@@ -27,10 +26,11 @@ import {
   getEngagementsUpdateEngagementStatusResponseMock,
   getEngagementsUpdateProgressLogResponseMock,
   getEngagementsUpsertReviewResponseMock,
+  getEngagementsWriteEngagementResponseMock,
 } from './engagements.faker';
 
 export {
-  getEngagementsCreateEngagementResponseMock,
+  getEngagementsWriteEngagementResponseMock,
   getEngagementsListEngagementsResponseMock,
   getEngagementsUpdateEngagementStatusResponseMock,
   getEngagementsGetEngagementResponseMock,
@@ -44,7 +44,7 @@ export {
   getEngagementsUpsertReviewResponseMock,
 } from './engagements.faker';
 
-export const getEngagementsCreateEngagementMockHandler = (
+export const getEngagementsWriteEngagementMockHandler = (
   overrideResponse?:
     | EngagementRead
     | ((
@@ -60,7 +60,7 @@ export const getEngagementsCreateEngagementMockHandler = (
           ? typeof overrideResponse === 'function'
             ? await overrideResponse(info)
             : overrideResponse
-          : getEngagementsCreateEngagementResponseMock(),
+          : getEngagementsWriteEngagementResponseMock(),
         { status: 200 }
       );
     },
@@ -396,7 +396,7 @@ export const getEngagementsUpsertReviewMockHandler = (
   );
 };
 export const getEngagementsMock = () => [
-  getEngagementsCreateEngagementMockHandler(),
+  getEngagementsWriteEngagementMockHandler(),
   getEngagementsListEngagementsMockHandler(),
   getEngagementsUpdateEngagementStatusMockHandler(),
   getEngagementsGetEngagementMockHandler(),
