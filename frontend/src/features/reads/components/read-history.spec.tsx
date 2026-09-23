@@ -135,7 +135,7 @@ describe('ReadHistory', () => {
       getEngagementsGetEngagementMockHandler(
         buildEngagement({ status: ReadingStatus.reading, finished_on: null })
       ),
-      http.patch('*/api/engagements/:engagementId', async ({ request }) => {
+      http.post('*/api/engagements', async ({ request }) => {
         sent.push((await request.json()) as Record<string, unknown>);
         return HttpResponse.json({});
       })
@@ -147,7 +147,9 @@ describe('ReadHistory', () => {
     await userEvent.type(screen.getByLabelText('finish date'), '2025-03-14');
     await userEvent.click(screen.getByRole('button', { name: 'Save finish date' }));
 
-    await waitFor(() => expect(sent).toEqual([{ status: 'finished', effective_on: '2025-03-14' }]));
+    await waitFor(() =>
+      expect(sent).toMatchObject([{ status: 'finished', effective_on: '2025-03-14' }])
+    );
   });
 
   it('shows the length of a page-measured read', async () => {

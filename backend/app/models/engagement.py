@@ -38,10 +38,6 @@ class Engagement(TimestampMixin, Base):
         SAEnum(ReadingStatus, name="reading_status")
     )
 
-    interested_on: Mapped[datetime.date | None]
-    interested_on_precision: Mapped[DatePrecision] = mapped_column(
-        date_precision_type, default=DatePrecision.day
-    )
     tbr_added_on: Mapped[datetime.date | None]
     tbr_added_on_precision: Mapped[DatePrecision] = mapped_column(
         date_precision_type, default=DatePrecision.day

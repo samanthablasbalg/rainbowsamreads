@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowDown01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
 import {
-  EngagementStatusUpdateStatus,
   ReadingStatus,
   type BookRead,
   type EngagementRead,
@@ -11,7 +10,7 @@ import {
 import { getBooksListBookEngagementsQueryKey } from '@/api/generated/books/books';
 import {
   getEngagementsListEngagementsQueryKey,
-  useEngagementsUpdateEngagementStatus,
+  useEngagementsWriteEngagement,
 } from '@/api/generated/engagements/engagements';
 import { FinishReadSheet } from '@/components/common/finish-read-sheet';
 import { StarRating } from '@/components/common/star-rating';
@@ -28,7 +27,6 @@ import { statusUpdateBody } from '@/utils/status';
 import { LogReadingSheet } from './log-reading-sheet';
 
 const STATUS_LABELS: Record<ReadingStatus, string> = {
-  interested: 'Interested',
   tbr: 'To read',
   reading: 'Reading',
   paused: 'Paused',
@@ -40,6 +38,7 @@ const STATUS_LABELS: Record<ReadingStatus, string> = {
 // not a correction to the last one, so it starts a new engagement through the sheet
 // instead of reopening the one that already ended.
 const ENDED: ReadingStatus[] = [ReadingStatus.finished, ReadingStatus.dnf];
+const STATUS_OPTIONS = [ReadingStatus.reading, ReadingStatus.finished, ReadingStatus.dnf] as const;
 
 function currentEngagement(engagements: EngagementRead[]): EngagementRead | null {
   if (engagements.length === 0) {
@@ -72,7 +71,7 @@ export function BookMetadata({
   const [finishOpen, setFinishOpen] = useState(false);
 
   const queryClient = useQueryClient();
-  const updateStatus = useEngagementsUpdateEngagementStatus({
+  const updateStatus = useEngagementsWriteEngagement({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({
@@ -103,21 +102,17 @@ export function BookMetadata({
               }
             />
             <DropdownMenuContent>
-              {Object.values(EngagementStatusUpdateStatus).map((status) => (
+              {STATUS_OPTIONS.map((status) => (
                 <DropdownMenuItem
                   key={status}
                   onClick={() => {
-                    if (status === EngagementStatusUpdateStatus.finished) {
+                    if (status === ReadingStatus.finished) {
                       setFinishOpen(true);
-                    } else if (
-                      status === EngagementStatusUpdateStatus.reading &&
-                      ENDED.includes(current.status)
-                    ) {
+                    } else if (status === ReadingStatus.reading && ENDED.includes(current.status)) {
                       setAddOpen(true);
                     } else {
                       updateStatus.mutate({
-                        engagementId: current.id,
-                        data: statusUpdateBody(status),
+                        data: { id: current.id, ...statusUpdateBody(status) },
                       });
                     }
                   }}

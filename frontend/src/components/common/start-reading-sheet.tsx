@@ -5,7 +5,7 @@ import { errorDetail, type DetailError } from '@/api/error-detail';
 import { getBooksListBookEngagementsQueryKey } from '@/api/generated/books/books';
 import {
   getEngagementsListEngagementsQueryKey,
-  useEngagementsCreateEngagement,
+  useEngagementsWriteEngagement,
 } from '@/api/generated/engagements/engagements';
 import {
   EngagementCreateStatus,
@@ -232,7 +232,7 @@ function useStartReadingForm(
 
   const queryClient = useQueryClient();
 
-  const createEngagement = useEngagementsCreateEngagement<DetailError>({
+  const createEngagement = useEngagementsWriteEngagement<DetailError>({
     mutation: {
       onSuccess: async () => {
         await Promise.all([

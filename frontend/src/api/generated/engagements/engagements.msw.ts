@@ -16,7 +16,6 @@ import type {
 
 import {
   getEngagementsCreateBindingResponseMock,
-  getEngagementsCreateEngagementResponseMock,
   getEngagementsGetEngagementResponseMock,
   getEngagementsListBindingsResponseMock,
   getEngagementsListEngagementsResponseMock,
@@ -24,18 +23,17 @@ import {
   getEngagementsLogProgressResponseMock,
   getEngagementsUpdateEngagementDatesResponseMock,
   getEngagementsUpdateEngagementLengthResponseMock,
-  getEngagementsUpdateEngagementStatusResponseMock,
   getEngagementsUpdateProgressLogResponseMock,
   getEngagementsUpsertReviewResponseMock,
+  getEngagementsWriteEngagementResponseMock,
 } from './engagements.faker';
 
 export {
-  getEngagementsCreateEngagementResponseMock,
+  getEngagementsWriteEngagementResponseMock,
   getEngagementsListEngagementsResponseMock,
-  getEngagementsUpdateEngagementStatusResponseMock,
-  getEngagementsGetEngagementResponseMock,
   getEngagementsUpdateEngagementDatesResponseMock,
   getEngagementsUpdateEngagementLengthResponseMock,
+  getEngagementsGetEngagementResponseMock,
   getEngagementsLogProgressResponseMock,
   getEngagementsListProgressLogsResponseMock,
   getEngagementsUpdateProgressLogResponseMock,
@@ -44,7 +42,7 @@ export {
   getEngagementsUpsertReviewResponseMock,
 } from './engagements.faker';
 
-export const getEngagementsCreateEngagementMockHandler = (
+export const getEngagementsWriteEngagementMockHandler = (
   overrideResponse?:
     | EngagementRead
     | ((
@@ -60,8 +58,8 @@ export const getEngagementsCreateEngagementMockHandler = (
           ? typeof overrideResponse === 'function'
             ? await overrideResponse(info)
             : overrideResponse
-          : getEngagementsCreateEngagementResponseMock(),
-        { status: 201 }
+          : getEngagementsWriteEngagementResponseMock(),
+        { status: 200 }
       );
     },
     options
@@ -87,72 +85,6 @@ export const getEngagementsListEngagementsMockHandler = (
           : getEngagementsListEngagementsResponseMock(),
         { status: 200 }
       );
-    },
-    options
-  );
-};
-
-export const getEngagementsUpdateEngagementStatusMockHandler = (
-  overrideResponse?:
-    | EngagementRead
-    | ((
-        info: Parameters<Parameters<typeof http.patch>[1]>[0]
-      ) => Promise<EngagementRead> | EngagementRead),
-  options?: RequestHandlerOptions
-) => {
-  return http.patch(
-    '*/api/engagements/:engagementId',
-    async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getEngagementsUpdateEngagementStatusResponseMock(),
-        { status: 200 }
-      );
-    },
-    options
-  );
-};
-
-export const getEngagementsGetEngagementMockHandler = (
-  overrideResponse?:
-    | EngagementRead
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0]
-      ) => Promise<EngagementRead> | EngagementRead),
-  options?: RequestHandlerOptions
-) => {
-  return http.get(
-    '*/api/engagements/:engagementId',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getEngagementsGetEngagementResponseMock(),
-        { status: 200 }
-      );
-    },
-    options
-  );
-};
-
-export const getEngagementsDeleteEngagementMockHandler = (
-  overrideResponse?:
-    void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void),
-  options?: RequestHandlerOptions
-) => {
-  return http.delete(
-    '*/api/engagements/:engagementId',
-    async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
-      if (typeof overrideResponse === 'function') {
-        await overrideResponse(info);
-      }
-
-      return new HttpResponse(null, { status: 204 });
     },
     options
   );
@@ -201,6 +133,48 @@ export const getEngagementsUpdateEngagementLengthMockHandler = (
           : getEngagementsUpdateEngagementLengthResponseMock(),
         { status: 200 }
       );
+    },
+    options
+  );
+};
+
+export const getEngagementsGetEngagementMockHandler = (
+  overrideResponse?:
+    | EngagementRead
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0]
+      ) => Promise<EngagementRead> | EngagementRead),
+  options?: RequestHandlerOptions
+) => {
+  return http.get(
+    '*/api/engagements/:engagementId',
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === 'function'
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getEngagementsGetEngagementResponseMock(),
+        { status: 200 }
+      );
+    },
+    options
+  );
+};
+
+export const getEngagementsDeleteEngagementMockHandler = (
+  overrideResponse?:
+    void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void),
+  options?: RequestHandlerOptions
+) => {
+  return http.delete(
+    '*/api/engagements/:engagementId',
+    async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+      if (typeof overrideResponse === 'function') {
+        await overrideResponse(info);
+      }
+
+      return new HttpResponse(null, { status: 204 });
     },
     options
   );
@@ -396,13 +370,12 @@ export const getEngagementsUpsertReviewMockHandler = (
   );
 };
 export const getEngagementsMock = () => [
-  getEngagementsCreateEngagementMockHandler(),
+  getEngagementsWriteEngagementMockHandler(),
   getEngagementsListEngagementsMockHandler(),
-  getEngagementsUpdateEngagementStatusMockHandler(),
-  getEngagementsGetEngagementMockHandler(),
-  getEngagementsDeleteEngagementMockHandler(),
   getEngagementsUpdateEngagementDatesMockHandler(),
   getEngagementsUpdateEngagementLengthMockHandler(),
+  getEngagementsGetEngagementMockHandler(),
+  getEngagementsDeleteEngagementMockHandler(),
   getEngagementsLogProgressMockHandler(),
   getEngagementsListProgressLogsMockHandler(),
   getEngagementsUpdateProgressLogMockHandler(),

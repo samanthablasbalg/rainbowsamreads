@@ -552,14 +552,22 @@
         "tags": [
           "engagements"
         ],
-        "summary": "Create Engagement",
-        "operationId": "engagements-create_engagement",
+        "summary": "Write Engagement",
+        "operationId": "engagements-write_engagement",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/EngagementCreate"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/EngagementCreate"
+                  },
+                  {
+                    "$ref": "#/components/schemas/EngagementStatusUpdate"
+                  }
+                ],
+                "title": "Payload"
               }
             }
           }
@@ -567,6 +575,16 @@
         "responses": {
           "201": {
             "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementRead"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Engagement status updated successfully.",
             "content": {
               "application/json": {
                 "schema": {
@@ -617,134 +635,6 @@
                 }
               }
             }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/engagements/{engagement_id}": {
-      "patch": {
-        "tags": [
-          "engagements"
-        ],
-        "summary": "Update Engagement Status",
-        "operationId": "engagements-update_engagement_status",
-        "parameters": [
-          {
-            "name": "engagement_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Engagement Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EngagementStatusUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EngagementRead"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "engagements"
-        ],
-        "summary": "Get Engagement",
-        "operationId": "engagements-get_engagement",
-        "parameters": [
-          {
-            "name": "engagement_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Engagement Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EngagementRead"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "engagements"
-        ],
-        "summary": "Delete Engagement",
-        "operationId": "engagements-delete_engagement",
-        "parameters": [
-          {
-            "name": "engagement_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Engagement Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -851,6 +741,83 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/engagements/{engagement_id}": {
+      "get": {
+        "tags": [
+          "engagements"
+        ],
+        "summary": "Get Engagement",
+        "operationId": "engagements-get_engagement",
+        "parameters": [
+          {
+            "name": "engagement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Engagement Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "engagements"
+        ],
+        "summary": "Delete Engagement",
+        "operationId": "engagements-delete_engagement",
+        "parameters": [
+          {
+            "name": "engagement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Engagement Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -2288,14 +2255,13 @@
       },
       "EngagementStatusUpdate": {
         "properties": {
-          "status": {
+          "id": {
             "type": "string",
-            "enum": [
-              "reading",
-              "finished",
-              "dnf"
-            ],
-            "title": "Status"
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReadingStatus"
           },
           "effective_on": {
             "anyOf": [
@@ -2320,12 +2286,13 @@
             ]
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
+          "id",
           "status"
         ],
-        "title": "EngagementStatusUpdate",
-        "description": "`unit` picks the ruler the closing log is written on when finishing a read that\nhas been going in more than one. Defaults to the one the read is already on."
+        "title": "EngagementStatusUpdate"
       },
       "Format": {
         "type": "string",
@@ -2621,7 +2588,6 @@
       "ReadingStatus": {
         "type": "string",
         "enum": [
-          "interested",
           "tbr",
           "reading",
           "finished",

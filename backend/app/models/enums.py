@@ -33,7 +33,6 @@ class Format(enum.StrEnum):
 
 
 class ReadingStatus(enum.StrEnum):
-    interested = "interested"
     tbr = "tbr"
     reading = "reading"
     finished = "finished"

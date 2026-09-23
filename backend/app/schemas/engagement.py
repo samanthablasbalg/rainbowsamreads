@@ -33,11 +33,13 @@ class EngagementCreate(BaseModel):
 
 
 class EngagementStatusUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: uuid.UUID
+    status: ReadingStatus
+    effective_on: datetime.date | None = None
     """`unit` picks the ruler the closing log is written on when finishing a read that
     has been going in more than one. Defaults to the one the read is already on."""
-
-    status: Literal["reading", "finished", "dnf"]
-    effective_on: datetime.date | None = None
     unit: LogUnit | None = None
 
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.crud import engagement_crud
@@ -25,43 +25,48 @@ from ._shared import reload
 router = APIRouter()
 
 
-@router.post("", response_model=EngagementRead, status_code=status.HTTP_201_CREATED)
-def create_engagement(
-    payload: EngagementCreate,
+@router.post(
+    "",
+    response_model=EngagementRead,
+    responses={
+        200: {
+            "model": EngagementRead,
+            "description": "Engagement status updated successfully.",
+        },
+    },
+    status_code=status.HTTP_201_CREATED,
+)
+def write_engagement(
+    response: Response,
+    payload: EngagementCreate | EngagementStatusUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> EngagementRead:
-    engagement = lifecycle_service.create_engagement(
-        db,
-        book_id=payload.book_id,
-        edition_format=payload.edition_format,
-        status=ReadingStatus(payload.status),
-        user_id=current_user.id,
-        edition_length=payload.edition_length,
-        length_override=payload.length_override,
-        started_on=payload.started_on,
-        finished_on=payload.finished_on,
-    )
-    db.commit()
-    return EngagementRead.model_validate(reload(db, engagement.id))
-
-
-@router.patch("/{engagement_id}", response_model=EngagementRead)
-def update_engagement_status(
-    engagement_id: uuid.UUID,
-    payload: EngagementStatusUpdate,
-    db: Session = Depends(get_db),
-) -> EngagementRead:
-    engagement = engagement_crud.get_or_raise(db, engagement_id)
-    lifecycle_service.update_status(
-        db,
-        engagement,
-        new_status=ReadingStatus(payload.status),
-        effective_on=payload.effective_on,
-        unit=payload.unit,
-    )
-    db.commit()
-    return EngagementRead.model_validate(reload(db, engagement_id))
+    if isinstance(payload, EngagementCreate):
+        engagement = lifecycle_service.create_engagement(
+            db,
+            book_id=payload.book_id,
+            edition_format=payload.edition_format,
+            status=ReadingStatus(payload.status),
+            user_id=current_user.id,
+            edition_length=payload.edition_length,
+            length_override=payload.length_override,
+            started_on=payload.started_on,
+            finished_on=payload.finished_on,
+        )
+        db.commit()
+        return EngagementRead.model_validate(reload(db, engagement.id))
+    else:
+        engagement = lifecycle_service.update_engagement_status(
+            db,
+            engagement_id=payload.id,
+            effective_on=payload.effective_on,
+            new_status=ReadingStatus(payload.status),
+            unit=payload.unit,
+        )
+        db.commit()
+        response.status_code = status.HTTP_200_OK
+        return EngagementRead.model_validate(reload(db, engagement.id))
 
 
 @router.patch("/{engagement_id}/dates", response_model=EngagementRead)

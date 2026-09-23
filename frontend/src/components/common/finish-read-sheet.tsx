@@ -5,12 +5,12 @@ import { errorDetail, type DetailError } from '@/api/error-detail';
 import { getBooksListBookEngagementsQueryKey } from '@/api/generated/books/books';
 import {
   getEngagementsListEngagementsQueryKey,
-  useEngagementsUpdateEngagementStatus,
+  useEngagementsWriteEngagement,
 } from '@/api/generated/engagements/engagements';
 import {
-  EngagementStatusUpdateStatus,
   Format,
   LogUnit,
+  ReadingStatus,
   type EngagementRead,
 } from '@/api/generated/readingTracker.schemas';
 import { CoverImage } from '@/components/common/cover-image';
@@ -160,7 +160,7 @@ function useFinishReadForm(engagement: EngagementRead, onClose: () => void) {
 
   const queryClient = useQueryClient();
 
-  const updateStatus = useEngagementsUpdateEngagementStatus<DetailError>({
+  const updateStatus = useEngagementsWriteEngagement<DetailError>({
     mutation: {
       onSuccess: async () => {
         await Promise.all([
@@ -193,9 +193,9 @@ function useFinishReadForm(engagement: EngagementRead, onClose: () => void) {
     if (!canFinish) return;
     setError(null);
     updateStatus.mutate({
-      engagementId: engagement.id,
       data: {
-        status: EngagementStatusUpdateStatus.finished,
+        id: engagement.id,
+        status: ReadingStatus.finished,
         effective_on: finishedOn,
         ...(unit !== null && { unit }),
       },

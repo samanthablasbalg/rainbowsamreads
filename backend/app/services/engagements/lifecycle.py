@@ -188,6 +188,8 @@ def _closing_unit(engagement: Engagement, unit: LogUnit | None) -> LogUnit:
 
 
 def _transition_to_reading(db: Session, engagement: Engagement) -> None:
+    engagement.status = ReadingStatus.reading
+
     latest = latest_log(engagement.progress_logs)
     if latest is not None and latest.generated_by_finish:
         progress_log_crud.delete(db, latest)
@@ -202,6 +204,9 @@ def _transition_to_finished(
     effective_on: datetime.date,
     unit: LogUnit | None,
 ) -> None:
+    engagement.status = ReadingStatus.finished
+    engagement.finished_on = effective_on
+
     latest = latest_log(engagement.progress_logs)
     if latest is not None and effective_on < latest.logged_on:
         raise ConflictError("finished_on cannot be before the latest progress log.")
@@ -211,8 +216,6 @@ def _transition_to_finished(
         and effective_on < engagement.started_on
     ):
         raise ConflictError("finished_on cannot be before started_on.")
-
-    engagement.finished_on = effective_on
 
     unit = _closing_unit(engagement, unit)
     is_audio = unit == LogUnit.minutes
@@ -245,6 +248,8 @@ def _transition_to_dnf(
     effective_on: datetime.date | None,
     resolved_on: datetime.date,
 ) -> None:
+    engagement.status = ReadingStatus.dnf
+
     latest = latest_log(engagement.progress_logs)
     if latest is None:
         engagement.abandoned_on = resolved_on
@@ -254,35 +259,42 @@ def _transition_to_dnf(
     engagement.abandoned_on = effective_on or latest.logged_on
 
 
-def update_status(
+def update_engagement_status(
     db: Session,
-    engagement: Engagement,
-    *,
+    engagement_id: uuid.UUID,
     new_status: ReadingStatus,
-    effective_on: datetime.date | None,
+    effective_on: datetime.date | None = None,
     unit: LogUnit | None = None,
-) -> None:
-    if new_status == engagement.status:
-        return
-
-    if new_status == ReadingStatus.reading:
-        _reject_duplicate_reading(db, engagement)
-        if not engagement.progress_logs:
-            raise InvalidOperationError(
-                "An engagement without progress logs cannot be returned to reading."
-            )
+) -> Engagement:
+    engagement = engagement_crud.get_or_raise(db, engagement_id)
+    if engagement.status == new_status:
+        return engagement
 
     resolved_on = effective_on or datetime.date.today()
     reject_future_date(resolved_on)
 
-    engagement.status = new_status
-    match new_status:
+    match engagement.status:
         case ReadingStatus.reading:
-            _transition_to_reading(db, engagement)
-        case ReadingStatus.finished:
-            _transition_to_finished(db, engagement, resolved_on, unit)
-        case ReadingStatus.dnf:
-            _transition_to_dnf(engagement, effective_on, resolved_on)
+            if new_status == ReadingStatus.finished:
+                _transition_to_finished(db, engagement, resolved_on, unit)
+            elif new_status == ReadingStatus.dnf:
+                _transition_to_dnf(engagement, effective_on, resolved_on)
+        case ReadingStatus.finished | ReadingStatus.dnf:
+            if new_status == ReadingStatus.reading:
+                _reject_duplicate_reading(db, engagement)
+                if not engagement.progress_logs:
+                    raise InvalidOperationError(
+                        "An engagement without progress logs "
+                        "cannot be returned to reading."
+                    )
+                _transition_to_reading(db, engagement)
+            else:
+                raise InvalidOperationError(
+                    "A finished or abandoned engagement cannot be changed "
+                    "to that status again."
+                )
+
+    return engagement
 
 
 def apply_date_change(

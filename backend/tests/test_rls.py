@@ -4,6 +4,7 @@ import datetime
 import uuid
 from collections.abc import Callable
 from decimal import Decimal
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -80,11 +81,13 @@ def _seed_owned_graph(
     owner_db.commit()
 
 
-def test_personal_tables_isolate_by_current_user(
+@pytest.mark.parametrize("model", OWNED_MODELS, ids=lambda model: model.__tablename__)
+def test_personal_table_isolates_by_current_user(
     client: TestClient,
     owner_db: Session,
     app_session: Callable[[uuid.UUID], Session],
     seed_user: User,
+    model: type[Any],
 ) -> None:
     book_id = uuid.UUID(_create_book(client)["id"])
     edition_id = (
@@ -102,9 +105,8 @@ def test_personal_tables_isolate_by_current_user(
     _seed_owned_graph(owner_db, user_y.id, book_id, edition_id)
 
     session_x = app_session(seed_user.id)
-    for model in OWNED_MODELS:
-        user_ids = session_x.execute(select(model.user_id)).scalars().all()
-        assert user_ids == [seed_user.id]
+    user_ids = session_x.execute(select(model.user_id)).scalars().all()
+    assert user_ids == [seed_user.id]
 
 
 def test_insert_claiming_another_users_id_is_rejected(
@@ -123,11 +125,19 @@ def test_insert_claiming_another_users_id_is_rejected(
     session_x.rollback()
 
 
-def test_reference_tables_readable_regardless_of_current_user(
+@pytest.mark.parametrize(
+    "user_index",
+    [
+        pytest.param(0, id="seed-user"),
+        pytest.param(1, id="other-user"),
+    ],
+)
+def test_reference_tables_readable_by_current_user(
     client: TestClient,
     owner_db: Session,
     app_session: Callable[[uuid.UUID], Session],
     seed_user: User,
+    user_index: int,
 ) -> None:
     book_id = uuid.UUID(_create_book(client)["id"])
 
@@ -135,13 +145,13 @@ def test_reference_tables_readable_regardless_of_current_user(
     owner_db.add(user_y)
     owner_db.commit()
 
-    for user_id in (seed_user.id, user_y.id):
-        session = app_session(user_id)
-        assert session.get(Book, book_id) is not None
-        assert session.execute(select(Author)).scalars().first() is not None
-        assert (
-            session.execute(select(Edition).where(Edition.book_id == book_id))
-            .scalars()
-            .first()
-            is not None
-        )
+    user_ids = (seed_user.id, user_y.id)
+    session = app_session(user_ids[user_index])
+    assert session.get(Book, book_id) is not None
+    assert session.execute(select(Author)).scalars().first() is not None
+    assert (
+        session.execute(select(Edition).where(Edition.book_id == book_id))
+        .scalars()
+        .first()
+        is not None
+    )
