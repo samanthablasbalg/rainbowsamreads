@@ -202,6 +202,9 @@ def _transition_to_finished(
     effective_on: datetime.date,
     unit: LogUnit | None,
 ) -> None:
+    engagement.status = ReadingStatus.finished
+    engagement.finished_on = effective_on
+
     latest = latest_log(engagement.progress_logs)
     if latest is not None and effective_on < latest.logged_on:
         raise ConflictError("finished_on cannot be before the latest progress log.")
@@ -211,8 +214,6 @@ def _transition_to_finished(
         and effective_on < engagement.started_on
     ):
         raise ConflictError("finished_on cannot be before started_on.")
-
-    engagement.finished_on = effective_on
 
     unit = _closing_unit(engagement, unit)
     is_audio = unit == LogUnit.minutes
@@ -252,6 +253,41 @@ def _transition_to_dnf(
     if effective_on is not None and effective_on < latest.logged_on:
         raise ConflictError("abandoned_on cannot be before the latest progress log.")
     engagement.abandoned_on = effective_on or latest.logged_on
+
+
+# Temporary name. Will rename to update_status once refactor is complete.
+def update_engagement(
+    db: Session,
+    engagement_id: uuid.UUID,
+    new_status: ReadingStatus,
+    effective_on: datetime.date | None = None,
+    unit: LogUnit | None = None,
+) -> Engagement:
+    engagement = engagement_crud.get_or_raise(db, engagement_id)
+    if engagement.status == new_status:
+        return engagement
+
+    match engagement.status:
+        case ReadingStatus.reading:
+            if new_status == ReadingStatus.finished:
+                _transition_to_finished(
+                    db, engagement, effective_on or datetime.date.today(), unit
+                )
+            elif new_status == ReadingStatus.dnf:
+                _transition_to_dnf(
+                    engagement, effective_on, effective_on or datetime.date.today()
+                )
+        case ReadingStatus.finished | ReadingStatus.dnf:
+            if new_status == ReadingStatus.reading:
+                _reject_duplicate_reading(db, engagement)
+                _transition_to_reading(db, engagement)
+            else:
+                raise InvalidOperationError(
+                    "A finished or abandoned engagement cannot be changed "
+                    "to that status again."
+                )
+
+    return engagement
 
 
 def update_status(

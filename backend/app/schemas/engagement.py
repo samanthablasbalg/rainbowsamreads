@@ -32,6 +32,15 @@ class EngagementCreate(BaseModel):
         return self
 
 
+# Temporary name. Will rename to EngagementStatusUpdate once refactor is complete.
+class EngagementTransitionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: uuid.UUID
+    status: ReadingStatus
+    effective_on: datetime.date | None = None
+
+
 class EngagementStatusUpdate(BaseModel):
     """`unit` picks the ruler the closing log is written on when finishing a read that
     has been going in more than one. Defaults to the one the read is already on."""

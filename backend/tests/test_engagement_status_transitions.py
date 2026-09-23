@@ -115,15 +115,16 @@ def test_manual_final_log_maintained_transitioning_back_to_reading(
 # --- Transition to finished ---
 
 
-def test_patch_to_finished_stamps_finished_on(client: TestClient) -> None:
+def test_transition_to_finished_stamps_finished_on(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
 
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}", json={"status": "finished"}
+    response = client.post(
+        "/api/engagements", json={"id": engagement["id"], "status": "finished"}
     )
     assert response.status_code == 200
     data = response.json()
+    assert data["id"] == engagement["id"]
     assert data["status"] == "finished"
     assert data["finished_on"] is not None
     assert data["started_on"] == engagement["started_on"]

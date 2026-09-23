@@ -244,6 +244,12 @@ export interface EngagementStatusUpdate {
   unit?: LogUnit | null;
 }
 
+export interface EngagementTransitionRequest {
+  id: string;
+  status: ReadingStatus;
+  effective_on?: string | null;
+}
+
 export type ValidationErrorCtx = { [key: string]: unknown };
 
 export interface ValidationError {

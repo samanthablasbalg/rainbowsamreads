@@ -18,6 +18,7 @@ from app.schemas.engagement import (
     EngagementLengthUpdate,
     EngagementRead,
     EngagementStatusUpdate,
+    EngagementTransitionRequest,
 )
 from app.schemas.progress_log import (
     MinuteProgressLogRead,
@@ -45,6 +46,7 @@ __all__ = [
     "EngagementLengthUpdate",
     "EngagementRead",
     "EngagementStatusUpdate",
+    "EngagementTransitionRequest",
     "MinuteProgressLogRead",
     "PageProgressLogRead",
     "ProgressLogCreate",

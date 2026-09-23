@@ -30,6 +30,7 @@ import type {
   EngagementLengthUpdate,
   EngagementRead,
   EngagementStatusUpdate,
+  EngagementTransitionRequest,
   EngagementsListEngagementsParams,
   HTTPValidationError,
   MinuteProgressLogRead,
@@ -63,7 +64,7 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
  * @summary Create Engagement
  */
 export const engagementsCreateEngagement = (
-  engagementCreate: EngagementCreate,
+  engagementCreateEngagementTransitionRequest: EngagementCreate | EngagementTransitionRequest,
   options?: SecondParameter<typeof customInstance>,
   signal?: AbortSignal
 ) => {
@@ -72,7 +73,7 @@ export const engagementsCreateEngagement = (
       url: `/api/engagements`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      data: engagementCreate,
+      data: engagementCreateEngagementTransitionRequest,
       signal,
     },
     options
@@ -86,14 +87,14 @@ export const getEngagementsCreateEngagementMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof engagementsCreateEngagement>>,
     TError,
-    { data: EngagementCreate },
+    { data: EngagementCreate | EngagementTransitionRequest },
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof engagementsCreateEngagement>>,
   TError,
-  { data: EngagementCreate },
+  { data: EngagementCreate | EngagementTransitionRequest },
   TContext
 > => {
   const mutationKey = ['engagementsCreateEngagement'];
@@ -105,7 +106,7 @@ export const getEngagementsCreateEngagementMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof engagementsCreateEngagement>>,
-    { data: EngagementCreate }
+    { data: EngagementCreate | EngagementTransitionRequest }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -118,7 +119,8 @@ export const getEngagementsCreateEngagementMutationOptions = <
 export type EngagementsCreateEngagementMutationResult = NonNullable<
   Awaited<ReturnType<typeof engagementsCreateEngagement>>
 >;
-export type EngagementsCreateEngagementMutationBody = EngagementCreate;
+export type EngagementsCreateEngagementMutationBody =
+  EngagementCreate | EngagementTransitionRequest;
 export type EngagementsCreateEngagementMutationError = ErrorType<HTTPValidationError>;
 
 /**
@@ -132,7 +134,7 @@ export const useEngagementsCreateEngagement = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof engagementsCreateEngagement>>,
       TError,
-      { data: EngagementCreate },
+      { data: EngagementCreate | EngagementTransitionRequest },
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -141,7 +143,7 @@ export const useEngagementsCreateEngagement = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof engagementsCreateEngagement>>,
   TError,
-  { data: EngagementCreate },
+  { data: EngagementCreate | EngagementTransitionRequest },
   TContext
 > => {
   return useMutation(getEngagementsCreateEngagementMutationOptions(options), queryClient);

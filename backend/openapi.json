@@ -559,7 +559,15 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/EngagementCreate"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/EngagementCreate"
+                  },
+                  {
+                    "$ref": "#/components/schemas/EngagementTransitionRequest"
+                  }
+                ],
+                "title": "Payload"
               }
             }
           }
@@ -2326,6 +2334,37 @@
         ],
         "title": "EngagementStatusUpdate",
         "description": "`unit` picks the ruler the closing log is written on when finishing a read that\nhas been going in more than one. Defaults to the one the read is already on."
+      },
+      "EngagementTransitionRequest": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReadingStatus"
+          },
+          "effective_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective On"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "status"
+        ],
+        "title": "EngagementTransitionRequest"
       },
       "Format": {
         "type": "string",
