@@ -27,7 +27,6 @@ import { statusUpdateBody } from '@/utils/status';
 import { LogReadingSheet } from './log-reading-sheet';
 
 const STATUS_LABELS: Record<ReadingStatus, string> = {
-  interested: 'Interested',
   tbr: 'To read',
   reading: 'Reading',
   paused: 'Paused',

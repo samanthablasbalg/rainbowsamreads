@@ -62,7 +62,7 @@ export function ReadHistory({ engagementId }: { engagementId: string }) {
 }
 
 function BackLink({ status }: { status: ReadingStatus }) {
-  // A read can also be tbr or interested, neither of which this page is reachable from.
+  // A read can also be tbr, which this page is not reachable from.
   const shelf = STATUSES[status as keyof typeof STATUSES] ?? STATUSES[ReadingStatus.reading];
   const label = status === ReadingStatus.reading ? 'Currently reading' : shelf.label;
 

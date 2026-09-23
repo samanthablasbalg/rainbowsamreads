@@ -135,7 +135,6 @@ describe('BookDetail', () => {
     expect(await screen.findByRole('menuitem', { name: 'Reading' })).toBeVisible();
     expect(screen.getByRole('menuitem', { name: 'Finished' })).toBeVisible();
     expect(screen.getByRole('menuitem', { name: 'DNF' })).toBeVisible();
-    expect(screen.queryByRole('menuitem', { name: 'Interested' })).not.toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: 'To read' })).not.toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: 'Paused' })).not.toBeInTheDocument();
   });

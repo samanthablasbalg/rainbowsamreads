@@ -2588,7 +2588,6 @@
       "ReadingStatus": {
         "type": "string",
         "enum": [
-          "interested",
           "tbr",
           "reading",
           "finished",

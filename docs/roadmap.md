@@ -54,8 +54,8 @@ is mostly ready for them.
 - **Multi-format and non-linear progress** — one read spanning audio, print, and ebook with a single
   combined completion; anthologies and omnibuses tracked story-by-story without wrecking the
   percentage.
-- **TBR and Interested pages** — adding and viewing books at the earlier lifecycle stages, including
-  declaring an intended reading format before a read begins.
+- **TBR pages** — adding and viewing books before reading begins, including declaring an intended
+  reading format before a read begins.
 - **Fuzzy dates in the UI** — recording and displaying month- or year-precision dates ("I read this
   in 1994") for backfilling older reads.
 - **Ownership** — tracking owned copies of a book independently of whether it's been read, with an

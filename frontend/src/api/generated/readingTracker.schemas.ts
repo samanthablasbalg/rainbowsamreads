@@ -183,7 +183,6 @@ export interface EngagementLengthUpdate {
 export type ReadingStatus = (typeof ReadingStatus)[keyof typeof ReadingStatus];
 
 export const ReadingStatus = {
-  interested: 'interested',
   tbr: 'tbr',
   reading: 'reading',
   finished: 'finished',
