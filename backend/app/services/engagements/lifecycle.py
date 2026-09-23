@@ -188,6 +188,8 @@ def _closing_unit(engagement: Engagement, unit: LogUnit | None) -> LogUnit:
 
 
 def _transition_to_reading(db: Session, engagement: Engagement) -> None:
+    engagement.status = ReadingStatus.reading
+
     latest = latest_log(engagement.progress_logs)
     if latest is not None and latest.generated_by_finish:
         progress_log_crud.delete(db, latest)
@@ -282,6 +284,11 @@ def update_engagement(
         case ReadingStatus.finished | ReadingStatus.dnf:
             if new_status == ReadingStatus.reading:
                 _reject_duplicate_reading(db, engagement)
+                if not engagement.progress_logs:
+                    raise InvalidOperationError(
+                        "An engagement without progress logs "
+                        "cannot be returned to reading."
+                    )
                 _transition_to_reading(db, engagement)
             else:
                 raise InvalidOperationError(

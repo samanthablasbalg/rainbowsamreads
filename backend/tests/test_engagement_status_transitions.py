@@ -33,14 +33,14 @@ def test_patch_completed_engagement_with_logs_back_to_reading_clears_end_date(
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
     _log_progress(client, engagement["id"], 100)
-    completed = client.patch(
-        f"/api/engagements/{engagement['id']}",
-        json={"status": completion.status},
+    completed = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": completion.status},
     ).json()
     assert completed[completion.end_date_field] is not None
 
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}", json={"status": "reading"}
+    response = client.post(
+        "/api/engagements", json={"id": engagement["id"], "status": "reading"}
     )
 
     assert response.status_code == 200
@@ -56,8 +56,8 @@ def test_patch_engagement_with_no_logs_back_to_reading_returns_422(
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"], status=completion.status)
 
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}", json={"status": "reading"}
+    response = client.post(
+        "/api/engagements", json={"id": engagement["id"], "status": "reading"}
     )
     assert response.status_code == 422
 
@@ -69,16 +69,16 @@ def test_generated_finish_log_removed_transitioning_back_to_reading(
     _, engagement_id = _read_with_length(client, ruler, 300)
     original_log = ruler.log_progress(client, engagement_id, 100)
 
-    finished = client.patch(
-        f"/api/engagements/{engagement_id}", json={"status": "finished"}
+    finished = client.post(
+        "/api/engagements", json={"id": engagement_id, "status": "finished"}
     )
     assert finished.status_code == 200
     finished_logs = client.get(f"/api/engagements/{engagement_id}/progress-logs").json()
     assert len(finished_logs) == 2
     assert finished_logs[-1][ruler.log_end_field] == 300
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}", json={"status": "reading"}
+    response = client.post(
+        "/api/engagements", json={"id": engagement_id, "status": "reading"}
     )
     assert response.status_code == 200
     assert response.json()[ruler.resume_field] == 100
@@ -96,13 +96,13 @@ def test_manual_final_log_maintained_transitioning_back_to_reading(
     _, engagement_id = _read_with_length(client, ruler, 300)
     manual_final_log = ruler.log_progress(client, engagement_id, 300)
 
-    finished = client.patch(
-        f"/api/engagements/{engagement_id}", json={"status": "finished"}
+    finished = client.post(
+        "/api/engagements", json={"id": engagement_id, "status": "finished"}
     )
     assert finished.status_code == 200
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}", json={"status": "reading"}
+    response = client.post(
+        "/api/engagements", json={"id": engagement_id, "status": "reading"}
     )
     assert response.status_code == 200
     assert response.json()[ruler.resume_field] == 300
