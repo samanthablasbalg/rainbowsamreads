@@ -271,16 +271,15 @@ def update_engagement(
     if engagement.status == new_status:
         return engagement
 
+    resolved_on = effective_on or datetime.date.today()
+    reject_future_date(resolved_on)
+
     match engagement.status:
         case ReadingStatus.reading:
             if new_status == ReadingStatus.finished:
-                _transition_to_finished(
-                    db, engagement, effective_on or datetime.date.today(), unit
-                )
+                _transition_to_finished(db, engagement, resolved_on, unit)
             elif new_status == ReadingStatus.dnf:
-                _transition_to_dnf(
-                    engagement, effective_on, effective_on or datetime.date.today()
-                )
+                _transition_to_dnf(engagement, effective_on, resolved_on)
         case ReadingStatus.finished | ReadingStatus.dnf:
             if new_status == ReadingStatus.reading:
                 _reject_duplicate_reading(db, engagement)

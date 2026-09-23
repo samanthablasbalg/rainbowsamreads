@@ -414,42 +414,42 @@ def test_patch_to_dnf_preserves_completion_pct(client: TestClient) -> None:
 # --- Transition-wide behavior ---
 
 
-def test_patch_status_with_future_effective_on_returns_422(
+def test_post_status_with_future_effective_on_returns_422(
     client: TestClient,
 ) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
     future = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
 
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}",
-        json={"status": "finished", "effective_on": future},
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "finished", "effective_on": future},
     )
     assert response.status_code == 422
 
 
-def test_patch_unknown_engagement_returns_404(client: TestClient) -> None:
-    response = client.patch(
-        f"/api/engagements/{uuid.uuid4()}", json={"status": "finished"}
+def test_post_unknown_engagement_returns_404(client: TestClient) -> None:
+    response = client.post(
+        "/api/engagements", json={"id": str(uuid.uuid4()), "status": "finished"}
     )
     assert response.status_code == 404
 
 
-def test_patch_invalid_status_returns_422(client: TestClient) -> None:
+def test_post_invalid_status_returns_422(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}", json={"status": "interested"}
+    response = client.post(
+        "/api/engagements", json={"id": engagement["id"], "status": "bogus"}
     )
     assert response.status_code == 422
 
 
-def test_patch_same_status_is_idempotent(client: TestClient) -> None:
+def test_post_same_status_is_idempotent(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
 
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}", json={"status": "reading"}
+    response = client.post(
+        "/api/engagements", json={"id": engagement["id"], "status": "reading"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -463,14 +463,14 @@ def test_patch_same_status_is_idempotent(client: TestClient) -> None:
         ("finished", "reading"),
     ],
 )
-def test_patch_engagement_backwards_conflicts_when_another_active_engagement_exists(
+def test_post_engagement_backwards_conflicts_when_another_active_engagement_exists(
     client: TestClient, old_status: str, new_status: str
 ) -> None:
     book = _create_book(client)
     eng_a = _create_engagement(client, book["id"], status=old_status)
     _create_engagement(client, book["id"], status=new_status)
 
-    response = client.patch(
-        f"/api/engagements/{eng_a['id']}", json={"status": new_status}
+    response = client.post(
+        "/api/engagements", json={"id": eng_a["id"], "status": new_status}
     )
     assert response.status_code == 409
