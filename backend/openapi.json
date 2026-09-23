@@ -2356,6 +2356,16 @@
               }
             ],
             "title": "Effective On"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LogUnit"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,

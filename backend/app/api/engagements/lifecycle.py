@@ -53,6 +53,7 @@ def create_engagement(
             engagement_id=payload.id,
             effective_on=payload.effective_on,
             new_status=ReadingStatus(payload.status),
+            unit=payload.unit,
         )
         db.commit()
         response.status_code = status.HTTP_200_OK

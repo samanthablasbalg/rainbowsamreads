@@ -162,9 +162,9 @@ def test_finish_closes_out_on_the_ruler_it_was_given(
     engagement = _mixed_engagement(client)
     _log_progress(client, engagement["id"], 220)
 
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}",
-        json={"status": "finished", "unit": ruler.unit},
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "finished", "unit": ruler.unit},
     )
     assert response.status_code == 200
     assert response.json()["completion_pct"] == 100
@@ -238,9 +238,9 @@ def test_finish_after_cross_format_recoverage_closes_out_from_the_frontier(
     assert state["frontier_page"] == 100
     assert state["frontier_minute"] == 120
 
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}",
-        json={"status": "finished", "unit": "minutes"},
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "finished", "unit": "minutes"},
     )
     assert response.status_code == 200
 
