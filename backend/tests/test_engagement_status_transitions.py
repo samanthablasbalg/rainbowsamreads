@@ -115,7 +115,7 @@ def test_manual_final_log_maintained_transitioning_back_to_reading(
 # --- Transition to finished ---
 
 
-def test_transition_to_finished_stamps_finished_on(client: TestClient) -> None:
+def test_finish_stamps_finished_on(client: TestClient) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
 
@@ -131,14 +131,14 @@ def test_transition_to_finished_stamps_finished_on(client: TestClient) -> None:
 
 
 @pytest.mark.parametrize("ruler", RULERS)
-def test_patch_to_finished_catches_up_to_the_corrected_length(
+def test_finish_catches_up_to_the_corrected_length(
     client: TestClient, ruler: Ruler
 ) -> None:
     _, engagement_id = _read_with_length(client, ruler, 1100, length_override=1000)
     ruler.log_progress(client, engagement_id, 500)
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}", json={"status": "finished"}
+    response = client.post(
+        "/api/engagements", json={"id": engagement_id, "status": "finished"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -181,8 +181,8 @@ def test_finish_a_multi_format_read_without_a_unit_returns_422(
 ) -> None:
     engagement = _mixed_engagement(client)
 
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}", json={"status": "finished"}
+    response = client.post(
+        "/api/engagements", json={"id": engagement["id"], "status": "finished"}
     )
 
     assert response.status_code == 422
@@ -193,8 +193,8 @@ def test_finish_creates_final_progress_log(client: TestClient, ruler: Ruler) -> 
     _, engagement_id = _read_with_length(client, ruler, 300)
     ruler.log_progress(client, engagement_id, 150)
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}", json={"status": "finished"}
+    response = client.post(
+        "/api/engagements", json={"id": engagement_id, "status": "finished"}
     )
     assert response.status_code == 200
     assert response.json()["completion_pct"] == 100
@@ -214,8 +214,8 @@ def test_finish_does_not_duplicate_log_when_already_at_length(
     _, engagement_id = _read_with_length(client, ruler, 300)
     original_log = ruler.log_progress(client, engagement_id, 300)
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}", json={"status": "finished"}
+    response = client.post(
+        "/api/engagements", json={"id": engagement_id, "status": "finished"}
     )
     assert response.status_code == 200
 
@@ -275,28 +275,32 @@ def test_finish_effective_on_before_latest_log_returns_409(
     _, engagement_id = _read_with_length(client, ruler, 300, started_on="2026-01-01")
     ruler.log_progress(client, engagement_id, 150, logged_on="2026-01-20")
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}",
-        json={"status": "finished", "effective_on": "2026-01-15"},
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement_id, "status": "finished", "effective_on": "2026-01-15"},
     )
 
     assert response.status_code == 409
 
 
-def test_patch_to_finished_before_started_on_with_no_logs_returns_409(
+def test_finished_on_before_started_on_with_no_logs_returns_409(
     client: TestClient,
 ) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"], started_on="2026-06-01")
 
-    response = client.patch(
-        f"/api/engagements/{engagement['id']}",
-        json={"status": "finished", "effective_on": "2026-01-01"},
+    response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "finished",
+            "effective_on": "2026-01-01",
+        },
     )
     assert response.status_code == 409
 
 
-def test_patch_finished_to_finished_does_not_overwrite_date(
+def test_post_finished_to_finished_does_not_overwrite_date(
     client: TestClient,
 ) -> None:
     book = _create_book(client)
@@ -308,9 +312,13 @@ def test_patch_finished_to_finished_does_not_overwrite_date(
     assert first.status_code == 200
     assert first.json()["finished_on"] == "2026-05-01"
 
-    second = client.patch(
-        f"/api/engagements/{engagement['id']}",
-        json={"status": "finished", "effective_on": "2026-06-01"},
+    second = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "finished",
+            "effective_on": "2026-06-01",
+        },
     )
     assert second.status_code == 200
     assert second.json()["finished_on"] == "2026-05-01"
