@@ -12,7 +12,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   getEngagementsListEngagementsQueryKey,
   useEngagementsDeleteEngagement,
-  useEngagementsUpdateEngagementStatus,
+  useEngagementsWriteEngagement,
 } from '@/api/generated/engagements/engagements';
 import {
   EngagementStatusUpdateStatus,
@@ -60,7 +60,7 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
     queryClient.invalidateQueries({ queryKey: getEngagementsListEngagementsQueryKey() });
   }
 
-  const updateStatus = useEngagementsUpdateEngagementStatus({
+  const updateStatus = useEngagementsWriteEngagement({
     mutation: { onSuccess: invalidateEngagements },
   });
   const deleteEngagement = useEngagementsDeleteEngagement({
@@ -72,8 +72,10 @@ export function ReadingCard({ engagement }: { engagement: EngagementRead }) {
       deleteEngagement.mutate({ engagementId: engagement.id });
     } else if (pendingAction !== null) {
       updateStatus.mutate({
-        engagementId: engagement.id,
-        data: statusUpdateBody(EngagementStatusUpdateStatus[pendingAction]),
+        data: {
+          id: engagement.id,
+          ...statusUpdateBody(EngagementStatusUpdateStatus[pendingAction]),
+        },
       });
     }
     setPendingAction(null);

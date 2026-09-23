@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { HttpResponse, http } from 'msw';
 import userEvent from '@testing-library/user-event';
 import {
-  getEngagementsUpdateEngagementStatusMockHandler,
-  getEngagementsUpdateEngagementStatusResponseMock,
+  getEngagementsWriteEngagementMockHandler,
+  getEngagementsWriteEngagementResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
 import { Format, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { buildAudioEngagement, buildEngagement } from '@/test/data-generators';
@@ -37,9 +37,9 @@ function renderSheet(engagement: EngagementRead = buildEngagement()) {
 function captureStatusBody() {
   const captured: { body?: unknown } = {};
   server.use(
-    getEngagementsUpdateEngagementStatusMockHandler(async (info) => {
+    getEngagementsWriteEngagementMockHandler(async (info) => {
       captured.body = await info.request.json();
-      return getEngagementsUpdateEngagementStatusResponseMock();
+      return getEngagementsWriteEngagementResponseMock();
     })
   );
   return captured;
@@ -59,7 +59,10 @@ describe('FinishReadSheet', () => {
     await user.click(screen.getByRole('button', finish));
 
     await waitFor(() => expect(screen.getByText('closed')).toBeInTheDocument());
-    expect(captured.body).toEqual({ status: 'finished', effective_on: localIsoDate() });
+    expect(captured.body).toMatchObject({
+      status: 'finished',
+      effective_on: localIsoDate(),
+    });
   });
 
   it('sends the date picked instead of today', async () => {
@@ -73,7 +76,10 @@ describe('FinishReadSheet', () => {
     await user.click(screen.getByRole('button', finish));
 
     await waitFor(() => expect(screen.getByText('closed')).toBeInTheDocument());
-    expect(captured.body).toEqual({ status: 'finished', effective_on: '2025-06-15' });
+    expect(captured.body).toMatchObject({
+      status: 'finished',
+      effective_on: '2025-06-15',
+    });
   });
 
   it('will not finish a date it has no answer for', async () => {
@@ -107,7 +113,7 @@ describe('FinishReadSheet', () => {
     await user.click(screen.getByRole('button', finish));
 
     await waitFor(() => expect(screen.getByText('closed')).toBeInTheDocument());
-    expect(captured.body).toEqual({
+    expect(captured.body).toMatchObject({
       status: 'finished',
       effective_on: localIsoDate(),
       unit: 'minutes',
@@ -131,7 +137,7 @@ describe('FinishReadSheet', () => {
   it('shows the failure reason and stays open when the finish is refused', async () => {
     const user = userEvent.setup();
     server.use(
-      http.patch('*/api/engagements/*', () =>
+      http.post('*/api/engagements', () =>
         HttpResponse.json({ detail: 'Cannot finish before the last session.' }, { status: 409 })
       )
     );

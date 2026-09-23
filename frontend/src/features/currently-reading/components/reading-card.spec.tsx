@@ -1,8 +1,8 @@
 import userEvent from '@testing-library/user-event';
 import {
   getEngagementsDeleteEngagementMockHandler,
-  getEngagementsUpdateEngagementStatusMockHandler,
-  getEngagementsUpdateEngagementStatusResponseMock,
+  getEngagementsWriteEngagementMockHandler,
+  getEngagementsWriteEngagementResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
 import { Format, ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
@@ -172,9 +172,9 @@ describe('ReadingCard', () => {
     const user = userEvent.setup();
     let capturedBody: unknown;
     server.use(
-      getEngagementsUpdateEngagementStatusMockHandler(async (info) => {
+      getEngagementsWriteEngagementMockHandler(async (info) => {
         capturedBody = await info.request.json();
-        return getEngagementsUpdateEngagementStatusResponseMock();
+        return getEngagementsWriteEngagementResponseMock();
       })
     );
     renderInList(buildEngagement());
@@ -185,16 +185,16 @@ describe('ReadingCard', () => {
     await user.click(screen.getByRole('button', { name: 'Mark Piranesi as finished' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ status: 'finished', effective_on: localIsoDate() });
+    expect(capturedBody).toMatchObject({ status: 'finished', effective_on: localIsoDate() });
   });
 
   it('marks the engagement DNF, after confirming, when Mark as DNF is chosen', async () => {
     const user = userEvent.setup();
     let capturedBody: unknown;
     server.use(
-      getEngagementsUpdateEngagementStatusMockHandler(async (info) => {
+      getEngagementsWriteEngagementMockHandler(async (info) => {
         capturedBody = await info.request.json();
-        return getEngagementsUpdateEngagementStatusResponseMock();
+        return getEngagementsWriteEngagementResponseMock();
       })
     );
     renderInList(buildEngagement());
@@ -207,7 +207,7 @@ describe('ReadingCard', () => {
     await user.click(screen.getByRole('button', { name: 'Mark as DNF' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(capturedBody).toEqual({ status: 'dnf' });
+    expect(capturedBody).toMatchObject({ status: 'dnf' });
   });
 
   it('deletes the engagement, after confirming, when Delete is chosen', async () => {

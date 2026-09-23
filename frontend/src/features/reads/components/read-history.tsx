@@ -7,7 +7,7 @@ import {
   useEngagementsGetEngagementSuspense,
   useEngagementsUpdateEngagementDates,
   useEngagementsUpdateEngagementLength,
-  useEngagementsUpdateEngagementStatus,
+  useEngagementsWriteEngagement,
 } from '@/api/generated/engagements/engagements';
 import {
   EngagementStatusUpdateStatus,
@@ -123,7 +123,7 @@ function ReadHeader({
   const updateLength = useEngagementsUpdateEngagementLength<DetailError>({
     mutation: { onSuccess },
   });
-  const finishRead = useEngagementsUpdateEngagementStatus<DetailError>({
+  const finishRead = useEngagementsWriteEngagement<DetailError>({
     mutation: { onSuccess },
   });
 
@@ -132,8 +132,11 @@ function ReadHeader({
   function saveDate(field: keyof EngagementDatesUpdate, value: string) {
     return field === 'finished_on' && engagement.status === ReadingStatus.reading
       ? finishRead.mutateAsync({
-          engagementId: engagement.id,
-          data: { status: EngagementStatusUpdateStatus.finished, effective_on: value },
+          data: {
+            id: engagement.id,
+            status: EngagementStatusUpdateStatus.finished,
+            effective_on: value,
+          },
         })
       : updateDates.mutateAsync({ engagementId: engagement.id, data: { [field]: value } });
   }

@@ -11,7 +11,7 @@ import {
 import { getBooksListBookEngagementsQueryKey } from '@/api/generated/books/books';
 import {
   getEngagementsListEngagementsQueryKey,
-  useEngagementsUpdateEngagementStatus,
+  useEngagementsWriteEngagement,
 } from '@/api/generated/engagements/engagements';
 import { FinishReadSheet } from '@/components/common/finish-read-sheet';
 import { StarRating } from '@/components/common/star-rating';
@@ -72,7 +72,7 @@ export function BookMetadata({
   const [finishOpen, setFinishOpen] = useState(false);
 
   const queryClient = useQueryClient();
-  const updateStatus = useEngagementsUpdateEngagementStatus({
+  const updateStatus = useEngagementsWriteEngagement({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({
@@ -116,8 +116,7 @@ export function BookMetadata({
                       setAddOpen(true);
                     } else {
                       updateStatus.mutate({
-                        engagementId: current.id,
-                        data: statusUpdateBody(status),
+                        data: { id: current.id, ...statusUpdateBody(status) },
                       });
                     }
                   }}

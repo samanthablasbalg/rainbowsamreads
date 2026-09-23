@@ -5,7 +5,7 @@ import { errorDetail, type DetailError } from '@/api/error-detail';
 import { getBooksListBookEngagementsQueryKey } from '@/api/generated/books/books';
 import {
   getEngagementsListEngagementsQueryKey,
-  useEngagementsUpdateEngagementStatus,
+  useEngagementsWriteEngagement,
 } from '@/api/generated/engagements/engagements';
 import {
   EngagementStatusUpdateStatus,
@@ -160,7 +160,7 @@ function useFinishReadForm(engagement: EngagementRead, onClose: () => void) {
 
   const queryClient = useQueryClient();
 
-  const updateStatus = useEngagementsUpdateEngagementStatus<DetailError>({
+  const updateStatus = useEngagementsWriteEngagement<DetailError>({
     mutation: {
       onSuccess: async () => {
         await Promise.all([
@@ -193,8 +193,8 @@ function useFinishReadForm(engagement: EngagementRead, onClose: () => void) {
     if (!canFinish) return;
     setError(null);
     updateStatus.mutate({
-      engagementId: engagement.id,
       data: {
+        id: engagement.id,
         status: EngagementStatusUpdateStatus.finished,
         effective_on: finishedOn,
         ...(unit !== null && { unit }),

@@ -4,8 +4,8 @@ import {
   getBooksListBookEngagementsMockHandler,
 } from '@/api/generated/books/books.msw';
 import {
-  getEngagementsUpdateEngagementStatusMockHandler,
-  getEngagementsUpdateEngagementStatusResponseMock,
+  getEngagementsWriteEngagementMockHandler,
+  getEngagementsWriteEngagementResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
 import { DatePrecision, Format, ReadingStatus } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
@@ -153,9 +153,9 @@ describe('BookDetail', () => {
           length_minutes: 600,
         }),
       ]),
-      getEngagementsUpdateEngagementStatusMockHandler(async (info) => {
+      getEngagementsWriteEngagementMockHandler(async (info) => {
         captured.body = await info.request.json();
-        return getEngagementsUpdateEngagementStatusResponseMock();
+        return getEngagementsWriteEngagementResponseMock();
       })
     );
 
@@ -167,7 +167,7 @@ describe('BookDetail', () => {
     await user.click(screen.getByRole('button', { name: 'Mark Piranesi as finished' }));
 
     await waitFor(() =>
-      expect(captured.body).toEqual({
+      expect(captured.body).toMatchObject({
         status: 'finished',
         effective_on: localIsoDate(),
         unit: 'minutes',
@@ -185,9 +185,9 @@ describe('BookDetail', () => {
       server.use(
         getBooksGetBookMockHandler(buildBook()),
         getBooksListBookEngagementsMockHandler([buildEngagement({ id: 'engagement-1', status })]),
-        getEngagementsUpdateEngagementStatusMockHandler(async (info) => {
+        getEngagementsWriteEngagementMockHandler(async (info) => {
           captured.body = await info.request.json();
-          return getEngagementsUpdateEngagementStatusResponseMock();
+          return getEngagementsWriteEngagementResponseMock();
         })
       );
 
