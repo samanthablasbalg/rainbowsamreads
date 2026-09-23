@@ -144,8 +144,12 @@ export class ApiClient {
    *   when a test needs the finish date to sit on a seeded log rather than on today.
    */
   async markAsFinished(engagementId: string, effectiveOn?: string): Promise<void> {
-    await this.request.patch(`/api/engagements/${engagementId}`, {
-      data: { status: 'finished', ...(effectiveOn != null && { effective_on: effectiveOn }) },
+    await this.request.post(`/api/engagements`, {
+      data: {
+        id: engagementId,
+        status: 'finished',
+        ...(effectiveOn != null && { effective_on: effectiveOn }),
+      },
     });
   }
 
@@ -154,8 +158,8 @@ export class ApiClient {
    * @param engagementId - The engagement to DNF.
    */
   async markAsDnf(engagementId: string): Promise<void> {
-    await this.request.patch(`/api/engagements/${engagementId}`, {
-      data: { status: 'dnf' },
+    await this.request.post(`/api/engagements`, {
+      data: { id: engagementId, status: 'dnf' },
     });
   }
 
