@@ -305,9 +305,13 @@ def test_post_finished_to_finished_does_not_overwrite_date(
 ) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"], started_on="2026-04-01")
-    first = client.patch(
-        f"/api/engagements/{engagement['id']}",
-        json={"status": "finished", "effective_on": "2026-05-01"},
+    first = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "finished",
+            "effective_on": "2026-05-01",
+        },
     )
     assert first.status_code == 200
     assert first.json()["finished_on"] == "2026-05-01"
