@@ -113,16 +113,21 @@ def test_update_length_below_a_finished_reads_catch_up_entry_succeeds(
 
 
 @pytest.mark.parametrize("ruler", RULERS)
-def test_update_length_past_several_entries_returns_409(
+def test_write_engagement_length_past_several_entries_returns_409(
     client: TestClient, ruler: Ruler
 ) -> None:
     _, engagement_id = _read_with_length(client, ruler, 1100)
     for position in (260, 280, 300):
         ruler.log_progress(client, engagement_id, position)
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={ruler.length_field: 250},
+    response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement_id,
+            "status": "reading",
+            "edition_format": ruler.edition_format,
+            "length_override": 250,
+        },
     )
 
     assert response.status_code == 409

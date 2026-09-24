@@ -66,17 +66,19 @@ def bind_format(
 ) -> EngagementEdition:
     edition = _edition_for_format(db, engagement, edition_format)
     binding = engagement_edition_crud.get(db, (engagement.id, edition.id))
-    if binding is not None:
-        return binding
-    return create_binding(
-        db,
-        engagement,
-        edition_id=edition.id,
-        edition_format=None,
-        origin_id=None,
-        length_override=length_override,
-        edition_length=None,
-    )
+    if binding is None:
+        return create_binding(
+            db,
+            engagement,
+            edition_id=edition.id,
+            edition_format=None,
+            origin_id=None,
+            length_override=length_override,
+            edition_length=None,
+        )
+    if length_override is not None:
+        _override_length(engagement, binding, length_override)
+    return binding
 
 
 def _edition_for_format(
@@ -116,13 +118,18 @@ def apply_length_change(
 def _correct_length(engagement: Engagement, fmt: Format, length: int) -> None:
     """Move the binding's length override, refusing a read that isn't bound in this
     format and a length that would strand a progress log past the end."""
-    # The correction lands on the binding, never on the edition: the edition is shared
-    # across users, so its length is not this reader's to move (ADR-0021).
     binding = engagement.binding_for(fmt)
     if binding is None:
         raise NotFoundError("This read has no binding in that format.")
+    _override_length(engagement, binding, length)
 
-    is_audio = fmt == Format.audio
+
+def _override_length(
+    engagement: Engagement, binding: EngagementEdition, length: int
+) -> None:
+    # The correction lands on the binding, never on the edition: the edition is shared
+    # across users, so its length is not this reader's to move (ADR-0021).
+    is_audio = binding.edition.format == Format.audio
     _pull_back_the_final_entry(engagement, is_audio, length)
     binding.length_override = length
 
