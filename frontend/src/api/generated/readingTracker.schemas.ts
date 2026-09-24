@@ -228,6 +228,7 @@ export interface EngagementStatusUpdate {
   id: string;
   status: ReadingStatus;
   edition_format?: Format | null;
+  length_override?: number | null;
   effective_on?: string | null;
   unit?: LogUnit | null;
 }

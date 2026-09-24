@@ -38,6 +38,7 @@ class EngagementStatusUpdate(BaseModel):
     id: uuid.UUID
     status: ReadingStatus
     edition_format: Format | None = None
+    length_override: int | None = Field(default=None, gt=0)
     effective_on: datetime.date | None = None
     """`unit` picks the ruler the closing log is written on when finishing a read that
     has been going in more than one. Defaults to the one the read is already on."""

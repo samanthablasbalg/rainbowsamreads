@@ -58,7 +58,11 @@ def create_binding(
 
 
 def bind_format(
-    db: Session, engagement: Engagement, edition_format: Format
+    db: Session,
+    engagement: Engagement,
+    edition_format: Format,
+    *,
+    length_override: int | None,
 ) -> EngagementEdition:
     edition = _edition_for_format(db, engagement, edition_format)
     binding = engagement_edition_crud.get(db, (engagement.id, edition.id))
@@ -70,7 +74,7 @@ def bind_format(
         edition_id=edition.id,
         edition_format=None,
         origin_id=None,
-        length_override=None,
+        length_override=length_override,
         edition_length=None,
     )
 

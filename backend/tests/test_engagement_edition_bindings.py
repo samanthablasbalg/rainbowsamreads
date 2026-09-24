@@ -42,17 +42,35 @@ def test_create_binding_by_edition_id_returns_201(client: TestClient) -> None:
     assert data["length_override"] is None
 
 
-def test_create_binding_carries_length_override(client: TestClient) -> None:
+@pytest.mark.parametrize(
+    ("source_ruler", "added_ruler"),
+    [
+        pytest.param(PAGES, MINUTES, id="audio"),
+        pytest.param(MINUTES, PAGES, id="pages"),
+    ],
+)
+def test_write_engagement_binding_carries_length_override(
+    client: TestClient,
+    source_ruler: Ruler,
+    added_ruler: Ruler,
+) -> None:
     book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-
-    response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_format": "audio", "length_override": 650},
+    engagement = _create_engagement(
+        client, book["id"], edition_format=source_ruler.edition_format
     )
 
-    assert response.status_code == 201
-    assert response.json()["length_override"] == 650
+    response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_format": added_ruler.edition_format,
+            "length_override": 650,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()[added_ruler.length_field] == 650
 
 
 @pytest.mark.parametrize(

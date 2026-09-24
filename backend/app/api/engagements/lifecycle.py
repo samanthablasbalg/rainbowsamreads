@@ -62,6 +62,7 @@ def write_engagement(
                 db,
                 engagement_crud.get_or_raise(db, payload.id),
                 payload.edition_format,
+                length_override=payload.length_override,
             )
         engagement = lifecycle_service.update_engagement_status(
             db,
