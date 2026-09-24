@@ -37,12 +37,20 @@ class EngagementStatusUpdate(BaseModel):
 
     id: uuid.UUID
     status: ReadingStatus
+    edition_id: uuid.UUID | None = None
     edition_format: Format | None = None
+    edition_length: int | None = Field(default=None, gt=0)
     length_override: int | None = Field(default=None, gt=0)
     effective_on: datetime.date | None = None
     """`unit` picks the ruler the closing log is written on when finishing a read that
     has been going in more than one. Defaults to the one the read is already on."""
     unit: LogUnit | None = None
+
+    @model_validator(mode="after")
+    def check_at_most_one_resolver(self) -> Self:
+        if self.edition_id is not None and self.edition_format is not None:
+            raise ValueError("Provide at most one of edition_id or edition_format")
+        return self
 
 
 class EngagementDatesUpdate(BaseModel):

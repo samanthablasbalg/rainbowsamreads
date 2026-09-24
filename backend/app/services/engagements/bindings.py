@@ -22,10 +22,7 @@ def create_binding(
     length_override: int | None,
     edition_length: int | None,
 ) -> EngagementEdition:
-    if edition_id is not None:
-        edition = edition_crud.get_or_raise(db, edition_id)
-    else:
-        edition = _edition_for_format(db, engagement, edition_format)
+    edition = _resolve_edition(db, engagement, edition_id, edition_format)
 
     if engagement_edition_crud.get(db, (engagement.id, edition.id)) is not None:
         raise ConflictError("This edition is already bound to this engagement.")
@@ -57,14 +54,16 @@ def create_binding(
     return binding
 
 
-def bind_format(
+def bind_edition(
     db: Session,
     engagement: Engagement,
-    edition_format: Format,
     *,
+    edition_id: uuid.UUID | None,
+    edition_format: Format | None,
+    edition_length: int | None,
     length_override: int | None,
 ) -> EngagementEdition:
-    edition = _edition_for_format(db, engagement, edition_format)
+    edition = _resolve_edition(db, engagement, edition_id, edition_format)
     binding = engagement_edition_crud.get(db, (engagement.id, edition.id))
     if binding is None:
         return create_binding(
@@ -74,11 +73,22 @@ def bind_format(
             edition_format=None,
             origin_id=None,
             length_override=length_override,
-            edition_length=None,
+            edition_length=edition_length,
         )
     if length_override is not None:
         _override_length(engagement, binding, length_override)
     return binding
+
+
+def _resolve_edition(
+    db: Session,
+    engagement: Engagement,
+    edition_id: uuid.UUID | None,
+    edition_format: Format | None,
+) -> Edition:
+    if edition_id is not None:
+        return edition_crud.get_or_raise(db, edition_id)
+    return _edition_for_format(db, engagement, edition_format)
 
 
 def _edition_for_format(

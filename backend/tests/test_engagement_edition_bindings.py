@@ -80,7 +80,7 @@ def test_write_engagement_binding_carries_length_override(
         pytest.param(MINUTES, PAGES, id="pages"),
     ],
 )
-def test_create_binding_captures_missing_edition_length(
+def test_write_engagement_binding_captures_missing_edition_length(
     client: TestClient,
     source_ruler: Ruler,
     added_ruler: Ruler,
@@ -104,12 +104,20 @@ def test_create_binding_captures_missing_edition_length(
     )
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_id": added_edition["id"], "edition_length": 430},
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_id": added_edition["id"],
+            "edition_length": 430,
+        },
     )
 
-    assert response.status_code == 201
-    assert response.json()["edition"]["length"] == 430
+    assert response.status_code == 200
+    assert response.json()[added_ruler.length_field] == 430
+    edition_response = client.get(f"/api/editions/{added_edition['id']}")
+    assert edition_response.status_code == 200
+    assert edition_response.json()["length"] == 430
     book_response = client.get(f"/api/books/{book['id']}")
     assert book_response.status_code == 200
     assert book_response.json()[added_ruler.book_length_field] == 430
@@ -270,6 +278,27 @@ def test_create_binding_unknown_edition_returns_404(client: TestClient) -> None:
     )
 
     assert response.status_code == 404
+
+
+def test_write_engagement_with_both_edition_id_and_format_returns_422(
+    client: TestClient,
+) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], format="print", length=300)
+    audio_edition = _create_edition(client, book["id"], format="audio", length=600)
+    engagement = _create_engagement(client, book["id"], edition_format="print")
+
+    response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_id": audio_edition["id"],
+            "edition_format": "audio",
+        },
+    )
+
+    assert response.status_code == 422
 
 
 @pytest.mark.parametrize(

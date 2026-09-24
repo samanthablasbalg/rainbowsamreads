@@ -57,11 +57,13 @@ def write_engagement(
         db.commit()
         return EngagementRead.model_validate(reload(db, engagement.id))
     else:
-        if payload.edition_format is not None:
-            bindings_service.bind_format(
+        if payload.edition_id is not None or payload.edition_format is not None:
+            bindings_service.bind_edition(
                 db,
                 engagement_crud.get_or_raise(db, payload.id),
-                payload.edition_format,
+                edition_id=payload.edition_id,
+                edition_format=payload.edition_format,
+                edition_length=payload.edition_length,
                 length_override=payload.length_override,
             )
         engagement = lifecycle_service.update_engagement_status(
