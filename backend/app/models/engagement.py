@@ -113,20 +113,14 @@ class Engagement(TimestampMixin, Base):
     def frontier_minute(self) -> int:
         return self.frontier_in(LogUnit.minutes)
 
-    def binding_for(self, fmt: Format) -> EngagementEdition | None:
-        return next(
-            (ee for ee in self.engagement_editions if ee.edition.format == fmt),
-            None,
-        )
-
     # ADR-0021 accepts that two page-measured bindings in one read can't be told apart
     # by unit alone, so anything measured in pages answers on the first non-audio one.
     @property
     def page_format(self) -> Format | None:
         return next((f for f in self.formats if f != Format.audio), None)
 
-    # Not binding_for: this keeps scanning past a matching binding that carries no
-    # length, so a second binding in the same format can still answer.
+    # Keeps scanning past a matching binding that carries no length, so a second
+    # binding in the same format can still answer.
     def resolve_length(self, fmt: Format) -> int | None:
         for ee in self.engagement_editions:
             if ee.edition.format == fmt:

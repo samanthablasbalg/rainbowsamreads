@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import uuid
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -208,19 +206,6 @@ def test_write_engagement_length_equal_to_the_furthest_log_is_allowed(
 # --- Validation and errors ---
 
 
-def test_update_length_in_a_format_the_read_is_not_bound_in_returns_404(
-    client: TestClient,
-) -> None:
-    _, engagement_id = _read_with_length(client, PAGES, 1100)
-
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={MINUTES.length_field: 500},
-    )
-
-    assert response.status_code == 404
-
-
 def test_write_engagement_edition_length_on_bound_format_returns_422(
     client: TestClient,
 ) -> None:
@@ -237,20 +222,6 @@ def test_write_engagement_edition_length_on_bound_format_returns_422(
         },
     )
 
-    assert response.status_code == 422
-
-
-@pytest.mark.parametrize(
-    "payload",
-    [{}, {"length_pages": 300, "length_minutes": 500}],
-    ids=["neither", "both"],
-)
-def test_update_length_needs_exactly_one_unit(
-    client: TestClient, payload: dict[str, int]
-) -> None:
-    _, engagement_id = _read_with_length(client, PAGES, 1100)
-
-    response = client.patch(f"/api/engagements/{engagement_id}/length", json=payload)
     assert response.status_code == 422
 
 
@@ -287,11 +258,3 @@ def test_write_engagement_length_rejects_a_non_positive_length(
     )
 
     assert response.status_code == 422
-
-
-def test_update_length_unknown_engagement_returns_404(client: TestClient) -> None:
-    response = client.patch(
-        f"/api/engagements/{uuid.uuid4()}/length",
-        json={PAGES.length_field: 300},
-    )
-    assert response.status_code == 404

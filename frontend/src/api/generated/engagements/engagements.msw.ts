@@ -21,7 +21,6 @@ import {
   getEngagementsListProgressLogsResponseMock,
   getEngagementsLogProgressResponseMock,
   getEngagementsUpdateEngagementDatesResponseMock,
-  getEngagementsUpdateEngagementLengthResponseMock,
   getEngagementsUpdateProgressLogResponseMock,
   getEngagementsUpsertReviewResponseMock,
   getEngagementsWriteEngagementResponseMock,
@@ -31,7 +30,6 @@ export {
   getEngagementsWriteEngagementResponseMock,
   getEngagementsListEngagementsResponseMock,
   getEngagementsUpdateEngagementDatesResponseMock,
-  getEngagementsUpdateEngagementLengthResponseMock,
   getEngagementsGetEngagementResponseMock,
   getEngagementsLogProgressResponseMock,
   getEngagementsListProgressLogsResponseMock,
@@ -105,30 +103,6 @@ export const getEngagementsUpdateEngagementDatesMockHandler = (
             ? await overrideResponse(info)
             : overrideResponse
           : getEngagementsUpdateEngagementDatesResponseMock(),
-        { status: 200 }
-      );
-    },
-    options
-  );
-};
-
-export const getEngagementsUpdateEngagementLengthMockHandler = (
-  overrideResponse?:
-    | EngagementRead
-    | ((
-        info: Parameters<Parameters<typeof http.patch>[1]>[0]
-      ) => Promise<EngagementRead> | EngagementRead),
-  options?: RequestHandlerOptions
-) => {
-  return http.patch(
-    '*/api/engagements/:engagementId/length',
-    async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getEngagementsUpdateEngagementLengthResponseMock(),
         { status: 200 }
       );
     },
@@ -347,7 +321,6 @@ export const getEngagementsMock = () => [
   getEngagementsWriteEngagementMockHandler(),
   getEngagementsListEngagementsMockHandler(),
   getEngagementsUpdateEngagementDatesMockHandler(),
-  getEngagementsUpdateEngagementLengthMockHandler(),
   getEngagementsGetEngagementMockHandler(),
   getEngagementsDeleteEngagementMockHandler(),
   getEngagementsLogProgressMockHandler(),

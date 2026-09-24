@@ -70,20 +70,6 @@ class EngagementDatesUpdate(BaseModel):
     abandoned_on: datetime.date | None = None
 
 
-class EngagementLengthUpdate(BaseModel):
-    """Mirrors the read side's length_pages / length_minutes pair. Exactly one, because
-    the unit is what tells the service which binding to correct."""
-
-    length_pages: int | None = Field(default=None, gt=0)
-    length_minutes: int | None = Field(default=None, gt=0)
-
-    @model_validator(mode="after")
-    def check_exactly_one_unit(self) -> Self:
-        if (self.length_pages is None) == (self.length_minutes is None):
-            raise ValueError("Provide exactly one of length_pages or length_minutes")
-        return self
-
-
 class EngagementRead(BaseModel):
     id: uuid.UUID
     book: BookRead

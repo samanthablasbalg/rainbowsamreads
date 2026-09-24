@@ -14,7 +14,6 @@ from app.schemas.edition import (
 from app.schemas.engagement import (
     EngagementCreate,
     EngagementDatesUpdate,
-    EngagementLengthUpdate,
     EngagementRead,
     EngagementStatusUpdate,
 )
@@ -40,7 +39,6 @@ __all__ = [
     "EngagementEditionRead",
     "EngagementCreate",
     "EngagementDatesUpdate",
-    "EngagementLengthUpdate",
     "EngagementRead",
     "EngagementStatusUpdate",
     "MinuteProgressLogRead",
