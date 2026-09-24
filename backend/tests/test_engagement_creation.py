@@ -523,9 +523,9 @@ def test_write_engagement_needs_exactly_one_of_book_id_and_id(
 def test_write_engagement_rejects_a_field_for_the_other_identifier(
     client: TestClient, identifier: str, field: str, value: str
 ) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-    known = {"book_id": book["id"], "id": engagement["id"]}
+    engagement = _create_engagement(client, _create_book(client)["id"])
+    unread_book = _create_book(client, title="Jonathan Strange & Mr Norrell")
+    known = {"book_id": unread_book["id"], "id": engagement["id"]}
 
     response = client.post(
         "/api/engagements",
