@@ -45,7 +45,8 @@ along with the separate binding POST and length PATCH, all folded into the one w
 - The client states the result it wants (this book or engagement, this status, this format and
   length) and doesn't need to know what the engagement already has. Starting from TBR is the same
   request whether the format is unbound, bound, or bound without a length.
-- The generated client exposes one request type and one mutation hook for every engagement write.
+- The generated client exposes one request type and one mutation hook for creating a read, changing
+  its status, and binding its formats.
 - The per-path rules the two old bodies enforced by shape, such as creation-only dates, `unit` only
   on an existing read, and the statuses a read can be created in, are now validators on one model.
   OpenAPI can't express "exactly one of", so the generated type marks both identifiers optional, and
