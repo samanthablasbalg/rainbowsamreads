@@ -124,29 +124,6 @@ export interface EditionUpdate {
   cover_url?: string | null;
 }
 
-export type EngagementCreateStatus =
-  (typeof EngagementCreateStatus)[keyof typeof EngagementCreateStatus];
-
-export const EngagementCreateStatus = {
-  reading: 'reading',
-  finished: 'finished',
-  dnf: 'dnf',
-} as const;
-
-/**
- * `finished_on` is the date the read ended, whichever way it ended: it lands in
- * `abandoned_on` when the status is dnf.
- */
-export interface EngagementCreate {
-  book_id: string;
-  edition_format: Format;
-  status?: EngagementCreateStatus;
-  edition_length?: number | null;
-  length_override?: number | null;
-  started_on?: string | null;
-  finished_on?: string | null;
-}
-
 /**
  * Corrects dates a read already has. Ending a read is the status endpoint's job:
  * `finished_on` here edits a finished read, `abandoned_on` a dnf one.
@@ -207,13 +184,19 @@ export interface EngagementRead {
   updated_at: string;
 }
 
-export interface EngagementStatusUpdate {
-  id: string;
+/**
+ * `book_id` creates a read, `id` writes an existing one.
+ */
+export interface EngagementWrite {
+  book_id?: string | null;
+  id?: string | null;
   status: ReadingStatus;
   edition_id?: string | null;
   edition_format?: Format | null;
   edition_length?: number | null;
   length_override?: number | null;
+  started_on?: string | null;
+  finished_on?: string | null;
   effective_on?: string | null;
   unit?: LogUnit | null;
 }

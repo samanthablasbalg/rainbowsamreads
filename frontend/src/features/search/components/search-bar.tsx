@@ -12,7 +12,7 @@ import {
 } from '@/api/generated/books/books';
 import {
   BookSearchResultState,
-  EngagementCreateStatus,
+  ReadingStatus,
   type BookSearchResult,
 } from '@/api/generated/readingTracker.schemas';
 import { ErrorText } from '@/components/common/error-text';
@@ -35,11 +35,7 @@ const DEBOUNCE_MS = 300;
 
 const MIN_QUERY_LENGTH = 2;
 
-const ADD_STATUSES = [
-  EngagementCreateStatus.reading,
-  EngagementCreateStatus.finished,
-  EngagementCreateStatus.dnf,
-];
+const ADD_STATUSES = [ReadingStatus.reading, ReadingStatus.finished, ReadingStatus.dnf];
 
 type PendingSheet = { bookId: string; cancelLabel?: string };
 

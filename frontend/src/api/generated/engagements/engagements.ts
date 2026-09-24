@@ -23,11 +23,10 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  EngagementCreate,
   EngagementDatesUpdate,
   EngagementEditionRead,
   EngagementRead,
-  EngagementStatusUpdate,
+  EngagementWrite,
   EngagementsListEngagementsParams,
   HTTPValidationError,
   MinuteProgressLogRead,
@@ -61,7 +60,7 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
  * @summary Write Engagement
  */
 export const engagementsWriteEngagement = (
-  engagementCreateEngagementStatusUpdate: EngagementCreate | EngagementStatusUpdate,
+  engagementWrite: EngagementWrite,
   options?: SecondParameter<typeof customInstance>,
   signal?: AbortSignal
 ) => {
@@ -70,7 +69,7 @@ export const engagementsWriteEngagement = (
       url: `/api/engagements`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      data: engagementCreateEngagementStatusUpdate,
+      data: engagementWrite,
       signal,
     },
     options
@@ -84,14 +83,14 @@ export const getEngagementsWriteEngagementMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof engagementsWriteEngagement>>,
     TError,
-    { data: EngagementCreate | EngagementStatusUpdate },
+    { data: EngagementWrite },
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof engagementsWriteEngagement>>,
   TError,
-  { data: EngagementCreate | EngagementStatusUpdate },
+  { data: EngagementWrite },
   TContext
 > => {
   const mutationKey = ['engagementsWriteEngagement'];
@@ -103,7 +102,7 @@ export const getEngagementsWriteEngagementMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof engagementsWriteEngagement>>,
-    { data: EngagementCreate | EngagementStatusUpdate }
+    { data: EngagementWrite }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -116,7 +115,7 @@ export const getEngagementsWriteEngagementMutationOptions = <
 export type EngagementsWriteEngagementMutationResult = NonNullable<
   Awaited<ReturnType<typeof engagementsWriteEngagement>>
 >;
-export type EngagementsWriteEngagementMutationBody = EngagementCreate | EngagementStatusUpdate;
+export type EngagementsWriteEngagementMutationBody = EngagementWrite;
 export type EngagementsWriteEngagementMutationError = ErrorType<HTTPValidationError>;
 
 /**
@@ -130,7 +129,7 @@ export const useEngagementsWriteEngagement = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof engagementsWriteEngagement>>,
       TError,
-      { data: EngagementCreate | EngagementStatusUpdate },
+      { data: EngagementWrite },
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -139,7 +138,7 @@ export const useEngagementsWriteEngagement = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof engagementsWriteEngagement>>,
   TError,
-  { data: EngagementCreate | EngagementStatusUpdate },
+  { data: EngagementWrite },
   TContext
 > => {
   return useMutation(getEngagementsWriteEngagementMutationOptions(options), queryClient);

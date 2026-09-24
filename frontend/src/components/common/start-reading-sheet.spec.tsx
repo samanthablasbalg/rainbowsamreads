@@ -6,7 +6,7 @@ import {
   getEngagementsWriteEngagementMockHandler,
   getEngagementsWriteEngagementResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
-import { EngagementCreateStatus, type BookRead } from '@/api/generated/readingTracker.schemas';
+import { ReadingStatus, type BookRead } from '@/api/generated/readingTracker.schemas';
 import { buildBook } from '@/test/data-generators';
 import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
@@ -42,11 +42,7 @@ function renderAddSheet(overrides: Partial<BookRead> = {}) {
   return render(
     <StartReadingSheet
       book={buildBook(overrides)}
-      statuses={[
-        EngagementCreateStatus.reading,
-        EngagementCreateStatus.finished,
-        EngagementCreateStatus.dnf,
-      ]}
+      statuses={[ReadingStatus.reading, ReadingStatus.finished, ReadingStatus.dnf]}
       open
       onOpenChange={() => {}}
     />

@@ -12,10 +12,9 @@ from app.schemas.edition import (
     EngagementEditionRead,
 )
 from app.schemas.engagement import (
-    EngagementCreate,
     EngagementDatesUpdate,
     EngagementRead,
-    EngagementStatusUpdate,
+    EngagementWrite,
 )
 from app.schemas.progress_log import (
     MinuteProgressLogRead,
@@ -37,10 +36,9 @@ __all__ = [
     "EditionRead",
     "EditionUpdate",
     "EngagementEditionRead",
-    "EngagementCreate",
     "EngagementDatesUpdate",
     "EngagementRead",
-    "EngagementStatusUpdate",
+    "EngagementWrite",
     "MinuteProgressLogRead",
     "PageProgressLogRead",
     "ProgressLogCreate",

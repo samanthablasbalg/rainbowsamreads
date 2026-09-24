@@ -38,7 +38,11 @@ def test_create_reading_engagement_with_selected_format_returns_201(
 
     response = client.post(
         "/api/engagements",
-        json={"book_id": book["id"], "edition_format": ruler.edition_format},
+        json={
+            "book_id": book["id"],
+            "status": "reading",
+            "edition_format": ruler.edition_format,
+        },
     )
 
     assert response.status_code == 201
@@ -69,6 +73,7 @@ def test_create_reading_engagement_captures_missing_edition_length(
         "/api/engagements",
         json={
             "book_id": book["id"],
+            "status": "reading",
             "edition_format": ruler.edition_format,
             "edition_length": 250,
         },
@@ -99,6 +104,7 @@ def test_create_reading_engagement_rejects_edition_length_when_edition_has_one(
         "/api/engagements",
         json={
             "book_id": book["id"],
+            "status": "reading",
             "edition_format": ruler.edition_format,
             "edition_length": 1000,
         },
@@ -116,7 +122,11 @@ def test_create_reading_engagement_without_a_length_returns_422(
 
     response = client.post(
         "/api/engagements",
-        json={"book_id": book["id"], "edition_format": ruler.edition_format},
+        json={
+            "book_id": book["id"],
+            "status": "reading",
+            "edition_format": ruler.edition_format,
+        },
     )
 
     assert response.status_code == 422
@@ -132,6 +142,7 @@ def test_create_reading_engagement_length_override_drives_completion(
         "/api/engagements",
         json={
             "book_id": book["id"],
+            "status": "reading",
             "edition_format": ruler.edition_format,
             "length_override": 1000,
         },
@@ -159,6 +170,7 @@ def test_create_reading_engagement_length_override_leaves_edition_alone(
         "/api/engagements",
         json={
             "book_id": book["id"],
+            "status": "reading",
             "edition_format": ruler.edition_format,
             "length_override": 1000,
         },
@@ -369,7 +381,9 @@ def test_create_reading_engagement_without_edition_format_returns_422(
     client: TestClient,
 ) -> None:
     book = _create_book(client)
-    response = client.post("/api/engagements", json={"book_id": book["id"]})
+    response = client.post(
+        "/api/engagements", json={"book_id": book["id"], "status": "reading"}
+    )
     assert response.status_code == 422
 
 
@@ -379,7 +393,8 @@ def test_create_reading_engagement_without_matching_edition_returns_404(
     book = _create_bare_book(client)
 
     response = client.post(
-        "/api/engagements", json={"book_id": book["id"], "edition_format": "print"}
+        "/api/engagements",
+        json={"book_id": book["id"], "status": "reading", "edition_format": "print"},
     )
 
     assert response.status_code == 404
@@ -392,7 +407,8 @@ def test_create_reading_engagement_with_multiple_matching_editions_returns_409(
     _create_edition(client, book["id"], format="print", isbn="9781526622426")
 
     response = client.post(
-        "/api/engagements", json={"book_id": book["id"], "edition_format": "print"}
+        "/api/engagements",
+        json={"book_id": book["id"], "status": "reading", "edition_format": "print"},
     )
 
     assert response.status_code == 409
@@ -427,7 +443,11 @@ def test_create_engagement_with_future_lifecycle_date_returns_422(
 def test_create_engagement_for_unknown_book_returns_404(client: TestClient) -> None:
     response = client.post(
         "/api/engagements",
-        json={"book_id": str(uuid.uuid4()), "edition_format": "print"},
+        json={
+            "book_id": str(uuid.uuid4()),
+            "status": "reading",
+            "edition_format": "print",
+        },
     )
     assert response.status_code == 404
 
@@ -463,6 +483,58 @@ def test_create_finished_engagement_with_end_before_start_returns_409(
         },
     )
     assert response.status_code == 409
+
+
+@pytest.mark.parametrize(
+    "identifiers",
+    [pytest.param(("book_id", "id"), id="both"), pytest.param((), id="neither")],
+)
+def test_write_engagement_needs_exactly_one_of_book_id_and_id(
+    client: TestClient, identifiers: tuple[str, ...]
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    known = {"book_id": book["id"], "id": engagement["id"]}
+
+    response = client.post(
+        "/api/engagements",
+        json={
+            "status": "reading",
+            "edition_format": "print",
+            **{key: known[key] for key in identifiers},
+        },
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize(
+    ("identifier", "field", "value"),
+    [
+        pytest.param("book_id", "effective_on", "2026-01-01", id="effective_on"),
+        pytest.param("book_id", "unit", "pages", id="unit"),
+        pytest.param("id", "started_on", "2026-01-01", id="started_on"),
+        pytest.param("id", "finished_on", "2026-01-01", id="finished_on"),
+    ],
+)
+def test_write_engagement_rejects_a_field_for_the_other_identifier(
+    client: TestClient, identifier: str, field: str, value: str
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    known = {"book_id": book["id"], "id": engagement["id"]}
+
+    response = client.post(
+        "/api/engagements",
+        json={
+            identifier: known[identifier],
+            "status": "reading",
+            "edition_format": "print",
+            field: value,
+        },
+    )
+
+    assert response.status_code == 422
 
 
 def test_create_engagement_with_invalid_status_returns_422(client: TestClient) -> None:

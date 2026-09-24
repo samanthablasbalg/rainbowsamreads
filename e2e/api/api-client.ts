@@ -49,6 +49,7 @@ export class ApiClient {
     const response = await this.request.post('/api/engagements', {
       data: {
         book_id: bookId,
+        status: 'reading',
         edition_format: editionFormat,
         ...(editionLength != null && { edition_length: editionLength }),
       },

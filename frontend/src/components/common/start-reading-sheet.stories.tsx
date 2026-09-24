@@ -2,22 +2,15 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { withPointer } from '@/test/pointer-decorator';
 import { expect, screen, userEvent, within } from 'storybook/test';
-import {
-  EngagementCreateStatus,
-  type BookRead,
-  type EngagementCreateStatus as Status,
-} from '@/api/generated/readingTracker.schemas';
+import { ReadingStatus, type BookRead } from '@/api/generated/readingTracker.schemas';
 import { Button } from '@/components/ui/button';
 import { buildBook } from '@/test/data-generators';
+import type { ShelvedStatus as Status } from '@/utils/status';
 import { StartReadingSheet } from './start-reading-sheet';
 
 const baseBook = buildBook();
 
-const ADD_STATUSES = [
-  EngagementCreateStatus.reading,
-  EngagementCreateStatus.finished,
-  EngagementCreateStatus.dnf,
-];
+const ADD_STATUSES = [ReadingStatus.reading, ReadingStatus.finished, ReadingStatus.dnf];
 
 function ControlledSheet({ book, statuses }: { book: BookRead; statuses?: Status[] }) {
   const [open, setOpen] = useState(false);

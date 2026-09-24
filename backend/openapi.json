@@ -559,15 +559,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/EngagementCreate"
-                  },
-                  {
-                    "$ref": "#/components/schemas/EngagementStatusUpdate"
-                  }
-                ],
-                "title": "Payload"
+                "$ref": "#/components/schemas/EngagementWrite"
               }
             }
           }
@@ -1724,84 +1716,6 @@
         "type": "object",
         "title": "EditionUpdate"
       },
-      "EngagementCreate": {
-        "properties": {
-          "book_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Book Id"
-          },
-          "edition_format": {
-            "$ref": "#/components/schemas/Format"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "reading",
-              "finished",
-              "dnf"
-            ],
-            "title": "Status",
-            "default": "reading"
-          },
-          "edition_length": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Edition Length"
-          },
-          "length_override": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Length Override"
-          },
-          "started_on": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Started On"
-          },
-          "finished_on": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Finished On"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "book_id",
-          "edition_format"
-        ],
-        "title": "EngagementCreate",
-        "description": "`finished_on` is the date the read ended, whichever way it ended: it lands in\n`abandoned_on` when the status is dnf."
-      },
       "EngagementDatesUpdate": {
         "properties": {
           "started_on": {
@@ -2053,11 +1967,30 @@
         ],
         "title": "EngagementRead"
       },
-      "EngagementStatusUpdate": {
+      "EngagementWrite": {
         "properties": {
+          "book_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book Id"
+          },
           "id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Id"
           },
           "status": {
@@ -2109,6 +2042,30 @@
             ],
             "title": "Length Override"
           },
+          "started_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started On"
+          },
+          "finished_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished On"
+          },
           "effective_on": {
             "anyOf": [
               {
@@ -2135,10 +2092,10 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "id",
           "status"
         ],
-        "title": "EngagementStatusUpdate"
+        "title": "EngagementWrite",
+        "description": "`book_id` creates a read, `id` writes an existing one."
       },
       "Format": {
         "type": "string",

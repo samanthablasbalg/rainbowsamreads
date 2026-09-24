@@ -35,6 +35,7 @@ def test_get_engagement_reports_override_without_unbound_book_default(
         "/api/engagements",
         json={
             "book_id": book["id"],
+            "status": "reading",
             "edition_format": other_ruler.edition_format,
             "edition_length": 600,
         },
@@ -48,6 +49,7 @@ def test_get_engagement_reports_override_without_unbound_book_default(
         "/api/engagements",
         json={
             "book_id": book["id"],
+            "status": "reading",
             "edition_format": ruler.edition_format,
             "length_override": 1000,
         },
