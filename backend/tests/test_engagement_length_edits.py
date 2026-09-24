@@ -224,6 +224,21 @@ def test_update_length_needs_exactly_one_unit(
     assert response.status_code == 422
 
 
+@pytest.mark.parametrize("length_field", ["edition_length", "length_override"])
+def test_write_engagement_length_without_edition_returns_422(
+    client: TestClient, length_field: str
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], edition_format="print")
+
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading", length_field: 300},
+    )
+
+    assert response.status_code == 422
+
+
 @pytest.mark.parametrize("ruler", RULERS)
 @pytest.mark.parametrize("length", [0, -1], ids=["zero", "negative"])
 def test_update_length_rejects_a_non_positive_length(

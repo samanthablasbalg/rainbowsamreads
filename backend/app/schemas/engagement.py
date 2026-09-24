@@ -52,6 +52,14 @@ class EngagementStatusUpdate(BaseModel):
             raise ValueError("Provide at most one of edition_id or edition_format")
         return self
 
+    @model_validator(mode="after")
+    def check_length_has_resolver(self) -> Self:
+        if self.edition_id is not None or self.edition_format is not None:
+            return self
+        if self.edition_length is not None or self.length_override is not None:
+            raise ValueError("A length needs an edition_id or edition_format")
+        return self
+
 
 class EngagementDatesUpdate(BaseModel):
     """Corrects dates a read already has. Ending a read is the status endpoint's job:
