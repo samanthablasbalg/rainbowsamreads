@@ -25,7 +25,7 @@ from tests.helpers import (
         pytest.param(MINUTES, 600, 300, 500, 50, 60, id="audio"),
     ],
 )
-def test_update_length_recomputes_completion(
+def test_write_engagement_length_recomputes_completion(
     client: TestClient,
     ruler: Ruler,
     original_length: int,
@@ -40,9 +40,14 @@ def test_update_length_recomputes_completion(
     assert current.status_code == 200
     assert current.json()["completion_pct"] == initial_pct
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={ruler.length_field: corrected_length},
+    response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement_id,
+            "status": "reading",
+            "edition_format": ruler.edition_format,
+            "length_override": corrected_length,
+        },
     )
 
     assert response.status_code == 200
