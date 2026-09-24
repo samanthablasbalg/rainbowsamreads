@@ -107,7 +107,7 @@ def test_write_engagement_length_pulls_back_the_only_entry_past_the_new_end(
 
 
 @pytest.mark.parametrize("ruler", RULERS)
-def test_update_length_below_a_finished_reads_catch_up_entry_succeeds(
+def test_write_engagement_length_below_a_finished_reads_catch_up_entry_succeeds(
     client: TestClient, ruler: Ruler
 ) -> None:
     _, engagement_id = _read_with_length(client, ruler, 1100)
@@ -117,9 +117,14 @@ def test_update_length_below_a_finished_reads_catch_up_entry_succeeds(
     )
     assert finish_response.status_code == 200
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={ruler.length_field: 1000},
+    response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement_id,
+            "status": "finished",
+            "edition_format": ruler.edition_format,
+            "length_override": 1000,
+        },
     )
 
     assert response.status_code == 200
