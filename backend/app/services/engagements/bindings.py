@@ -24,11 +24,23 @@ def bind_edition(
     edition = (
         edition_crud.get_or_raise(db, edition_id)
         if edition_id is not None
-        else _edition_for_format(db, engagement, edition_format)
+        else edition_for_format(db, engagement, edition_format)
     )
     binding = engagement_edition_crud.get(db, (engagement.id, edition.id))
     if binding is None:
-        return _create_binding(
+        if engagement.status != ReadingStatus.reading:
+            raise InvalidOperationError(
+                "An engagement must be in progress to get an edition bound."
+            )
+        if (
+            length_override is None
+            and edition_length is None
+            and edition.length is None
+        ):
+            raise InvalidOperationError(
+                "A reading engagement requires a length for its selected format."
+            )
+        return create_binding(
             db,
             engagement,
             edition,
@@ -45,7 +57,7 @@ def bind_edition(
     return binding
 
 
-def _create_binding(
+def create_binding(
     db: Session,
     engagement: Engagement,
     edition: Edition,
@@ -53,16 +65,6 @@ def _create_binding(
     length_override: int | None,
     edition_length: int | None,
 ) -> EngagementEdition:
-    if engagement.status != ReadingStatus.reading:
-        raise InvalidOperationError(
-            "An engagement must be in progress to get an edition bound."
-        )
-
-    if length_override is None and edition_length is None and edition.length is None:
-        raise InvalidOperationError(
-            "A reading engagement requires a length for its selected format."
-        )
-
     binding = engagement_edition_crud.create(
         db,
         EngagementEdition(
@@ -79,19 +81,18 @@ def _create_binding(
     return binding
 
 
-def _edition_for_format(
+def edition_for_format(
     db: Session, engagement: Engagement, edition_format: Format | None
 ) -> Edition:
     candidates = edition_crud.list_by(
         db, book_id=engagement.book_id, format=edition_format
     )
     if len(candidates) == 0:
-        raise NotFoundError(
-            f"No {edition_format} edition exists for this book; create one first"
-        )
+        raise NotFoundError(f"No {edition_format} edition exists for this book")
     if len(candidates) > 1:
         raise ConflictError(
-            "Multiple editions exist for this format; pass edition_id instead"
+            f"This book has more than one {edition_format} edition, so the app"
+            " can't tell which one to use."
         )
     return candidates[0]
 

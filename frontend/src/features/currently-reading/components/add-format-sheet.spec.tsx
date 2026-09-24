@@ -200,7 +200,10 @@ describe('AddFormatSheet', () => {
     server.use(
       http.post('*/api/engagements', () =>
         HttpResponse.json(
-          { detail: 'Multiple editions exist for this format; pass edition_id instead' },
+          {
+            detail:
+              "This book has more than one digital edition, so the app can't tell which one to use.",
+          },
           { status: 409 }
         )
       )
@@ -211,7 +214,7 @@ describe('AddFormatSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Add format' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Multiple editions exist for this format; pass edition_id instead'
+      "This book has more than one digital edition, so the app can't tell which one to use."
     );
     expect(screen.queryByText('closed')).not.toBeInTheDocument();
   });
