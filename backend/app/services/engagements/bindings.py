@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.crud import edition_crud, engagement_edition_crud
 from app.exceptions import ConflictError, InvalidOperationError, NotFoundError
-from app.models.edition import EngagementEdition
+from app.models.edition import Edition, EngagementEdition
 from app.models.engagement import Engagement
 from app.models.enums import Format, LogUnit, ReadingStatus
 from app.services.books import capture_edition_length
@@ -25,18 +25,7 @@ def create_binding(
     if edition_id is not None:
         edition = edition_crud.get_or_raise(db, edition_id)
     else:
-        candidates = edition_crud.list_by(
-            db, book_id=engagement.book_id, format=edition_format
-        )
-        if len(candidates) == 0:
-            raise NotFoundError(
-                f"No {edition_format} edition exists for this book; create one first"
-            )
-        if len(candidates) > 1:
-            raise ConflictError(
-                "Multiple editions exist for this format; pass edition_id instead"
-            )
-        edition = candidates[0]
+        edition = _edition_for_format(db, engagement, edition_format)
 
     if engagement_edition_crud.get(db, (engagement.id, edition.id)) is not None:
         raise ConflictError("This edition is already bound to this engagement.")
@@ -66,6 +55,41 @@ def create_binding(
         capture_edition_length(engagement.book, edition, edition_length)
 
     return binding
+
+
+def bind_format(
+    db: Session, engagement: Engagement, edition_format: Format
+) -> EngagementEdition:
+    edition = _edition_for_format(db, engagement, edition_format)
+    binding = engagement_edition_crud.get(db, (engagement.id, edition.id))
+    if binding is not None:
+        return binding
+    return create_binding(
+        db,
+        engagement,
+        edition_id=edition.id,
+        edition_format=None,
+        origin_id=None,
+        length_override=None,
+        edition_length=None,
+    )
+
+
+def _edition_for_format(
+    db: Session, engagement: Engagement, edition_format: Format | None
+) -> Edition:
+    candidates = edition_crud.list_by(
+        db, book_id=engagement.book_id, format=edition_format
+    )
+    if len(candidates) == 0:
+        raise NotFoundError(
+            f"No {edition_format} edition exists for this book; create one first"
+        )
+    if len(candidates) > 1:
+        raise ConflictError(
+            "Multiple editions exist for this format; pass edition_id instead"
+        )
+    return candidates[0]
 
 
 def apply_length_change(

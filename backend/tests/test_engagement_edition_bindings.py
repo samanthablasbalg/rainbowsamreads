@@ -160,7 +160,7 @@ def test_create_binding_by_format_with_no_edition_returns_404(
     assert response.status_code == 404
 
 
-def test_create_binding_by_format_with_multiple_editions_returns_409(
+def test_write_engagement_with_format_matching_multiple_editions_returns_409(
     client: TestClient,
 ) -> None:
     book = _create_bare_book(client)
@@ -182,23 +182,52 @@ def test_create_binding_by_format_with_multiple_editions_returns_409(
     engagement = _create_engagement(client, book["id"], edition_format="audio")
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_format": "print"},
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading", "edition_format": "print"},
     )
 
     assert response.status_code == 409
 
 
-def test_create_duplicate_binding_returns_409(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
+def test_write_engagement_with_bound_format_matching_multiple_editions_returns_409(
+    client: TestClient,
+) -> None:
+    book = _create_bare_book(client)
+    _create_edition(
+        client,
+        book["id"],
+        format="print",
+        length=300,
+        isbn="9781111111111",
+    )
+    engagement = _create_engagement(client, book["id"], edition_format="print")
+    _create_edition(
+        client,
+        book["id"],
+        format="print",
+        length=350,
+        isbn="9782222222222",
+    )
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_format": "print"},
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading", "edition_format": "print"},
     )
 
     assert response.status_code == 409
+
+
+def test_write_engagement_reuses_already_bound_format(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], edition_format="print")
+
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading", "edition_format": "print"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["formats"] == ["print"]
 
 
 def test_create_binding_unknown_engagement_returns_404(client: TestClient) -> None:
