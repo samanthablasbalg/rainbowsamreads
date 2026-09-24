@@ -15,7 +15,6 @@ import type {
 } from '../readingTracker.schemas';
 
 import {
-  getEngagementsCreateBindingResponseMock,
   getEngagementsGetEngagementResponseMock,
   getEngagementsListBindingsResponseMock,
   getEngagementsListEngagementsResponseMock,
@@ -37,7 +36,6 @@ export {
   getEngagementsLogProgressResponseMock,
   getEngagementsListProgressLogsResponseMock,
   getEngagementsUpdateProgressLogResponseMock,
-  getEngagementsCreateBindingResponseMock,
   getEngagementsListBindingsResponseMock,
   getEngagementsUpsertReviewResponseMock,
 } from './engagements.faker';
@@ -280,30 +278,6 @@ export const getEngagementsDeleteProgressLogMockHandler = (
   );
 };
 
-export const getEngagementsCreateBindingMockHandler = (
-  overrideResponse?:
-    | EngagementEditionRead
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0]
-      ) => Promise<EngagementEditionRead> | EngagementEditionRead),
-  options?: RequestHandlerOptions
-) => {
-  return http.post(
-    '*/api/engagements/:engagementId/editions',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getEngagementsCreateBindingResponseMock(),
-        { status: 201 }
-      );
-    },
-    options
-  );
-};
-
 export const getEngagementsListBindingsMockHandler = (
   overrideResponse?:
     | EngagementEditionRead[]
@@ -380,7 +354,6 @@ export const getEngagementsMock = () => [
   getEngagementsListProgressLogsMockHandler(),
   getEngagementsUpdateProgressLogMockHandler(),
   getEngagementsDeleteProgressLogMockHandler(),
-  getEngagementsCreateBindingMockHandler(),
   getEngagementsListBindingsMockHandler(),
   getEngagementsDeleteBindingMockHandler(),
   getEngagementsUpsertReviewMockHandler(),

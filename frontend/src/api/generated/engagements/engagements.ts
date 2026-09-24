@@ -25,7 +25,6 @@ import type {
 import type {
   EngagementCreate,
   EngagementDatesUpdate,
-  EngagementEditionCreate,
   EngagementEditionRead,
   EngagementLengthUpdate,
   EngagementRead,
@@ -1376,94 +1375,6 @@ export const useEngagementsDeleteProgressLog = <
   TContext
 > => {
   return useMutation(getEngagementsDeleteProgressLogMutationOptions(options), queryClient);
-};
-/**
- * @summary Create Binding
- */
-export const engagementsCreateBinding = (
-  engagementId: string,
-  engagementEditionCreate: EngagementEditionCreate,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
-) => {
-  return customInstance<EngagementEditionRead>(
-    {
-      url: `/api/engagements/${engagementId}/editions`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      data: engagementEditionCreate,
-      signal,
-    },
-    options
-  );
-};
-
-export const getEngagementsCreateBindingMutationOptions = <
-  TError = ErrorType<HTTPValidationError>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof engagementsCreateBinding>>,
-    TError,
-    { engagementId: string; data: EngagementEditionCreate },
-    TContext
-  >;
-  request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof engagementsCreateBinding>>,
-  TError,
-  { engagementId: string; data: EngagementEditionCreate },
-  TContext
-> => {
-  const mutationKey = ['engagementsCreateBinding'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof engagementsCreateBinding>>,
-    { engagementId: string; data: EngagementEditionCreate }
-  > = (props) => {
-    const { engagementId, data } = props ?? {};
-
-    return engagementsCreateBinding(engagementId, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type EngagementsCreateBindingMutationResult = NonNullable<
-  Awaited<ReturnType<typeof engagementsCreateBinding>>
->;
-export type EngagementsCreateBindingMutationBody = EngagementEditionCreate;
-export type EngagementsCreateBindingMutationError = ErrorType<HTTPValidationError>;
-
-/**
- * @summary Create Binding
- */
-export const useEngagementsCreateBinding = <
-  TError = ErrorType<HTTPValidationError>,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof engagementsCreateBinding>>,
-      TError,
-      { engagementId: string; data: EngagementEditionCreate },
-      TContext
-    >;
-    request?: SecondParameter<typeof customInstance>;
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof engagementsCreateBinding>>,
-  TError,
-  { engagementId: string; data: EngagementEditionCreate },
-  TContext
-> => {
-  return useMutation(getEngagementsCreateBindingMutationOptions(options), queryClient);
 };
 /**
  * @summary List Bindings

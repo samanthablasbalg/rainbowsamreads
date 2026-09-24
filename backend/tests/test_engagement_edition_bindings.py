@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -304,33 +303,6 @@ def test_write_engagement_with_both_edition_id_and_format_returns_422(
             "edition_id": audio_edition["id"],
             "edition_format": "audio",
         },
-    )
-
-    assert response.status_code == 422
-
-
-@pytest.mark.parametrize(
-    "payload",
-    [
-        pytest.param({}, id="neither"),
-        pytest.param(
-            {"edition_id": "edition-id", "edition_format": "audio"},
-            id="both",
-        ),
-    ],
-)
-def test_create_binding_requires_exactly_one_resolver(
-    client: TestClient,
-    payload: dict[str, Any],
-) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-    if "edition_id" in payload:
-        payload = {**payload, "edition_id": str(uuid.uuid4())}
-
-    response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json=payload,
     )
 
     assert response.status_code == 422

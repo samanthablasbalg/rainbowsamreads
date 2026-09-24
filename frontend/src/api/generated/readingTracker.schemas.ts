@@ -157,14 +157,6 @@ export interface EngagementDatesUpdate {
   abandoned_on?: string | null;
 }
 
-export interface EngagementEditionCreate {
-  edition_id?: string | null;
-  edition_format?: Format | null;
-  origin_id?: string | null;
-  length_override?: number | null;
-  edition_length?: number | null;
-}
-
 export interface EngagementEditionRead {
   edition: EditionRead;
   origin_id: string | null;

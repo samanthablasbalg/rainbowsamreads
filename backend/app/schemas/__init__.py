@@ -9,7 +9,6 @@ from app.schemas.edition import (
     EditionCreate,
     EditionRead,
     EditionUpdate,
-    EngagementEditionCreate,
     EngagementEditionRead,
 )
 from app.schemas.engagement import (
@@ -38,7 +37,6 @@ __all__ = [
     "EditionCreate",
     "EditionRead",
     "EditionUpdate",
-    "EngagementEditionCreate",
     "EngagementEditionRead",
     "EngagementCreate",
     "EngagementDatesUpdate",

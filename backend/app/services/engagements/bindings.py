@@ -12,21 +12,43 @@ from app.models.enums import Format, LogUnit, ReadingStatus
 from app.services.books import capture_edition_length
 
 
-def create_binding(
+def bind_edition(
     db: Session,
     engagement: Engagement,
     *,
     edition_id: uuid.UUID | None,
     edition_format: Format | None,
-    origin_id: uuid.UUID | None,
+    edition_length: int | None,
+    length_override: int | None,
+) -> EngagementEdition:
+    edition = _resolve_edition(db, engagement, edition_id, edition_format)
+    binding = engagement_edition_crud.get(db, (engagement.id, edition.id))
+    if binding is None:
+        return _create_binding(
+            db,
+            engagement,
+            edition,
+            length_override=length_override,
+            edition_length=edition_length,
+        )
+    if edition_length is not None:
+        raise InvalidOperationError(
+            "This edition is already bound to this engagement. "
+            "Use the length override to change its length."
+        )
+    if length_override is not None:
+        _override_length(engagement, binding, length_override)
+    return binding
+
+
+def _create_binding(
+    db: Session,
+    engagement: Engagement,
+    edition: Edition,
+    *,
     length_override: int | None,
     edition_length: int | None,
 ) -> EngagementEdition:
-    edition = _resolve_edition(db, engagement, edition_id, edition_format)
-
-    if engagement_edition_crud.get(db, (engagement.id, edition.id)) is not None:
-        raise ConflictError("This edition is already bound to this engagement.")
-
     if engagement.status != ReadingStatus.reading:
         raise InvalidOperationError(
             "An engagement must be in progress to get an edition bound."
@@ -43,7 +65,6 @@ def create_binding(
             engagement_id=engagement.id,
             edition_id=edition.id,
             user_id=engagement.user_id,
-            origin_id=origin_id,
             length_override=length_override,
         ),
     )
@@ -51,37 +72,6 @@ def create_binding(
     if edition_length is not None:
         capture_edition_length(engagement.book, edition, edition_length)
 
-    return binding
-
-
-def bind_edition(
-    db: Session,
-    engagement: Engagement,
-    *,
-    edition_id: uuid.UUID | None,
-    edition_format: Format | None,
-    edition_length: int | None,
-    length_override: int | None,
-) -> EngagementEdition:
-    edition = _resolve_edition(db, engagement, edition_id, edition_format)
-    binding = engagement_edition_crud.get(db, (engagement.id, edition.id))
-    if binding is None:
-        return create_binding(
-            db,
-            engagement,
-            edition_id=edition.id,
-            edition_format=None,
-            origin_id=None,
-            length_override=length_override,
-            edition_length=edition_length,
-        )
-    if edition_length is not None:
-        raise InvalidOperationError(
-            "This edition is already bound to this engagement. "
-            "Use the length override to change its length."
-        )
-    if length_override is not None:
-        _override_length(engagement, binding, length_override)
     return binding
 
 

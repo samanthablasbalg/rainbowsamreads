@@ -1082,57 +1082,6 @@
       }
     },
     "/api/engagements/{engagement_id}/editions": {
-      "post": {
-        "tags": [
-          "engagements"
-        ],
-        "summary": "Create Binding",
-        "operationId": "engagements-create_binding",
-        "parameters": [
-          {
-            "name": "engagement_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Engagement Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EngagementEditionCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EngagementEditionRead"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
       "get": {
         "tags": [
           "engagements"
@@ -1948,71 +1897,6 @@
         "type": "object",
         "title": "EngagementDatesUpdate",
         "description": "Corrects dates a read already has. Ending a read is the status endpoint's job:\n`finished_on` here edits a finished read, `abandoned_on` a dnf one."
-      },
-      "EngagementEditionCreate": {
-        "properties": {
-          "edition_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Edition Id"
-          },
-          "edition_format": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Format"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "origin_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Origin Id"
-          },
-          "length_override": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Length Override"
-          },
-          "edition_length": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Edition Length"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "title": "EngagementEditionCreate"
       },
       "EngagementEditionRead": {
         "properties": {

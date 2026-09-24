@@ -624,31 +624,6 @@ export const getEngagementsUpdateProgressLogResponseMock = ():
     { ...getEngagementsUpdateProgressLogResponseMinuteProgressLogReadMock() },
   ]);
 
-export const getEngagementsCreateBindingResponseMock = (
-  overrideResponse: Partial<Extract<EngagementEditionRead, object>> = {}
-): EngagementEditionRead => ({
-  edition: {
-    id: faker.string.uuid(),
-    book_id: faker.string.uuid(),
-    format: faker.helpers.arrayElement(Object.values(Format)),
-    isbn: faker.helpers.arrayElement([faker.string.alpha({ length: { min: 10, max: 20 } }), null]),
-    publisher: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      null,
-    ]),
-    length: faker.helpers.arrayElement([faker.number.int(), null]),
-    cover_url: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      null,
-    ]),
-    created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-    updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  },
-  origin_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
-  length_override: faker.helpers.arrayElement([faker.number.int(), null]),
-  ...overrideResponse,
-});
-
 export const getEngagementsListBindingsResponseMock = (): EngagementEditionRead[] =>
   Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({
     edition: {
