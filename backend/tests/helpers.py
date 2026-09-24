@@ -213,10 +213,15 @@ def _bind_edition(
     **kwargs: Any,
 ) -> dict[str, Any]:
     response = client.post(
-        f"/api/engagements/{engagement_id}/editions",
-        json={"edition_id": edition_id, **kwargs},
+        "/api/engagements",
+        json={
+            "id": engagement_id,
+            "status": "reading",
+            "edition_id": edition_id,
+            **kwargs,
+        },
     )
-    assert response.status_code == 201
+    assert response.status_code == 200
     return cast(dict[str, Any], response.json())
 
 

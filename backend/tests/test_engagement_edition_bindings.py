@@ -484,10 +484,14 @@ def test_list_bindings_returns_all_bound_editions(client: TestClient) -> None:
     audio_edition = _create_edition(client, book["id"], format="audio", length=600)
     engagement = _create_engagement(client, book["id"])
     bind_response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_id": audio_edition["id"]},
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_id": audio_edition["id"],
+        },
     )
-    assert bind_response.status_code == 201
+    assert bind_response.status_code == 200
 
     response = client.get(f"/api/engagements/{engagement['id']}/editions")
 
@@ -505,14 +509,20 @@ def test_list_bindings_unknown_engagement_returns_404(client: TestClient) -> Non
 
 
 def test_delete_binding_returns_204_and_removes_it(client: TestClient) -> None:
-    book = _create_book(client)
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], format="print", length=300)
+    audio_edition = _create_edition(client, book["id"], format="audio", length=600)
     engagement = _create_engagement(client, book["id"])
-    create_response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_format": "audio"},
+    bind_response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_id": audio_edition["id"],
+        },
     )
-    assert create_response.status_code == 201
-    edition_id = create_response.json()["edition"]["id"]
+    assert bind_response.status_code == 200
+    edition_id = audio_edition["id"]
 
     response = client.delete(
         f"/api/engagements/{engagement['id']}/editions/{edition_id}"
