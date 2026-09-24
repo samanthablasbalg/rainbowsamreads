@@ -126,8 +126,10 @@ export class ApiClient {
     editionFormat: string,
     editionLength?: number
   ): Promise<void> {
-    const response = await this.request.post(`/api/engagements/${engagementId}/editions`, {
+    const response = await this.request.post('/api/engagements', {
       data: {
+        id: engagementId,
+        status: 'reading',
         edition_format: editionFormat,
         ...(editionLength != null && { edition_length: editionLength }),
       },

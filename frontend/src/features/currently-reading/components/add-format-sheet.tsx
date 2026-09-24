@@ -6,7 +6,7 @@ import { errorDetail, type DetailError } from '@/api/error-detail';
 import { getBooksListBookEngagementsQueryKey } from '@/api/generated/books/books';
 import {
   getEngagementsListEngagementsQueryKey,
-  useEngagementsCreateBinding,
+  useEngagementsWriteEngagement,
 } from '@/api/generated/engagements/engagements';
 import { Format, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { CoverImage } from '@/components/common/cover-image';
@@ -209,7 +209,7 @@ function useAddFormatForm(engagement: EngagementRead, onClose: () => void) {
 
   const queryClient = useQueryClient();
 
-  const createBinding = useEngagementsCreateBinding<DetailError>({
+  const writeEngagement = useEngagementsWriteEngagement<DetailError>({
     mutation: {
       onSuccess: async () => {
         await Promise.all([
@@ -246,9 +246,10 @@ function useAddFormatForm(engagement: EngagementRead, onClose: () => void) {
   function handleAdd() {
     if (format === null || (typed && parsedLength === null)) return;
     setError(null);
-    createBinding.mutate({
-      engagementId: engagement.id,
+    writeEngagement.mutate({
       data: {
+        id: engagement.id,
+        status: engagement.status,
         edition_format: format,
         ...(typed && parsedLength !== null && lengthField(knownLength, parsedLength)),
       },
@@ -276,7 +277,7 @@ function useAddFormatForm(engagement: EngagementRead, onClose: () => void) {
     canAdd: format !== null && (typed ? parsedLength !== null : knownLength !== null),
     handleAdd,
     error,
-    addPending: createBinding.isPending,
+    addPending: writeEngagement.isPending,
   };
 }
 
