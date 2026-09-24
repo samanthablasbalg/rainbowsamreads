@@ -75,6 +75,11 @@ def bind_edition(
             length_override=length_override,
             edition_length=edition_length,
         )
+    if edition_length is not None:
+        raise InvalidOperationError(
+            "This edition is already bound to this engagement. "
+            "Use the length override to change its length."
+        )
     if length_override is not None:
         _override_length(engagement, binding, length_override)
     return binding

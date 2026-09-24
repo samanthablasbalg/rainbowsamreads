@@ -10,6 +10,8 @@ from tests.helpers import (
     PAGES,
     RULERS,
     Ruler,
+    _create_book,
+    _create_engagement,
     _read_with_length,
 )
 
@@ -187,6 +189,25 @@ def test_update_length_in_a_format_the_read_is_not_bound_in_returns_404(
     )
 
     assert response.status_code == 404
+
+
+def test_write_engagement_edition_length_on_bound_format_returns_422(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], edition_format="print")
+
+    response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_format": "print",
+            "edition_length": 430,
+        },
+    )
+
+    assert response.status_code == 422
 
 
 @pytest.mark.parametrize(
