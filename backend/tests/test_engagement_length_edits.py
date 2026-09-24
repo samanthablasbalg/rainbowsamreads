@@ -81,16 +81,21 @@ def test_write_engagement_length_leaves_the_shared_edition_alone(
 
 
 @pytest.mark.parametrize("ruler", RULERS)
-def test_update_length_pulls_back_the_only_entry_past_the_new_end(
+def test_write_engagement_length_pulls_back_the_only_entry_past_the_new_end(
     client: TestClient, ruler: Ruler
 ) -> None:
     _, engagement_id = _read_with_length(client, ruler, 1100)
     for position in (300, 400, 500, 800):
         ruler.log_progress(client, engagement_id, position)
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={ruler.length_field: 750},
+    response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement_id,
+            "status": "reading",
+            "edition_format": ruler.edition_format,
+            "length_override": 750,
+        },
     )
 
     assert response.status_code == 200
