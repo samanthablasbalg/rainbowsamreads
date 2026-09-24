@@ -130,6 +130,9 @@ def test_create_reading_engagement_without_a_length_returns_422(
     )
 
     assert response.status_code == 422
+    engagements_response = client.get(f"/api/books/{book['id']}/engagements")
+    assert engagements_response.status_code == 200
+    assert engagements_response.json() == []
 
 
 @pytest.mark.parametrize("ruler", RULERS)

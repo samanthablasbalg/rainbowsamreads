@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import uuid
 
 import pytest
@@ -347,6 +348,31 @@ def test_write_engagement_binding_does_not_reopen_completed_engagement(
     assert engagement_response.status_code == 200
     data = engagement_response.json()
     assert data["status"] == status
+    assert data["formats"] == ["print"]
+
+
+def test_write_engagement_failed_status_change_keeps_no_binding(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+
+    response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "finished",
+            "edition_format": "audio",
+            "effective_on": tomorrow.isoformat(),
+        },
+    )
+
+    assert response.status_code == 422
+    engagement_response = client.get(f"/api/engagements/{engagement['id']}")
+    assert engagement_response.status_code == 200
+    data = engagement_response.json()
+    assert data["status"] == "reading"
     assert data["formats"] == ["print"]
 
 
