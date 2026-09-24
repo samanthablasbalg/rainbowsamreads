@@ -271,14 +271,19 @@ def test_write_engagement_length_without_edition_returns_422(
 
 @pytest.mark.parametrize("ruler", RULERS)
 @pytest.mark.parametrize("length", [0, -1], ids=["zero", "negative"])
-def test_update_length_rejects_a_non_positive_length(
+def test_write_engagement_length_rejects_a_non_positive_length(
     client: TestClient, ruler: Ruler, length: int
 ) -> None:
     _, engagement_id = _read_with_length(client, ruler, 1100)
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={ruler.length_field: length},
+    response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement_id,
+            "status": "reading",
+            "edition_format": ruler.edition_format,
+            "length_override": length,
+        },
     )
 
     assert response.status_code == 422
