@@ -6,12 +6,12 @@ import {
   getEngagementsWriteEngagementMockHandler,
   getEngagementsWriteEngagementResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
-import { ReadingStatus, type BookRead } from '@/api/generated/readingTracker.schemas';
+import type { BookRead } from '@/api/generated/readingTracker.schemas';
 import { buildBook } from '@/test/data-generators';
 import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
 import { localIsoDate } from '@/utils/local-date';
-import { STATUSES } from '@/utils/status';
+import { SHELVED_STATUSES, STATUSES } from '@/utils/status';
 import { StartReadingSheet } from './start-reading-sheet';
 
 // The sheet leaves navigation to whoever opened it, so the harness stands in for the
@@ -42,7 +42,7 @@ function renderAddSheet(overrides: Partial<BookRead> = {}) {
   return render(
     <StartReadingSheet
       book={buildBook(overrides)}
-      statuses={[ReadingStatus.reading, ReadingStatus.finished, ReadingStatus.dnf]}
+      statuses={SHELVED_STATUSES}
       open
       onOpenChange={() => {}}
     />

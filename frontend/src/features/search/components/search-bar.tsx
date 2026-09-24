@@ -12,7 +12,6 @@ import {
 } from '@/api/generated/books/books';
 import {
   BookSearchResultState,
-  ReadingStatus,
   type BookSearchResult,
 } from '@/api/generated/readingTracker.schemas';
 import { ErrorText } from '@/components/common/error-text';
@@ -28,14 +27,13 @@ import {
 } from '@/components/ui/combobox';
 import { InputGroupAddon } from '@/components/ui/input-group';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
+import { SHELVED_STATUSES } from '@/utils/status';
 import { SearchButton } from './search-button';
 import { SearchResultRow } from './search-result-row';
 
 const DEBOUNCE_MS = 300;
 
 const MIN_QUERY_LENGTH = 2;
-
-const ADD_STATUSES = [ReadingStatus.reading, ReadingStatus.finished, ReadingStatus.dnf];
 
 type PendingSheet = { bookId: string; cancelLabel?: string };
 
@@ -116,7 +114,7 @@ function AddToLibrarySheet({
   return (
     <StartReadingSheet
       book={book}
-      statuses={ADD_STATUSES}
+      statuses={SHELVED_STATUSES}
       {...(cancelLabel && { cancelLabel })}
       open
       onOpenChange={(open) => !open && onClose()}
