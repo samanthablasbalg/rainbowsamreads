@@ -161,7 +161,7 @@ def test_write_engagement_length_past_several_entries_returns_409(
 
 
 @pytest.mark.parametrize("ruler", RULERS)
-def test_update_length_down_to_an_entrys_own_start_returns_409(
+def test_write_engagement_length_down_to_an_entrys_own_start_returns_409(
     client: TestClient, ruler: Ruler
 ) -> None:
     _, engagement_id = _read_with_length(client, ruler, 1100)
@@ -170,9 +170,14 @@ def test_update_length_down_to_an_entrys_own_start_returns_409(
 
     # Pulling the 200-500 entry back to 200 would leave it ending where it starts,
     # which update_progress_log refuses too.
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={ruler.length_field: 200},
+    response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement_id,
+            "status": "reading",
+            "edition_format": ruler.edition_format,
+            "length_override": 200,
+        },
     )
 
     assert response.status_code == 409
