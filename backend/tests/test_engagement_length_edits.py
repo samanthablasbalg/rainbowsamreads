@@ -185,15 +185,20 @@ def test_write_engagement_length_down_to_an_entrys_own_start_returns_409(
 
 
 @pytest.mark.parametrize("ruler", RULERS)
-def test_update_length_equal_to_the_furthest_log_is_allowed(
+def test_write_engagement_length_equal_to_the_furthest_log_is_allowed(
     client: TestClient, ruler: Ruler
 ) -> None:
     _, engagement_id = _read_with_length(client, ruler, 1100)
     ruler.log_progress(client, engagement_id, 500)
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={ruler.length_field: 500},
+    response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement_id,
+            "status": "reading",
+            "edition_format": ruler.edition_format,
+            "length_override": 500,
+        },
     )
 
     assert response.status_code == 200
