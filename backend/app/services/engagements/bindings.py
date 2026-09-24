@@ -21,7 +21,11 @@ def bind_edition(
     edition_length: int | None,
     length_override: int | None,
 ) -> EngagementEdition:
-    edition = _resolve_edition(db, engagement, edition_id, edition_format)
+    edition = (
+        edition_crud.get_or_raise(db, edition_id)
+        if edition_id is not None
+        else _edition_for_format(db, engagement, edition_format)
+    )
     binding = engagement_edition_crud.get(db, (engagement.id, edition.id))
     if binding is None:
         return _create_binding(
@@ -73,17 +77,6 @@ def _create_binding(
         capture_edition_length(engagement.book, edition, edition_length)
 
     return binding
-
-
-def _resolve_edition(
-    db: Session,
-    engagement: Engagement,
-    edition_id: uuid.UUID | None,
-    edition_format: Format | None,
-) -> Edition:
-    if edition_id is not None:
-        return edition_crud.get_or_raise(db, edition_id)
-    return _edition_for_format(db, engagement, edition_format)
 
 
 def _edition_for_format(
