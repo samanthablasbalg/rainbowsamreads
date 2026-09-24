@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import httpx2
 import pytest
 from fastapi.testclient import TestClient
 
@@ -12,6 +13,26 @@ from tests.helpers import (
     _create_engagement,
     _read_with_length,
 )
+
+
+def _correct_length(
+    client: TestClient,
+    ruler: Ruler,
+    engagement_id: str,
+    length: int,
+    *,
+    status: str = "reading",
+) -> httpx2.Response:
+    return client.post(
+        "/api/engagements",
+        json={
+            "id": engagement_id,
+            "status": status,
+            "edition_format": ruler.edition_format,
+            "length_override": length,
+        },
+    )
+
 
 # --- Successful corrections ---
 
@@ -38,15 +59,7 @@ def test_write_engagement_length_recomputes_completion(
     assert current.status_code == 200
     assert current.json()["completion_pct"] == initial_pct
 
-    response = client.post(
-        "/api/engagements",
-        json={
-            "id": engagement_id,
-            "status": "reading",
-            "edition_format": ruler.edition_format,
-            "length_override": corrected_length,
-        },
-    )
+    response = _correct_length(client, ruler, engagement_id, corrected_length)
 
     assert response.status_code == 200
     data = response.json()
@@ -59,15 +72,7 @@ def test_write_engagement_length_leaves_the_shared_edition_alone(
     client: TestClient, ruler: Ruler
 ) -> None:
     edition, engagement_id = _read_with_length(client, ruler, 1100)
-    response = client.post(
-        "/api/engagements",
-        json={
-            "id": engagement_id,
-            "status": "reading",
-            "edition_format": ruler.edition_format,
-            "length_override": 1000,
-        },
-    )
+    response = _correct_length(client, ruler, engagement_id, 1000)
     assert response.status_code == 200
 
     edition_response = client.get(f"/api/editions/{edition['id']}")
@@ -86,15 +91,7 @@ def test_write_engagement_length_pulls_back_the_only_entry_past_the_new_end(
     for position in (300, 400, 500, 800):
         ruler.log_progress(client, engagement_id, position)
 
-    response = client.post(
-        "/api/engagements",
-        json={
-            "id": engagement_id,
-            "status": "reading",
-            "edition_format": ruler.edition_format,
-            "length_override": 750,
-        },
-    )
+    response = _correct_length(client, ruler, engagement_id, 750)
 
     assert response.status_code == 200
     data = response.json()
@@ -115,15 +112,7 @@ def test_write_engagement_length_below_a_finished_reads_catch_up_entry_succeeds(
     )
     assert finish_response.status_code == 200
 
-    response = client.post(
-        "/api/engagements",
-        json={
-            "id": engagement_id,
-            "status": "finished",
-            "edition_format": ruler.edition_format,
-            "length_override": 1000,
-        },
-    )
+    response = _correct_length(client, ruler, engagement_id, 1000, status="finished")
 
     assert response.status_code == 200
     data = response.json()
@@ -140,15 +129,7 @@ def test_write_engagement_length_past_several_entries_returns_409(
     for position in (260, 280, 300):
         ruler.log_progress(client, engagement_id, position)
 
-    response = client.post(
-        "/api/engagements",
-        json={
-            "id": engagement_id,
-            "status": "reading",
-            "edition_format": ruler.edition_format,
-            "length_override": 250,
-        },
-    )
+    response = _correct_length(client, ruler, engagement_id, 250)
 
     assert response.status_code == 409
     assert "300" in response.json()["detail"]
@@ -168,15 +149,7 @@ def test_write_engagement_length_down_to_an_entrys_own_start_returns_409(
 
     # Pulling the 200-500 entry back to 200 would leave it ending where it starts,
     # which update_progress_log refuses too.
-    response = client.post(
-        "/api/engagements",
-        json={
-            "id": engagement_id,
-            "status": "reading",
-            "edition_format": ruler.edition_format,
-            "length_override": 200,
-        },
-    )
+    response = _correct_length(client, ruler, engagement_id, 200)
 
     assert response.status_code == 409
     assert "500" in response.json()["detail"]
@@ -189,15 +162,7 @@ def test_write_engagement_length_equal_to_the_furthest_log_is_allowed(
     _, engagement_id = _read_with_length(client, ruler, 1100)
     ruler.log_progress(client, engagement_id, 500)
 
-    response = client.post(
-        "/api/engagements",
-        json={
-            "id": engagement_id,
-            "status": "reading",
-            "edition_format": ruler.edition_format,
-            "length_override": 500,
-        },
-    )
+    response = _correct_length(client, ruler, engagement_id, 500)
 
     assert response.status_code == 200
     assert response.json()["completion_pct"] == 100
@@ -247,14 +212,6 @@ def test_write_engagement_length_rejects_a_non_positive_length(
 ) -> None:
     _, engagement_id = _read_with_length(client, ruler, 1100)
 
-    response = client.post(
-        "/api/engagements",
-        json={
-            "id": engagement_id,
-            "status": "reading",
-            "edition_format": ruler.edition_format,
-            "length_override": length,
-        },
-    )
+    response = _correct_length(client, ruler, engagement_id, length)
 
     assert response.status_code == 422
