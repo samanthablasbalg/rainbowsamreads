@@ -20,6 +20,7 @@ from app.models.enums import Format, LogUnit, ReadingStatus
 from app.models.progress_log import ProgressLog
 from app.services.books import capture_edition_length
 from app.services.engagements._shared import ENGAGEMENT_READ_OPTIONS
+from app.services.engagements.bindings import bind_edition
 from app.services.engagements.progress_logs import latest_log, reject_future_date
 
 
@@ -259,14 +260,28 @@ def _transition_to_dnf(
     engagement.abandoned_on = effective_on or latest.logged_on
 
 
-def update_engagement_status(
+def update_engagement(
     db: Session,
     engagement_id: uuid.UUID,
     new_status: ReadingStatus,
+    *,
+    edition_id: uuid.UUID | None = None,
+    edition_format: Format | None = None,
+    edition_length: int | None = None,
+    length_override: int | None = None,
     effective_on: datetime.date | None = None,
     unit: LogUnit | None = None,
 ) -> Engagement:
     engagement = engagement_crud.get_or_raise(db, engagement_id)
+    if edition_id is not None or edition_format is not None:
+        bind_edition(
+            db,
+            engagement,
+            edition_id=edition_id,
+            edition_format=edition_format,
+            edition_length=edition_length,
+            length_override=length_override,
+        )
     if engagement.status == new_status:
         return engagement
 
