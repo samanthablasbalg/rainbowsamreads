@@ -70,7 +70,7 @@ class EngagementWrite(BaseModel):
 
 
 class EngagementDatesUpdate(BaseModel):
-    """Corrects dates a read already has. Ending a read is the status endpoint's job:
+    """Corrects dates a read already has. Ending a read is the engagement write's job:
     `finished_on` here edits a finished read, `abandoned_on` a dnf one."""
 
     started_on: datetime.date | None = None

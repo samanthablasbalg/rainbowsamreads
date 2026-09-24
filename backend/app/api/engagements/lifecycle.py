@@ -29,7 +29,7 @@ router = APIRouter()
     responses={
         200: {
             "model": EngagementRead,
-            "description": "Engagement status updated successfully.",
+            "description": "Existing engagement updated successfully.",
         },
     },
     status_code=status.HTTP_201_CREATED,

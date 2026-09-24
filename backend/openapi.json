@@ -576,7 +576,7 @@
             }
           },
           "200": {
-            "description": "Engagement status updated successfully.",
+            "description": "Existing engagement updated successfully.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1757,7 +1757,7 @@
         },
         "type": "object",
         "title": "EngagementDatesUpdate",
-        "description": "Corrects dates a read already has. Ending a read is the status endpoint's job:\n`finished_on` here edits a finished read, `abandoned_on` a dnf one."
+        "description": "Corrects dates a read already has. Ending a read is the engagement write's job:\n`finished_on` here edits a finished read, `abandoned_on` a dnf one."
       },
       "EngagementEditionRead": {
         "properties": {
