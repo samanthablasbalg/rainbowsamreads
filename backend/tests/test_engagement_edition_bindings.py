@@ -104,7 +104,7 @@ def test_create_binding_captures_missing_edition_length(
         pytest.param(MINUTES, PAGES, id="pages"),
     ],
 )
-def test_create_binding_by_format_finds_existing_edition(
+def test_write_engagement_binds_supplied_format_to_its_edition(
     client: TestClient,
     source_ruler: Ruler,
     added_ruler: Ruler,
@@ -116,7 +116,7 @@ def test_create_binding_by_format_finds_existing_edition(
         format=source_ruler.edition_format,
         length=300,
     )
-    added_edition = _create_edition(
+    _create_edition(
         client,
         book["id"],
         format=added_ruler.edition_format,
@@ -129,12 +129,20 @@ def test_create_binding_by_format_finds_existing_edition(
     )
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_format": added_ruler.edition_format},
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_format": added_ruler.edition_format,
+        },
     )
 
-    assert response.status_code == 201
-    assert response.json()["edition"]["id"] == added_edition["id"]
+    assert response.status_code == 200
+    data = response.json()
+    assert sorted(data["formats"]) == sorted(
+        [source_ruler.edition_format, added_ruler.edition_format]
+    )
+    assert data[added_ruler.length_field] == 600
 
 
 def test_create_binding_by_format_with_no_edition_returns_404(

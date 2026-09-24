@@ -2263,6 +2263,16 @@
           "status": {
             "$ref": "#/components/schemas/ReadingStatus"
           },
+          "edition_format": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Format"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "effective_on": {
             "anyOf": [
               {
