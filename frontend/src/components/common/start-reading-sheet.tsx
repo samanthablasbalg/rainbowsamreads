@@ -89,15 +89,17 @@ function StartReadingForm({
                   className="justify-start"
                   aria-label={`Add ${book.title} as ${STATUSES[status].label}`}
                   onClick={() => form.pickStatus(status)}
+                  disabled={form.startPending}
                 >
                   {STATUSES[status].label}
                 </Button>
               ))}
             </div>
+            {form.error && <ErrorText>{form.error}</ErrorText>}
           </ResponsiveDialogBody>
 
           <ResponsiveDialogFooter>
-            <Button variant="outline" onClick={onDone}>
+            <Button variant="outline" disabled={form.startPending} onClick={onDone}>
               {cancelLabel}
             </Button>
           </ResponsiveDialogFooter>
@@ -263,8 +265,17 @@ function useStartReadingForm(
 
   function pickStatus(picked: ShelvedStatus) {
     setStatus(picked);
-    setStartedOn(defaultStartedOn(picked));
-    setStep('fields');
+    if (picked === 'tbr') {
+      createEngagement.mutate({
+        data: {
+          book_id: book.id,
+          status: picked,
+        },
+      });
+    } else {
+      setStartedOn(defaultStartedOn(picked));
+      setStep('fields');
+    }
   }
 
   function handleStart() {
