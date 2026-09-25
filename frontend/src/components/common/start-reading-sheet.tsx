@@ -31,6 +31,7 @@ const READING_ONLY = [ReadingStatus.reading];
 
 type StartReadingSheetProps = {
   book: BookRead;
+  engagementId?: string;
   // More than one turns the sheet into two steps, asking where the read goes before
   // asking how it was read. One (the default) goes straight to the form.
   statuses?: ShelvedStatus[];
@@ -62,8 +63,9 @@ function StartReadingForm({
   cancelLabel = 'Cancel',
   onDone,
   onStarted,
+  engagementId,
 }: StartReadingFormProps) {
-  const form = useStartReadingForm(book, statuses, onDone, onStarted);
+  const form = useStartReadingForm(book, statuses, onDone, onStarted, engagementId);
 
   return (
     <>
@@ -217,7 +219,8 @@ function useStartReadingForm(
   book: BookRead,
   statuses: ShelvedStatus[],
   onClose: () => void,
-  onStarted?: () => void
+  onStarted?: () => void,
+  engagementId?: string
 ) {
   const [status, setStatus] = useState(statuses[0]!);
   const [step, setStep] = useState<'status' | 'fields'>(statuses.length > 1 ? 'status' : 'fields');
@@ -230,7 +233,7 @@ function useStartReadingForm(
 
   const queryClient = useQueryClient();
 
-  const createEngagement = useEngagementsWriteEngagement<DetailError>({
+  const writeEngagement = useEngagementsWriteEngagement<DetailError>({
     mutation: {
       onSuccess: async () => {
         await Promise.all([
@@ -266,7 +269,7 @@ function useStartReadingForm(
   function pickStatus(picked: ShelvedStatus) {
     setStatus(picked);
     if (picked === 'tbr') {
-      createEngagement.mutate({
+      writeEngagement.mutate({
         data: {
           book_id: book.id,
           status: picked,
@@ -281,12 +284,14 @@ function useStartReadingForm(
   function handleStart() {
     if (typed && parsedLength === null) return;
     setError(null);
-    createEngagement.mutate({
+    const target = engagementId
+      ? { id: engagementId, ...(startedOn && { effective_on: startedOn }) }
+      : { book_id: book.id, ...(startedOn && { started_on: startedOn }) };
+    writeEngagement.mutate({
       data: {
-        book_id: book.id,
+        ...target,
         edition_format: format,
         status,
-        ...(startedOn && { started_on: startedOn }),
         ...(finishedOn && { finished_on: finishedOn }),
         ...(typed && parsedLength !== null && lengthField(knownLength, parsedLength)),
       },
@@ -325,6 +330,6 @@ function useStartReadingForm(
     canStart: typed ? parsedLength !== null : knownLength !== null,
     handleStart,
     error,
-    startPending: createEngagement.isPending,
+    startPending: writeEngagement.isPending,
   };
 }

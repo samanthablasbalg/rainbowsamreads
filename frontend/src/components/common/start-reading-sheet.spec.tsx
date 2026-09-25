@@ -322,4 +322,28 @@ describe('StartReadingSheet', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(expectedErrorMessage);
   });
+
+  it('transitions an existing read from TBR to Reading', async () => {
+    const user = userEvent.setup();
+    const captured = captureCreateBody();
+    render(
+      <StartReadingSheet
+        book={buildBook()}
+        engagementId="eng-Piranesi"
+        open
+        onOpenChange={() => {}}
+      />
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Start reading Piranesi' }));
+
+    await waitFor(() =>
+      expect(captured.body).toEqual({
+        id: 'eng-Piranesi',
+        status: 'reading',
+        edition_format: 'print',
+        effective_on: localIsoDate(),
+      })
+    );
+  });
 });

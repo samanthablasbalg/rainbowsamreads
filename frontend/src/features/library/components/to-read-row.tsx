@@ -68,7 +68,12 @@ export function ToReadRow({ engagement }: { engagement: EngagementRead }) {
         </DropdownMenuItem>
       }
     >
-      <StartReadingSheet book={book} open={startReadingOpen} onOpenChange={setStartReadingOpen} />
+      <StartReadingSheet
+        book={book}
+        engagementId={engagement.id}
+        open={startReadingOpen}
+        onOpenChange={setStartReadingOpen}
+      />
 
       <ConfirmDialog
         open={confirmOpen}

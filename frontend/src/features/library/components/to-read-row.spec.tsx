@@ -1,10 +1,15 @@
 import userEvent from '@testing-library/user-event';
-import { getEngagementsDeleteEngagementMockHandler } from '@/api/generated/engagements/engagements.msw';
+import {
+  getEngagementsDeleteEngagementMockHandler,
+  getEngagementsWriteEngagementMockHandler,
+  getEngagementsWriteEngagementResponseMock,
+} from '@/api/generated/engagements/engagements.msw';
 import { type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
 import { buildEngagement } from '@/test/data-generators';
 import { ToReadRow } from './to-read-row';
+import { localIsoDate } from '@/utils/local-date';
 
 function renderInList(engagement: EngagementRead) {
   return render(
@@ -77,5 +82,29 @@ describe('ToReadRow', () => {
     await user.click(screen.getByRole('button', { name: 'Mark Piranesi as reading' }));
 
     expect(await screen.findByRole('button', { name: 'Start reading Piranesi' })).toBeVisible();
+  });
+
+  it('marks the engagement reading, through the start reading sheet, when Mark as reading is chosen', async () => {
+    const user = userEvent.setup();
+    let capturedBody: unknown;
+    server.use(
+      getEngagementsWriteEngagementMockHandler(async (info) => {
+        capturedBody = await info.request.json();
+        return getEngagementsWriteEngagementResponseMock();
+      })
+    );
+    renderInList(buildEngagement());
+
+    await user.click(screen.getByRole('button', { name: 'Mark Piranesi as reading' }));
+    expect(await screen.findByRole('dialog', { name: 'Piranesi' })).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Start reading Piranesi' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(capturedBody).toMatchObject({
+      id: 'engagement-Piranesi',
+      status: 'reading',
+      effective_on: localIsoDate(),
+    });
   });
 });
