@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { HttpResponse, http } from 'msw';
 import userEvent from '@testing-library/user-event';
 import {
-  getEngagementsCreateBindingMockHandler,
-  getEngagementsCreateBindingResponseMock,
+  getEngagementsWriteEngagementMockHandler,
+  getEngagementsWriteEngagementResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
-import { Format, type EngagementRead } from '@/api/generated/readingTracker.schemas';
+import { Format, ReadingStatus, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { buildAudioEngagement, buildEngagement } from '@/test/data-generators';
 import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
@@ -21,16 +21,18 @@ function ControlledSheet({ engagement }: { engagement: EngagementRead }) {
   );
 }
 
-function renderSheet(engagement: EngagementRead = buildEngagement()) {
+function renderSheet(
+  engagement: EngagementRead = buildEngagement({ status: ReadingStatus.reading })
+) {
   return render(<ControlledSheet engagement={engagement} />);
 }
 
 function captureBindingBody() {
   const captured: { body?: unknown } = {};
   server.use(
-    getEngagementsCreateBindingMockHandler(async (info) => {
+    getEngagementsWriteEngagementMockHandler(async (info) => {
       captured.body = await info.request.json();
-      return getEngagementsCreateBindingResponseMock();
+      return getEngagementsWriteEngagementResponseMock();
     })
   );
   return captured;
@@ -90,7 +92,11 @@ describe('AddFormatSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Add format' }));
 
     await waitFor(() => expect(screen.getByText('closed')).toBeInTheDocument());
-    expect(captured.body).toEqual({ edition_format: 'digital' });
+    expect(captured.body).toEqual({
+      id: 'engagement-Piranesi',
+      status: 'reading',
+      edition_format: 'digital',
+    });
   });
 
   it('sends a typed page count as a length override', async () => {
@@ -103,7 +109,12 @@ describe('AddFormatSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Add format' }));
 
     await waitFor(() => expect(screen.getByText('closed')).toBeInTheDocument());
-    expect(captured.body).toEqual({ edition_format: 'digital', length_override: 310 });
+    expect(captured.body).toEqual({
+      id: 'engagement-Piranesi',
+      status: 'reading',
+      edition_format: 'digital',
+      length_override: 310,
+    });
   });
 
   it('swaps to an HH:MM length for audio and drops what was typed for pages', async () => {
@@ -131,7 +142,12 @@ describe('AddFormatSheet', () => {
     await user.click(add);
 
     await waitFor(() => expect(screen.getByText('closed')).toBeInTheDocument());
-    expect(captured.body).toEqual({ edition_format: 'audio', edition_length: 630 });
+    expect(captured.body).toEqual({
+      id: 'engagement-Piranesi',
+      status: 'reading',
+      edition_format: 'audio',
+      edition_length: 630,
+    });
   });
 
   it('overrides rather than captures when the audio length is already known', async () => {
@@ -139,6 +155,7 @@ describe('AddFormatSheet', () => {
     const captured = captureBindingBody();
     renderSheet(
       buildEngagement({
+        status: ReadingStatus.reading,
         book: { ...buildEngagement().book, default_audio_minutes: 600 },
       })
     );
@@ -150,7 +167,12 @@ describe('AddFormatSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Add format' }));
 
     await waitFor(() => expect(screen.getByText('closed')).toBeInTheDocument());
-    expect(captured.body).toEqual({ edition_format: 'audio', length_override: 660 });
+    expect(captured.body).toEqual({
+      id: 'engagement-Piranesi',
+      status: 'reading',
+      edition_format: 'audio',
+      length_override: 660,
+    });
   });
 
   it('reads the bound audio row off the read, in its own ruler', async () => {
@@ -176,9 +198,12 @@ describe('AddFormatSheet', () => {
   it('shows the failure reason and stays open when the format cannot be added', async () => {
     const user = userEvent.setup();
     server.use(
-      http.post('*/api/engagements/*/editions', () =>
+      http.post('*/api/engagements', () =>
         HttpResponse.json(
-          { detail: 'This edition is already bound to this engagement.' },
+          {
+            detail:
+              "This book has more than one digital edition, so the app can't tell which one to use.",
+          },
           { status: 409 }
         )
       )
@@ -189,7 +214,7 @@ describe('AddFormatSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Add format' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'This edition is already bound to this engagement.'
+      "This book has more than one digital edition, so the app can't tell which one to use."
     );
     expect(screen.queryByText('closed')).not.toBeInTheDocument();
   });

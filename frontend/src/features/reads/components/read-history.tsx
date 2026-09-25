@@ -6,7 +6,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   useEngagementsGetEngagementSuspense,
   useEngagementsUpdateEngagementDates,
-  useEngagementsUpdateEngagementLength,
   useEngagementsWriteEngagement,
 } from '@/api/generated/engagements/engagements';
 import {
@@ -111,6 +110,9 @@ function ReadHeader({
   onLogProgress?: () => void;
 }) {
   const { book, formats, completion_pct } = engagement;
+  // Every page row shows length_pages, which the server reads off the first non-audio
+  // format, so a page length is corrected there too.
+  const pageFormat = formats.find((f) => f !== Format.audio);
 
   const queryClient = useQueryClient();
   const onSuccess = () => invalidateRead(queryClient, engagement.id);
@@ -119,7 +121,7 @@ function ReadHeader({
   });
   // Every percentage on the read is derived from this length, so invalidating is all it
   // takes to reflow them -- no log row stores a percentage of its own.
-  const updateLength = useEngagementsUpdateEngagementLength<DetailError>({
+  const updateLength = useEngagementsWriteEngagement<DetailError>({
     mutation: { onSuccess },
   });
   const finishRead = useEngagementsWriteEngagement<DetailError>({
@@ -169,8 +171,12 @@ function ReadHeader({
                   isAudio={isAudio}
                   onSave={(next) =>
                     updateLength.mutateAsync({
-                      engagementId: engagement.id,
-                      data: isAudio ? { length_minutes: next } : { length_pages: next },
+                      data: {
+                        id: engagement.id,
+                        status: engagement.status,
+                        edition_format: isAudio ? format : pageFormat,
+                        length_override: next,
+                      },
                     })
                   }
                 />

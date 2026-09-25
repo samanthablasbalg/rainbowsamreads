@@ -7,11 +7,7 @@ import {
   getEngagementsListEngagementsQueryKey,
   useEngagementsWriteEngagement,
 } from '@/api/generated/engagements/engagements';
-import {
-  EngagementCreateStatus,
-  Format,
-  type BookRead,
-} from '@/api/generated/readingTracker.schemas';
+import { Format, ReadingStatus, type BookRead } from '@/api/generated/readingTracker.schemas';
 import { ErrorText } from '@/components/common/error-text';
 import { PositionInput } from '@/components/common/position-input';
 import { Button } from '@/components/ui/button';
@@ -29,15 +25,15 @@ import {
 import { FORMATS } from '@/utils/format';
 import { formatLength, lengthField, parseLength } from '@/utils/length';
 import { localIsoDate } from '@/utils/local-date';
-import { STATUSES } from '@/utils/status';
+import { STATUSES, type ShelvedStatus } from '@/utils/status';
 
-const READING_ONLY = [EngagementCreateStatus.reading];
+const READING_ONLY = [ReadingStatus.reading];
 
 type StartReadingSheetProps = {
   book: BookRead;
   // More than one turns the sheet into two steps, asking where the read goes before
   // asking how it was read. One (the default) goes straight to the form.
-  statuses?: EngagementCreateStatus[];
+  statuses?: ShelvedStatus[];
   cancelLabel?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -211,13 +207,13 @@ function StartReadingFields({
 
 // A read in progress starts today unless you say otherwise. One logged after the fact
 // starts blank -- prefilling today would record a date you never claimed.
-function defaultStartedOn(status: EngagementCreateStatus) {
-  return status === EngagementCreateStatus.reading ? localIsoDate() : '';
+function defaultStartedOn(status: ShelvedStatus) {
+  return status === ReadingStatus.reading ? localIsoDate() : '';
 }
 
 function useStartReadingForm(
   book: BookRead,
-  statuses: EngagementCreateStatus[],
+  statuses: ShelvedStatus[],
   onClose: () => void,
   onStarted?: () => void
 ) {
@@ -265,7 +261,7 @@ function useStartReadingForm(
     setError(null);
   }
 
-  function pickStatus(picked: EngagementCreateStatus) {
+  function pickStatus(picked: ShelvedStatus) {
     setStatus(picked);
     setStartedOn(defaultStartedOn(picked));
     setStep('fields');
@@ -293,14 +289,14 @@ function useStartReadingForm(
         : 'Enter a number of pages'
       : null;
 
-  const isReading = status === EngagementCreateStatus.reading;
+  const isReading = status === ReadingStatus.reading;
 
   return {
     step,
     pickStatus,
     isReading,
     submitLabel: isReading ? 'Start reading' : 'Add',
-    finishLabel: status === EngagementCreateStatus.dnf ? 'Stopped on' : 'Finish date',
+    finishLabel: status === ReadingStatus.dnf ? 'Stopped on' : 'Finish date',
     finishedOn,
     setFinishedOn,
     format,

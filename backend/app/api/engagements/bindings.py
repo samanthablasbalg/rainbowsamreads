@@ -8,40 +8,11 @@ from sqlalchemy.orm import Session, selectinload
 from app.crud import engagement_crud, engagement_edition_crud
 from app.database import get_db
 from app.models.edition import EngagementEdition
-from app.schemas import EngagementEditionCreate, EngagementEditionRead
-from app.services.engagements import bindings as bindings_service
+from app.schemas import EngagementEditionRead
 
 router = APIRouter()
 
 _BINDING_OPTIONS = (selectinload(EngagementEdition.edition),)
-
-
-@router.post(
-    "/{engagement_id}/editions",
-    response_model=EngagementEditionRead,
-    status_code=status.HTTP_201_CREATED,
-)
-def create_binding(
-    engagement_id: uuid.UUID,
-    payload: EngagementEditionCreate,
-    db: Session = Depends(get_db),
-) -> EngagementEditionRead:
-    engagement = engagement_crud.get_or_raise(db, engagement_id)
-    binding = bindings_service.create_binding(
-        db,
-        engagement,
-        edition_id=payload.edition_id,
-        edition_format=payload.edition_format,
-        origin_id=payload.origin_id,
-        length_override=payload.length_override,
-        edition_length=payload.edition_length,
-    )
-    db.commit()
-
-    loaded = engagement_edition_crud.get_or_raise(
-        db, (engagement_id, binding.edition_id), options=_BINDING_OPTIONS
-    )
-    return EngagementEditionRead.model_validate(loaded)
 
 
 @router.get("/{engagement_id}/editions", response_model=list[EngagementEditionRead])

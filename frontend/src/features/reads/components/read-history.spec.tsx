@@ -172,11 +172,11 @@ describe('ReadHistory', () => {
     );
   });
 
-  it('patches the length in pages for a page-measured read', async () => {
+  it('writes the length in pages for a page-measured read', async () => {
     const sent: Record<string, unknown>[] = [];
     server.use(
       getEngagementsGetEngagementMockHandler(buildEngagement()),
-      http.patch('*/api/engagements/*/length', async ({ request }) => {
+      http.post('*/api/engagements', async ({ request }) => {
         sent.push((await request.json()) as Record<string, unknown>);
         return HttpResponse.json({});
       })
@@ -189,14 +189,23 @@ describe('ReadHistory', () => {
     await userEvent.type(screen.getByLabelText('print length'), '300');
     await userEvent.click(screen.getByRole('button', { name: 'Save print length' }));
 
-    await waitFor(() => expect(sent).toEqual([{ length_pages: 300 }]));
+    await waitFor(() =>
+      expect(sent).toEqual([
+        {
+          id: 'engagement-Piranesi',
+          status: 'finished',
+          edition_format: 'print',
+          length_override: 300,
+        },
+      ])
+    );
   });
 
-  it('patches the length in minutes for an audio read', async () => {
+  it('writes the length in minutes for an audio read', async () => {
     const sent: Record<string, unknown>[] = [];
     server.use(
       getEngagementsGetEngagementMockHandler(buildAudioEngagement()),
-      http.patch('*/api/engagements/*/length', async ({ request }) => {
+      http.post('*/api/engagements', async ({ request }) => {
         sent.push((await request.json()) as Record<string, unknown>);
         return HttpResponse.json({});
       })
@@ -208,13 +217,22 @@ describe('ReadHistory', () => {
     await userEvent.type(screen.getByLabelText('audio length'), '0930');
     await userEvent.click(screen.getByRole('button', { name: 'Save audio length' }));
 
-    await waitFor(() => expect(sent).toEqual([{ length_minutes: 570 }]));
+    await waitFor(() =>
+      expect(sent).toEqual([
+        {
+          id: 'engagement-Piranesi',
+          status: 'finished',
+          edition_format: 'audio',
+          length_override: 570,
+        },
+      ])
+    );
   });
 
   it('surfaces a length the server refuses', async () => {
     server.use(
       getEngagementsGetEngagementMockHandler(buildEngagement()),
-      http.patch('*/api/engagements/*/length', () =>
+      http.post('*/api/engagements', () =>
         HttpResponse.json(
           {
             detail:

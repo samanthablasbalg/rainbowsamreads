@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import datetime
 import uuid
-from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import Format
 
@@ -39,24 +38,6 @@ class EditionRead(BaseModel):
     updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class EngagementEditionCreate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    edition_id: uuid.UUID | None = None
-    edition_format: Format | None = None
-    origin_id: uuid.UUID | None = None
-    length_override: int | None = Field(default=None, gt=0)
-    edition_length: int | None = Field(default=None, gt=0)
-
-    @model_validator(mode="after")
-    def check_exactly_one_resolver(self) -> Self:
-        has_id = self.edition_id is not None
-        has_format = self.edition_format is not None
-        if has_id == has_format:
-            raise ValueError("Provide exactly one of edition_id or edition_format")
-        return self
 
 
 class EngagementEditionRead(BaseModel):

@@ -124,31 +124,8 @@ export interface EditionUpdate {
   cover_url?: string | null;
 }
 
-export type EngagementCreateStatus =
-  (typeof EngagementCreateStatus)[keyof typeof EngagementCreateStatus];
-
-export const EngagementCreateStatus = {
-  reading: 'reading',
-  finished: 'finished',
-  dnf: 'dnf',
-} as const;
-
 /**
- * `finished_on` is the date the read ended, whichever way it ended: it lands in
- * `abandoned_on` when the status is dnf.
- */
-export interface EngagementCreate {
-  book_id: string;
-  edition_format: Format;
-  status?: EngagementCreateStatus;
-  edition_length?: number | null;
-  length_override?: number | null;
-  started_on?: string | null;
-  finished_on?: string | null;
-}
-
-/**
- * Corrects dates a read already has. Ending a read is the status endpoint's job:
+ * Corrects dates a read already has. Ending a read is the engagement write's job:
  * `finished_on` here edits a finished read, `abandoned_on` a dnf one.
  */
 export interface EngagementDatesUpdate {
@@ -157,27 +134,10 @@ export interface EngagementDatesUpdate {
   abandoned_on?: string | null;
 }
 
-export interface EngagementEditionCreate {
-  edition_id?: string | null;
-  edition_format?: Format | null;
-  origin_id?: string | null;
-  length_override?: number | null;
-  edition_length?: number | null;
-}
-
 export interface EngagementEditionRead {
   edition: EditionRead;
   origin_id: string | null;
   length_override: number | null;
-}
-
-/**
- * Mirrors the read side's length_pages / length_minutes pair. Exactly one, because
- * the unit is what tells the service which binding to correct.
- */
-export interface EngagementLengthUpdate {
-  length_pages?: number | null;
-  length_minutes?: number | null;
 }
 
 export type ReadingStatus = (typeof ReadingStatus)[keyof typeof ReadingStatus];
@@ -224,9 +184,19 @@ export interface EngagementRead {
   updated_at: string;
 }
 
-export interface EngagementStatusUpdate {
-  id: string;
+/**
+ * `book_id` creates a read, `id` writes an existing one.
+ */
+export interface EngagementWrite {
+  book_id?: string | null;
+  id?: string | null;
   status: ReadingStatus;
+  edition_id?: string | null;
+  edition_format?: Format | null;
+  edition_length?: number | null;
+  length_override?: number | null;
+  started_on?: string | null;
+  finished_on?: string | null;
   effective_on?: string | null;
   unit?: LogUnit | null;
 }

@@ -559,15 +559,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/EngagementCreate"
-                  },
-                  {
-                    "$ref": "#/components/schemas/EngagementStatusUpdate"
-                  }
-                ],
-                "title": "Payload"
+                "$ref": "#/components/schemas/EngagementWrite"
               }
             }
           }
@@ -584,7 +576,7 @@
             }
           },
           "200": {
-            "description": "Engagement status updated successfully.",
+            "description": "Existing engagement updated successfully.",
             "content": {
               "application/json": {
                 "schema": {
@@ -674,59 +666,6 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/EngagementDatesUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EngagementRead"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/engagements/{engagement_id}/length": {
-      "patch": {
-        "tags": [
-          "engagements"
-        ],
-        "summary": "Update Engagement Length",
-        "operationId": "engagements-update_engagement_length",
-        "parameters": [
-          {
-            "name": "engagement_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Engagement Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EngagementLengthUpdate"
               }
             }
           }
@@ -1082,57 +1021,6 @@
       }
     },
     "/api/engagements/{engagement_id}/editions": {
-      "post": {
-        "tags": [
-          "engagements"
-        ],
-        "summary": "Create Binding",
-        "operationId": "engagements-create_binding",
-        "parameters": [
-          {
-            "name": "engagement_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Engagement Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EngagementEditionCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EngagementEditionRead"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
       "get": {
         "tags": [
           "engagements"
@@ -1828,84 +1716,6 @@
         "type": "object",
         "title": "EditionUpdate"
       },
-      "EngagementCreate": {
-        "properties": {
-          "book_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Book Id"
-          },
-          "edition_format": {
-            "$ref": "#/components/schemas/Format"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "reading",
-              "finished",
-              "dnf"
-            ],
-            "title": "Status",
-            "default": "reading"
-          },
-          "edition_length": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Edition Length"
-          },
-          "length_override": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Length Override"
-          },
-          "started_on": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Started On"
-          },
-          "finished_on": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Finished On"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "book_id",
-          "edition_format"
-        ],
-        "title": "EngagementCreate",
-        "description": "`finished_on` is the date the read ended, whichever way it ended: it lands in\n`abandoned_on` when the status is dnf."
-      },
       "EngagementDatesUpdate": {
         "properties": {
           "started_on": {
@@ -1947,72 +1757,7 @@
         },
         "type": "object",
         "title": "EngagementDatesUpdate",
-        "description": "Corrects dates a read already has. Ending a read is the status endpoint's job:\n`finished_on` here edits a finished read, `abandoned_on` a dnf one."
-      },
-      "EngagementEditionCreate": {
-        "properties": {
-          "edition_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Edition Id"
-          },
-          "edition_format": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Format"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "origin_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Origin Id"
-          },
-          "length_override": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Length Override"
-          },
-          "edition_length": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Edition Length"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "title": "EngagementEditionCreate"
+        "description": "Corrects dates a read already has. Ending a read is the engagement write's job:\n`finished_on` here edits a finished read, `abandoned_on` a dnf one."
       },
       "EngagementEditionRead": {
         "properties": {
@@ -2050,37 +1795,6 @@
           "length_override"
         ],
         "title": "EngagementEditionRead"
-      },
-      "EngagementLengthUpdate": {
-        "properties": {
-          "length_pages": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Length Pages"
-          },
-          "length_minutes": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Length Minutes"
-          }
-        },
-        "type": "object",
-        "title": "EngagementLengthUpdate",
-        "description": "Mirrors the read side's length_pages / length_minutes pair. Exactly one, because\nthe unit is what tells the service which binding to correct."
       },
       "EngagementRead": {
         "properties": {
@@ -2253,15 +1967,104 @@
         ],
         "title": "EngagementRead"
       },
-      "EngagementStatusUpdate": {
+      "EngagementWrite": {
         "properties": {
+          "book_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book Id"
+          },
           "id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Id"
           },
           "status": {
             "$ref": "#/components/schemas/ReadingStatus"
+          },
+          "edition_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edition Id"
+          },
+          "edition_format": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Format"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "edition_length": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edition Length"
+          },
+          "length_override": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Override"
+          },
+          "started_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started On"
+          },
+          "finished_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished On"
           },
           "effective_on": {
             "anyOf": [
@@ -2289,10 +2092,10 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "id",
           "status"
         ],
-        "title": "EngagementStatusUpdate"
+        "title": "EngagementWrite",
+        "description": "`book_id` creates a read, `id` writes an existing one."
       },
       "Format": {
         "type": "string",

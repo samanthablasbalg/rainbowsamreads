@@ -6,58 +6,71 @@ from sqlalchemy.orm import Session
 
 from app.crud import edition_crud, engagement_edition_crud
 from app.exceptions import ConflictError, InvalidOperationError, NotFoundError
-from app.models.edition import EngagementEdition
+from app.models.edition import Edition, EngagementEdition
 from app.models.engagement import Engagement
 from app.models.enums import Format, LogUnit, ReadingStatus
 from app.services.books import capture_edition_length
 
 
-def create_binding(
+def bind_edition(
     db: Session,
     engagement: Engagement,
     *,
     edition_id: uuid.UUID | None,
     edition_format: Format | None,
-    origin_id: uuid.UUID | None,
+    edition_length: int | None,
+    length_override: int | None,
+) -> EngagementEdition:
+    edition = (
+        edition_crud.get_or_raise(db, edition_id)
+        if edition_id is not None
+        else edition_for_format(db, engagement, edition_format)
+    )
+    binding = engagement_edition_crud.get(db, (engagement.id, edition.id))
+    if binding is None:
+        if engagement.status != ReadingStatus.reading:
+            raise InvalidOperationError(
+                "An engagement must be in progress to get an edition bound."
+            )
+        if (
+            length_override is None
+            and edition_length is None
+            and edition.length is None
+        ):
+            raise InvalidOperationError(
+                "A reading engagement requires a length for its selected format."
+            )
+        return create_binding(
+            db,
+            engagement,
+            edition,
+            length_override=length_override,
+            edition_length=edition_length,
+        )
+    if edition_length is not None:
+        raise InvalidOperationError(
+            "This edition is already bound to this engagement. "
+            "Use the length override to change its length."
+        )
+    if length_override is not None:
+        _override_length(engagement, binding, length_override)
+    return binding
+
+
+def create_binding(
+    db: Session,
+    engagement: Engagement,
+    edition: Edition,
+    *,
     length_override: int | None,
     edition_length: int | None,
 ) -> EngagementEdition:
-    if edition_id is not None:
-        edition = edition_crud.get_or_raise(db, edition_id)
-    else:
-        candidates = edition_crud.list_by(
-            db, book_id=engagement.book_id, format=edition_format
-        )
-        if len(candidates) == 0:
-            raise NotFoundError(
-                f"No {edition_format} edition exists for this book; create one first"
-            )
-        if len(candidates) > 1:
-            raise ConflictError(
-                "Multiple editions exist for this format; pass edition_id instead"
-            )
-        edition = candidates[0]
-
-    if engagement_edition_crud.get(db, (engagement.id, edition.id)) is not None:
-        raise ConflictError("This edition is already bound to this engagement.")
-
-    if engagement.status != ReadingStatus.reading:
-        raise InvalidOperationError(
-            "An engagement must be in progress to get an edition bound."
-        )
-
-    if length_override is None and edition_length is None and edition.length is None:
-        raise InvalidOperationError(
-            "A reading engagement requires a length for its selected format."
-        )
-
     binding = engagement_edition_crud.create(
         db,
         EngagementEdition(
             engagement_id=engagement.id,
             edition_id=edition.id,
             user_id=engagement.user_id,
-            origin_id=origin_id,
             length_override=length_override,
         ),
     )
@@ -68,33 +81,28 @@ def create_binding(
     return binding
 
 
-def apply_length_change(
-    engagement: Engagement,
-    *,
-    length_pages: int | None,
-    length_minutes: int | None,
+def edition_for_format(
+    db: Session, engagement: Engagement, edition_format: Format | None
+) -> Edition:
+    candidates = edition_crud.list_by(
+        db, book_id=engagement.book_id, format=edition_format
+    )
+    if len(candidates) == 0:
+        raise NotFoundError(f"No {edition_format} edition exists for this book")
+    if len(candidates) > 1:
+        raise ConflictError(
+            f"This book has more than one {edition_format} edition, so the app"
+            " can't tell which one to use."
+        )
+    return candidates[0]
+
+
+def _override_length(
+    engagement: Engagement, binding: EngagementEdition, length: int
 ) -> None:
-    """Correct this read's length. The unit picks the binding, on the same rule
-    Engagement.length_minutes and .length_pages read it back on."""
-    if length_minutes is not None:
-        _correct_length(engagement, Format.audio, length_minutes)
-    elif length_pages is not None:
-        # A read with no page binding resolves to print, which it has no binding in
-        # either, so the lookup below is what turns that into the 404.
-        page_format = engagement.page_format or Format.print
-        _correct_length(engagement, page_format, length_pages)
-
-
-def _correct_length(engagement: Engagement, fmt: Format, length: int) -> None:
-    """Move the binding's length override, refusing a read that isn't bound in this
-    format and a length that would strand a progress log past the end."""
     # The correction lands on the binding, never on the edition: the edition is shared
     # across users, so its length is not this reader's to move (ADR-0021).
-    binding = engagement.binding_for(fmt)
-    if binding is None:
-        raise NotFoundError("This read has no binding in that format.")
-
-    is_audio = fmt == Format.audio
+    is_audio = binding.edition.format == Format.audio
     _pull_back_the_final_entry(engagement, is_audio, length)
     binding.length_override = length
 

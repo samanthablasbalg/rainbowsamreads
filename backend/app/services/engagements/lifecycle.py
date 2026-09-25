@@ -8,18 +8,20 @@ from sqlalchemy.orm import Session
 
 from app.crud import (
     book_crud,
-    edition_crud,
     engagement_crud,
-    engagement_edition_crud,
     progress_log_crud,
 )
-from app.exceptions import ConflictError, InvalidOperationError, NotFoundError
+from app.exceptions import ConflictError, InvalidOperationError
 from app.models.edition import Edition, EngagementEdition
 from app.models.engagement import Engagement
 from app.models.enums import Format, LogUnit, ReadingStatus
 from app.models.progress_log import ProgressLog
-from app.services.books import capture_edition_length
 from app.services.engagements._shared import ENGAGEMENT_READ_OPTIONS
+from app.services.engagements.bindings import (
+    bind_edition,
+    create_binding,
+    edition_for_format,
+)
 from app.services.engagements.progress_logs import latest_log, reject_future_date
 
 
@@ -88,7 +90,7 @@ def create_engagement(
     started_on: datetime.date | None = None,
     finished_on: datetime.date | None = None,
 ) -> Engagement:
-    book = book_crud.get_or_raise(db, book_id)
+    book_crud.get_or_raise(db, book_id)
 
     reject_future_date(started_on)
     reject_future_date(finished_on)
@@ -125,29 +127,13 @@ def create_engagement(
         ),
     )
 
-    candidates = edition_crud.list_by(db, book_id=book_id, format=edition_format)
-    if len(candidates) == 0:
-        raise NotFoundError(f"No {edition_format} edition exists for this book")
-    if len(candidates) > 1:
-        raise ConflictError(
-            f"This book has more than one {edition_format} edition, so the app"
-            " can't tell which one to start reading. Choosing a specific edition"
-            " when starting a read isn't supported yet."
-        )
-    edition = candidates[0]
-
-    engagement_edition_crud.create(
+    create_binding(
         db,
-        EngagementEdition(
-            engagement_id=engagement.id,
-            edition_id=edition.id,
-            user_id=engagement.user_id,
-            length_override=length_override,
-        ),
+        engagement,
+        edition_for_format(db, engagement, edition_format),
+        length_override=length_override,
+        edition_length=edition_length,
     )
-
-    if edition_length is not None:
-        capture_edition_length(book, edition, edition_length)
 
     if (
         status == ReadingStatus.reading
@@ -259,14 +245,28 @@ def _transition_to_dnf(
     engagement.abandoned_on = effective_on or latest.logged_on
 
 
-def update_engagement_status(
+def update_engagement(
     db: Session,
     engagement_id: uuid.UUID,
     new_status: ReadingStatus,
+    *,
+    edition_id: uuid.UUID | None = None,
+    edition_format: Format | None = None,
+    edition_length: int | None = None,
+    length_override: int | None = None,
     effective_on: datetime.date | None = None,
     unit: LogUnit | None = None,
 ) -> Engagement:
     engagement = engagement_crud.get_or_raise(db, engagement_id)
+    if edition_id is not None or edition_format is not None:
+        bind_edition(
+            db,
+            engagement,
+            edition_id=edition_id,
+            edition_format=edition_format,
+            edition_length=edition_length,
+            length_override=length_override,
+        )
     if engagement.status == new_status:
         return engagement
 

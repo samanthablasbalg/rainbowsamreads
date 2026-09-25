@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import uuid
-
+import httpx2
 import pytest
 from fastapi.testclient import TestClient
 
@@ -10,8 +9,30 @@ from tests.helpers import (
     PAGES,
     RULERS,
     Ruler,
+    _create_book,
+    _create_engagement,
     _read_with_length,
 )
+
+
+def _correct_length(
+    client: TestClient,
+    ruler: Ruler,
+    engagement_id: str,
+    length: int,
+    *,
+    status: str = "reading",
+) -> httpx2.Response:
+    return client.post(
+        "/api/engagements",
+        json={
+            "id": engagement_id,
+            "status": status,
+            "edition_format": ruler.edition_format,
+            "length_override": length,
+        },
+    )
+
 
 # --- Successful corrections ---
 
@@ -23,7 +44,7 @@ from tests.helpers import (
         pytest.param(MINUTES, 600, 300, 500, 50, 60, id="audio"),
     ],
 )
-def test_update_length_recomputes_completion(
+def test_write_engagement_length_recomputes_completion(
     client: TestClient,
     ruler: Ruler,
     original_length: int,
@@ -38,10 +59,7 @@ def test_update_length_recomputes_completion(
     assert current.status_code == 200
     assert current.json()["completion_pct"] == initial_pct
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={ruler.length_field: corrected_length},
-    )
+    response = _correct_length(client, ruler, engagement_id, corrected_length)
 
     assert response.status_code == 200
     data = response.json()
@@ -50,14 +68,11 @@ def test_update_length_recomputes_completion(
 
 
 @pytest.mark.parametrize("ruler", RULERS)
-def test_update_length_leaves_the_shared_edition_alone(
+def test_write_engagement_length_leaves_the_shared_edition_alone(
     client: TestClient, ruler: Ruler
 ) -> None:
     edition, engagement_id = _read_with_length(client, ruler, 1100)
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={ruler.length_field: 1000},
-    )
+    response = _correct_length(client, ruler, engagement_id, 1000)
     assert response.status_code == 200
 
     edition_response = client.get(f"/api/editions/{edition['id']}")
@@ -69,17 +84,14 @@ def test_update_length_leaves_the_shared_edition_alone(
 
 
 @pytest.mark.parametrize("ruler", RULERS)
-def test_update_length_pulls_back_the_only_entry_past_the_new_end(
+def test_write_engagement_length_pulls_back_the_only_entry_past_the_new_end(
     client: TestClient, ruler: Ruler
 ) -> None:
     _, engagement_id = _read_with_length(client, ruler, 1100)
     for position in (300, 400, 500, 800):
         ruler.log_progress(client, engagement_id, position)
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={ruler.length_field: 750},
-    )
+    response = _correct_length(client, ruler, engagement_id, 750)
 
     assert response.status_code == 200
     data = response.json()
@@ -90,7 +102,7 @@ def test_update_length_pulls_back_the_only_entry_past_the_new_end(
 
 
 @pytest.mark.parametrize("ruler", RULERS)
-def test_update_length_below_a_finished_reads_catch_up_entry_succeeds(
+def test_write_engagement_length_below_a_finished_reads_catch_up_entry_succeeds(
     client: TestClient, ruler: Ruler
 ) -> None:
     _, engagement_id = _read_with_length(client, ruler, 1100)
@@ -100,10 +112,7 @@ def test_update_length_below_a_finished_reads_catch_up_entry_succeeds(
     )
     assert finish_response.status_code == 200
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={ruler.length_field: 1000},
-    )
+    response = _correct_length(client, ruler, engagement_id, 1000, status="finished")
 
     assert response.status_code == 200
     data = response.json()
@@ -113,17 +122,14 @@ def test_update_length_below_a_finished_reads_catch_up_entry_succeeds(
 
 
 @pytest.mark.parametrize("ruler", RULERS)
-def test_update_length_past_several_entries_returns_409(
+def test_write_engagement_length_past_several_entries_returns_409(
     client: TestClient, ruler: Ruler
 ) -> None:
     _, engagement_id = _read_with_length(client, ruler, 1100)
     for position in (260, 280, 300):
         ruler.log_progress(client, engagement_id, position)
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={ruler.length_field: 250},
-    )
+    response = _correct_length(client, ruler, engagement_id, 250)
 
     assert response.status_code == 409
     assert "300" in response.json()["detail"]
@@ -134,7 +140,7 @@ def test_update_length_past_several_entries_returns_409(
 
 
 @pytest.mark.parametrize("ruler", RULERS)
-def test_update_length_down_to_an_entrys_own_start_returns_409(
+def test_write_engagement_length_down_to_an_entrys_own_start_returns_409(
     client: TestClient, ruler: Ruler
 ) -> None:
     _, engagement_id = _read_with_length(client, ruler, 1100)
@@ -143,26 +149,20 @@ def test_update_length_down_to_an_entrys_own_start_returns_409(
 
     # Pulling the 200-500 entry back to 200 would leave it ending where it starts,
     # which update_progress_log refuses too.
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={ruler.length_field: 200},
-    )
+    response = _correct_length(client, ruler, engagement_id, 200)
 
     assert response.status_code == 409
     assert "500" in response.json()["detail"]
 
 
 @pytest.mark.parametrize("ruler", RULERS)
-def test_update_length_equal_to_the_furthest_log_is_allowed(
+def test_write_engagement_length_equal_to_the_furthest_log_is_allowed(
     client: TestClient, ruler: Ruler
 ) -> None:
     _, engagement_id = _read_with_length(client, ruler, 1100)
     ruler.log_progress(client, engagement_id, 500)
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={ruler.length_field: 500},
-    )
+    response = _correct_length(client, ruler, engagement_id, 500)
 
     assert response.status_code == 200
     assert response.json()["completion_pct"] == 100
@@ -171,51 +171,47 @@ def test_update_length_equal_to_the_furthest_log_is_allowed(
 # --- Validation and errors ---
 
 
-def test_update_length_in_a_format_the_read_is_not_bound_in_returns_404(
+def test_write_engagement_edition_length_on_bound_format_returns_422(
     client: TestClient,
 ) -> None:
-    _, engagement_id = _read_with_length(client, PAGES, 1100)
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], edition_format="print")
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={MINUTES.length_field: 500},
+    response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_format": "print",
+            "edition_length": 430,
+        },
     )
 
-    assert response.status_code == 404
+    assert response.status_code == 422
 
 
-@pytest.mark.parametrize(
-    "payload",
-    [{}, {"length_pages": 300, "length_minutes": 500}],
-    ids=["neither", "both"],
-)
-def test_update_length_needs_exactly_one_unit(
-    client: TestClient, payload: dict[str, int]
+@pytest.mark.parametrize("length_field", ["edition_length", "length_override"])
+def test_write_engagement_length_without_edition_returns_422(
+    client: TestClient, length_field: str
 ) -> None:
-    _, engagement_id = _read_with_length(client, PAGES, 1100)
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], edition_format="print")
 
-    response = client.patch(f"/api/engagements/{engagement_id}/length", json=payload)
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading", length_field: 300},
+    )
+
     assert response.status_code == 422
 
 
 @pytest.mark.parametrize("ruler", RULERS)
 @pytest.mark.parametrize("length", [0, -1], ids=["zero", "negative"])
-def test_update_length_rejects_a_non_positive_length(
+def test_write_engagement_length_rejects_a_non_positive_length(
     client: TestClient, ruler: Ruler, length: int
 ) -> None:
     _, engagement_id = _read_with_length(client, ruler, 1100)
 
-    response = client.patch(
-        f"/api/engagements/{engagement_id}/length",
-        json={ruler.length_field: length},
-    )
+    response = _correct_length(client, ruler, engagement_id, length)
 
     assert response.status_code == 422
-
-
-def test_update_length_unknown_engagement_returns_404(client: TestClient) -> None:
-    response = client.patch(
-        f"/api/engagements/{uuid.uuid4()}/length",
-        json={PAGES.length_field: 300},
-    )
-    assert response.status_code == 404

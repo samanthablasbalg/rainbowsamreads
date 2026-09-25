@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import datetime
 import uuid
-from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -17,7 +17,7 @@ from tests.helpers import (
 )
 
 
-def test_create_binding_by_edition_id_returns_201(client: TestClient) -> None:
+def test_write_engagement_binds_by_edition_id(client: TestClient) -> None:
     book = _create_bare_book(client)
     _create_edition(client, book["id"], format="print", length=300)
     edition = _create_edition(
@@ -30,29 +30,12 @@ def test_create_binding_by_edition_id_returns_201(client: TestClient) -> None:
     engagement = _create_engagement(client, book["id"])
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_id": edition["id"]},
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading", "edition_id": edition["id"]},
     )
 
-    assert response.status_code == 201
-    data = response.json()
-    assert data["edition"]["id"] == edition["id"]
-    assert data["edition"]["format"] == "digital"
-    assert data["origin_id"] is None
-    assert data["length_override"] is None
-
-
-def test_create_binding_carries_length_override(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-
-    response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_format": "audio", "length_override": 650},
-    )
-
-    assert response.status_code == 201
-    assert response.json()["length_override"] == 650
+    assert response.status_code == 200
+    assert sorted(response.json()["formats"]) == ["digital", "print"]
 
 
 @pytest.mark.parametrize(
@@ -62,7 +45,38 @@ def test_create_binding_carries_length_override(client: TestClient) -> None:
         pytest.param(MINUTES, PAGES, id="pages"),
     ],
 )
-def test_create_binding_captures_missing_edition_length(
+def test_write_engagement_binding_carries_length_override(
+    client: TestClient,
+    source_ruler: Ruler,
+    added_ruler: Ruler,
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(
+        client, book["id"], edition_format=source_ruler.edition_format
+    )
+
+    response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_format": added_ruler.edition_format,
+            "length_override": 650,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()[added_ruler.length_field] == 650
+
+
+@pytest.mark.parametrize(
+    ("source_ruler", "added_ruler"),
+    [
+        pytest.param(PAGES, MINUTES, id="audio"),
+        pytest.param(MINUTES, PAGES, id="pages"),
+    ],
+)
+def test_write_engagement_binding_captures_missing_edition_length(
     client: TestClient,
     source_ruler: Ruler,
     added_ruler: Ruler,
@@ -86,12 +100,20 @@ def test_create_binding_captures_missing_edition_length(
     )
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_id": added_edition["id"], "edition_length": 430},
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_id": added_edition["id"],
+            "edition_length": 430,
+        },
     )
 
-    assert response.status_code == 201
-    assert response.json()["edition"]["length"] == 430
+    assert response.status_code == 200
+    assert response.json()[added_ruler.length_field] == 430
+    edition_response = client.get(f"/api/editions/{added_edition['id']}")
+    assert edition_response.status_code == 200
+    assert edition_response.json()["length"] == 430
     book_response = client.get(f"/api/books/{book['id']}")
     assert book_response.status_code == 200
     assert book_response.json()[added_ruler.book_length_field] == 430
@@ -104,7 +126,7 @@ def test_create_binding_captures_missing_edition_length(
         pytest.param(MINUTES, PAGES, id="pages"),
     ],
 )
-def test_create_binding_by_format_finds_existing_edition(
+def test_write_engagement_binds_supplied_format_to_its_edition(
     client: TestClient,
     source_ruler: Ruler,
     added_ruler: Ruler,
@@ -116,7 +138,7 @@ def test_create_binding_by_format_finds_existing_edition(
         format=source_ruler.edition_format,
         length=300,
     )
-    added_edition = _create_edition(
+    _create_edition(
         client,
         book["id"],
         format=added_ruler.edition_format,
@@ -129,15 +151,23 @@ def test_create_binding_by_format_finds_existing_edition(
     )
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_format": added_ruler.edition_format},
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_format": added_ruler.edition_format,
+        },
     )
 
-    assert response.status_code == 201
-    assert response.json()["edition"]["id"] == added_edition["id"]
+    assert response.status_code == 200
+    data = response.json()
+    assert sorted(data["formats"]) == sorted(
+        [source_ruler.edition_format, added_ruler.edition_format]
+    )
+    assert data[added_ruler.length_field] == 600
 
 
-def test_create_binding_by_format_with_no_edition_returns_404(
+def test_write_engagement_with_format_matching_no_edition_returns_404(
     client: TestClient,
 ) -> None:
     book = _create_bare_book(client)
@@ -145,14 +175,14 @@ def test_create_binding_by_format_with_no_edition_returns_404(
     engagement = _create_engagement(client, book["id"])
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_format": "audio"},
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading", "edition_format": "audio"},
     )
 
     assert response.status_code == 404
 
 
-def test_create_binding_by_format_with_multiple_editions_returns_409(
+def test_write_engagement_with_format_matching_multiple_editions_returns_409(
     client: TestClient,
 ) -> None:
     book = _create_bare_book(client)
@@ -174,78 +204,113 @@ def test_create_binding_by_format_with_multiple_editions_returns_409(
     engagement = _create_engagement(client, book["id"], edition_format="audio")
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_format": "print"},
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading", "edition_format": "print"},
     )
 
     assert response.status_code == 409
 
 
-def test_create_duplicate_binding_returns_409(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
+def test_write_engagement_with_bound_format_matching_multiple_editions_returns_409(
+    client: TestClient,
+) -> None:
+    book = _create_bare_book(client)
+    _create_edition(
+        client,
+        book["id"],
+        format="print",
+        length=300,
+        isbn="9781111111111",
+    )
+    engagement = _create_engagement(client, book["id"], edition_format="print")
+    _create_edition(
+        client,
+        book["id"],
+        format="print",
+        length=350,
+        isbn="9782222222222",
+    )
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_format": "print"},
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading", "edition_format": "print"},
     )
 
     assert response.status_code == 409
 
 
-def test_create_binding_unknown_engagement_returns_404(client: TestClient) -> None:
+def test_write_engagement_reuses_already_bound_format(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], edition_format="print")
+
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading", "edition_format": "print"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["formats"] == ["print"]
+
+
+def test_write_engagement_binding_unknown_engagement_returns_404(
+    client: TestClient,
+) -> None:
     book = _create_bare_book(client)
     edition = _create_edition(client, book["id"], format="print", length=300)
 
     response = client.post(
-        f"/api/engagements/{uuid.uuid4()}/editions",
-        json={"edition_id": edition["id"]},
+        "/api/engagements",
+        json={
+            "id": str(uuid.uuid4()),
+            "status": "reading",
+            "edition_id": edition["id"],
+        },
     )
 
     assert response.status_code == 404
 
 
-def test_create_binding_unknown_edition_returns_404(client: TestClient) -> None:
-    book = _create_book(client)
-    engagement = _create_engagement(client, book["id"])
-
-    response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_id": str(uuid.uuid4())},
-    )
-
-    assert response.status_code == 404
-
-
-@pytest.mark.parametrize(
-    "payload",
-    [
-        pytest.param({}, id="neither"),
-        pytest.param(
-            {"edition_id": "edition-id", "edition_format": "audio"},
-            id="both",
-        ),
-    ],
-)
-def test_create_binding_requires_exactly_one_resolver(
+def test_write_engagement_with_unknown_edition_id_returns_404(
     client: TestClient,
-    payload: dict[str, Any],
 ) -> None:
     book = _create_book(client)
     engagement = _create_engagement(client, book["id"])
-    if "edition_id" in payload:
-        payload = {**payload, "edition_id": str(uuid.uuid4())}
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json=payload,
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_id": str(uuid.uuid4()),
+        },
+    )
+
+    assert response.status_code == 404
+
+
+def test_write_engagement_with_both_edition_id_and_format_returns_422(
+    client: TestClient,
+) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], format="print", length=300)
+    audio_edition = _create_edition(client, book["id"], format="audio", length=600)
+    engagement = _create_engagement(client, book["id"], edition_format="print")
+
+    response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_id": audio_edition["id"],
+            "edition_format": "audio",
+        },
     )
 
     assert response.status_code == 422
 
 
 @pytest.mark.parametrize("status", ["finished", "dnf"])
-def test_create_binding_for_completed_engagement_returns_422(
+def test_write_engagement_binding_on_completed_engagement_returns_422(
     client: TestClient,
     status: str,
 ) -> None:
@@ -253,11 +318,62 @@ def test_create_binding_for_completed_engagement_returns_422(
     engagement = _create_engagement(client, book["id"], status=status)
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_format": "audio"},
+        "/api/engagements",
+        json={"id": engagement["id"], "status": status, "edition_format": "audio"},
     )
 
     assert response.status_code == 422
+
+
+@pytest.mark.parametrize("status", ["finished", "dnf"])
+def test_write_engagement_binding_does_not_reopen_completed_engagement(
+    client: TestClient,
+    status: str,
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    PAGES.log_progress(client, engagement["id"], 50)
+    close_response = client.post(
+        "/api/engagements", json={"id": engagement["id"], "status": status}
+    )
+    assert close_response.status_code == 200
+
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading", "edition_format": "audio"},
+    )
+
+    assert response.status_code == 422
+    engagement_response = client.get(f"/api/engagements/{engagement['id']}")
+    assert engagement_response.status_code == 200
+    data = engagement_response.json()
+    assert data["status"] == status
+    assert data["formats"] == ["print"]
+
+
+def test_write_engagement_failed_status_change_keeps_no_binding(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+
+    response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "finished",
+            "edition_format": "audio",
+            "effective_on": tomorrow.isoformat(),
+        },
+    )
+
+    assert response.status_code == 422
+    engagement_response = client.get(f"/api/engagements/{engagement['id']}")
+    assert engagement_response.status_code == 200
+    data = engagement_response.json()
+    assert data["status"] == "reading"
+    assert data["formats"] == ["print"]
 
 
 @pytest.mark.parametrize(
@@ -267,7 +383,7 @@ def test_create_binding_for_completed_engagement_returns_422(
         pytest.param(MINUTES, PAGES, id="pages"),
     ],
 )
-def test_create_lengthless_binding_for_reading_engagement_returns_422(
+def test_write_engagement_lengthless_binding_on_reading_engagement_returns_422(
     client: TestClient,
     source_ruler: Ruler,
     added_ruler: Ruler,
@@ -291,8 +407,12 @@ def test_create_lengthless_binding_for_reading_engagement_returns_422(
     )
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_id": added_edition["id"]},
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_id": added_edition["id"],
+        },
     )
 
     assert response.status_code == 422
@@ -312,7 +432,7 @@ def test_create_lengthless_binding_for_reading_engagement_returns_422(
         pytest.param(MINUTES, 430, 215, PAGES, 440, 220, id="audio-to-print"),
     ],
 )
-def test_create_binding_projects_existing_progress_onto_added_format(
+def test_write_engagement_binding_projects_existing_progress_onto_added_format(
     client: TestClient,
     source_ruler: Ruler,
     source_length: int,
@@ -340,14 +460,16 @@ def test_create_binding_projects_existing_progress_onto_added_format(
     source_ruler.log_progress(client, engagement["id"], source_position)
 
     response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_id": added_edition["id"]},
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_id": added_edition["id"],
+        },
     )
 
-    assert response.status_code == 201
-    engagement_response = client.get(f"/api/engagements/{engagement['id']}")
-    assert engagement_response.status_code == 200
-    data = engagement_response.json()
+    assert response.status_code == 200
+    data = response.json()
     assert data["completion_pct"] == 50
     assert data["resume_unit"] == source_ruler.unit
     assert data[source_ruler.resume_field] == source_position
@@ -360,10 +482,14 @@ def test_list_bindings_returns_all_bound_editions(client: TestClient) -> None:
     audio_edition = _create_edition(client, book["id"], format="audio", length=600)
     engagement = _create_engagement(client, book["id"])
     bind_response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_id": audio_edition["id"]},
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_id": audio_edition["id"],
+        },
     )
-    assert bind_response.status_code == 201
+    assert bind_response.status_code == 200
 
     response = client.get(f"/api/engagements/{engagement['id']}/editions")
 
@@ -381,14 +507,20 @@ def test_list_bindings_unknown_engagement_returns_404(client: TestClient) -> Non
 
 
 def test_delete_binding_returns_204_and_removes_it(client: TestClient) -> None:
-    book = _create_book(client)
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], format="print", length=300)
+    audio_edition = _create_edition(client, book["id"], format="audio", length=600)
     engagement = _create_engagement(client, book["id"])
-    create_response = client.post(
-        f"/api/engagements/{engagement['id']}/editions",
-        json={"edition_format": "audio"},
+    bind_response = client.post(
+        "/api/engagements",
+        json={
+            "id": engagement["id"],
+            "status": "reading",
+            "edition_id": audio_edition["id"],
+        },
     )
-    assert create_response.status_code == 201
-    edition_id = create_response.json()["edition"]["id"]
+    assert bind_response.status_code == 200
+    edition_id = audio_edition["id"]
 
     response = client.delete(
         f"/api/engagements/{engagement['id']}/editions/{edition_id}"
