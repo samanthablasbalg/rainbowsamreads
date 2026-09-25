@@ -53,10 +53,6 @@ def post(path: str, body: dict[str, object]) -> dict[str, object]:
     return _request("POST", path, body)
 
 
-def patch(path: str, body: dict[str, object]) -> None:
-    _request("PATCH", path, body)
-
-
 def login() -> None:
     # "dev" matches the email reset() hardcodes below, so whichever database
     # this points at (local dev or the e2e db), the two agree on one user.
@@ -115,7 +111,11 @@ def tbr(book_id: str) -> None:
 
 
 def start_reading(book_id: str, fmt: str, edition_length: int | None = None) -> str:
-    body: dict[str, object] = {"book_id": book_id, "edition_format": fmt}
+    body: dict[str, object] = {
+        "book_id": book_id,
+        "status": "reading",
+        "edition_format": fmt,
+    }
     if edition_length is not None:
         body["edition_length"] = edition_length
     return str(post("/engagements", body)["id"])
@@ -150,11 +150,11 @@ def log_audio_progress(engagement_id: str, current_minute: int) -> None:
 
 
 def finish(engagement_id: str) -> None:
-    patch(f"/engagements/{engagement_id}", {"status": "finished"})
+    post("/engagements", {"id": engagement_id, "status": "finished"})
 
 
 def dnf(engagement_id: str) -> None:
-    patch(f"/engagements/{engagement_id}", {"status": "dnf"})
+    post("/engagements", {"id": engagement_id, "status": "dnf"})
 
 
 reset()

@@ -150,9 +150,8 @@ def create_engagement(
             edition_length=edition_length,
         )
 
-    if (
-        status == ReadingStatus.reading
-        and engagement.resolve_length(edition_format) is None
+    if status == ReadingStatus.reading and (
+        edition_format is None or engagement.resolve_length(edition_format) is None
     ):
         raise InvalidOperationError(
             "A reading engagement requires a length for its selected format."
@@ -191,7 +190,7 @@ def _transition_to_tbr(
         raise InvalidOperationError("A completed engagement cannot be returned to TBR.")
 
     engagement.status = ReadingStatus.tbr
-    
+
     if engagement.tbr_added_on is None:
         engagement.tbr_added_on = effective_on
     engagement.started_on = None

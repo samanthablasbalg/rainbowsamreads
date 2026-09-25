@@ -41,6 +41,8 @@ def write_engagement(
     current_user: User = Depends(get_current_user),
 ) -> EngagementRead:
     if payload.id is None:
+        if payload.book_id is None:
+            raise InvalidOperationError("Creating an engagement needs a book_id.")
         engagement = lifecycle_service.create_engagement(
             db,
             book_id=payload.book_id,

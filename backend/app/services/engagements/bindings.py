@@ -29,8 +29,8 @@ def bind_edition(
     binding = engagement_edition_crud.get(db, (engagement.id, edition.id))
     if binding is None:
         if (
-        engagement.status != ReadingStatus.reading
-        and engagement.status != ReadingStatus.tbr
+            engagement.status != ReadingStatus.reading
+            and engagement.status != ReadingStatus.tbr
         ):
             raise InvalidOperationError(
                 "An engagement must be in tbr or in progress to get an edition bound."

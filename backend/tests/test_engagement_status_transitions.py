@@ -48,7 +48,7 @@ def test_transition_to_tbr_sets_tbr_added_on_and_clears_started_on(
     engagement = _create_engagement(client, book["id"], started_on="2026-05-01")
 
     response = client.post(
-        f"/api/engagements",
+        "/api/engagements",
         json={**payload, "id": engagement["id"]},
     )
     assert response.status_code == 200

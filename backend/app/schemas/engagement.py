@@ -10,7 +10,12 @@ from app.models.enums import Format, LogUnit, ReadingStatus
 from app.schemas.book import BookRead
 from app.schemas.review import ReviewRead
 
-_CREATE_STATUSES = {ReadingStatus.tbr, ReadingStatus.reading, ReadingStatus.finished, ReadingStatus.dnf}
+_CREATE_STATUSES = {
+    ReadingStatus.tbr,
+    ReadingStatus.reading,
+    ReadingStatus.finished,
+    ReadingStatus.dnf,
+}
 
 
 class EngagementWrite(BaseModel):
