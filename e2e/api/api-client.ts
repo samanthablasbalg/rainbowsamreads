@@ -62,6 +62,22 @@ export class ApiClient {
   }
 
   /**
+   * Puts a book on the To Read shelf, with no format.
+   * @param bookId - The book to add.
+   * @returns The new engagement's id.
+   */
+  async addToTbr(bookId: string): Promise<string> {
+    const response = await this.request.post('/api/engagements', {
+      data: { book_id: bookId, status: 'tbr' },
+    });
+    if (!response.ok()) {
+      throw new Error(`Failed to add to TBR: ${await response.text()}`);
+    }
+    const { id } = (await response.json()) as { id: string };
+    return id;
+  }
+
+  /**
    * Where the sheet would prefill "From" -- a session names both its ends, so seeding
    * one that just carries on from the last needs this first.
    * @param engagementId - The engagement to read.
