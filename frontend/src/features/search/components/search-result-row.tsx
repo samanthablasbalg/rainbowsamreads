@@ -3,7 +3,7 @@ import { CoverImage } from '@/components/common/cover-image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ComboboxItem } from '@/components/ui/combobox';
-import { STATUSES } from '@/utils/status';
+import { STATUS_LABELS } from '@/utils/status';
 
 type SearchResultRowProps = {
   result: BookSearchResult;
@@ -14,7 +14,7 @@ type SearchResultRowProps = {
 
 export function SearchResultRow({ result, importing, onAdd, onImport }: SearchResultRowProps) {
   const badge =
-    result.state === 'in_library' ? result.status && STATUSES[result.status].label : null;
+    result.state === 'in_library' ? result.status && STATUS_LABELS[result.status] : null;
 
   return (
     <ComboboxItem value={result} className="gap-3 pr-3">

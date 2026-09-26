@@ -1,7 +1,7 @@
 import { Locator, Page } from '@playwright/test';
 
 export type StartableFormat = 'Print' | 'Digital' | 'Audio';
-export type StartableStatus = 'Reading' | 'Finished' | 'DNF';
+export type StartableStatus = 'To Be Read' | 'Reading' | 'Finished' | 'DNF';
 
 /**
  * The add-a-read surface: one form carrying the format toggles, an optional length

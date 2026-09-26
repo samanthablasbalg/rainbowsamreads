@@ -15,6 +15,7 @@ import { destinations } from '@/config/destinations';
 import { server } from '@/test/msw-server';
 import { renderRoute, screen } from '@/test/render';
 import { buildBook, buildEngagement } from '@/test/data-generators';
+import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
 
 describe('the route tree', () => {
   it.each(destinations)('$to resolves to its own page, not the catch-all', async ({ to }) => {
@@ -30,22 +31,46 @@ describe('the route tree', () => {
     expect(heading).not.toHaveTextContent('Page not found');
   });
 
-  it.each([
-    ['/library/tbr', 'To Read'],
-    ['/library/finished', 'Finished'],
-    ['/library/dnf', 'DNF'],
-    ['/library/catalog', 'Catalog'],
-  ])('%s renders its own shelf under the library nav', async (path, title) => {
+  it('/library/catalog renders its book list under the library nav', async () => {
     server.use(
       getAuthMeMockHandler(),
-      getBooksListBooksMockHandler(),
-      getEngagementsListEngagementsMockHandler()
+      getBooksListBooksMockHandler([buildBook({ title: 'Dune' })])
+    );
+
+    renderRoute('/library/catalog');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Catalog' })).toBeVisible();
+    expect(screen.getByRole('navigation', { name: 'Library' })).toBeVisible();
+    expect(await screen.findByRole('listitem', { name: 'Dune' })).toBeVisible();
+  });
+
+  it.each([
+    ['/library/tbr', 'To Read', ReadingStatus.tbr],
+    ['/library/finished', 'Finished', ReadingStatus.finished],
+    ['/library/dnf', 'DNF', ReadingStatus.dnf],
+  ])('%s renders its own shelf under the library nav', async (path, title, status) => {
+    const requested: string[] = [];
+
+    server.use(
+      getAuthMeMockHandler(),
+      getEngagementsListEngagementsMockHandler(({ request }) => {
+        requested.push(new URL(request.url).searchParams.get('status') ?? '');
+
+        return [
+          buildEngagement({
+            title: 'Dune',
+            status,
+          }),
+        ];
+      })
     );
 
     renderRoute(path);
 
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeVisible();
     expect(screen.getByRole('navigation', { name: 'Library' })).toBeVisible();
+    expect(await screen.findByRole('listitem', { name: 'Dune' })).toBeVisible();
+    expect(requested).toEqual([status]);
   });
 
   it('/reads/:engagementId renders the read named by the URL', async () => {
@@ -113,11 +138,11 @@ describe('the route tree', () => {
     expect(await screen.findByText('No books yet')).toBeVisible();
   });
 
-  it('sends /library to the catalog, since it has no screen of its own', async () => {
-    server.use(getAuthMeMockHandler(), getBooksListBooksMockHandler());
+  it('/library redirects to tbr', async () => {
+    server.use(getAuthMeMockHandler(), getEngagementsListEngagementsMockHandler());
 
     renderRoute('/library');
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Catalog' })).toBeVisible();
+    expect(await screen.findByRole('heading', { level: 1, name: 'To Read' })).toBeVisible();
   });
 });

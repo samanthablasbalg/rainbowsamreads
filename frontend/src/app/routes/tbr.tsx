@@ -1,6 +1,5 @@
-import { ComingSoon } from '@/components/common/coming-soon';
+import { ToReadList } from '@/features/library/components/to-read-list';
 
-// The backend has no to-read list yet, so this is not an empty shelf.
 export function ToRead() {
-  return <ComingSoon title="To Read" />;
+  return <ToReadList />;
 }

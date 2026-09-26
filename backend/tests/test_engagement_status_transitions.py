@@ -15,7 +15,9 @@ from tests.helpers import (
     Ruler,
     _bind_edition,
     _catch_up_engagement,
+    _create_bare_book,
     _create_book,
+    _create_edition,
     _create_engagement,
     _log_audio_progress,
     _log_progress,
@@ -23,7 +25,126 @@ from tests.helpers import (
     _read_with_length,
 )
 
+# --- Transition to TBR ---
+
+
+@pytest.mark.parametrize(
+    "payload, expected_tbr_added_on",
+    [
+        ({"status": "tbr"}, datetime.date.today().isoformat()),
+        (
+            {"status": "tbr", "effective_on": "2026-06-01"},
+            "2026-06-01",
+        ),
+    ],
+    ids=["defaults-to-today", "uses-effective-on"],
+)
+def test_transition_to_tbr_sets_tbr_added_on_and_clears_started_on(
+    client: TestClient,
+    payload: dict[str, str],
+    expected_tbr_added_on: str,
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], started_on="2026-05-01")
+
+    response = client.post(
+        "/api/engagements",
+        json={**payload, "id": engagement["id"]},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "tbr"
+    assert data["finished_on"] is None
+    assert data["started_on"] is None
+    assert data["tbr_added_on"] == expected_tbr_added_on
+
+
+def test_transition_engagement_with_logs_back_to_tbr_returns_422(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"])
+    _log_progress(client, engagement["id"], 100)
+
+    response = client.post(
+        "/api/engagements", json={"id": engagement["id"], "status": "tbr"}
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "status",
+    [
+        ("finished"),
+        ("dnf"),
+    ],
+)
+def test_transition_completed_engagement_back_to_tbr_returns_422(
+    client: TestClient, status: str
+) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], status=status)
+
+    response = client.post(
+        "/api/engagements", json={"id": engagement["id"], "status": "tbr"}
+    )
+
+    assert response.status_code == 422
+
+
 # --- Transition to reading ---
+
+
+def test_transition_to_reading_sets_started_on(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(
+        client, book["id"], status="tbr", tbr_added_on="2026-06-01"
+    )
+
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "reading"
+    assert data["started_on"] == datetime.date.today().isoformat()
+    assert data["tbr_added_on"] == "2026-06-01"
+
+
+def test_transition_to_reading_with_no_edition_returns_422(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "status": "tbr",
+            "tbr_added_on": "2026-09-15",
+        },
+    ).json()
+
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading"},
+    )
+    assert response.status_code == 422
+
+
+def test_patch_lengthless_engagement_to_reading_returns_422(client: TestClient) -> None:
+    book = _create_bare_book(client)
+    _create_edition(client, book["id"], format="print")
+    engagement = client.post(
+        "/api/engagements",
+        json={"book_id": book["id"], "edition_format": "print", "status": "tbr"},
+    ).json()
+
+    response = client.post(
+        "/api/engagements",
+        json={"id": engagement["id"], "status": "reading"},
+    )
+
+    assert response.status_code == 422
 
 
 @pytest.mark.parametrize("completion", COMPLETIONS)
@@ -328,6 +449,22 @@ def test_post_finished_to_finished_does_not_overwrite_date(
     assert second.json()["finished_on"] == "2026-05-01"
 
 
+def test_finish_from_tbr_succeeds(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], status="tbr")
+
+    response = client.post(
+        "/api/engagements", json={"id": engagement["id"], "status": "finished"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == engagement["id"]
+    assert data["status"] == "finished"
+    assert data["tbr_added_on"] is not None
+    assert data["started_on"] is None
+    assert data["finished_on"] is not None
+
+
 # --- Transition to DNF ---
 
 
@@ -411,6 +548,22 @@ def test_dnf_preserves_completion_pct(client: TestClient) -> None:
     assert response.json()["completion_pct"] == 50
 
 
+def test_dnf_from_tbr_succeeds(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], status="tbr")
+
+    response = client.post(
+        "/api/engagements", json={"id": engagement["id"], "status": "dnf"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == engagement["id"]
+    assert data["status"] == "dnf"
+    assert data["tbr_added_on"] is not None
+    assert data["started_on"] is None
+    assert data["abandoned_on"] is not None
+
+
 # --- Transition-wide behavior ---
 
 
@@ -461,9 +614,10 @@ def test_post_same_status_is_idempotent(client: TestClient) -> None:
     "old_status, new_status",
     [
         ("finished", "reading"),
+        ("reading", "tbr"),
     ],
 )
-def test_post_engagement_backwards_conflicts_when_another_active_engagement_exists(
+def test_post_engagement_backwards_conflicts_when_status_already_taken(
     client: TestClient, old_status: str, new_status: str
 ) -> None:
     book = _create_book(client)

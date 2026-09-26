@@ -1467,18 +1467,12 @@
           "status": {
             "anyOf": [
               {
-                "type": "string",
-                "enum": [
-                  "reading",
-                  "finished",
-                  "dnf"
-                ]
+                "$ref": "#/components/schemas/ReadingStatus"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Status"
+            ]
           }
         },
         "type": "object",
@@ -1827,6 +1821,18 @@
           "status": {
             "$ref": "#/components/schemas/ReadingStatus"
           },
+          "tbr_added_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tbr Added On"
+          },
           "started_on": {
             "anyOf": [
               {
@@ -1950,6 +1956,7 @@
           "formats",
           "cover_url",
           "status",
+          "tbr_added_on",
           "started_on",
           "finished_on",
           "abandoned_on",
@@ -2041,6 +2048,18 @@
               }
             ],
             "title": "Length Override"
+          },
+          "tbr_added_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tbr Added On"
           },
           "started_on": {
             "anyOf": [

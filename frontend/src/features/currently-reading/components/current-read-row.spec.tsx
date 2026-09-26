@@ -9,7 +9,7 @@ import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
 import { buildEngagement as buildBaseEngagement } from '@/test/data-generators';
 import { localIsoDate } from '@/utils/local-date';
-import { ReadingCard } from './reading-card';
+import { CurrentReadRow } from './current-read-row';
 
 function buildEngagement(overrides: Partial<EngagementRead> = {}): EngagementRead {
   return buildBaseEngagement({
@@ -25,7 +25,7 @@ function buildEngagement(overrides: Partial<EngagementRead> = {}): EngagementRea
 function renderInList(engagement: EngagementRead) {
   return render(
     <ul>
-      <ReadingCard engagement={engagement} />
+      <CurrentReadRow engagement={engagement} />
     </ul>
   );
 }
@@ -35,7 +35,7 @@ async function openOverflowMenuAndChoose(user: ReturnType<typeof userEvent.setup
   await user.click(await screen.findByRole('menuitem', { name: item }));
 }
 
-describe('ReadingCard', () => {
+describe('CurrentReadRow', () => {
   it('renders the title, author and progress on a listitem named for the book', () => {
     renderInList(buildEngagement());
 

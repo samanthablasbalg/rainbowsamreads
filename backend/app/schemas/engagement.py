@@ -10,7 +10,12 @@ from app.models.enums import Format, LogUnit, ReadingStatus
 from app.schemas.book import BookRead
 from app.schemas.review import ReviewRead
 
-_CREATE_STATUSES = {ReadingStatus.reading, ReadingStatus.finished, ReadingStatus.dnf}
+_CREATE_STATUSES = {
+    ReadingStatus.tbr,
+    ReadingStatus.reading,
+    ReadingStatus.finished,
+    ReadingStatus.dnf,
+}
 
 
 class EngagementWrite(BaseModel):
@@ -25,6 +30,7 @@ class EngagementWrite(BaseModel):
     edition_format: Format | None = None
     edition_length: int | None = Field(default=None, gt=0)
     length_override: int | None = Field(default=None, gt=0)
+    tbr_added_on: datetime.date | None = None
     started_on: datetime.date | None = None
     finished_on: datetime.date | None = None
     effective_on: datetime.date | None = None
@@ -46,10 +52,10 @@ class EngagementWrite(BaseModel):
             return self
         if self.effective_on is not None or self.unit is not None:
             raise ValueError("effective_on and unit need an id")
-        if self.edition_format is None:
-            raise ValueError("Creating a read needs an edition_format")
+        if self.edition_format is None and self.status != ReadingStatus.tbr:
+            raise ValueError("Creating a non-tbr read needs an edition_format")
         if self.status not in _CREATE_STATUSES:
-            raise ValueError("A read can only be created reading, finished or dnf")
+            raise ValueError("A read can only be created tbr, reading, finished or dnf")
         if self.finished_on is not None and self.status == ReadingStatus.reading:
             raise ValueError("A read in progress cannot have an end date")
         return self
@@ -84,6 +90,7 @@ class EngagementRead(BaseModel):
     formats: list[Format]
     cover_url: str | None
     status: ReadingStatus
+    tbr_added_on: datetime.date | None
     started_on: datetime.date | None
     finished_on: datetime.date | None
     abandoned_on: datetime.date | None

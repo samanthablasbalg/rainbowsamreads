@@ -2,7 +2,7 @@ import { Locator, Page } from '@playwright/test';
 import { StartReadingSheetPage, StartableFormat } from './start-reading-sheet.page';
 
 /** The statuses the book page's status menu offers, as it labels them. */
-export type BookStatus = 'Reading' | 'Finished' | 'DNF';
+export type BookStatus = 'To read' | 'Reading' | 'Finished' | 'DNF';
 
 /**
  * A book's own page. The metadata card carries the status control, which is a
@@ -10,8 +10,14 @@ export type BookStatus = 'Reading' | 'Finished' | 'DNF';
  * picking Reading hands off to the start-reading sheet to open a new read.
  */
 export class BookPage {
+  // Stands in for the status control on a book with no read yet, and opens the
+  // start-reading sheet at its status step.
+  readonly notTrackedButton: Locator;
+
   /** @param page - The Playwright page to drive the book page through. */
-  constructor(public readonly page: Page) {}
+  constructor(public readonly page: Page) {
+    this.notTrackedButton = page.getByRole('button', { name: 'Not tracked' });
+  }
 
   /**
    * Navigates to a book's page.

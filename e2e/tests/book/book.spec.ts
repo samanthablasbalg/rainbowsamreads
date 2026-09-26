@@ -6,6 +6,7 @@ import { FinishedBooksPage } from '../../page-objects/finished-books.page';
 import { FinishReadSheetPage } from '../../page-objects/finish-read-sheet.page';
 import { ReadHistoryPage } from '../../page-objects/read-history.page';
 import { StartReadingSheetPage } from '../../page-objects/start-reading-sheet.page';
+import { TbrBooksPage } from '../../page-objects/tbr-books.page';
 
 const TITLE = 'Piranesi';
 const AUTHOR = 'Susanna Clarke';
@@ -134,5 +135,34 @@ test('Switching an in-progress read to DNF from the book page abandons it on the
   await test.step("It is abandoned on the last session's date, not today", async () => {
     await readHistory.goto(engagementId);
     await expect(readHistory.getDateDisplay('abandon date')).toContainText('May 15, 2026');
+  });
+});
+
+test('Adding an untracked book to TBR from the book page shelves it on To Read', async ({
+  page,
+  apiClient,
+}) => {
+  const bookPage = new BookPage(page);
+  const sheet = new StartReadingSheetPage(page);
+  const tbrBooks = new TbrBooksPage(page);
+
+  await test.step('Seed a book with no reads', async () => {
+    const bookId = await apiClient.createBook(TITLE, AUTHOR, 272);
+    await bookPage.goto(bookId);
+  });
+
+  await test.step('Pick To Be Read from the status step', async () => {
+    await bookPage.notTrackedButton.click();
+    await sheet.chooseStatus(TITLE, 'To Be Read');
+    await expect(sheet.sheet).toHaveCount(0);
+  });
+
+  await test.step('The status control shows it is on TBR', async () => {
+    await expect(bookPage.getStatusButton('To read')).toBeVisible();
+  });
+
+  await test.step('It is on the To Read shelf', async () => {
+    await tbrBooks.goto();
+    await expect(tbrBooks.getEntry(TITLE)).toBeVisible();
   });
 });

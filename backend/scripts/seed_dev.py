@@ -53,10 +53,6 @@ def post(path: str, body: dict[str, object]) -> dict[str, object]:
     return _request("POST", path, body)
 
 
-def patch(path: str, body: dict[str, object]) -> None:
-    _request("PATCH", path, body)
-
-
 def login() -> None:
     # "dev" matches the email reset() hardcodes below, so whichever database
     # this points at (local dev or the e2e db), the two agree on one user.
@@ -109,8 +105,17 @@ def apply_cover_urls() -> None:
                 )
 
 
+def tbr(book_id: str) -> None:
+    body: dict[str, object] = {"book_id": book_id, "status": "tbr"}
+    post("/engagements", body)
+
+
 def start_reading(book_id: str, fmt: str, edition_length: int | None = None) -> str:
-    body: dict[str, object] = {"book_id": book_id, "edition_format": fmt}
+    body: dict[str, object] = {
+        "book_id": book_id,
+        "status": "reading",
+        "edition_format": fmt,
+    }
     if edition_length is not None:
         body["edition_length"] = edition_length
     return str(post("/engagements", body)["id"])
@@ -145,11 +150,11 @@ def log_audio_progress(engagement_id: str, current_minute: int) -> None:
 
 
 def finish(engagement_id: str) -> None:
-    patch(f"/engagements/{engagement_id}", {"status": "finished"})
+    post("/engagements", {"id": engagement_id, "status": "finished"})
 
 
 def dnf(engagement_id: str) -> None:
-    patch(f"/engagements/{engagement_id}", {"status": "dnf"})
+    post("/engagements", {"id": engagement_id, "status": "dnf"})
 
 
 reset()
@@ -164,16 +169,20 @@ add_book(
     "http://books.google.com/books/content?id=MSurBex2xcUC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
 )
 add_book(
-    "Mexican Gothic",
-    "Silvia Moreno-Garcia",
-    320,
-    "http://books.google.com/books/content?id=ksKyDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-)
-add_book(
     "Educated",
     "Tara Westover",
     352,
     "http://books.google.com/books/content?id=JZwpDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+)
+
+# TBR
+tbr(
+    add_book(
+        "Mexican Gothic",
+        "Silvia Moreno-Garcia",
+        320,
+        "http://books.google.com/books/content?id=ksKyDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    )
 )
 
 # Currently reading — with progress

@@ -211,6 +211,37 @@ describe('BookDetail', () => {
     expect(await screen.findByRole('button', { name: 'Add Piranesi as Reading' })).toBeVisible();
   });
 
+  it('starts a read from a tbr book without leaving the page', async () => {
+    const user = userEvent.setup();
+    const captured: { body?: unknown } = {};
+    server.use(
+      getBooksGetBookMockHandler(buildBook()),
+      getBooksListBookEngagementsMockHandler([
+        buildEngagement({ id: 'eng-Piranesi', status: 'tbr' }),
+      ]),
+      getEngagementsWriteEngagementMockHandler(async (info) => {
+        captured.body = await info.request.json();
+        return getEngagementsWriteEngagementResponseMock();
+      })
+    );
+
+    render(<BookDetail bookId="book-Piranesi" />);
+
+    await user.click(await screen.findByRole('button', { name: /To read/ }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Reading' }));
+
+    await user.click(await screen.findByRole('button', { name: 'Start reading Piranesi' }));
+
+    await waitFor(() =>
+      expect(captured.body).toEqual({
+        id: 'eng-Piranesi',
+        status: 'reading',
+        edition_format: 'print',
+        effective_on: localIsoDate(),
+      })
+    );
+  });
+
   it('requires the missing page length when starting an untracked book', async () => {
     const user = userEvent.setup();
     server.use(

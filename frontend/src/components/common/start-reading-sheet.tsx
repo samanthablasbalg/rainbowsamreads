@@ -31,6 +31,7 @@ const READING_ONLY = [ReadingStatus.reading];
 
 type StartReadingSheetProps = {
   book: BookRead;
+  engagementId?: string;
   // More than one turns the sheet into two steps, asking where the read goes before
   // asking how it was read. One (the default) goes straight to the form.
   statuses?: ShelvedStatus[];
@@ -62,8 +63,9 @@ function StartReadingForm({
   cancelLabel = 'Cancel',
   onDone,
   onStarted,
+  engagementId,
 }: StartReadingFormProps) {
-  const form = useStartReadingForm(book, statuses, onDone, onStarted);
+  const form = useStartReadingForm({ book, statuses, onClose: onDone, onStarted, engagementId });
 
   return (
     <>
@@ -89,15 +91,17 @@ function StartReadingForm({
                   className="justify-start"
                   aria-label={`Add ${book.title} as ${STATUSES[status].label}`}
                   onClick={() => form.pickStatus(status)}
+                  disabled={form.startPending}
                 >
                   {STATUSES[status].label}
                 </Button>
               ))}
             </div>
+            {form.error && <ErrorText>{form.error}</ErrorText>}
           </ResponsiveDialogBody>
 
           <ResponsiveDialogFooter>
-            <Button variant="outline" onClick={onDone}>
+            <Button variant="outline" disabled={form.startPending} onClick={onDone}>
               {cancelLabel}
             </Button>
           </ResponsiveDialogFooter>
@@ -211,12 +215,19 @@ function defaultStartedOn(status: ShelvedStatus) {
   return status === ReadingStatus.reading ? localIsoDate() : '';
 }
 
-function useStartReadingForm(
-  book: BookRead,
-  statuses: ShelvedStatus[],
-  onClose: () => void,
-  onStarted?: () => void
-) {
+function useStartReadingForm({
+  book,
+  statuses,
+  onClose,
+  onStarted,
+  engagementId,
+}: {
+  book: BookRead;
+  statuses: ShelvedStatus[];
+  onClose: () => void;
+  onStarted?: () => void;
+  engagementId?: string;
+}) {
   const [status, setStatus] = useState(statuses[0]!);
   const [step, setStep] = useState<'status' | 'fields'>(statuses.length > 1 ? 'status' : 'fields');
   const [format, setFormat] = useState<Format>(Format.print);
@@ -228,7 +239,7 @@ function useStartReadingForm(
 
   const queryClient = useQueryClient();
 
-  const createEngagement = useEngagementsWriteEngagement<DetailError>({
+  const writeEngagement = useEngagementsWriteEngagement<DetailError>({
     mutation: {
       onSuccess: async () => {
         await Promise.all([
@@ -263,19 +274,30 @@ function useStartReadingForm(
 
   function pickStatus(picked: ShelvedStatus) {
     setStatus(picked);
-    setStartedOn(defaultStartedOn(picked));
-    setStep('fields');
+    if (picked === ReadingStatus.tbr) {
+      writeEngagement.mutate({
+        data: {
+          book_id: book.id,
+          status: picked,
+        },
+      });
+    } else {
+      setStartedOn(defaultStartedOn(picked));
+      setStep('fields');
+    }
   }
 
   function handleStart() {
     if (typed && parsedLength === null) return;
     setError(null);
-    createEngagement.mutate({
+    const target = engagementId
+      ? { id: engagementId, ...(startedOn && { effective_on: startedOn }) }
+      : { book_id: book.id, ...(startedOn && { started_on: startedOn }) };
+    writeEngagement.mutate({
       data: {
-        book_id: book.id,
+        ...target,
         edition_format: format,
         status,
-        ...(startedOn && { started_on: startedOn }),
         ...(finishedOn && { finished_on: finishedOn }),
         ...(typed && parsedLength !== null && lengthField(knownLength, parsedLength)),
       },
@@ -314,6 +336,6 @@ function useStartReadingForm(
     canStart: typed ? parsedLength !== null : knownLength !== null,
     handleStart,
     error,
-    startPending: createEngagement.isPending,
+    startPending: writeEngagement.isPending,
   };
 }

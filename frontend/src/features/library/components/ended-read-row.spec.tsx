@@ -4,7 +4,7 @@ import { ReadingStatus, type EngagementRead } from '@/api/generated/readingTrack
 import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
 import { buildEngagement } from '@/test/data-generators';
-import { EngagementRow } from './engagement-row';
+import { EndedReadRow } from './ended-read-row';
 
 function buildDnf(overrides: Partial<EngagementRead> = {}): EngagementRead {
   return buildEngagement({
@@ -19,7 +19,7 @@ function buildDnf(overrides: Partial<EngagementRead> = {}): EngagementRead {
 function renderInList(engagement: EngagementRead) {
   return render(
     <ul>
-      <EngagementRow engagement={engagement} />
+      <EndedReadRow engagement={engagement} />
     </ul>
   );
 }
@@ -29,7 +29,7 @@ async function openOverflowMenuAndChoose(user: ReturnType<typeof userEvent.setup
   await user.click(await screen.findByRole('menuitem', { name: item }));
 }
 
-describe('EngagementRow', () => {
+describe('EndedReadRow', () => {
   it('renders the title and author on a listitem named for the book', () => {
     renderInList(buildEngagement());
 
@@ -177,7 +177,12 @@ describe('EngagementRow', () => {
 
   it('deletes the read, after confirming, when Delete is chosen', async () => {
     const user = userEvent.setup();
-    server.use(getEngagementsDeleteEngagementMockHandler());
+    let deletedId: unknown;
+    server.use(
+      getEngagementsDeleteEngagementMockHandler((info) => {
+        deletedId = info.params.engagementId;
+      })
+    );
     renderInList(buildEngagement());
 
     await openOverflowMenuAndChoose(user, 'Delete Piranesi');
@@ -187,7 +192,7 @@ describe('EngagementRow', () => {
 
     await user.click(screen.getByRole('button', { name: 'Delete' }));
 
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(deletedId).toBe('engagement-Piranesi'));
   });
 
   it('leaves the read alone when the confirmation is cancelled', async () => {

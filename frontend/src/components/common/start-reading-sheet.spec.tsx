@@ -292,4 +292,58 @@ describe('StartReadingSheet', () => {
     );
     expect(screen.getByText('path: /')).toBeInTheDocument();
   });
+
+  it('adds a book straight to TBR', async () => {
+    const user = userEvent.setup();
+    const captured = captureCreateBody();
+    renderAddSheet();
+
+    await user.click(await screen.findByRole('button', { name: 'Add Piranesi as To Be Read' }));
+
+    await waitFor(() =>
+      expect(captured.body).toEqual({
+        book_id: 'book-Piranesi',
+        status: 'tbr',
+      })
+    );
+  });
+
+  it('shows the failure reason and stays open when a book cannot be added to TBR', async () => {
+    const expectedErrorMessage = 'Already have a TBR engagement in progress for this book.';
+    const user = userEvent.setup();
+    server.use(
+      http.post('*/api/engagements', () =>
+        HttpResponse.json({ detail: expectedErrorMessage }, { status: 409 })
+      )
+    );
+    renderAddSheet();
+
+    await user.click(await screen.findByRole('button', { name: 'Add Piranesi as To Be Read' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(expectedErrorMessage);
+  });
+
+  it('transitions an existing read from TBR to Reading', async () => {
+    const user = userEvent.setup();
+    const captured = captureCreateBody();
+    render(
+      <StartReadingSheet
+        book={buildBook()}
+        engagementId="eng-Piranesi"
+        open
+        onOpenChange={() => {}}
+      />
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Start reading Piranesi' }));
+
+    await waitFor(() =>
+      expect(captured.body).toEqual({
+        id: 'eng-Piranesi',
+        status: 'reading',
+        edition_format: 'print',
+        effective_on: localIsoDate(),
+      })
+    );
+  });
 });
