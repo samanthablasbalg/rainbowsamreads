@@ -31,11 +31,6 @@ describe('ToReadRow', () => {
     expect(screen.getByRole('listitem', { name: 'Piranesi' })).toHaveTextContent('Susanna Clarke');
   });
 
-  it.skip('shows the length of the book', () => {
-    renderInList(buildEngagement());
-    expect(screen.getByText('272 pages · 8h 32m')).toBeVisible();
-  });
-
   it('offers delete from the overflow menu', async () => {
     const user = userEvent.setup();
     renderInList(buildEngagement());
