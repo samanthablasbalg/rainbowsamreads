@@ -45,7 +45,12 @@ describe('ToReadRow', () => {
 
   it('deletes the read, after confirming, when Delete is chosen', async () => {
     const user = userEvent.setup();
-    server.use(getEngagementsDeleteEngagementMockHandler());
+    let deletedId: unknown;
+    server.use(
+      getEngagementsDeleteEngagementMockHandler((info) => {
+        deletedId = info.params.engagementId;
+      })
+    );
     renderInList(buildEngagement());
 
     await openOverflowMenuAndChoose(user, 'Remove Piranesi from To Read');
@@ -55,7 +60,7 @@ describe('ToReadRow', () => {
 
     await user.click(screen.getByRole('button', { name: 'Delete' }));
 
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(deletedId).toBe('engagement-Piranesi'));
   });
 
   it('leaves the read alone when the confirmation is cancelled', async () => {
@@ -68,15 +73,6 @@ describe('ToReadRow', () => {
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-  });
-
-  it('opens the start-reading sheet from Mark as reading', async () => {
-    const user = userEvent.setup();
-    renderInList(buildEngagement());
-
-    await user.click(screen.getByRole('button', { name: 'Mark Piranesi as reading' }));
-
-    expect(await screen.findByRole('button', { name: 'Start reading Piranesi' })).toBeVisible();
   });
 
   it('marks the engagement reading, through the start reading sheet, when Mark as reading is chosen', async () => {

@@ -65,7 +65,7 @@ function StartReadingForm({
   onStarted,
   engagementId,
 }: StartReadingFormProps) {
-  const form = useStartReadingForm(book, statuses, onDone, onStarted, engagementId);
+  const form = useStartReadingForm({ book, statuses, onClose: onDone, onStarted, engagementId });
 
   return (
     <>
@@ -215,13 +215,19 @@ function defaultStartedOn(status: ShelvedStatus) {
   return status === ReadingStatus.reading ? localIsoDate() : '';
 }
 
-function useStartReadingForm(
-  book: BookRead,
-  statuses: ShelvedStatus[],
-  onClose: () => void,
-  onStarted?: () => void,
-  engagementId?: string
-) {
+function useStartReadingForm({
+  book,
+  statuses,
+  onClose,
+  onStarted,
+  engagementId,
+}: {
+  book: BookRead;
+  statuses: ShelvedStatus[];
+  onClose: () => void;
+  onStarted?: () => void;
+  engagementId?: string;
+}) {
   const [status, setStatus] = useState(statuses[0]!);
   const [step, setStep] = useState<'status' | 'fields'>(statuses.length > 1 ? 'status' : 'fields');
   const [format, setFormat] = useState<Format>(Format.print);
@@ -268,7 +274,7 @@ function useStartReadingForm(
 
   function pickStatus(picked: ShelvedStatus) {
     setStatus(picked);
-    if (picked === 'tbr') {
+    if (picked === ReadingStatus.tbr) {
       writeEngagement.mutate({
         data: {
           book_id: book.id,

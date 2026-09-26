@@ -40,11 +40,9 @@ export function ToReadRow({ engagement }: { engagement: EngagementRead }) {
       author={authorNames(book)}
       cover={coverSrc(engagement)}
       details={
-        <>
-          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-            <FormatIcons formats={formats} />
-          </div>
-        </>
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+          <FormatIcons formats={formats} />
+        </div>
       }
       slots={[
         <Button

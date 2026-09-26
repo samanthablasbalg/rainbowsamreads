@@ -177,7 +177,12 @@ describe('EndedReadRow', () => {
 
   it('deletes the read, after confirming, when Delete is chosen', async () => {
     const user = userEvent.setup();
-    server.use(getEngagementsDeleteEngagementMockHandler());
+    let deletedId: unknown;
+    server.use(
+      getEngagementsDeleteEngagementMockHandler((info) => {
+        deletedId = info.params.engagementId;
+      })
+    );
     renderInList(buildEngagement());
 
     await openOverflowMenuAndChoose(user, 'Delete Piranesi');
@@ -187,7 +192,7 @@ describe('EndedReadRow', () => {
 
     await user.click(screen.getByRole('button', { name: 'Delete' }));
 
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(deletedId).toBe('engagement-Piranesi'));
   });
 
   it('leaves the read alone when the confirmation is cancelled', async () => {

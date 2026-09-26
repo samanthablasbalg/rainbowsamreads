@@ -176,19 +176,12 @@ def _closing_unit(engagement: Engagement, unit: LogUnit | None) -> LogUnit:
 
 
 def _transition_to_tbr(
-    effective_on: datetime.date | None, engagement: Engagement
+    engagement: Engagement, effective_on: datetime.date | None
 ) -> None:
-
     if engagement.progress_logs:
         raise InvalidOperationError(
             "A read with progress logs cannot be returned to TBR."
         )
-    if (
-        engagement.status == ReadingStatus.finished
-        or engagement.status == ReadingStatus.dnf
-    ):
-        raise InvalidOperationError("A completed engagement cannot be returned to TBR.")
-
     engagement.status = ReadingStatus.tbr
 
     if engagement.tbr_added_on is None:
@@ -310,13 +303,9 @@ def update_engagement(
         return engagement
 
     if new_status == ReadingStatus.reading and engagement.status != ReadingStatus.tbr:
-        duplicate = db.execute(
-            select(Engagement).where(
-                Engagement.book_id == engagement.book_id,
-                Engagement.status == ReadingStatus.reading,
-                Engagement.id != engagement.id,
-            )
-        ).scalar_one_or_none()
+        duplicate = engagement_crud.get_by(
+            db, book_id=engagement.book_id, status=ReadingStatus.reading
+        )
         if duplicate is not None:
             raise ConflictError(
                 "A completed engagement cannot be"
@@ -329,13 +318,9 @@ def update_engagement(
             )
 
     if new_status == ReadingStatus.tbr:
-        duplicate = db.execute(
-            select(Engagement).where(
-                Engagement.book_id == engagement.book_id,
-                Engagement.status == ReadingStatus.tbr,
-                Engagement.id != engagement.id,
-            )
-        ).scalar_one_or_none()
+        duplicate = engagement_crud.get_by(
+            db, book_id=engagement.book_id, status=ReadingStatus.tbr
+        )
         if duplicate is not None:
             raise ConflictError("Already another tbr engagement for this book.")
 
@@ -352,18 +337,13 @@ def update_engagement(
                 _transition_to_dnf(engagement, effective_on, resolved_on)
         case ReadingStatus.reading:
             if new_status == ReadingStatus.tbr:
-                _transition_to_tbr(resolved_on, engagement)
+                _transition_to_tbr(engagement, resolved_on)
             elif new_status == ReadingStatus.finished:
                 _transition_to_finished(db, engagement, resolved_on, unit)
             elif new_status == ReadingStatus.dnf:
                 _transition_to_dnf(engagement, effective_on, resolved_on)
         case ReadingStatus.finished | ReadingStatus.dnf:
             if new_status == ReadingStatus.reading:
-                if not engagement.progress_logs:
-                    raise InvalidOperationError(
-                        "An engagement without progress logs "
-                        "cannot be returned to reading."
-                    )
                 _transition_to_reading(db, engagement, resolved_on)
             else:
                 raise InvalidOperationError(

@@ -617,7 +617,7 @@ def test_post_same_status_is_idempotent(client: TestClient) -> None:
         ("reading", "tbr"),
     ],
 )
-def test_post_engagement_backwards_conflicts_when_another_active_engagement_exists(
+def test_post_engagement_backwards_conflicts_when_status_already_taken(
     client: TestClient, old_status: str, new_status: str
 ) -> None:
     book = _create_book(client)

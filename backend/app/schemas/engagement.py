@@ -55,7 +55,7 @@ class EngagementWrite(BaseModel):
         if self.edition_format is None and self.status != ReadingStatus.tbr:
             raise ValueError("Creating a non-tbr read needs an edition_format")
         if self.status not in _CREATE_STATUSES:
-            raise ValueError("A read can only be created reading, finished or dnf")
+            raise ValueError("A read can only be created tbr, reading, finished or dnf")
         if self.finished_on is not None and self.status == ReadingStatus.reading:
             raise ValueError("A read in progress cannot have an end date")
         return self
