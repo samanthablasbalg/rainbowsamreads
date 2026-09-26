@@ -346,6 +346,10 @@ def update_engagement(
         case ReadingStatus.tbr:
             if new_status == ReadingStatus.reading:
                 _transition_to_reading(db, engagement, resolved_on)
+            elif new_status == ReadingStatus.finished:
+                _transition_to_finished(db, engagement, resolved_on, unit=None)
+            elif new_status == ReadingStatus.dnf:
+                _transition_to_dnf(engagement, effective_on, resolved_on)
         case ReadingStatus.reading:
             if new_status == ReadingStatus.tbr:
                 _transition_to_tbr(resolved_on, engagement)

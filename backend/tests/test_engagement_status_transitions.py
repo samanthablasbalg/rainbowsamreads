@@ -449,6 +449,22 @@ def test_post_finished_to_finished_does_not_overwrite_date(
     assert second.json()["finished_on"] == "2026-05-01"
 
 
+def test_finish_from_tbr_succeeds(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], status="tbr")
+
+    response = client.post(
+        "/api/engagements", json={"id": engagement["id"], "status": "finished"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == engagement["id"]
+    assert data["status"] == "finished"
+    assert data["tbr_added_on"] is not None
+    assert data["started_on"] is None
+    assert data["finished_on"] is not None
+
+
 # --- Transition to DNF ---
 
 
@@ -530,6 +546,22 @@ def test_dnf_preserves_completion_pct(client: TestClient) -> None:
     )
     assert response.status_code == 200
     assert response.json()["completion_pct"] == 50
+
+
+def test_dnf_from_tbr_succeeds(client: TestClient) -> None:
+    book = _create_book(client)
+    engagement = _create_engagement(client, book["id"], status="tbr")
+
+    response = client.post(
+        "/api/engagements", json={"id": engagement["id"], "status": "dnf"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == engagement["id"]
+    assert data["status"] == "dnf"
+    assert data["tbr_added_on"] is not None
+    assert data["started_on"] is None
+    assert data["abandoned_on"] is not None
 
 
 # --- Transition-wide behavior ---
