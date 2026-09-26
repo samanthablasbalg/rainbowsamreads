@@ -108,7 +108,10 @@ export function BookMetadata({
                   onClick={() => {
                     if (status === ReadingStatus.finished) {
                       setFinishOpen(true);
-                    } else if (status === ReadingStatus.reading && ENDED.includes(current.status)) {
+                    } else if (
+                      status === ReadingStatus.reading &&
+                      (ENDED.includes(current.status) || current.status === ReadingStatus.tbr)
+                    ) {
                       setAddOpen(true);
                     } else {
                       updateStatus.mutate({
@@ -136,7 +139,12 @@ export function BookMetadata({
 
         {current ? (
           <>
-            <StartReadingSheet book={book} open={addOpen} onOpenChange={setAddOpen} />
+            <StartReadingSheet
+              book={book}
+              engagementId={current.status === ReadingStatus.tbr ? current.id : undefined}
+              open={addOpen}
+              onOpenChange={setAddOpen}
+            />
             <FinishReadSheet engagement={current} open={finishOpen} onOpenChange={setFinishOpen} />
           </>
         ) : (
