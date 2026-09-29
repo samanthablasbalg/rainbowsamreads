@@ -368,7 +368,7 @@ def test_create_completed_engagement_stores_its_dates(
             "edition_format": "print",
             "status": completion.status,
             "started_on": started_on,
-            "finished_on": "2026-03-20",
+            completion.end_date_field: "2026-03-20",
         },
     )
 

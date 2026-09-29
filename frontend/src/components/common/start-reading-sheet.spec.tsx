@@ -257,7 +257,7 @@ describe('StartReadingSheet', () => {
         book_id: 'book-Piranesi',
         status: 'dnf',
         edition_format: 'print',
-        finished_on: '2026-02-20',
+        abandoned_on: '2026-02-20',
       })
     );
   });

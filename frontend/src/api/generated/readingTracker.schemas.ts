@@ -190,6 +190,7 @@ export interface EngagementWrite {
   tbr_added_on?: string | null;
   started_on?: string | null;
   finished_on?: string | null;
+  abandoned_on?: string | null;
   effective_on?: string | null;
   unit?: LogUnit | null;
 }

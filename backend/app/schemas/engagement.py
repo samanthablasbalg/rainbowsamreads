@@ -26,6 +26,7 @@ class EngagementWrite(BaseModel):
     tbr_added_on: datetime.date | None = None
     started_on: datetime.date | None = None
     finished_on: datetime.date | None = None
+    abandoned_on: datetime.date | None = None
     effective_on: datetime.date | None = None
     """`unit` picks the ruler the closing log is written on when finishing a read that
     has been going in more than one. Defaults to the one the read is already on."""

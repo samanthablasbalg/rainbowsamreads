@@ -16,13 +16,13 @@ from app.models.edition import Edition, EngagementEdition
 from app.models.engagement import Engagement
 from app.models.enums import Format, LogUnit, ReadingStatus
 from app.models.progress_log import ProgressLog
-from app.services.engagements._shared import ENGAGEMENT_READ_OPTIONS
+from app.services.engagements._shared import ENGAGEMENT_READ_OPTIONS, reject_future_date
 from app.services.engagements.bindings import (
     bind_edition,
     create_binding,
     edition_for_format,
 )
-from app.services.engagements.progress_logs import latest_log, reject_future_date
+from app.services.engagements.progress_logs import latest_log
 
 
 def list_for_book(db: Session, book_id: uuid.UUID) -> list[Engagement]:
@@ -91,14 +91,15 @@ def create_engagement(
     tbr_added_on: datetime.date | None = None,
     started_on: datetime.date | None = None,
     finished_on: datetime.date | None = None,
+    abandoned_on: datetime.date | None = None,
 ) -> Engagement:
     book_crud.get_or_raise(db, book_id)
 
     reject_future_date(tbr_added_on)
     reject_future_date(started_on)
     reject_future_date(finished_on)
-    if finished_on is not None and started_on is not None and finished_on < started_on:
-        raise ConflictError("finished_on cannot be before started_on.")
+    reject_future_date(abandoned_on)
+    _validate_end_date(status, started_on, finished_on, abandoned_on)
 
     if status == ReadingStatus.tbr:
         tbr_duplicate = engagement_crud.get_by(
@@ -135,7 +136,7 @@ def create_engagement(
             started_on=started_on
             or (datetime.date.today() if status == ReadingStatus.reading else None),
             finished_on=finished_on if status == ReadingStatus.finished else None,
-            abandoned_on=finished_on if status == ReadingStatus.dnf else None,
+            abandoned_on=abandoned_on if status == ReadingStatus.dnf else None,
             tbr_added_on=tbr_added_on
             or (datetime.date.today() if status == ReadingStatus.tbr else None),
         ),
@@ -158,6 +159,26 @@ def create_engagement(
         )
 
     return engagement
+
+
+def _validate_end_date(
+    status: ReadingStatus,
+    started_on: datetime.date | None,
+    finished_on: datetime.date | None,
+    abandoned_on: datetime.date | None,
+) -> None:
+    if status == ReadingStatus.finished and abandoned_on is not None:
+        raise ConflictError("abandoned_on cannot be passed for a finished engagement.")
+    if status == ReadingStatus.dnf and finished_on is not None:
+        raise ConflictError("finished_on cannot be passed for a finished engagement.")
+    if finished_on is not None and started_on is not None and finished_on < started_on:
+        raise ConflictError("finished_on cannot be before started_on.")
+    if (
+        abandoned_on is not None
+        and started_on is not None
+        and abandoned_on < started_on
+    ):
+        raise ConflictError("abandoned_on cannot be before started_on.")
 
 
 def _closing_unit(engagement: Engagement, unit: LogUnit | None) -> LogUnit:

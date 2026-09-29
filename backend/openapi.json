@@ -2085,6 +2085,18 @@
             ],
             "title": "Finished On"
           },
+          "abandoned_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abandoned On"
+          },
           "effective_on": {
             "anyOf": [
               {

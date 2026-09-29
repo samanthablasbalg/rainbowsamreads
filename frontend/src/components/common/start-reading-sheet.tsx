@@ -184,13 +184,13 @@ function StartReadingFields({
 
         {!form.isReading && (
           <Field>
-            <FieldLabel htmlFor="start-reading-finish-date">{form.finishLabel}</FieldLabel>
+            <FieldLabel htmlFor="start-reading-finish-date">{form.endDate.label}</FieldLabel>
             <Input
               id="start-reading-finish-date"
               type="date"
               max={localIsoDate()}
-              value={form.finishedOn}
-              onChange={(event) => form.setFinishedOn(event.target.value)}
+              value={form.endDate.value}
+              onChange={(event) => form.endDate.set(event.target.value)}
             />
           </Field>
         )}
@@ -240,6 +240,7 @@ function useStartReadingForm({
   const [lengthFocused, setLengthFocused] = useState(false);
   const [startedOn, setStartedOn] = useState(defaultStartedOn(statuses[0]!));
   const [finishedOn, setFinishedOn] = useState('');
+  const [abandonedOn, setAbandonedOn] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
@@ -304,6 +305,7 @@ function useStartReadingForm({
         edition_format: format,
         status,
         ...(finishedOn && { finished_on: finishedOn }),
+        ...(abandonedOn && { abandoned_on: abandonedOn }),
         ...(typed && parsedLength !== null && lengthField(knownLength, parsedLength)),
       },
     });
@@ -318,14 +320,17 @@ function useStartReadingForm({
 
   const isReading = status === ReadingStatus.reading;
 
+  const endDate =
+    status === ReadingStatus.dnf
+      ? { label: 'Stopped on', value: abandonedOn, set: setAbandonedOn }
+      : { label: 'Finish date', value: finishedOn, set: setFinishedOn };
+
   return {
     step,
     pickStatus,
     isReading,
     submitLabel: isReading ? 'Start reading' : 'Add',
-    finishLabel: status === ReadingStatus.dnf ? 'Stopped on' : 'Finish date',
-    finishedOn,
-    setFinishedOn,
+    endDate,
     format,
     pickFormat,
     isAudio,

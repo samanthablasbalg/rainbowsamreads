@@ -54,6 +54,7 @@ def write_engagement(
             tbr_added_on=payload.tbr_added_on,
             started_on=payload.started_on,
             finished_on=payload.finished_on,
+            abandoned_on=payload.abandoned_on,
         )
         db.commit()
         return EngagementRead.model_validate(reload(db, engagement.id))

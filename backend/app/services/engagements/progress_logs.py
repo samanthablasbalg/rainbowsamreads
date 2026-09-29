@@ -7,15 +7,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.crud import engagement_crud, progress_log_crud
-from app.exceptions import ConflictError, InvalidOperationError
+from app.exceptions import ConflictError
 from app.models.engagement import Engagement
 from app.models.enums import Format, LogUnit, ReadingStatus
 from app.models.progress_log import ProgressLog, log_sort_key
-
-
-def reject_future_date(value: datetime.date | None) -> None:
-    if value is not None and value > datetime.date.today():
-        raise InvalidOperationError("Date cannot be in the future.")
+from app.services.engagements._shared import reject_future_date
 
 
 def latest_log(logs: list[ProgressLog]) -> ProgressLog | None:
