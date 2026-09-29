@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { server } from './msw-server';
+import { configure } from '@testing-library/react';
 
 // jsdom has no matchMedia, and theme-provider.tsx calls it during mount, so without this
 // anything inside AppProvider throws before the first assertion. The stub always reports
@@ -36,4 +37,12 @@ afterEach(() => {
 
 afterAll(() => {
   server.close();
+});
+
+configure({
+  getElementError: (message) => {
+    const error = new Error(message ?? 'Element not found');
+    error.name = 'TestingLibraryElementError';
+    return error;
+  },
 });
