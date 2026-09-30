@@ -8,6 +8,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.api import router
 from app.exceptions import register_exception_handlers
+from app.openapi import install_openapi_extensions
 
 _session_secret = os.getenv("SESSION_SECRET")
 if not _session_secret:
@@ -28,6 +29,7 @@ app.add_middleware(
 )
 app.include_router(router, prefix="/api")
 register_exception_handlers(app)
+install_openapi_extensions(app)
 
 FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 

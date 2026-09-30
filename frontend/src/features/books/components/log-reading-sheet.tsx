@@ -1,6 +1,6 @@
-import type { BookRead } from '@/api/generated/readingTracker.schemas';
+import { type BookRead } from '@/api/generated/readingTracker.schemas';
 import { StartReadingSheet } from '@/components/common/start-reading-sheet';
-import { SHELVED_STATUSES } from '@/utils/status';
+import { CREATABLE_STATUSES } from '@/utils/status';
 
 export function LogReadingSheet({
   book,
@@ -14,7 +14,7 @@ export function LogReadingSheet({
   return (
     <StartReadingSheet
       book={book}
-      statuses={SHELVED_STATUSES}
+      statuses={CREATABLE_STATUSES}
       open={open}
       onOpenChange={onOpenChange}
     />

@@ -40,6 +40,31 @@ class ReadingStatus(enum.StrEnum):
     dnf = "dnf"
 
 
+CREATABLE_STATUSES = frozenset(
+    {
+        ReadingStatus.tbr,
+        ReadingStatus.reading,
+        ReadingStatus.finished,
+        ReadingStatus.dnf,
+    }
+)
+
+OPEN_STATUSES = frozenset(
+    {
+        ReadingStatus.tbr,
+        ReadingStatus.reading,
+        ReadingStatus.paused,
+    }
+)
+
+ENDED_STATUSES = frozenset(
+    {
+        ReadingStatus.finished,
+        ReadingStatus.dnf,
+    }
+)
+
+
 # Shared Postgres ENUM type. `date_precision` is used by multiple tables (books,
 # engagements, standalone_entries), so it is declared once and bound to the
 # metadata; that makes SQLAlchemy emit a single CREATE TYPE for it. Per-table

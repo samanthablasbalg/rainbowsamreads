@@ -6,12 +6,12 @@ import {
   getEngagementsWriteEngagementMockHandler,
   getEngagementsWriteEngagementResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
-import type { BookRead } from '@/api/generated/readingTracker.schemas';
+import { type BookRead } from '@/api/generated/readingTracker.schemas';
 import { buildBook } from '@/test/data-generators';
 import { server } from '@/test/msw-server';
 import { render, screen, waitFor } from '@/test/render';
 import { localIsoDate } from '@/utils/local-date';
-import { SHELVED_STATUSES, STATUSES } from '@/utils/status';
+import { CREATABLE_STATUSES } from '@/utils/status';
 import { StartReadingSheet } from './start-reading-sheet';
 
 // The sheet leaves navigation to whoever opened it, so the harness stands in for the
@@ -26,7 +26,7 @@ function ControlledSheet({ book }: { book: BookRead }) {
         book={book}
         open={open}
         onOpenChange={setOpen}
-        onStarted={() => navigate(STATUSES.reading.to)}
+        onStarted={() => navigate('/home')}
       />
     </>
   );
@@ -42,7 +42,7 @@ function renderAddSheet(overrides: Partial<BookRead> = {}) {
   return render(
     <StartReadingSheet
       book={buildBook(overrides)}
-      statuses={SHELVED_STATUSES}
+      statuses={CREATABLE_STATUSES}
       open
       onOpenChange={() => {}}
     />

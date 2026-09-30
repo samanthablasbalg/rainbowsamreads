@@ -23,7 +23,7 @@ import { ReadingProgress } from '@/components/common/reading-progress';
 import { Button } from '@/components/ui/button';
 import { authorNames, coverSrc } from '@/utils/book';
 import { FORMATS } from '@/utils/format';
-import { STATUSES } from '@/utils/status';
+import { STATUS_LABELS } from '@/utils/status';
 import { invalidateRead } from '../utils/invalidate-read';
 import { EntryTimeline } from './entry-timeline';
 import { InlineDateEdit } from './inline-date-edit';
@@ -61,12 +61,17 @@ export function ReadHistory({ engagementId }: { engagementId: string }) {
 }
 
 function BackLink({ status }: { status: ReadingStatus }) {
-  // A read can also be tbr, which this page is not reachable from.
-  const shelf = STATUSES[status as keyof typeof STATUSES] ?? STATUSES[ReadingStatus.reading];
-  const label = status === ReadingStatus.reading ? 'Currently reading' : shelf.label;
+  const inProgress = status === ReadingStatus.reading || status === ReadingStatus.paused;
+  const to = inProgress ? '/home' : `/library/${status}`;
+  const label =
+    status === ReadingStatus.reading
+      ? 'Currently reading'
+      : status === ReadingStatus.paused
+        ? STATUS_LABELS.reading
+        : STATUS_LABELS[status];
 
   return (
-    <Button variant="ghost" size="sm" className="-ml-3 mb-2" render={<Link to={shelf.to} />}>
+    <Button variant="ghost" size="sm" className="-ml-3 mb-2" render={<Link to={to} />}>
       <HugeiconsIcon icon={ArrowLeft01Icon} data-icon="inline-start" />
       {label}
     </Button>

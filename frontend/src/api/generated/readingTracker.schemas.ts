@@ -265,6 +265,31 @@ export interface TestLoginRequest {
   persona?: TestLoginRequestPersona;
 }
 
+export type CreatableReadingStatus =
+  (typeof CreatableReadingStatus)[keyof typeof CreatableReadingStatus];
+
+export const CreatableReadingStatus = {
+  tbr: 'tbr',
+  reading: 'reading',
+  finished: 'finished',
+  dnf: 'dnf',
+} as const;
+
+export type OpenReadingStatus = (typeof OpenReadingStatus)[keyof typeof OpenReadingStatus];
+
+export const OpenReadingStatus = {
+  tbr: 'tbr',
+  reading: 'reading',
+  paused: 'paused',
+} as const;
+
+export type EndedReadingStatus = (typeof EndedReadingStatus)[keyof typeof EndedReadingStatus];
+
+export const EndedReadingStatus = {
+  finished: 'finished',
+  dnf: 'dnf',
+} as const;
+
 export type AuthLogout200 = { [key: string]: boolean };
 
 export type AuthTestLogin200 = { [key: string]: boolean };

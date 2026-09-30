@@ -7,7 +7,12 @@ import {
   getEngagementsListEngagementsQueryKey,
   useEngagementsWriteEngagement,
 } from '@/api/generated/engagements/engagements';
-import { Format, ReadingStatus, type BookRead } from '@/api/generated/readingTracker.schemas';
+import {
+  Format,
+  ReadingStatus,
+  type BookRead,
+  type CreatableReadingStatus,
+} from '@/api/generated/readingTracker.schemas';
 import { ErrorText } from '@/components/common/error-text';
 import { PositionInput } from '@/components/common/position-input';
 import { Button } from '@/components/ui/button';
@@ -25,7 +30,7 @@ import {
 import { FORMATS } from '@/utils/format';
 import { formatLength, lengthField, parseLength } from '@/utils/length';
 import { localIsoDate } from '@/utils/local-date';
-import { STATUSES, type ShelvedStatus } from '@/utils/status';
+import { STATUS_LABELS } from '@/utils/status';
 
 const READING_ONLY = [ReadingStatus.reading];
 
@@ -34,7 +39,7 @@ type StartReadingSheetProps = {
   engagementId?: string;
   // More than one turns the sheet into two steps, asking where the read goes before
   // asking how it was read. One (the default) goes straight to the form.
-  statuses?: ShelvedStatus[];
+  statuses?: readonly CreatableReadingStatus[];
   cancelLabel?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -89,11 +94,11 @@ function StartReadingForm({
                   key={status}
                   variant="outline"
                   className="justify-start"
-                  aria-label={`Add ${book.title} as ${STATUSES[status].label}`}
+                  aria-label={`Add ${book.title} as ${STATUS_LABELS[status]}`}
                   onClick={() => form.pickStatus(status)}
                   disabled={form.startPending}
                 >
-                  {STATUSES[status].label}
+                  {STATUS_LABELS[status]}
                 </Button>
               ))}
             </div>
@@ -211,7 +216,7 @@ function StartReadingFields({
 
 // A read in progress starts today unless you say otherwise. One logged after the fact
 // starts blank -- prefilling today would record a date you never claimed.
-function defaultStartedOn(status: ShelvedStatus) {
+function defaultStartedOn(status: CreatableReadingStatus) {
   return status === ReadingStatus.reading ? localIsoDate() : '';
 }
 
@@ -223,7 +228,7 @@ function useStartReadingForm({
   engagementId,
 }: {
   book: BookRead;
-  statuses: ShelvedStatus[];
+  statuses: readonly CreatableReadingStatus[];
   onClose: () => void;
   onStarted?: () => void;
   engagementId?: string;
@@ -272,7 +277,7 @@ function useStartReadingForm({
     setError(null);
   }
 
-  function pickStatus(picked: ShelvedStatus) {
+  function pickStatus(picked: CreatableReadingStatus) {
     setStatus(picked);
     if (picked === ReadingStatus.tbr) {
       writeEngagement.mutate({

@@ -6,16 +6,9 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.models.enums import Format, LogUnit, ReadingStatus
+from app.models.enums import CREATABLE_STATUSES, Format, LogUnit, ReadingStatus
 from app.schemas.book import BookRead
 from app.schemas.review import ReviewRead
-
-_CREATE_STATUSES = {
-    ReadingStatus.tbr,
-    ReadingStatus.reading,
-    ReadingStatus.finished,
-    ReadingStatus.dnf,
-}
 
 
 class EngagementWrite(BaseModel):
@@ -54,7 +47,7 @@ class EngagementWrite(BaseModel):
             raise ValueError("effective_on and unit need an id")
         if self.edition_format is None and self.status != ReadingStatus.tbr:
             raise ValueError("Creating a non-tbr read needs an edition_format")
-        if self.status not in _CREATE_STATUSES:
+        if self.status not in CREATABLE_STATUSES:
             raise ValueError("A read can only be created tbr, reading, finished or dnf")
         if self.finished_on is not None and self.status == ReadingStatus.reading:
             raise ValueError("A read in progress cannot have an end date")

@@ -14,6 +14,7 @@ import { ErrorText } from '@/components/common/error-text';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatIsoDate } from '@/utils/format-date';
+import { isEndedStatus } from '@/utils/status';
 import { toDayGroups, toEntryViews, type EntryView } from '../utils/entry-view';
 import { invalidateRead } from '../utils/invalidate-read';
 import { EntryCard } from './entry-card';
@@ -47,8 +48,7 @@ export function EntryTimeline({
 
   const groups = toDayGroups(toEntryViews(logs, engagement));
 
-  const ended =
-    engagement.status === ReadingStatus.finished || engagement.status === ReadingStatus.dnf;
+  const ended = isEndedStatus(engagement.status);
 
   return (
     <section aria-labelledby="entry-timeline-heading">

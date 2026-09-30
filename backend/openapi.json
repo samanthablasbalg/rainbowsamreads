@@ -2537,6 +2537,33 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "CreatableReadingStatus": {
+        "type": "string",
+        "title": "CreatableReadingStatus",
+        "enum": [
+          "tbr",
+          "reading",
+          "finished",
+          "dnf"
+        ]
+      },
+      "OpenReadingStatus": {
+        "type": "string",
+        "title": "OpenReadingStatus",
+        "enum": [
+          "tbr",
+          "reading",
+          "paused"
+        ]
+      },
+      "EndedReadingStatus": {
+        "type": "string",
+        "title": "EndedReadingStatus",
+        "enum": [
+          "finished",
+          "dnf"
+        ]
       }
     }
   }

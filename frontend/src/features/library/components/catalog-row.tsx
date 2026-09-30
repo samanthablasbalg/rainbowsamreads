@@ -13,7 +13,6 @@ import { StartReadingSheet } from '@/components/common/start-reading-sheet';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { authorNames, formatAudioLength, formatPageCount } from '@/utils/book';
-import { STATUSES } from '@/utils/status';
 
 function formatLengths({ default_page_count, default_audio_minutes }: BookRead): string | null {
   const lengths = [
@@ -85,7 +84,7 @@ export function CatalogRow({ book }: { book: BookRead }) {
         book={book}
         open={pickOpen}
         onOpenChange={setPickOpen}
-        onStarted={() => navigate(STATUSES.reading.to)}
+        onStarted={() => navigate('/home')}
       />
 
       <ConfirmDialog
