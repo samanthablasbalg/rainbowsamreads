@@ -40,4 +40,4 @@ exec codex "$@"'
 docker compose up workspace -d >/dev/null
 exec docker compose exec -e OPENAI_API_KEY workspace \
   sh -c "$sync_skills" -- \
-  --sandbox danger-full-access --ask-for-approval on-request "$@"
+  --no-daemon --sandbox danger-full-access --ask-for-approval on-request "$@"
