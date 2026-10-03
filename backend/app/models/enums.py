@@ -53,7 +53,6 @@ OPEN_STATUSES = frozenset(
     {
         ReadingStatus.tbr,
         ReadingStatus.reading,
-        ReadingStatus.paused,
     }
 )
 

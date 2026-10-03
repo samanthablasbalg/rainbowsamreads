@@ -2565,8 +2565,7 @@
         "title": "OpenReadingStatus",
         "enum": [
           "tbr",
-          "reading",
-          "paused"
+          "reading"
         ]
       },
       "EndedReadingStatus": {

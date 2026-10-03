@@ -23,7 +23,7 @@ from tests.helpers import (
         pytest.param(MINUTES, PAGES, id="audio"),
     ],
 )
-def test_get_engagement_reports_override_without_unbound_book_default(
+def test_get_engagement_omits_book_default_for_unbound_format(
     client: TestClient,
     ruler: Ruler,
     other_ruler: Ruler,
@@ -35,7 +35,7 @@ def test_get_engagement_reports_override_without_unbound_book_default(
         "/api/engagements",
         json={
             "book_id": book["id"],
-            "status": "reading",
+            "status": "finished",
             "edition_format": other_ruler.edition_format,
             "edition_length": 600,
         },

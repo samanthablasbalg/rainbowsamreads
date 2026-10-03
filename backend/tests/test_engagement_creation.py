@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 
 from app.models.book import Book
 from app.models.enums import (
-    CREATABLE_STATUSES,
     ENDED_STATUSES,
     OPEN_STATUSES,
     ReadingStatus,
@@ -293,21 +292,26 @@ def test_create_reading_engagement_length_override_leaves_edition_alone(
 # --- Duplicate engagements ---
 
 
-@pytest.mark.parametrize(
-    "new_status",
-    sorted(CREATABLE_STATUSES - {ReadingStatus.tbr}),
-)
-def test_create_non_tbr_engagement_with_active_read_in_same_format_returns_409(
-    client: TestClient, new_status: ReadingStatus
+@pytest.mark.parametrize("existing_status", sorted(OPEN_STATUSES))
+@pytest.mark.parametrize("new_status", sorted(OPEN_STATUSES))
+def test_create_active_engagement_when_book_has_active_engagement_returns_409(
+    client: TestClient,
+    existing_status: ReadingStatus,
+    new_status: ReadingStatus,
 ) -> None:
     book = _create_book(client)
-    _create_engagement(client, book["id"])
+    _create_engagement(
+        client,
+        book["id"],
+        status=existing_status,
+        edition_format="print",
+    )
 
     response = client.post(
         "/api/engagements",
         json={
             "book_id": book["id"],
-            "edition_format": "print",
+            "edition_format": "audio",
             "status": new_status,
         },
     )
@@ -315,45 +319,13 @@ def test_create_non_tbr_engagement_with_active_read_in_same_format_returns_409(
     assert response.status_code == 409
 
 
-@pytest.mark.parametrize(
-    "existing_ruler, new_ruler",
-    [
-        pytest.param(PAGES, MINUTES, id="print-to-audio"),
-        pytest.param(MINUTES, PAGES, id="audio-to-print"),
-    ],
-)
-def test_create_reading_engagement_in_different_format_from_active_read_succeeds(
-    client: TestClient,
-    existing_ruler: Ruler,
-    new_ruler: Ruler,
+@pytest.mark.parametrize("existing_status", sorted(ENDED_STATUSES))
+@pytest.mark.parametrize("new_status", sorted(OPEN_STATUSES))
+def test_create_active_engagement_after_ended_engagement_succeeds(
+    client: TestClient, existing_status: ReadingStatus, new_status: ReadingStatus
 ) -> None:
     book = _create_book(client)
-    _create_engagement(client, book["id"], edition_format=existing_ruler.edition_format)
-
-    response = client.post(
-        "/api/engagements",
-        json={
-            "book_id": book["id"],
-            "edition_format": new_ruler.edition_format,
-            "status": "reading",
-        },
-    )
-
-    assert response.status_code == 201
-    data = response.json()
-    assert data["status"] == "reading"
-    assert data["formats"] == [new_ruler.edition_format]
-
-
-@pytest.mark.parametrize(
-    "new_status",
-    sorted(CREATABLE_STATUSES & OPEN_STATUSES),
-)
-def test_create_tbr_or_reading_engagement_after_finished_read_succeeds(
-    client: TestClient, new_status: ReadingStatus
-) -> None:
-    book = _create_book(client)
-    _create_engagement(client, book["id"], status="finished")
+    _create_engagement(client, book["id"], status=existing_status)
 
     response = client.post(
         "/api/engagements",
@@ -368,6 +340,33 @@ def test_create_tbr_or_reading_engagement_after_finished_read_succeeds(
     data = response.json()
     assert data["status"] == new_status
     assert data["formats"] == ["print"]
+
+
+@pytest.mark.parametrize("existing_status", sorted(OPEN_STATUSES))
+@pytest.mark.parametrize("new_status", sorted(ENDED_STATUSES))
+def test_create_ended_engagement_for_book_with_active_engagement_succeeds(
+    client: TestClient,
+    existing_status: ReadingStatus,
+    new_status: ReadingStatus,
+) -> None:
+    book = _create_book(client)
+    _create_engagement(
+        client,
+        book["id"],
+        status=existing_status,
+        edition_format="print",
+    )
+
+    response = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "status": new_status,
+            "edition_format": "print",
+        },
+    )
+
+    assert response.status_code == 201
 
 
 # --- Completed reads ---

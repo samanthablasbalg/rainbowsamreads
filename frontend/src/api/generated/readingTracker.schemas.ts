@@ -281,7 +281,6 @@ export type OpenReadingStatus = (typeof OpenReadingStatus)[keyof typeof OpenRead
 export const OpenReadingStatus = {
   tbr: 'tbr',
   reading: 'reading',
-  paused: 'paused',
 } as const;
 
 export type EndedReadingStatus = (typeof EndedReadingStatus)[keyof typeof EndedReadingStatus];
