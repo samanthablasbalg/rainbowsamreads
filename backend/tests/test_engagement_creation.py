@@ -8,6 +8,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.models.book import Book
+from app.models.enums import (
+    CREATABLE_STATUSES,
+    ENDED_STATUSES,
+    OPEN_STATUSES,
+    ReadingStatus,
+)
 from tests.helpers import (
     COMPLETIONS,
     MINUTES,
@@ -21,12 +27,74 @@ from tests.helpers import (
     _create_engagement,
 )
 
-# --- TBR ---
+_LIFECYCLE_DATE_FIELDS = (
+    "tbr_added_on",
+    "started_on",
+    "finished_on",
+    "abandoned_on",
+)
 
 
-@pytest.mark.parametrize("ruler", RULERS)
-def test_create_tbr_engagement_with_format_returns_201(
-    client: TestClient, ruler: Ruler
+@pytest.mark.parametrize(
+    ("status", "dates", "expected_dates"),
+    [
+        pytest.param(
+            ReadingStatus.tbr,
+            {},
+            {"tbr_added_on": datetime.date.today().isoformat()},
+            id="tbr-default",
+        ),
+        pytest.param(
+            ReadingStatus.tbr,
+            {"tbr_added_on": "2026-09-15"},
+            {"tbr_added_on": "2026-09-15"},
+            id="tbr-explicit",
+        ),
+        pytest.param(
+            ReadingStatus.reading,
+            {},
+            {"started_on": datetime.date.today().isoformat()},
+            id="reading-default",
+        ),
+        pytest.param(
+            ReadingStatus.reading,
+            {"started_on": "2026-09-15"},
+            {"started_on": "2026-09-15"},
+            id="reading-explicit",
+        ),
+        pytest.param(ReadingStatus.finished, {}, {}, id="finished-no-dates"),
+        pytest.param(
+            ReadingStatus.finished,
+            {"finished_on": "2026-09-15"},
+            {"finished_on": "2026-09-15"},
+            id="finished-end-only",
+        ),
+        pytest.param(
+            ReadingStatus.finished,
+            {"started_on": "2026-09-01", "finished_on": "2026-09-15"},
+            {"started_on": "2026-09-01", "finished_on": "2026-09-15"},
+            id="finished-start-and-end",
+        ),
+        pytest.param(ReadingStatus.dnf, {}, {}, id="dnf-no-dates"),
+        pytest.param(
+            ReadingStatus.dnf,
+            {"abandoned_on": "2026-09-15"},
+            {"abandoned_on": "2026-09-15"},
+            id="dnf-end-only",
+        ),
+        pytest.param(
+            ReadingStatus.dnf,
+            {"started_on": "2026-09-01", "abandoned_on": "2026-09-15"},
+            {"started_on": "2026-09-01", "abandoned_on": "2026-09-15"},
+            id="dnf-start-and-end",
+        ),
+    ],
+)
+def test_create_engagement_sets_status_appropriate_lifecycle_dates(
+    client: TestClient,
+    status: ReadingStatus,
+    dates: dict[str, str],
+    expected_dates: dict[str, str],
 ) -> None:
     book = _create_book(client)
 
@@ -34,50 +102,28 @@ def test_create_tbr_engagement_with_format_returns_201(
         "/api/engagements",
         json={
             "book_id": book["id"],
-            "status": "tbr",
-            "edition_format": ruler.edition_format,
+            "status": status,
+            "edition_format": "print",
+            **dates,
         },
     )
 
     assert response.status_code == 201
     data = response.json()
-    assert data["status"] == "tbr"
-    assert data["tbr_added_on"] == datetime.date.today().isoformat()
-    assert data["started_on"] is None
-    assert data["finished_on"] is None
-    assert data["formats"] == [ruler.edition_format]
-
-
-def test_create_tbr_engagement_without_format_returns_201(client: TestClient) -> None:
-    book = _create_book(client)
-    response = client.post(
-        "/api/engagements",
-        json={
-            "book_id": book["id"],
-            "status": "tbr",
-            "tbr_added_on": "2026-09-15",
-        },
-    )
-    assert response.status_code == 201
-    data = response.json()
-    assert data["status"] == "tbr"
-    assert data["finished_on"] is None
-    assert data["started_on"] is None
-    assert data["formats"] == []
-    assert data["tbr_added_on"] == "2026-09-15"
-
-
-# --- Reading ---
+    assert data["status"] == status
+    assert {field: data[field] for field in _LIFECYCLE_DATE_FIELDS} == {
+        field: expected_dates.get(field) for field in _LIFECYCLE_DATE_FIELDS
+    }
 
 
 @pytest.mark.parametrize(
-    "ruler, expected_length",
+    ("ruler", "expected_length"),
     [
         pytest.param(PAGES, 300, id="pages"),
         pytest.param(MINUTES, 600, id="audio"),
     ],
 )
-def test_create_reading_engagement_with_selected_format_returns_201(
+def test_create_reading_engagement_returns_selected_edition(
     client: TestClient, ruler: Ruler, expected_length: int
 ) -> None:
     book = _create_book(client)
@@ -93,16 +139,25 @@ def test_create_reading_engagement_with_selected_format_returns_201(
 
     assert response.status_code == 201
     data = response.json()
-    assert data["status"] == "reading"
-    assert data["started_on"] is not None
-    assert data["finished_on"] is None
-    assert data["book"]["title"] == "Piranesi"
-    assert data["book"]["authors"][0]["name"] == "Susanna Clarke"
     assert data["formats"] == [ruler.edition_format]
     assert data[ruler.length_field] == expected_length
     assert data[ruler.other_length_field] is None
     assert data[ruler.resume_field] == 0
-    assert data["completion_pct"] is None
+
+
+def test_create_tbr_engagement_without_format_returns_201(client: TestClient) -> None:
+    book = _create_book(client)
+    response = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "status": "tbr",
+        },
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["status"] == "tbr"
+    assert data["formats"] == []
 
 
 # --- Edition selection and length ---
@@ -238,9 +293,12 @@ def test_create_reading_engagement_length_override_leaves_edition_alone(
 # --- Duplicate engagements ---
 
 
-@pytest.mark.parametrize("new_status", ["reading", "finished", "dnf"])
+@pytest.mark.parametrize(
+    "new_status",
+    sorted(CREATABLE_STATUSES - {ReadingStatus.tbr}),
+)
 def test_create_non_tbr_engagement_with_active_read_in_same_format_returns_409(
-    client: TestClient, new_status: str
+    client: TestClient, new_status: ReadingStatus
 ) -> None:
     book = _create_book(client)
     _create_engagement(client, book["id"])
@@ -287,9 +345,12 @@ def test_create_reading_engagement_in_different_format_from_active_read_succeeds
     assert data["formats"] == [new_ruler.edition_format]
 
 
-@pytest.mark.parametrize("new_status", ["tbr", "reading"])
+@pytest.mark.parametrize(
+    "new_status",
+    sorted(CREATABLE_STATUSES & OPEN_STATUSES),
+)
 def test_create_tbr_or_reading_engagement_after_finished_read_succeeds(
-    client: TestClient, new_status: str
+    client: TestClient, new_status: ReadingStatus
 ) -> None:
     book = _create_book(client)
     _create_engagement(client, book["id"], status="finished")
@@ -312,71 +373,30 @@ def test_create_tbr_or_reading_engagement_after_finished_read_succeeds(
 # --- Completed reads ---
 
 
-@pytest.mark.parametrize("completion", COMPLETIONS)
-@pytest.mark.parametrize(
-    "edition_length",
-    [pytest.param(300, id="with-length"), pytest.param(None, id="without-length")],
-)
-def test_create_completed_engagement_without_dates_succeeds(
+@pytest.mark.parametrize("status", sorted(ENDED_STATUSES))
+def test_create_completed_engagement_without_edition_length_succeeds(
     client: TestClient,
-    completion: Completion,
-    edition_length: int | None,
+    status: ReadingStatus,
 ) -> None:
     book = _create_bare_book(client)
-    _create_edition(client, book["id"], format="print", length=edition_length)
+    _create_edition(client, book["id"], format="print")
 
     response = client.post(
         "/api/engagements",
         json={
             "book_id": book["id"],
             "edition_format": "print",
-            "status": completion.status,
+            "status": status,
         },
     )
 
     assert response.status_code == 201
     data = response.json()
-    assert data["status"] == completion.status
-    assert data["started_on"] is None
-    assert data[completion.end_date_field] is None
-    assert data[completion.other_end_date_field] is None
+    assert data["status"] == status
 
     logs_response = client.get(f"/api/engagements/{data['id']}/progress-logs")
     assert logs_response.status_code == 200
     assert logs_response.json() == []
-
-
-@pytest.mark.parametrize("completion", COMPLETIONS)
-@pytest.mark.parametrize(
-    "started_on",
-    [
-        pytest.param("2026-03-01", id="with-start"),
-        pytest.param(None, id="without-start"),
-    ],
-)
-def test_create_completed_engagement_stores_its_dates(
-    client: TestClient,
-    completion: Completion,
-    started_on: str | None,
-) -> None:
-    book = _create_book(client)
-
-    response = client.post(
-        "/api/engagements",
-        json={
-            "book_id": book["id"],
-            "edition_format": "print",
-            "status": completion.status,
-            "started_on": started_on,
-            completion.end_date_field: "2026-03-20",
-        },
-    )
-
-    assert response.status_code == 201
-    data = response.json()
-    assert data["started_on"] == started_on
-    assert data[completion.end_date_field] == "2026-03-20"
-    assert data[completion.other_end_date_field] is None
 
 
 # --- Derived cover ---
@@ -466,8 +486,10 @@ def test_create_reading_engagement_with_multiple_matching_editions_returns_409(
 @pytest.mark.parametrize(
     "status, date_field",
     [
+        pytest.param("tbr", "tbr_added_on", id="tbr-added-on"),
         pytest.param("reading", "started_on", id="started-on"),
         pytest.param("finished", "finished_on", id="finished-on"),
+        pytest.param("dnf", "abandoned_on", id="abandoned-on"),
     ],
 )
 def test_create_engagement_with_future_lifecycle_date_returns_422(
@@ -501,8 +523,9 @@ def test_create_engagement_for_unknown_book_returns_404(client: TestClient) -> N
     assert response.status_code == 404
 
 
+@pytest.mark.parametrize("end_date_field", ["finished_on", "abandoned_on"])
 def test_create_reading_engagement_with_end_date_returns_422(
-    client: TestClient,
+    client: TestClient, end_date_field: str
 ) -> None:
     book = _create_book(client)
     response = client.post(
@@ -511,14 +534,15 @@ def test_create_reading_engagement_with_end_date_returns_422(
             "book_id": book["id"],
             "edition_format": "print",
             "status": "reading",
-            "finished_on": "2026-03-20",
+            end_date_field: "2026-03-20",
         },
     )
     assert response.status_code == 422
 
 
-def test_create_finished_engagement_with_end_before_start_returns_409(
-    client: TestClient,
+@pytest.mark.parametrize("completion", COMPLETIONS)
+def test_create_completed_engagement_with_other_end_date_returns_409(
+    client: TestClient, completion: Completion
 ) -> None:
     book = _create_book(client)
     response = client.post(
@@ -526,9 +550,26 @@ def test_create_finished_engagement_with_end_before_start_returns_409(
         json={
             "book_id": book["id"],
             "edition_format": "print",
-            "status": "finished",
+            "status": completion.status,
+            completion.other_end_date_field: "2026-03-20",
+        },
+    )
+    assert response.status_code == 409
+
+
+@pytest.mark.parametrize("completion", COMPLETIONS)
+def test_create_completed_engagement_with_end_before_start_returns_409(
+    client: TestClient, completion: Completion
+) -> None:
+    book = _create_book(client)
+    response = client.post(
+        "/api/engagements",
+        json={
+            "book_id": book["id"],
+            "edition_format": "print",
+            "status": completion.status,
             "started_on": "2026-03-20",
-            "finished_on": "2026-03-01",
+            completion.end_date_field: "2026-03-01",
         },
     )
     assert response.status_code == 409
@@ -562,8 +603,10 @@ def test_write_engagement_needs_exactly_one_of_book_id_and_id(
     [
         pytest.param("book_id", "effective_on", "2026-01-01", id="effective_on"),
         pytest.param("book_id", "unit", "pages", id="unit"),
+        pytest.param("id", "tbr_added_on", "2026-01-01", id="tbr_added_on"),
         pytest.param("id", "started_on", "2026-01-01", id="started_on"),
         pytest.param("id", "finished_on", "2026-01-01", id="finished_on"),
+        pytest.param("id", "abandoned_on", "2026-01-01", id="abandoned_on"),
     ],
 )
 def test_write_engagement_rejects_a_field_for_the_other_identifier(

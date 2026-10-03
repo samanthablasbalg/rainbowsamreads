@@ -41,8 +41,14 @@ class EngagementWrite(BaseModel):
     @model_validator(mode="after")
     def check_fields_match_identifier(self) -> Self:
         if self.id is not None:
-            if self.started_on is not None or self.finished_on is not None:
-                raise ValueError("started_on and finished_on need a book_id")
+            creation_dates = (
+                self.tbr_added_on,
+                self.started_on,
+                self.finished_on,
+                self.abandoned_on,
+            )
+            if any(date is not None for date in creation_dates):
+                raise ValueError("Lifecycle dates need a book_id")
             return self
         if self.effective_on is not None or self.unit is not None:
             raise ValueError("effective_on and unit need an id")
@@ -50,7 +56,8 @@ class EngagementWrite(BaseModel):
             raise ValueError("Creating a non-tbr read needs an edition_format")
         if self.status not in CREATABLE_STATUSES:
             raise ValueError("A read can only be created tbr, reading, finished or dnf")
-        if self.finished_on is not None and self.status == ReadingStatus.reading:
+        has_end_date = self.finished_on is not None or self.abandoned_on is not None
+        if has_end_date and self.status == ReadingStatus.reading:
             raise ValueError("A read in progress cannot have an end date")
         return self
 
