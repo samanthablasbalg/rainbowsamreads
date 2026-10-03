@@ -5,7 +5,7 @@ import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import ForeignKey, UniqueConstraint
+from sqlalchemy import ForeignKey, Index, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -29,7 +29,16 @@ if TYPE_CHECKING:
 
 class Engagement(TimestampMixin, Base):
     __tablename__ = "engagements"
-    __table_args__ = (UniqueConstraint("id", "user_id"),)
+    __table_args__ = (
+        UniqueConstraint("id", "user_id"),
+        Index(
+            "ix_engagements_user_book_open",
+            "user_id",
+            "book_id",
+            unique=True,
+            postgresql_where=text("status IN ('tbr', 'reading', 'paused')"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     book_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("books.id"))
