@@ -162,7 +162,12 @@ export function CurrentReadRow({ engagement }: { engagement: EngagementRead }) {
         onOpenChange={setAddFormatOpen}
       />
 
-      <FinishReadSheet engagement={engagement} open={finishOpen} onOpenChange={setFinishOpen} />
+      <FinishReadSheet
+        book={book}
+        engagement={engagement}
+        open={finishOpen}
+        onOpenChange={setFinishOpen}
+      />
 
       <ConfirmDialog
         open={pendingAction !== null}

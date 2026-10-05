@@ -17,7 +17,7 @@ export function Catalog() {
       ) : (
         <ul className="flex flex-col gap-3">
           {books.map((book) => (
-            <CatalogRow key={book.id} book={book} />
+            <CatalogRow key={book.id} book={book} engagement={book.engagement} />
           ))}
         </ul>
       )}

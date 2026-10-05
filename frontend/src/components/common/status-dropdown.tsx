@@ -12,8 +12,8 @@ import { FinishReadSheet } from './finish-read-sheet';
 import {
   ReadingStatus,
   type BookRead,
+  type CatalogEngagementRead,
   type CreatableReadingStatus,
-  type EngagementRead,
 } from '@/api/generated/readingTracker.schemas';
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -37,7 +37,7 @@ export function StatusDropdown({
   engagement,
 }: {
   book: BookRead;
-  engagement: EngagementRead | null;
+  engagement: CatalogEngagementRead | null;
 }) {
   const [addOpen, setAddOpen] = useState(false);
   const [finishOpen, setFinishOpen] = useState(false);
@@ -112,7 +112,12 @@ export function StatusDropdown({
         onOpenChange={setAddOpen}
       />
       {engagement && (
-        <FinishReadSheet engagement={engagement} open={finishOpen} onOpenChange={setFinishOpen} />
+        <FinishReadSheet
+          book={book}
+          engagement={engagement}
+          open={finishOpen}
+          onOpenChange={setFinishOpen}
+        />
       )}
     </>
   );

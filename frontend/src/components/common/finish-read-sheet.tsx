@@ -11,6 +11,7 @@ import {
   Format,
   LogUnit,
   ReadingStatus,
+  type BookRead,
   type EngagementRead,
 } from '@/api/generated/readingTracker.schemas';
 import { CoverImage } from '@/components/common/cover-image';
@@ -27,34 +28,39 @@ import {
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from '@/components/ui/responsive-dialog';
-import { authorNames, coverSrc } from '@/utils/book';
+import { authorNames } from '@/utils/book';
 import { FORMATS } from '@/utils/format';
 import { localIsoDate } from '@/utils/local-date';
 
+type FinishableEngagement = Pick<EngagementRead, 'id' | 'formats' | 'cover_url'>;
+
 type FinishReadSheetProps = {
-  engagement: EngagementRead;
+  book: BookRead;
+  engagement: FinishableEngagement;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
-export function FinishReadSheet({ engagement, open, onOpenChange }: FinishReadSheetProps) {
+export function FinishReadSheet({ book, engagement, open, onOpenChange }: FinishReadSheetProps) {
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent>
-        <FinishReadForm engagement={engagement} onDone={() => onOpenChange(false)} />
+        <FinishReadForm book={book} engagement={engagement} onDone={() => onOpenChange(false)} />
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
 }
 
 function FinishReadForm({
+  book,
   engagement,
   onDone,
 }: {
-  engagement: EngagementRead;
+  book: BookRead;
+  engagement: FinishableEngagement;
   onDone: () => void;
 }) {
-  const form = useFinishReadForm(engagement, onDone);
+  const form = useFinishReadForm(book, engagement, onDone);
 
   return (
     <>
@@ -68,13 +74,13 @@ function FinishReadForm({
       <ResponsiveDialogBody>
         <div className="flex items-center gap-3">
           <CoverImage
-            src={coverSrc(engagement)}
-            title={engagement.book.title}
+            src={engagement.cover_url ?? book.default_cover_url}
+            title={book.title}
             className="h-16 w-11"
           />
           <div className="min-w-0">
-            <p className="font-heading font-semibold">{engagement.book.title}</p>
-            <p className="text-sm text-muted-foreground">{authorNames(engagement.book)}</p>
+            <p className="font-heading font-semibold">{book.title}</p>
+            <p className="text-sm text-muted-foreground">{authorNames(book)}</p>
           </div>
         </div>
 
@@ -138,7 +144,7 @@ function FinishReadForm({
         </Button>
         <Button
           disabled={!form.canFinish || form.finishPending}
-          aria-label={`Mark ${engagement.book.title} as finished`}
+          aria-label={`Mark ${book.title} as finished`}
           onClick={form.handleFinish}
         >
           Mark finished
@@ -148,7 +154,7 @@ function FinishReadForm({
   );
 }
 
-function useFinishReadForm(engagement: EngagementRead, onClose: () => void) {
+function useFinishReadForm(book: BookRead, engagement: FinishableEngagement, onClose: () => void) {
   // Same derivation the log sheet uses, so the sheet asks exactly when the backend's
   // `_closing_unit` would refuse to guess.
   const pageFormat = engagement.formats.find((format) => format !== Format.audio) ?? null;
@@ -166,7 +172,7 @@ function useFinishReadForm(engagement: EngagementRead, onClose: () => void) {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: getEngagementsListEngagementsQueryKey() }),
           queryClient.invalidateQueries({
-            queryKey: getBooksListBookEngagementsQueryKey(engagement.book.id),
+            queryKey: getBooksListBookEngagementsQueryKey(book.id),
           }),
         ]);
         onClose();

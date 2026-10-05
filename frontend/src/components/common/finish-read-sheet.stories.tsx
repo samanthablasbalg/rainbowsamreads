@@ -2,11 +2,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { withPointer } from '@/test/pointer-decorator';
 import { expect, screen, userEvent, within } from 'storybook/test';
-import { Format, type EngagementRead } from '@/api/generated/readingTracker.schemas';
+import { Format, type BookRead, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { Button } from '@/components/ui/button';
-import { buildEngagement } from '@/test/data-generators';
+import { buildBook, buildEngagement } from '@/test/data-generators';
 import { FinishReadSheet } from './finish-read-sheet';
 
+const book = buildBook();
 const printRead = buildEngagement({ resume_from_page: 250 });
 
 const mixedRead = buildEngagement({
@@ -15,14 +16,14 @@ const mixedRead = buildEngagement({
   frontier_minute: 600,
 });
 
-function ControlledSheet({ engagement }: { engagement: EngagementRead }) {
+function ControlledSheet({ book, engagement }: { book: BookRead; engagement: EngagementRead }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <Button variant="outline" onClick={() => setOpen(true)}>
         Open
       </Button>
-      <FinishReadSheet engagement={engagement} open={open} onOpenChange={setOpen} />
+      <FinishReadSheet book={book} engagement={engagement} open={open} onOpenChange={setOpen} />
     </>
   );
 }
@@ -40,20 +41,20 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const OneFormat: Story = {
-  render: () => <ControlledSheet engagement={printRead} />,
+  render: () => <ControlledSheet book={book} engagement={printRead} />,
 };
 
 export const MobileSheet: Story = {
   decorators: [withPointer(true)],
-  render: () => <ControlledSheet engagement={printRead} />,
+  render: () => <ControlledSheet book={book} engagement={printRead} />,
 };
 
 export const TwoRulers: Story = {
-  render: () => <ControlledSheet engagement={mixedRead} />,
+  render: () => <ControlledSheet book={book} engagement={mixedRead} />,
 };
 
 export const RulerPicked: Story = {
-  render: () => <ControlledSheet engagement={mixedRead} />,
+  render: () => <ControlledSheet book={book} engagement={mixedRead} />,
   play: async (context) => {
     await openSheet(context);
     await userEvent.click(await screen.findByRole('button', { name: 'Minutes' }));

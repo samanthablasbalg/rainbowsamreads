@@ -1,12 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { buildBook } from '@/test/data-generators';
+import { buildCatalogBook, buildEngagement } from '@/test/data-generators';
 import { CatalogRow } from './catalog-row';
 
-const book = buildBook();
+const book = buildCatalogBook();
+const engagement = buildEngagement();
 
 const meta = {
   component: CatalogRow,
-  args: { book },
+  args: { book, engagement },
   render: (args) => (
     <ul>
       <CatalogRow {...args} />
