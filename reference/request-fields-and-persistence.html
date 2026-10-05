@@ -23,22 +23,24 @@
       <section>
         <h2>The Reading Tracker example</h2>
         <p>
-          <code>audio_length_minutes</code> appears on the engagement-creation request. That makes
-          it look like an engagement property, but tracing the operation shows otherwise.
+          <code>edition_length</code> appears on <code>EngagementWrite</code>. That makes it look
+          like an engagement property, but tracing the operation shows otherwise.
         </p>
 
-        <pre aria-label="Audio length data flow"><code>EngagementCreate.audio_length_minutes
+        <pre aria-label="Edition length data flow"><code>EngagementWrite.edition_length
         ↓
 engagement lifecycle service
         ↓
-capture_audio_length(book, edition, length)
+bind_edition(..., edition_length)
         ↓
-Book.default_audio_minutes + Edition.audio_minutes</code></pre>
+capture_edition_length(book, edition, length)
+        ↓
+Edition.length + the matching missing Book.default_*</code></pre>
 
         <p>
-          No <code>audio_length_minutes</code> column is stored on <code>Engagement</code>. The
-          create-engagement command carries a newly learned edition fact because starting the read
-          and capturing that fact need to succeed or fail together.
+          No <code>edition_length</code> column is stored on <code>Engagement</code>. The engagement
+          command carries a newly learned edition fact because binding that edition and capturing
+          its length need to succeed or fail together.
         </p>
       </section>
 
@@ -56,7 +58,7 @@ Book.default_audio_minutes + Edition.audio_minutes</code></pre>
             <tr>
               <td>Request schema</td>
               <td>What must the client provide for this operation?</td>
-              <td><code>EngagementCreate</code></td>
+              <td><code>EngagementWrite</code></td>
             </tr>
             <tr>
               <td>Service command</td>
@@ -66,7 +68,7 @@ Book.default_audio_minutes + Edition.audio_minutes</code></pre>
             <tr>
               <td>Persistence model</td>
               <td>Which entity owns durable state?</td>
-              <td><code>Edition.audio_minutes</code></td>
+              <td><code>Edition.length</code></td>
             </tr>
           </tbody>
         </table>
@@ -82,8 +84,9 @@ Book.default_audio_minutes + Edition.audio_minutes</code></pre>
 
         <pre aria-label="Ownership summary"><code>Edition.length                 shared edition fact
 Book.default_*                 shared format fallback
-EngagementEdition.override    this read differs
-EngagementCreate field        command input, not ownership</code></pre>
+EngagementEdition.length_override
+                              this read differs
+EngagementWrite field         command input, not ownership</code></pre>
 
         <p>
           This is useful when one user action spans several entities. Sending two separate requests

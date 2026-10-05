@@ -3,18 +3,55 @@ from __future__ import annotations
 import datetime
 import uuid
 
-from sqlalchemy import or_, select
+from sqlalchemy import case, or_, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, aliased, selectinload
 
 from app.crud import author_crud, book_author_crud, book_crud, edition_crud
 from app.exceptions import ConflictError, InvalidOperationError, NotFoundError
 from app.models.author import Author
 from app.models.book import Book, BookAuthor
-from app.models.edition import Edition
+from app.models.edition import Edition, EngagementEdition
 from app.models.engagement import Engagement
-from app.models.enums import BookAuthorRole, DatePrecision, Format
+from app.models.enums import (
+    ENDED_STATUSES,
+    OPEN_STATUSES,
+    BookAuthorRole,
+    DatePrecision,
+    Format,
+)
 from app.services.google_books import get_volume
+
+
+def list_catalog(db: Session) -> list[tuple[Book, Engagement | None]]:
+    selected_engagements = (
+        select(Engagement)
+        .where(
+            Engagement.status.in_(OPEN_STATUSES | ENDED_STATUSES),
+        )
+        .distinct(Engagement.book_id)
+        .order_by(
+            Engagement.book_id,
+            case((Engagement.status.in_(OPEN_STATUSES), 0), else_=1),
+            Engagement.updated_at.desc(),
+            Engagement.id,
+        )
+        .subquery()
+    )
+    selected_engagement = aliased(Engagement, selected_engagements)
+    rows = db.execute(
+        select(Book, selected_engagement)
+        .outerjoin(selected_engagement, selected_engagement.book_id == Book.id)
+        .options(
+            selectinload(Book.book_authors).selectinload(BookAuthor.author),
+            selectinload(Book.editions),
+            selectinload(selected_engagement.book),
+            selectinload(selected_engagement.engagement_editions).selectinload(
+                EngagementEdition.edition
+            ),
+        )
+    )
+    return list(rows.tuples())
 
 
 def search_local(db: Session, q: str) -> list[Book]:

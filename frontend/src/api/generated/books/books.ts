@@ -28,6 +28,7 @@ import type {
   BookRead,
   BookSearchResult,
   BooksSearchBooksParams,
+  CatalogBookRead,
   EngagementRead,
   HTTPValidationError,
 } from '../readingTracker.schemas';
@@ -59,7 +60,7 @@ export const booksListBooks = (
   options?: SecondParameter<typeof customInstance>,
   signal?: AbortSignal
 ) => {
-  return customInstance<BookRead[]>({ url: `/api/books`, method: 'GET', signal }, options);
+  return customInstance<CatalogBookRead[]>({ url: `/api/books`, method: 'GET', signal }, options);
 };
 
 export const getBooksListBooksQueryKey = () => {

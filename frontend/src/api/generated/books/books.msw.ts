@@ -7,7 +7,12 @@
 import { HttpResponse, http } from 'msw';
 import type { RequestHandlerOptions } from 'msw';
 
-import type { BookRead, BookSearchResult, EngagementRead } from '../readingTracker.schemas';
+import type {
+  BookRead,
+  BookSearchResult,
+  CatalogBookRead,
+  EngagementRead,
+} from '../readingTracker.schemas';
 
 import {
   getBooksCreateBookResponseMock,
@@ -29,8 +34,10 @@ export {
 
 export const getBooksListBooksMockHandler = (
   overrideResponse?:
-    | BookRead[]
-    | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<BookRead[]> | BookRead[]),
+    | CatalogBookRead[]
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0]
+      ) => Promise<CatalogBookRead[]> | CatalogBookRead[]),
   options?: RequestHandlerOptions
 ) => {
   return http.get(

@@ -4,6 +4,8 @@ from app.schemas.book import (
     BookImportRequest,
     BookRead,
     BookSearchResult,
+    CatalogBookRead,
+    CatalogEngagementRead,
 )
 from app.schemas.edition import (
     EditionCreate,
@@ -32,6 +34,8 @@ __all__ = [
     "BookImportRequest",
     "BookRead",
     "BookSearchResult",
+    "CatalogBookRead",
+    "CatalogEngagementRead",
     "EditionCreate",
     "EditionRead",
     "EditionUpdate",

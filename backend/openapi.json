@@ -150,7 +150,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/BookRead"
+                    "$ref": "#/components/schemas/CatalogBookRead"
                   },
                   "type": "array",
                   "title": "Response Books-List Books"
@@ -1490,6 +1490,191 @@
           "status"
         ],
         "title": "BookSearchResult"
+      },
+      "CatalogBookRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "authors": {
+            "items": {
+              "$ref": "#/components/schemas/AuthorRead"
+            },
+            "type": "array",
+            "title": "Authors"
+          },
+          "google_books_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Google Books Id"
+          },
+          "default_cover_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Cover Url"
+          },
+          "default_page_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Page Count"
+          },
+          "default_audio_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Audio Minutes"
+          },
+          "original_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Language"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Genres"
+          },
+          "publication_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publication Date"
+          },
+          "publication_date_precision": {
+            "$ref": "#/components/schemas/DatePrecision"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "engagement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CatalogEngagementRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "authors",
+          "google_books_id",
+          "default_cover_url",
+          "default_page_count",
+          "default_audio_minutes",
+          "original_language",
+          "description",
+          "genres",
+          "publication_date",
+          "publication_date_precision",
+          "created_at",
+          "updated_at",
+          "engagement"
+        ],
+        "title": "CatalogBookRead"
+      },
+      "CatalogEngagementRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReadingStatus"
+          },
+          "formats": {
+            "items": {
+              "$ref": "#/components/schemas/Format"
+            },
+            "type": "array",
+            "title": "Formats"
+          },
+          "cover_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "formats",
+          "cover_url"
+        ],
+        "title": "CatalogEngagementRead"
       },
       "CurrentUser": {
         "properties": {

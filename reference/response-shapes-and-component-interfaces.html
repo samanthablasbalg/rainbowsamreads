@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Response Shapes and Component Interfaces</title>
+    <link rel="stylesheet" href="../assets/learning.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Response shapes and component interfaces</h1>
+        <p class="lede">
+          Return what an HTTP operation needs, then let each frontend module depend on only the
+          structure its behavior requires.
+        </p>
+      </header>
+
+      <section class="callout" aria-label="Key idea">
+        <strong>Key idea:</strong> one domain entity may have several legitimate response shapes.
+        TypeScript allows a richer value to satisfy a smaller component interface when it contains
+        every required field.
+      </section>
+
+      <section>
+        <h2>Two interfaces, two questions</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Interface</th>
+              <th>Question it answers</th>
+              <th>Owner</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>HTTP response model</td>
+              <td>What does this operation promise to return?</td>
+              <td>Backend operation</td>
+            </tr>
+            <tr>
+              <td>React prop type</td>
+              <td>What may this module require from every caller?</td>
+              <td>Frontend module</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          A smaller response can reduce database loading and the public contract. A smaller prop
+          type limits module dependencies, but it does not remove fields from an object already in
+          memory.
+        </p>
+      </section>
+
+      <section>
+        <h2>Derive a response from the operation</h2>
+        <ol class="checklist">
+          <li>Identify the caller and the behavior this operation supports.</li>
+          <li>Trace every field the caller consumes, including downstream dialogs and forms.</li>
+          <li>Separate implementation inputs from response outputs.</li>
+          <li>Exclude data the caller already receives elsewhere.</li>
+          <li>
+            Check which ORM relationships and computed properties serialization would require.
+          </li>
+          <li>Keep fuller response models for operations that genuinely need the fuller entity.</li>
+        </ol>
+        <p>
+          Sorting by <code>updated_at</code>, joining through a relationship, or checking ownership
+          can be necessary to implement an operation without making those values part of its
+          response.
+        </p>
+      </section>
+
+      <section>
+        <h2>Issue #263: one entity, two projections</h2>
+        <p>
+          The book page needs complete engagement history. The catalog needs one selected engagement
+          only to display and change status. Its target contract is therefore smaller:
+        </p>
+
+        <pre aria-label="Catalog response models"><code>class CatalogEngagementRead(BaseModel):
+    id: UUID
+    status: ReadingStatus
+    formats: list[Format]
+    cover_url: str | None
+
+class CatalogBookRead(BookRead):
+    engagement: CatalogEngagementRead | None</code></pre>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Why it crosses the catalog interface</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>id</code></td>
+              <td>Update the existing engagement.</td>
+            </tr>
+            <tr>
+              <td><code>status</code></td>
+              <td>Render the label and choose between update and create behavior.</td>
+            </tr>
+            <tr>
+              <td><code>formats</code></td>
+              <td>Choose pages or minutes when finishing a mixed-format engagement.</td>
+            </tr>
+            <tr>
+              <td><code>cover_url</code></td>
+              <td>Preserve the engagement-specific cover in the finish sheet.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>
+          The full <code>EngagementRead</code> remains appropriate for engagement-history
+          operations. The smaller catalog projection does not replace it.
+        </p>
+      </section>
+
+      <section>
+        <h2>Structural compatibility on the frontend</h2>
+        <p>
+          TypeScript compares the required fields, not the declared names of the source and target
+          types. The shared dropdown can declare one smaller interface:
+        </p>
+
+        <pre><code>type StatusDropdownProps = {
+  book: BookRead;
+  engagement: CatalogEngagementRead | null;
+};</code></pre>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Value supplied</th>
+              <th>Accepted?</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>CatalogEngagementRead</code></td>
+              <td>Yes</td>
+              <td>It has exactly the required fields.</td>
+            </tr>
+            <tr>
+              <td><code>EngagementRead</code></td>
+              <td>Yes</td>
+              <td>It has every required field plus additional ones.</td>
+            </tr>
+            <tr>
+              <td><code>CatalogEngagementRead</code> passed to a progress form</td>
+              <td>No</td>
+              <td>It lacks the progress fields required by <code>EngagementRead</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <pre
+          aria-label="Two callers of the same dropdown"
+        ><code>// Full history supplies EngagementRead | null.
+&lt;StatusDropdown book={book} engagement={selectedEngagement} /&gt;
+
+// Catalog supplies CatalogEngagementRead | null.
+&lt;StatusDropdown book={book} engagement={book.engagement} /&gt;</code></pre>
+
+        <p>
+          No conversion, field stripping, extra request, or union type is required. Both callers
+          pass an existing object reference. The dropdown may rely only on the fields declared by
+          its prop type.
+        </p>
+      </section>
+
+      <section>
+        <h2>Follow the shared workflow downstream</h2>
+        <p>
+          Anything opened by a shared module must work with the data that module can receive.
+          <code>FinishReadSheet</code> therefore needs the smaller engagement plus the separately
+          available book. It cannot continue requiring fields absent from the catalog response.
+        </p>
+        <p>
+          <code>StartReadingSheet</code> does not need the same change. It already receives a book
+          and an optional engagement id rather than a full engagement. Narrow only the interfaces
+          affected by the actual response change.
+        </p>
+      </section>
+
+      <section>
+        <h2>When a smaller shape earns its keep</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Use a smaller shape when</th>
+              <th>Keep the full shape when</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>The full response forces otherwise unnecessary queries or relationships.</td>
+              <td>The operation genuinely presents the complete entity.</td>
+            </tr>
+            <tr>
+              <td>Several callers have different representations of the same concept.</td>
+              <td>Every caller naturally already has and uses most of the full response.</td>
+            </tr>
+            <tr>
+              <td>A shared module needs a stable subset from every caller.</td>
+              <td>
+                The proposed type is speculative and has no second source or concrete pressure.
+              </td>
+            </tr>
+            <tr>
+              <td>Unrelated future fields should not silently enlarge this contract.</td>
+              <td>Narrowing would add names without reducing caller knowledge or backend work.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Final check</h2>
+        <ol class="checklist">
+          <li>Can every returned field be tied to caller behavior?</li>
+          <li>Have downstream sheets and forms been included in that trace?</li>
+          <li>Are selection and authorization fields omitted when the caller does not use them?</li>
+          <li>Does the response avoid nesting data already provided beside it?</li>
+          <li>Can each shared module be satisfied by every one of its callers?</li>
+          <li>
+            Will the compiler reject the smaller value at modules that require the full entity?
+          </li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Sources</h2>
+        <ul>
+          <li>
+            <a href="../learning-records/0006-a-prop-type-describes-every-caller.md"
+              >Learning record 0006</a
+            >: a prop type describes every caller, and passing props does not fetch data.
+          </li>
+          <li>
+            <a href="../learning-records/0008-response-models-are-operation-specific-projections.md"
+              >Learning record 0008</a
+            >: the catalog response-shape decision and its structural-typing implications.
+          </li>
+          <li>
+            <a href="https://www.typescriptlang.org/docs/handbook/type-compatibility.html"
+              >TypeScript: Type Compatibility</a
+            >: the official description of structural typing.
+          </li>
+          <li>
+            <a href="../frontend/src/components/common/status-dropdown.tsx">StatusDropdown</a> and
+            <a href="../frontend/src/components/common/finish-read-sheet.tsx">FinishReadSheet</a>:
+            the shared workflow that determines the required engagement fields.
+          </li>
+        </ul>
+      </section>
+
+      <footer>
+        When a response feels too large, trace what the caller and every downstream interaction
+        actually read before choosing either an existing full model or a new projection.
+      </footer>
+    </main>
+  </body>
+</html>

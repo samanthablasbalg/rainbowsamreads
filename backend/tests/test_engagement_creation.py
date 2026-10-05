@@ -5,14 +5,17 @@ import uuid
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.book import Book
+from app.models.engagement import Engagement
 from app.models.enums import (
     ENDED_STATUSES,
     OPEN_STATUSES,
     ReadingStatus,
 )
+from app.models.user import User
 from tests.helpers import (
     COMPLETIONS,
     MINUTES,
@@ -317,6 +320,26 @@ def test_create_active_engagement_when_book_has_active_engagement_returns_409(
     )
 
     assert response.status_code == 409
+
+
+def test_database_rejects_second_open_engagement_when_service_is_bypassed(
+    client: TestClient,
+    owner_db: Session,
+    seed_user: User,
+) -> None:
+    book = _create_book(client)
+    _create_engagement(client, book["id"], status="reading")
+    owner_db.add(
+        Engagement(
+            book_id=uuid.UUID(book["id"]),
+            user_id=seed_user.id,
+            status=ReadingStatus.tbr,
+        )
+    )
+
+    with pytest.raises(IntegrityError, match="ix_engagements_user_book_open"):
+        owner_db.commit()
+    owner_db.rollback()
 
 
 @pytest.mark.parametrize("existing_status", sorted(ENDED_STATUSES))

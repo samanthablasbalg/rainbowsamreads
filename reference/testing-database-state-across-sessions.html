@@ -84,7 +84,7 @@ book_obj = db.get(Book, book_id)
 edition_obj = db.get(Edition, edition_id)
 
 assert book_obj.default_page_count == 250
-assert edition_obj.page_count == 250</code></pre>
+assert edition_obj.length == 250</code></pre>
         <p>
           <code>expire_all()</code> marks everything currently loaded by the test session as stale;
           the next attribute read reloads it. Use <code>refresh(object)</code> when only one object

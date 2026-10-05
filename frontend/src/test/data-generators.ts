@@ -4,6 +4,7 @@ import {
   LogUnit,
   ReadingStatus,
   type BookRead,
+  type CatalogBookRead,
   type EngagementRead,
   type MinuteProgressLogRead,
   type PageProgressLogRead,
@@ -29,6 +30,17 @@ export function buildBook({
     publication_date_precision: DatePrecision.year,
     created_at: '2025-01-01T00:00:00Z',
     updated_at: '2025-01-01T00:00:00Z',
+    ...overrides,
+  };
+}
+
+export function buildCatalogBook({
+  title = 'Piranesi',
+  ...overrides
+}: Partial<CatalogBookRead> & { title?: string } = {}): CatalogBookRead {
+  return {
+    ...buildBook({ title }),
+    engagement: null,
     ...overrides,
   };
 }

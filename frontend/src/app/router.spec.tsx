@@ -14,7 +14,7 @@ import {
 import { destinations } from '@/config/destinations';
 import { server } from '@/test/msw-server';
 import { renderRoute, screen } from '@/test/render';
-import { buildBook, buildEngagement } from '@/test/data-generators';
+import { buildBook, buildCatalogBook, buildEngagement } from '@/test/data-generators';
 import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
 
 describe('the route tree', () => {
@@ -34,7 +34,7 @@ describe('the route tree', () => {
   it('/library/catalog renders its book list under the library nav', async () => {
     server.use(
       getAuthMeMockHandler(),
-      getBooksListBooksMockHandler([buildBook({ title: 'Dune' })])
+      getBooksListBooksMockHandler([buildCatalogBook({ title: 'Dune' })])
     );
 
     renderRoute('/library/catalog');
