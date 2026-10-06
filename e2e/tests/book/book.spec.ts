@@ -143,7 +143,6 @@ test('Adding an untracked book to TBR from the book page shelves it on To Read',
   apiClient,
 }) => {
   const bookPage = new BookPage(page);
-  const sheet = new StartReadingSheetPage(page);
   const tbrBooks = new TbrBooksPage(page);
 
   await test.step('Seed a book with no reads', async () => {
@@ -151,10 +150,8 @@ test('Adding an untracked book to TBR from the book page shelves it on To Read',
     await bookPage.goto(bookId);
   });
 
-  await test.step('Pick To Be Read from the status step', async () => {
-    await bookPage.notTrackedButton.click();
-    await sheet.chooseStatus(TITLE, 'To Be Read');
-    await expect(sheet.sheet).toHaveCount(0);
+  await test.step('Pick To read from the status menu', async () => {
+    await bookPage.chooseStatus('Not tracked', 'To read');
   });
 
   await test.step('The status control shows it is on TBR', async () => {

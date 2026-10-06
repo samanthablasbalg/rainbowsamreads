@@ -178,6 +178,6 @@ test('Deleting a read from the card menu removes it for good', async ({ page, ap
 
   await test.step('Verify the book itself survives, with no read in progress', async () => {
     await catalog.goto();
-    await expect(catalog.getMarkAsReadingButton('Dune')).toBeVisible();
+    await expect(catalog.getStatusButton('Dune', 'Not tracked')).toBeVisible();
   });
 });

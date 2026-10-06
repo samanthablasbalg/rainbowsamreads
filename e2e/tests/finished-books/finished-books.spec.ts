@@ -194,6 +194,6 @@ test('Deleting a finished engagement with a review removes it and leaves the boo
 
   await test.step('Verify the book remains in the catalog', async () => {
     await catalog.goto();
-    await expect(catalog.getMarkAsReadingButton('Babel')).toBeVisible();
+    await expect(catalog.getStatusButton('Babel', 'Not tracked')).toBeVisible();
   });
 });

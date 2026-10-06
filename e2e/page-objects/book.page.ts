@@ -1,8 +1,8 @@
 import { Locator, Page } from '@playwright/test';
 import { StartReadingSheetPage, StartableFormat } from './start-reading-sheet.page';
 
-/** The statuses the book page's status menu offers, as it labels them. */
-export type BookStatus = 'To read' | 'Reading' | 'Finished' | 'DNF';
+/** The statuses the book page's status control can show, as it labels them. */
+export type BookStatus = 'Not tracked' | 'To read' | 'Reading' | 'Finished' | 'DNF';
 
 /**
  * A book's own page. The metadata card carries the status control, which is a
@@ -10,14 +10,8 @@ export type BookStatus = 'To read' | 'Reading' | 'Finished' | 'DNF';
  * picking Reading hands off to the start-reading sheet to open a new read.
  */
 export class BookPage {
-  // Stands in for the status control on a book with no read yet, and opens the
-  // start-reading sheet at its status step.
-  readonly notTrackedButton: Locator;
-
   /** @param page - The Playwright page to drive the book page through. */
-  constructor(public readonly page: Page) {
-    this.notTrackedButton = page.getByRole('button', { name: 'Not tracked' });
-  }
+  constructor(public readonly page: Page) {}
 
   /**
    * Navigates to a book's page.
@@ -43,7 +37,7 @@ export class BookPage {
    * @param status - The status to pick.
    * @returns The menu item locator.
    */
-  getStatusMenuItem(status: BookStatus): Locator {
+  getStatusMenuItem(status: Exclude<BookStatus, 'Not tracked'>): Locator {
     return this.page.getByRole('menuitem', { name: status });
   }
 
@@ -53,7 +47,7 @@ export class BookPage {
    * @param from - The status currently showing, which labels the trigger.
    * @param to - The status to pick.
    */
-  async chooseStatus(from: BookStatus, to: BookStatus): Promise<void> {
+  async chooseStatus(from: BookStatus, to: Exclude<BookStatus, 'Not tracked'>): Promise<void> {
     await this.getStatusButton(from).click();
     await this.getStatusMenuItem(to).click();
   }
