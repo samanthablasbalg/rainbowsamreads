@@ -143,14 +143,6 @@ describe('EntryTimeline', () => {
     expect(screen.queryByRole('button', { name: 'Log progress' })).not.toBeInTheDocument();
   });
 
-  it('shows a pending state while the entries load', () => {
-    server.use(getEngagementsListProgressLogsMockHandler([]));
-
-    renderTimeline();
-
-    expect(screen.getByRole('status')).toHaveTextContent('Loading');
-  });
-
   it('opens the editor for the entry whose control was used', async () => {
     server.use(
       getEngagementsListProgressLogsMockHandler([

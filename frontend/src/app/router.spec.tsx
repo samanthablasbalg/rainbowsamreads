@@ -1,5 +1,5 @@
 import { userEvent } from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import { getAuthMeMockHandler } from '@/api/generated/auth/auth.msw';
 import {
   getBooksGetBookMockHandler,
@@ -18,6 +18,20 @@ import { buildBook, buildCatalogBook, buildEngagement } from '@/test/data-genera
 import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
 
 describe('the route tree', () => {
+  it('shows the shared pending state while route data loads', () => {
+    server.use(
+      getAuthMeMockHandler(),
+      getBooksListBooksMockHandler(async () => {
+        await delay('infinite');
+        return [];
+      })
+    );
+
+    renderRoute('/library/catalog');
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading');
+  });
+
   it.each(destinations)('$to resolves to its own page, not the catch-all', async ({ to }) => {
     server.use(
       getAuthMeMockHandler(),
@@ -98,8 +112,10 @@ describe('the route tree', () => {
   });
 
   it('replaces an unknown book with the error boundary rather than a broken page', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     server.use(
       getAuthMeMockHandler(),
+      getBooksListBookEngagementsMockHandler([]),
       http.get('*/api/books/:bookId', () => new HttpResponse(null, { status: 404 }))
     );
 
@@ -109,6 +125,7 @@ describe('the route tree', () => {
   });
 
   it('replaces a failed shelf with the error boundary and keeps the library nav', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     server.use(
       getAuthMeMockHandler(),
       http.get('*/api/books', () => new HttpResponse(null, { status: 500 }))
@@ -121,6 +138,7 @@ describe('the route tree', () => {
   });
 
   it('recovers a failed shelf in place when Try again is pressed', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     let attempts = 0;
     server.use(
       getAuthMeMockHandler(),
