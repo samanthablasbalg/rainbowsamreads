@@ -20,7 +20,7 @@ import { ErrorText } from '@/components/common/error-text';
 import { FormatIcons } from '@/components/common/format-icons';
 import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
 import { ReadingProgress } from '@/components/common/reading-progress';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { authorNames, coverSrc } from '@/utils/book';
 import { FORMATS } from '@/utils/format';
 import { STATUS_LABELS } from '@/utils/status';
@@ -71,10 +71,13 @@ function BackLink({ status }: { status: ReadingStatus }) {
         : STATUS_LABELS[status];
 
   return (
-    <Button variant="ghost" size="sm" className="-ml-3 mb-2" render={<Link to={to} />}>
+    <Link
+      to={to}
+      className={buttonVariants({ variant: 'ghost', size: 'sm', className: '-ml-3 mb-2' })}
+    >
       <HugeiconsIcon icon={ArrowLeft01Icon} data-icon="inline-start" />
       {label}
-    </Button>
+    </Link>
   );
 }
 

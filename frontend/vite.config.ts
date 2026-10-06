@@ -56,6 +56,7 @@ export default defineConfig({
             headless: true,
             api: {
               host: process.env.VITEST_BROWSER_HOST,
+              allowExec: false,
             },
             provider: playwright({
               connectOptions: {
