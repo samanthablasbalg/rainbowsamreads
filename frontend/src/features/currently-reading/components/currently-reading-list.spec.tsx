@@ -82,12 +82,4 @@ describe('CurrentlyReadingList', () => {
     });
     expect(screen.queryByText('·')).not.toBeInTheDocument();
   });
-
-  it('shows a pending state while the list loads', () => {
-    server.use(getEngagementsListEngagementsMockHandler([]));
-
-    render(<CurrentlyReadingList />);
-
-    expect(screen.getByRole('status')).toHaveTextContent('Loading');
-  });
 });

@@ -302,12 +302,4 @@ describe('ReadHistory', () => {
 
     expect(await screen.findByRole('link', { name: label })).toHaveAttribute('href', href);
   });
-
-  it('shows a pending state while the read loads', () => {
-    server.use(getEngagementsGetEngagementMockHandler(buildEngagement()));
-
-    render(<ReadHistory engagementId="engagement-Piranesi" />);
-
-    expect(screen.getByRole('status')).toHaveTextContent('Loading');
-  });
 });

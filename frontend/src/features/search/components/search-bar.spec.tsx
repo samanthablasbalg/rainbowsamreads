@@ -54,25 +54,19 @@ function stubSearchFailure() {
 }
 
 function stubImport(book: Partial<BookRead> = {}) {
+  const importedBook = buildBook({
+    id: 'book-9',
+    title: 'The Left Hand of Darkness',
+    authors: [{ id: 'author-9', name: 'Ursula K. Le Guin' }],
+    google_books_id: 'gb-1',
+    default_page_count: 304,
+    publication_date_precision: DatePrecision.year,
+    ...book,
+  });
+
   server.use(
-    http.post('*/api/books/import', () =>
-      HttpResponse.json({
-        id: 'book-9',
-        title: 'The Left Hand of Darkness',
-        authors: [{ id: 'author-9', name: 'Ursula K. Le Guin' }],
-        google_books_id: 'gb-1',
-        default_cover_url: null,
-        default_page_count: 304,
-        default_audio_minutes: null,
-        original_language: null,
-        genres: [],
-        publication_date: null,
-        publication_date_precision: DatePrecision.year,
-        created_at: '2025-01-01T00:00:00Z',
-        updated_at: '2025-01-01T00:00:00Z',
-        ...book,
-      })
-    )
+    http.post('*/api/books/import', () => HttpResponse.json(importedBook)),
+    getBooksGetBookMockHandler(importedBook)
   );
 }
 
