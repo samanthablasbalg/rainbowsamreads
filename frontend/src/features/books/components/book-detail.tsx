@@ -9,7 +9,7 @@ import {
 import type { BookRead, EngagementRead } from '@/api/generated/readingTracker.schemas';
 import type { DetailError } from '@/api/error-detail';
 import { CoverImage } from '@/components/common/cover-image';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { BookBlurb } from './book-blurb';
 import { BookContents } from './book-contents';
 import { BookMetadata } from './book-metadata';
@@ -28,15 +28,13 @@ export function BookDetail({ bookId }: { bookId: string }) {
 
   return (
     <section>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="-ml-3 mb-2"
-        render={<Link to="/library/catalog" />}
+      <Link
+        to="/library/catalog"
+        className={buttonVariants({ variant: 'ghost', size: 'sm', className: '-ml-3 mb-2' })}
       >
         <HugeiconsIcon icon={ArrowLeft01Icon} data-icon="inline-start" />
         Catalog
-      </Button>
+      </Link>
 
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 gap-y-5 lg:flex lg:gap-8">
         <aside className="contents lg:flex lg:w-60 lg:shrink-0 lg:flex-col lg:gap-4">
