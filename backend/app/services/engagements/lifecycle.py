@@ -164,7 +164,7 @@ def _validate_end_date(
     if status == ReadingStatus.finished and abandoned_on is not None:
         raise ConflictError("abandoned_on cannot be passed for a finished engagement.")
     if status == ReadingStatus.dnf and finished_on is not None:
-        raise ConflictError("finished_on cannot be passed for a finished engagement.")
+        raise ConflictError("finished_on cannot be passed for a dnf engagement.")
     if finished_on is not None and started_on is not None and finished_on < started_on:
         raise ConflictError("finished_on cannot be before started_on.")
     if (

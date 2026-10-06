@@ -7,8 +7,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowDown01Icon } from '@hugeicons/core-free-icons';
-import { StartReadingSheet } from './start-reading-sheet';
-import { FinishReadSheet } from './finish-read-sheet';
+import { StartReadingSheet } from '@/components/common/start-reading-sheet';
+import { FinishReadSheet } from '@/components/common/finish-read-sheet';
 import {
   ReadingStatus,
   type BookRead,
@@ -21,7 +21,10 @@ import {
   getEngagementsListEngagementsQueryKey,
   useEngagementsWriteEngagement,
 } from '@/api/generated/engagements/engagements';
-import { getBooksListBookEngagementsQueryKey } from '@/api/generated/books/books';
+import {
+  getBooksListBookEngagementsQueryKey,
+  getBooksListBooksQueryKey,
+} from '@/api/generated/books/books';
 import { CREATABLE_STATUSES, isEndedStatus, statusUpdateBody } from '@/utils/status';
 
 const STATUS_LABELS: Record<ReadingStatus, string> = {
@@ -51,6 +54,7 @@ export function StatusDropdown({
           queryKey: getBooksListBookEngagementsQueryKey(book.id),
         });
         queryClient.invalidateQueries({ queryKey: getEngagementsListEngagementsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getBooksListBooksQueryKey() });
       },
     },
   });

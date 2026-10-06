@@ -109,6 +109,7 @@ def test_transition_to_reading_sets_started_on(client: TestClient) -> None:
     )
     assert response.status_code == 200
     data = response.json()
+    assert data["id"] == engagement["id"]
     assert data["status"] == "reading"
     assert data["started_on"] == datetime.date.today().isoformat()
     assert data["tbr_added_on"] == "2026-06-01"

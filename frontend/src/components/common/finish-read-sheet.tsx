@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { errorDetail, type DetailError } from '@/api/error-detail';
-import { getBooksListBookEngagementsQueryKey } from '@/api/generated/books/books';
+import {
+  getBooksListBookEngagementsQueryKey,
+  getBooksListBooksQueryKey,
+} from '@/api/generated/books/books';
 import {
   getEngagementsListEngagementsQueryKey,
   useEngagementsWriteEngagement,
@@ -174,6 +177,7 @@ function useFinishReadForm(book: BookRead, engagement: FinishableEngagement, onC
           queryClient.invalidateQueries({
             queryKey: getBooksListBookEngagementsQueryKey(book.id),
           }),
+          queryClient.invalidateQueries({ queryKey: getBooksListBooksQueryKey() }),
         ]);
         onClose();
       },
