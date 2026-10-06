@@ -27,6 +27,8 @@ Object.defineProperty(window, 'matchMedia', {
   }),
 });
 
+window.scrollTo = vi.fn();
+
 beforeAll(() => {
   server.listen({ onUnhandledRequest: 'error' });
 });
