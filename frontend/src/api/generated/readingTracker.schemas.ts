@@ -79,6 +79,39 @@ export interface BookSearchResult {
   status: ReadingStatus | null;
 }
 
+export type Format = (typeof Format)[keyof typeof Format];
+
+export const Format = {
+  print: 'print',
+  digital: 'digital',
+  audio: 'audio',
+} as const;
+
+export interface CatalogEngagementRead {
+  id: string;
+  status: ReadingStatus;
+  formats: Format[];
+  cover_url: string | null;
+}
+
+export interface CatalogBookRead {
+  id: string;
+  title: string;
+  authors: AuthorRead[];
+  google_books_id: string | null;
+  default_cover_url: string | null;
+  default_page_count: number | null;
+  default_audio_minutes: number | null;
+  original_language: string | null;
+  description: string | null;
+  genres: string[];
+  publication_date: string | null;
+  publication_date_precision: DatePrecision;
+  created_at: string;
+  updated_at: string;
+  engagement: CatalogEngagementRead | null;
+}
+
 /**
  * The session's view of the signed-in user.
  *
@@ -90,14 +123,6 @@ export interface CurrentUser {
   email: string;
   picture: string | null;
 }
-
-export type Format = (typeof Format)[keyof typeof Format];
-
-export const Format = {
-  print: 'print',
-  digital: 'digital',
-  audio: 'audio',
-} as const;
 
 export interface EditionCreate {
   book_id: string;
@@ -190,6 +215,7 @@ export interface EngagementWrite {
   tbr_added_on?: string | null;
   started_on?: string | null;
   finished_on?: string | null;
+  abandoned_on?: string | null;
   effective_on?: string | null;
   unit?: LogUnit | null;
 }
@@ -264,6 +290,30 @@ export const TestLoginRequestPersona = {
 export interface TestLoginRequest {
   persona?: TestLoginRequestPersona;
 }
+
+export type CreatableReadingStatus =
+  (typeof CreatableReadingStatus)[keyof typeof CreatableReadingStatus];
+
+export const CreatableReadingStatus = {
+  tbr: 'tbr',
+  reading: 'reading',
+  finished: 'finished',
+  dnf: 'dnf',
+} as const;
+
+export type OpenReadingStatus = (typeof OpenReadingStatus)[keyof typeof OpenReadingStatus];
+
+export const OpenReadingStatus = {
+  tbr: 'tbr',
+  reading: 'reading',
+} as const;
+
+export type EndedReadingStatus = (typeof EndedReadingStatus)[keyof typeof EndedReadingStatus];
+
+export const EndedReadingStatus = {
+  finished: 'finished',
+  dnf: 'dnf',
+} as const;
 
 export type AuthLogout200 = { [key: string]: boolean };
 

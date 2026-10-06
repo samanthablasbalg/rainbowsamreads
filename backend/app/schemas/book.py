@@ -6,7 +6,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
-from app.models.enums import DatePrecision, ReadingStatus
+from app.models.enums import DatePrecision, Format, ReadingStatus
 
 NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
@@ -59,3 +59,16 @@ class BookRead(BaseModel):
     updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CatalogEngagementRead(BaseModel):
+    id: uuid.UUID
+    status: ReadingStatus
+    formats: list[Format]
+    cover_url: str | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CatalogBookRead(BookRead):
+    engagement: CatalogEngagementRead | None

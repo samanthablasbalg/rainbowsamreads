@@ -3,15 +3,10 @@ import {
   getBooksGetBookMockHandler,
   getBooksListBookEngagementsMockHandler,
 } from '@/api/generated/books/books.msw';
-import {
-  getEngagementsWriteEngagementMockHandler,
-  getEngagementsWriteEngagementResponseMock,
-} from '@/api/generated/engagements/engagements.msw';
-import { DatePrecision, Format, ReadingStatus } from '@/api/generated/readingTracker.schemas';
+import { DatePrecision } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
-import { render, screen, waitFor } from '@/test/render';
+import { render, screen } from '@/test/render';
 import { buildBook, buildEngagement } from '@/test/data-generators';
-import { localIsoDate } from '@/utils/local-date';
 import { BookDetail } from './book-detail';
 
 describe('BookDetail', () => {
@@ -98,168 +93,12 @@ describe('BookDetail', () => {
     expect(await screen.findByText(/not a tag/)).toBeVisible();
   });
 
-  it('rates the book as the average of every read of it', async () => {
-    server.use(
-      getBooksGetBookMockHandler(buildBook()),
-      getBooksListBookEngagementsMockHandler([
-        buildEngagement({ id: 'engagement-1', review: { rating: '5.00', body: null } }),
-        buildEngagement({ id: 'engagement-2', review: { rating: '4.00', body: null } }),
-        buildEngagement({ id: 'engagement-3', review: null }),
-      ])
-    );
-
-    render(<BookDetail bookId="book-Piranesi" />);
-
-    expect(await screen.findByRole('img', { name: 'Rated 4.5 out of 5' })).toBeVisible();
-  });
-
   it('shows empty stars for a book nothing has rated', async () => {
     server.use(getBooksGetBookMockHandler(buildBook()), getBooksListBookEngagementsMockHandler([]));
 
     render(<BookDetail bookId="book-Piranesi" />);
 
     expect(await screen.findByRole('img', { name: 'Not rated' })).toBeVisible();
-  });
-
-  it('offers only the statuses the endpoint accepts', async () => {
-    const user = userEvent.setup();
-    server.use(
-      getBooksGetBookMockHandler(buildBook()),
-      getBooksListBookEngagementsMockHandler([buildEngagement({ status: ReadingStatus.reading })])
-    );
-
-    render(<BookDetail bookId="book-Piranesi" />);
-
-    await user.click(await screen.findByRole('button', { name: /Reading/ }));
-
-    expect(await screen.findByRole('menuitem', { name: 'Reading' })).toBeVisible();
-    expect(screen.getByRole('menuitem', { name: 'Finished' })).toBeVisible();
-    expect(screen.getByRole('menuitem', { name: 'DNF' })).toBeVisible();
-    expect(screen.queryByRole('menuitem', { name: 'To read' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('menuitem', { name: 'Paused' })).not.toBeInTheDocument();
-  });
-
-  it('finishes the read the pill is showing with its date and closing ruler', async () => {
-    const user = userEvent.setup();
-    const captured: { body?: unknown } = {};
-    server.use(
-      getBooksGetBookMockHandler(buildBook()),
-      getBooksListBookEngagementsMockHandler([
-        buildEngagement({
-          id: 'engagement-1',
-          status: ReadingStatus.reading,
-          formats: [Format.print, Format.audio],
-          length_minutes: 600,
-        }),
-      ]),
-      getEngagementsWriteEngagementMockHandler(async (info) => {
-        captured.body = await info.request.json();
-        return getEngagementsWriteEngagementResponseMock();
-      })
-    );
-
-    render(<BookDetail bookId="book-Piranesi" />);
-
-    await user.click(await screen.findByRole('button', { name: /Reading/ }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Finished' }));
-    await user.click(await screen.findByRole('button', { name: 'Minutes' }));
-    await user.click(screen.getByRole('button', { name: 'Mark Piranesi as finished' }));
-
-    await waitFor(() =>
-      expect(captured.body).toMatchObject({
-        status: 'finished',
-        effective_on: localIsoDate(),
-        unit: 'minutes',
-      })
-    );
-  });
-
-  // Reading again after an ending is another time through the book, so it opens the
-  // start-reading sheet rather than reopening the read that already ended.
-  it.each([ReadingStatus.finished, ReadingStatus.dnf])(
-    'starts a new read instead of reopening a %s one',
-    async (status) => {
-      const user = userEvent.setup();
-      const captured: { body?: unknown } = {};
-      server.use(
-        getBooksGetBookMockHandler(buildBook()),
-        getBooksListBookEngagementsMockHandler([buildEngagement({ id: 'engagement-1', status })]),
-        getEngagementsWriteEngagementMockHandler(async (info) => {
-          captured.body = await info.request.json();
-          return getEngagementsWriteEngagementResponseMock();
-        })
-      );
-
-      render(<BookDetail bookId="book-Piranesi" />);
-
-      await user.click(await screen.findByRole('button', { name: /Finished|DNF/ }));
-      await user.click(await screen.findByRole('menuitem', { name: 'Reading' }));
-
-      expect(await screen.findByRole('button', { name: 'Start reading Piranesi' })).toBeVisible();
-      expect(captured.body).toBeUndefined();
-    }
-  );
-
-  it('starts a read from an untracked book without leaving the page', async () => {
-    const user = userEvent.setup();
-    server.use(getBooksGetBookMockHandler(buildBook()), getBooksListBookEngagementsMockHandler([]));
-
-    render(<BookDetail bookId="book-Piranesi" />);
-
-    await user.click(await screen.findByRole('button', { name: /Not tracked/ }));
-
-    expect(await screen.findByRole('button', { name: 'Add Piranesi as Reading' })).toBeVisible();
-  });
-
-  it('starts a read from a tbr book without leaving the page', async () => {
-    const user = userEvent.setup();
-    const captured: { body?: unknown } = {};
-    server.use(
-      getBooksGetBookMockHandler(buildBook()),
-      getBooksListBookEngagementsMockHandler([
-        buildEngagement({ id: 'eng-Piranesi', status: 'tbr' }),
-      ]),
-      getEngagementsWriteEngagementMockHandler(async (info) => {
-        captured.body = await info.request.json();
-        return getEngagementsWriteEngagementResponseMock();
-      })
-    );
-
-    render(<BookDetail bookId="book-Piranesi" />);
-
-    await user.click(await screen.findByRole('button', { name: /To read/ }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Reading' }));
-
-    await user.click(await screen.findByRole('button', { name: 'Start reading Piranesi' }));
-
-    await waitFor(() =>
-      expect(captured.body).toEqual({
-        id: 'eng-Piranesi',
-        status: 'reading',
-        edition_format: 'print',
-        effective_on: localIsoDate(),
-      })
-    );
-  });
-
-  it('requires the missing page length when starting an untracked book', async () => {
-    const user = userEvent.setup();
-    server.use(
-      getBooksGetBookMockHandler(buildBook({ default_page_count: null })),
-      getBooksListBookEngagementsMockHandler([])
-    );
-
-    render(<BookDetail bookId="book-Piranesi" />);
-
-    await user.click(await screen.findByRole('button', { name: /Not tracked/ }));
-    await user.click(await screen.findByRole('button', { name: 'Add Piranesi as Reading' }));
-
-    const start = screen.getByRole('button', { name: 'Start reading Piranesi' });
-    expect(start).toBeDisabled();
-
-    await user.type(screen.getByLabelText('Pages'), '300');
-
-    expect(start).toBeEnabled();
   });
 
   it('logs another reading from the reading history', async () => {

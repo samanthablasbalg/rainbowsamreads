@@ -6,6 +6,7 @@ import uuid
 import pytest
 from fastapi.testclient import TestClient
 
+from app.models.enums import ENDED_STATUSES, OPEN_STATUSES
 from tests.helpers import (
     COMPLETIONS,
     MINUTES,
@@ -108,6 +109,7 @@ def test_transition_to_reading_sets_started_on(client: TestClient) -> None:
     )
     assert response.status_code == 200
     data = response.json()
+    assert data["id"] == engagement["id"]
     assert data["status"] == "reading"
     assert data["started_on"] == datetime.date.today().isoformat()
     assert data["tbr_added_on"] == "2026-06-01"
@@ -610,13 +612,8 @@ def test_post_same_status_is_idempotent(client: TestClient) -> None:
     assert data["finished_on"] is None
 
 
-@pytest.mark.parametrize(
-    "old_status, new_status",
-    [
-        ("finished", "reading"),
-        ("reading", "tbr"),
-    ],
-)
+@pytest.mark.parametrize("old_status", sorted(ENDED_STATUSES))
+@pytest.mark.parametrize("new_status", sorted(OPEN_STATUSES))
 def test_post_engagement_backwards_conflicts_when_status_already_taken(
     client: TestClient, old_status: str, new_status: str
 ) -> None:

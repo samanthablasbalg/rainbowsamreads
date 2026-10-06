@@ -2,12 +2,20 @@ import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { errorDetail, type DetailError } from '@/api/error-detail';
-import { getBooksListBookEngagementsQueryKey } from '@/api/generated/books/books';
+import {
+  getBooksListBookEngagementsQueryKey,
+  getBooksListBooksQueryKey,
+} from '@/api/generated/books/books';
 import {
   getEngagementsListEngagementsQueryKey,
   useEngagementsWriteEngagement,
 } from '@/api/generated/engagements/engagements';
-import { Format, ReadingStatus, type BookRead } from '@/api/generated/readingTracker.schemas';
+import {
+  Format,
+  ReadingStatus,
+  type BookRead,
+  type CreatableReadingStatus,
+} from '@/api/generated/readingTracker.schemas';
 import { ErrorText } from '@/components/common/error-text';
 import { PositionInput } from '@/components/common/position-input';
 import { Button } from '@/components/ui/button';
@@ -25,7 +33,7 @@ import {
 import { FORMATS } from '@/utils/format';
 import { formatLength, lengthField, parseLength } from '@/utils/length';
 import { localIsoDate } from '@/utils/local-date';
-import { STATUSES, type ShelvedStatus } from '@/utils/status';
+import { STATUS_LABELS } from '@/utils/status';
 
 const READING_ONLY = [ReadingStatus.reading];
 
@@ -34,7 +42,7 @@ type StartReadingSheetProps = {
   engagementId?: string;
   // More than one turns the sheet into two steps, asking where the read goes before
   // asking how it was read. One (the default) goes straight to the form.
-  statuses?: ShelvedStatus[];
+  statuses?: readonly CreatableReadingStatus[];
   cancelLabel?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -89,11 +97,11 @@ function StartReadingForm({
                   key={status}
                   variant="outline"
                   className="justify-start"
-                  aria-label={`Add ${book.title} as ${STATUSES[status].label}`}
+                  aria-label={`Add ${book.title} as ${STATUS_LABELS[status]}`}
                   onClick={() => form.pickStatus(status)}
                   disabled={form.startPending}
                 >
-                  {STATUSES[status].label}
+                  {STATUS_LABELS[status]}
                 </Button>
               ))}
             </div>
@@ -179,13 +187,13 @@ function StartReadingFields({
 
         {!form.isReading && (
           <Field>
-            <FieldLabel htmlFor="start-reading-finish-date">{form.finishLabel}</FieldLabel>
+            <FieldLabel htmlFor="start-reading-finish-date">{form.endDate.label}</FieldLabel>
             <Input
               id="start-reading-finish-date"
               type="date"
               max={localIsoDate()}
-              value={form.finishedOn}
-              onChange={(event) => form.setFinishedOn(event.target.value)}
+              value={form.endDate.value}
+              onChange={(event) => form.endDate.set(event.target.value)}
             />
           </Field>
         )}
@@ -211,7 +219,7 @@ function StartReadingFields({
 
 // A read in progress starts today unless you say otherwise. One logged after the fact
 // starts blank -- prefilling today would record a date you never claimed.
-function defaultStartedOn(status: ShelvedStatus) {
+function defaultStartedOn(status: CreatableReadingStatus) {
   return status === ReadingStatus.reading ? localIsoDate() : '';
 }
 
@@ -223,7 +231,7 @@ function useStartReadingForm({
   engagementId,
 }: {
   book: BookRead;
-  statuses: ShelvedStatus[];
+  statuses: readonly CreatableReadingStatus[];
   onClose: () => void;
   onStarted?: () => void;
   engagementId?: string;
@@ -235,6 +243,7 @@ function useStartReadingForm({
   const [lengthFocused, setLengthFocused] = useState(false);
   const [startedOn, setStartedOn] = useState(defaultStartedOn(statuses[0]!));
   const [finishedOn, setFinishedOn] = useState('');
+  const [abandonedOn, setAbandonedOn] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
@@ -245,6 +254,7 @@ function useStartReadingForm({
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: getEngagementsListEngagementsQueryKey() }),
           queryClient.invalidateQueries({ queryKey: getBooksListBookEngagementsQueryKey(book.id) }),
+          queryClient.invalidateQueries({ queryKey: getBooksListBooksQueryKey() }),
         ]);
         onClose();
         onStarted?.();
@@ -272,7 +282,7 @@ function useStartReadingForm({
     setError(null);
   }
 
-  function pickStatus(picked: ShelvedStatus) {
+  function pickStatus(picked: CreatableReadingStatus) {
     setStatus(picked);
     if (picked === ReadingStatus.tbr) {
       writeEngagement.mutate({
@@ -299,6 +309,7 @@ function useStartReadingForm({
         edition_format: format,
         status,
         ...(finishedOn && { finished_on: finishedOn }),
+        ...(abandonedOn && { abandoned_on: abandonedOn }),
         ...(typed && parsedLength !== null && lengthField(knownLength, parsedLength)),
       },
     });
@@ -313,14 +324,17 @@ function useStartReadingForm({
 
   const isReading = status === ReadingStatus.reading;
 
+  const endDate =
+    status === ReadingStatus.dnf
+      ? { label: 'Stopped on', value: abandonedOn, set: setAbandonedOn }
+      : { label: 'Finish date', value: finishedOn, set: setFinishedOn };
+
   return {
     step,
     pickStatus,
     isReading,
     submitLabel: isReading ? 'Start reading' : 'Add',
-    finishLabel: status === ReadingStatus.dnf ? 'Stopped on' : 'Finish date',
-    finishedOn,
-    setFinishedOn,
+    endDate,
     format,
     pickFormat,
     isAudio,

@@ -6,16 +6,9 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.models.enums import Format, LogUnit, ReadingStatus
+from app.models.enums import CREATABLE_STATUSES, Format, LogUnit, ReadingStatus
 from app.schemas.book import BookRead
 from app.schemas.review import ReviewRead
-
-_CREATE_STATUSES = {
-    ReadingStatus.tbr,
-    ReadingStatus.reading,
-    ReadingStatus.finished,
-    ReadingStatus.dnf,
-}
 
 
 class EngagementWrite(BaseModel):
@@ -33,6 +26,7 @@ class EngagementWrite(BaseModel):
     tbr_added_on: datetime.date | None = None
     started_on: datetime.date | None = None
     finished_on: datetime.date | None = None
+    abandoned_on: datetime.date | None = None
     effective_on: datetime.date | None = None
     """`unit` picks the ruler the closing log is written on when finishing a read that
     has been going in more than one. Defaults to the one the read is already on."""
@@ -47,16 +41,23 @@ class EngagementWrite(BaseModel):
     @model_validator(mode="after")
     def check_fields_match_identifier(self) -> Self:
         if self.id is not None:
-            if self.started_on is not None or self.finished_on is not None:
-                raise ValueError("started_on and finished_on need a book_id")
+            creation_dates = (
+                self.tbr_added_on,
+                self.started_on,
+                self.finished_on,
+                self.abandoned_on,
+            )
+            if any(date is not None for date in creation_dates):
+                raise ValueError("Lifecycle dates need a book_id")
             return self
         if self.effective_on is not None or self.unit is not None:
             raise ValueError("effective_on and unit need an id")
         if self.edition_format is None and self.status != ReadingStatus.tbr:
             raise ValueError("Creating a non-tbr read needs an edition_format")
-        if self.status not in _CREATE_STATUSES:
+        if self.status not in CREATABLE_STATUSES:
             raise ValueError("A read can only be created tbr, reading, finished or dnf")
-        if self.finished_on is not None and self.status == ReadingStatus.reading:
+        has_end_date = self.finished_on is not None or self.abandoned_on is not None
+        if has_end_date and self.status == ReadingStatus.reading:
             raise ValueError("A read in progress cannot have an end date")
         return self
 

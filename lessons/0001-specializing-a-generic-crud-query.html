@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Specializing a generic CRUD query</title>
+    <link rel="stylesheet" href="../assets/learning.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="lede">Reading Tracker · Python + SQLAlchemy</p>
+        <h1>Specializing a generic CRUD query</h1>
+        <p>
+          The catalog is not asking for a more powerful generic <code>list()</code>. It is asking
+          for a different result: one book plus one optional, deliberately selected engagement.
+          Recognizing that difference makes the Python design much easier.
+        </p>
+      </header>
+
+      <section>
+        <h2>Start with the promise already made</h2>
+        <p>
+          <code>CRUDBase[Book].list()</code> currently makes a strong, useful promise: “return a
+          list of this model type.” Its type is conceptually <code>list[Book]</code>. Loader options
+          may change which relationships are already loaded, but they do not change that result
+          type.
+        </p>
+        <p>
+          The catalog needs a different cardinality and shape:
+          <code>list[(Book, Engagement | None)]</code>, or an equivalent named projection. It must
+          also choose one engagement when several exist. That is why overriding the existing
+          <code>list()</code> with a different return type would be misleading even if Python let it
+          run.
+        </p>
+        <div class="callout">
+          <strong>Design rule:</strong> preserve the inherited generic method and give the
+          specialized result a specialized name and return type.
+        </div>
+      </section>
+
+      <section>
+        <h2>Three Python designs</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Design</th>
+              <th>What it says</th>
+              <th>Use it when</th>
+              <th>Main cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Specialized subclass</td>
+              <td>A book repository has extra persistence queries.</td>
+              <td>The project deliberately keeps model-specific SQL in CRUD objects.</td>
+              <td>Another class and export; it should not import HTTP response schemas.</td>
+            </tr>
+            <tr>
+              <td>Module-level service/query function</td>
+              <td>This operation has a use-case-specific query.</td>
+              <td>
+                The query exists for one workflow and Python module functions already express nearby
+                workflows.
+              </td>
+              <td>
+                The function needs an honest result type rather than hiding behind
+                <code>Book</code>.
+              </td>
+            </tr>
+            <tr>
+              <td>Mutate the singleton instance</td>
+              <td>This one object gains behavior at runtime.</td>
+              <td>Almost only tests, plugins, or temporary experiments.</td>
+              <td>Poor discoverability and static typing; method binding is easy to get wrong.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Option A: subclass without overriding</h3>
+        <pre><code>class BookCRUD(CRUDBase[Book]):
+    def list_catalog_rows(...) -&gt; list[CatalogRow]:
+        ...
+
+book_crud = BookCRUD(Book)</code></pre>
+        <p>
+          This is ordinary inheritance: the instance keeps <code>get()</code>,
+          <code>create()</code>, and the original <code>list()</code>, while gaining a book-specific
+          method. Python's
+          <a href="https://docs.python.org/3.14/tutorial/classes.html#inheritance"
+            >inheritance rules</a
+          >
+          make this the conventional class-based extension point.
+        </p>
+        <p>
+          The new method should return a persistence-layer value such as a typed tuple or small
+          dataclass. Returning <code>CatalogBookRead</code> from CRUD would make the lowest layer
+          know about the API contract and reverse the repository's existing dependency direction.
+        </p>
+
+        <h3>Option B: a module-level function</h3>
+        <pre><code>@dataclass(frozen=True, slots=True)
+class CatalogRow:
+    book: Book
+    engagement: Engagement | None
+
+def list_catalog_rows(db: Session, ...) -&gt; list[CatalogRow]:
+    ...</code></pre>
+        <p>
+          Python does not require a class merely to namespace one query. A function is often the
+          clearest choice when there is no mutable repository state and no family of interchangeable
+          repository implementations. In this repository, the book service already contains
+          specialized selection queries, so this option matches the local shape well.
+        </p>
+        <p>
+          The dataclass is optional. A tuple is smaller, but names make the boundary clear and keep
+          the route's conversion code readable. The important part is that the type admits
+          <code>None</code> for books without an engagement.
+        </p>
+
+        <h3>Option C: attach a method to <em>one</em> object</h3>
+        <pre><code>book_crud.list_catalog_rows = MethodType(list_catalog_rows, book_crud)</code></pre>
+        <p>
+          Python can do this, but a function stored on an instance is not automatically bound the
+          way a function stored on a class is. Manual binding uses <code>types.MethodType</code>;
+          the
+          <a href="https://docs.python.org/3.14/howto/descriptor.html#functions-and-methods"
+            >descriptor guide</a
+          >
+          explains why. The language tutorial itself warns that even assigning external functions
+          onto classes can confuse readers. On one singleton, type checkers also cannot see the
+          method from its declared type, and importing a module can silently become the action that
+          installs behavior. This is dynamic Python, but not the maintainable default here.
+        </p>
+      </section>
+
+      <section>
+        <h2>Why changing <code>CRUDBase</code> is probably the wrong generalization</h2>
+        <p>
+          A generic hook is earned when several model repositories need the same variation. Adding
+          “optional joins,” “selected related rows,” or arbitrary statements to the base now would
+          make its type contract less precise for one caller. A generic
+          <code>execute(statement)</code> wrapper also adds little:
+          <code>Session.execute()</code> already is that abstraction.
+        </p>
+        <p>
+          If a second and third model later need the same stable query protocol, that evidence may
+          justify a hook or another generic result type. Until then, a specialized name localizes
+          the complexity.
+        </p>
+      </section>
+
+      <section>
+        <h2>The SQL problem hiding inside “left join”</h2>
+        <p>
+          A plain left join preserves books with no engagements, but it produces one result row per
+          matching engagement. Therefore a book with three historical engagements appears three
+          times. The operation first needs a rule that ranks engagements within each book, then it
+          can left-join only rank one.
+        </p>
+        <ol>
+          <li>
+            Rank candidate engagements inside each book partition according to the catalog rule.
+          </li>
+          <li>Expose that ranking as a subquery and alias it back to the engagement model.</li>
+          <li>Left-join books to only the first ranked candidate.</li>
+          <li>
+            Keep the rank restriction in the join condition so a missing engagement remains
+            <code>None</code>.
+          </li>
+        </ol>
+        <p>
+          SQLAlchemy documents this as a
+          <a
+            href="https://docs.sqlalchemy.org/en/20/orm/join_conditions.html#row-limited-relationships-with-window-functions"
+            >row-limited window-function pattern</a
+          >. The same idea can remain local to one statement; it does not have to become a mapped
+          relationship.
+        </p>
+        <div class="callout">
+          A left join solves “keep parents with no child.” It does not solve “choose exactly one
+          child.” Those are separate requirements.
+        </div>
+      </section>
+
+      <section>
+        <h2>Result shape: do not throw the joined object away</h2>
+        <p>
+          SQLAlchemy distinguishes the FROM clause from the selected columns. Joining an engagement
+          while selecting only <code>Book</code> still returns only books. Selecting both produces
+          result rows containing both values. The
+          <a
+            href="https://docs.sqlalchemy.org/en/20/orm/queryguide/select.html#selecting-multiple-orm-entities-simultaneously"
+            >ORM SELECT guide</a
+          >
+          makes this distinction explicit.
+        </p>
+        <pre><code>select(Book)              # result carries Book
+select(Book, engagement)  # result carries Book and Engagement | None</code></pre>
+        <p>
+          This also explains a common trap: calling <code>.scalars()</code> on the second shape
+          keeps only the first selected element. If the route needs both values, preserve and unpack
+          the rows, then translate each pair into the response projection.
+        </p>
+      </section>
+
+      <section>
+        <h2>Loading is a separate axis</h2>
+        <p>
+          The selected engagement's <code>formats</code> and <code>cover_url</code> are computed
+          from edition bindings and edition data; the book response also needs its authors.
+          Selecting the right engagement does not automatically load those relationships. Loader
+          options should be chosen for each selected entity to avoid accidental lazy loads or N+1
+          queries.
+        </p>
+        <p>
+          SQLAlchemy's
+          <a href="https://docs.sqlalchemy.org/en/20/orm/queryguide/relationships.html"
+            >relationship-loading guide</a
+          >
+          stresses that a join used to determine rows and a joined/select-in loader used to populate
+          relationships have different jobs. Keeping those jobs distinct makes the query easier to
+          reason about.
+        </p>
+      </section>
+
+      <section>
+        <h2>Pydantic will read attributes; it will not invent them</h2>
+        <p>
+          With <code>from_attributes=True</code>, Pydantic can read matching attributes from ORM
+          objects, including nested ones. But a <code>Book</code> has an
+          <code>engagements</code> collection, not the catalog's singular selected
+          <code>engagement</code>. Calling <code>CatalogBookRead.model_validate(book)</code> cannot
+          infer the selection rule or rename that collection.
+        </p>
+        <p>
+          The boundary therefore needs either explicit construction from the two query values or an
+          adapter object whose attributes already match the response shape. The
+          <a href="https://docs.pydantic.dev/latest/concepts/models/#arbitrary-class-instances"
+            >Pydantic model documentation</a
+          >
+          describes <code>from_attributes</code> as attribute lookup, not projection logic.
+        </p>
+      </section>
+
+      <section>
+        <h2>My judgment for this repository</h2>
+        <p>
+          Prefer the module-level book service/query function first. The operation is
+          catalog-specific, combines selection with a projection, and nearby book-service functions
+          already contain specialized SQL. Return a named persistence result and let the API layer
+          construct
+          <code>CatalogBookRead</code> and <code>CatalogEngagementRead</code>.
+        </p>
+        <p>
+          The specialized <code>BookCRUD</code> subclass is also respectable if you make a conscious
+          repository-wide decision that model-specific persistence queries belong in CRUD classes.
+          In that case, add a new method; do not change the meaning of <code>list()</code>. Avoid
+          modifying the instantiated singleton at runtime.
+        </p>
+      </section>
+
+      <section>
+        <h2>Your exercise</h2>
+        <p>
+          Choose the public return contract for the query boundary before writing SQL. Which one
+          best preserves the current layer responsibilities, and why?
+        </p>
+        <ol class="checklist">
+          <li>
+            <code>list[Book]</code>, with a temporary <code>engagement</code> attribute attached to
+            each book
+          </li>
+          <li><code>list[tuple[Book, Engagement | None]]</code></li>
+          <li><code>list[CatalogBookRead]</code></li>
+          <li>
+            A named <code>CatalogRow</code> containing <code>book</code> and <code>engagement</code>
+          </li>
+        </ol>
+        <p>
+          Reply with your choice and reasoning. I will review the boundary first; then we can
+          inspect the query shape one piece at a time. Ask for a hint if you want one.
+        </p>
+      </section>
+
+      <footer>
+        <p>
+          Sources: Python 3.14 documentation, SQLAlchemy 2.0 documentation, and Pydantic model
+          documentation. Repository baseline inspected:
+          <code>73e4e051b72360672385b2ce0ffae071fb069dff</code>.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>

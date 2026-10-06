@@ -12,17 +12,22 @@ from app.crud import (
     progress_log_crud,
 )
 from app.exceptions import ConflictError, InvalidOperationError
-from app.models.edition import Edition, EngagementEdition
 from app.models.engagement import Engagement
-from app.models.enums import Format, LogUnit, ReadingStatus
+from app.models.enums import (
+    ENDED_STATUSES,
+    OPEN_STATUSES,
+    Format,
+    LogUnit,
+    ReadingStatus,
+)
 from app.models.progress_log import ProgressLog
-from app.services.engagements._shared import ENGAGEMENT_READ_OPTIONS
+from app.services.engagements._shared import ENGAGEMENT_READ_OPTIONS, reject_future_date
 from app.services.engagements.bindings import (
     bind_edition,
     create_binding,
     edition_for_format,
 )
-from app.services.engagements.progress_logs import latest_log, reject_future_date
+from app.services.engagements.progress_logs import latest_log
 
 
 def list_for_book(db: Session, book_id: uuid.UUID) -> list[Engagement]:
@@ -91,38 +96,18 @@ def create_engagement(
     tbr_added_on: datetime.date | None = None,
     started_on: datetime.date | None = None,
     finished_on: datetime.date | None = None,
+    abandoned_on: datetime.date | None = None,
 ) -> Engagement:
     book_crud.get_or_raise(db, book_id)
 
     reject_future_date(tbr_added_on)
     reject_future_date(started_on)
     reject_future_date(finished_on)
-    if finished_on is not None and started_on is not None and finished_on < started_on:
-        raise ConflictError("finished_on cannot be before started_on.")
+    reject_future_date(abandoned_on)
+    _validate_end_date(status, started_on, finished_on, abandoned_on)
 
-    if status == ReadingStatus.tbr:
-        tbr_duplicate = engagement_crud.get_by(
-            db,
-            book_id=book_id,
-            status=ReadingStatus.tbr,
-        )
-        if tbr_duplicate is not None:
-            raise ConflictError("Already have a TBR engagement for this book.")
-    else:
-        reading_duplicate = db.execute(
-            select(Engagement)
-            .join(EngagementEdition)
-            .join(Edition)
-            .where(
-                Engagement.book_id == book_id,
-                Engagement.status == ReadingStatus.reading,
-                Edition.format == edition_format,
-            )
-        ).scalar_one_or_none()
-        if reading_duplicate is not None:
-            raise ConflictError(
-                f"Already have a {edition_format} engagement in progress for this book."
-            )
+    if status in OPEN_STATUSES:
+        _validate_no_open_engagement(db, book_id)
 
     engagement = engagement_crud.create(
         db,
@@ -135,7 +120,7 @@ def create_engagement(
             started_on=started_on
             or (datetime.date.today() if status == ReadingStatus.reading else None),
             finished_on=finished_on if status == ReadingStatus.finished else None,
-            abandoned_on=finished_on if status == ReadingStatus.dnf else None,
+            abandoned_on=abandoned_on if status == ReadingStatus.dnf else None,
             tbr_added_on=tbr_added_on
             or (datetime.date.today() if status == ReadingStatus.tbr else None),
         ),
@@ -158,6 +143,36 @@ def create_engagement(
         )
 
     return engagement
+
+
+def _validate_no_open_engagement(db: Session, book_id: uuid.UUID) -> None:
+    """A book can have multiple finished or abandoned reads, but only one TBR or reading
+    engagement at a time."""
+    for status in OPEN_STATUSES:
+        if engagement_crud.get_by(db, book_id=book_id, status=status) is not None:
+            raise ConflictError(
+                f"Already have a {status.value} engagement for this book."
+            )
+
+
+def _validate_end_date(
+    status: ReadingStatus,
+    started_on: datetime.date | None,
+    finished_on: datetime.date | None,
+    abandoned_on: datetime.date | None,
+) -> None:
+    if status == ReadingStatus.finished and abandoned_on is not None:
+        raise ConflictError("abandoned_on cannot be passed for a finished engagement.")
+    if status == ReadingStatus.dnf and finished_on is not None:
+        raise ConflictError("finished_on cannot be passed for a dnf engagement.")
+    if finished_on is not None and started_on is not None and finished_on < started_on:
+        raise ConflictError("finished_on cannot be before started_on.")
+    if (
+        abandoned_on is not None
+        and started_on is not None
+        and abandoned_on < started_on
+    ):
+        raise ConflictError("abandoned_on cannot be before started_on.")
 
 
 def _closing_unit(engagement: Engagement, unit: LogUnit | None) -> LogUnit:
@@ -302,27 +317,17 @@ def update_engagement(
     if engagement.status == new_status:
         return engagement
 
-    if new_status == ReadingStatus.reading and engagement.status != ReadingStatus.tbr:
-        duplicate = engagement_crud.get_by(
-            db, book_id=engagement.book_id, status=ReadingStatus.reading
-        )
-        if duplicate is not None:
-            raise ConflictError(
-                "A completed engagement cannot be"
-                " returned to reading if another is already in progress."
-            )
-        if not engagement.progress_logs:
-            raise InvalidOperationError(
-                "A finished engagement without progress logs cannot be"
-                " returned to reading."
-            )
+    if engagement.status in ENDED_STATUSES and new_status in OPEN_STATUSES:
+        _validate_no_open_engagement(db, engagement.book_id)
 
-    if new_status == ReadingStatus.tbr:
-        duplicate = engagement_crud.get_by(
-            db, book_id=engagement.book_id, status=ReadingStatus.tbr
+    if (
+        engagement.status in ENDED_STATUSES
+        and new_status == ReadingStatus.reading
+        and not engagement.progress_logs
+    ):
+        raise InvalidOperationError(
+            "A finished engagement without progress logs cannot be returned to reading."
         )
-        if duplicate is not None:
-            raise ConflictError("Already another tbr engagement for this book.")
 
     resolved_on = effective_on or datetime.date.today()
     reject_future_date(resolved_on)

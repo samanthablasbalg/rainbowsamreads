@@ -18,6 +18,8 @@ from app.schemas import (
     BookImportRequest,
     BookRead,
     BookSearchResult,
+    CatalogBookRead,
+    CatalogEngagementRead,
     EngagementRead,
 )
 from app.services import books as book_service
@@ -40,6 +42,17 @@ def _reload(db: Session, book_id: uuid.UUID) -> Book:
 
 def _to_book_read(book: Book) -> BookRead:
     return BookRead.model_validate(book)
+
+
+def _to_catalog_book_read(book: Book, engagement: Engagement | None) -> CatalogBookRead:
+    return CatalogBookRead(
+        **_to_book_read(book).model_dump(),
+        engagement=(
+            CatalogEngagementRead.model_validate(engagement)
+            if engagement is not None
+            else None
+        ),
+    )
 
 
 def _format_published_date(book: Book) -> str | None:
@@ -179,10 +192,12 @@ def import_book(
     return _to_book_read(_reload(db, book.id))
 
 
-@router.get("", response_model=list[BookRead])
-def list_books(db: Session = Depends(get_db)) -> list[BookRead]:
-    books = book_crud.list(db, options=_BOOK_READ_OPTIONS)
-    return [_to_book_read(book) for book in books]
+@router.get("", response_model=list[CatalogBookRead])
+def list_books(db: Session = Depends(get_db)) -> list[CatalogBookRead]:
+    return [
+        _to_catalog_book_read(book, engagement)
+        for book, engagement in book_service.list_catalog(db)
+    ]
 
 
 @router.get("/{book_id}", response_model=BookRead)

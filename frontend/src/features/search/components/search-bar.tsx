@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/combobox';
 import { InputGroupAddon } from '@/components/ui/input-group';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
-import { SHELVED_STATUSES } from '@/utils/status';
+import { CREATABLE_STATUSES } from '@/utils/status';
 import { SearchButton } from './search-button';
 import { SearchResultRow } from './search-result-row';
 
@@ -114,7 +114,7 @@ function AddToLibrarySheet({
   return (
     <StartReadingSheet
       book={book}
-      statuses={SHELVED_STATUSES}
+      statuses={CREATABLE_STATUSES}
       {...(cancelLabel && { cancelLabel })}
       open
       onOpenChange={(open) => !open && onClose()}

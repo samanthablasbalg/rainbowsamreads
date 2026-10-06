@@ -1,19 +1,16 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { BookOpen01Icon, Delete02Icon } from '@hugeicons/core-free-icons';
+import { Delete02Icon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { getBooksListBooksQueryKey, useBooksDeleteBook } from '@/api/generated/books/books';
-import type { BookRead } from '@/api/generated/readingTracker.schemas';
+import type { BookRead, CatalogEngagementRead } from '@/api/generated/readingTracker.schemas';
 import { errorDetail, type DetailError } from '@/api/error-detail';
 import { BookRow } from '@/components/common/book-row';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { ErrorText } from '@/components/common/error-text';
-import { StartReadingSheet } from '@/components/common/start-reading-sheet';
-import { Button } from '@/components/ui/button';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { authorNames, formatAudioLength, formatPageCount } from '@/utils/book';
-import { STATUSES } from '@/utils/status';
+import { StatusDropdown } from '@/components/common/status-dropdown';
 
 function formatLengths({ default_page_count, default_audio_minutes }: BookRead): string | null {
   const lengths = [
@@ -24,12 +21,16 @@ function formatLengths({ default_page_count, default_audio_minutes }: BookRead):
   return lengths.length > 0 ? lengths.join(' · ') : null;
 }
 
-export function CatalogRow({ book }: { book: BookRead }) {
+export function CatalogRow({
+  book,
+  engagement,
+}: {
+  book: BookRead;
+  engagement: CatalogEngagementRead | null;
+}) {
   const lengths = formatLengths(book);
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pickOpen, setPickOpen] = useState(false);
 
   const deleteBook = useBooksDeleteBook<DetailError>({
     mutation: {
@@ -59,17 +60,7 @@ export function CatalogRow({ book }: { book: BookRead }) {
           )}
         </>
       }
-      slots={[
-        <Button
-          size="sm"
-          className="col-span-2 @xl:col-span-1"
-          aria-label={`Mark ${book.title} as reading`}
-          onClick={() => setPickOpen(true)}
-        >
-          <HugeiconsIcon icon={BookOpen01Icon} />
-          Mark as reading
-        </Button>,
-      ]}
+      slots={[<StatusDropdown book={book} engagement={engagement} />]}
       menu={
         <DropdownMenuItem
           variant="destructive"
@@ -81,13 +72,6 @@ export function CatalogRow({ book }: { book: BookRead }) {
         </DropdownMenuItem>
       }
     >
-      <StartReadingSheet
-        book={book}
-        open={pickOpen}
-        onOpenChange={setPickOpen}
-        onStarted={() => navigate(STATUSES.reading.to)}
-      />
-
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}

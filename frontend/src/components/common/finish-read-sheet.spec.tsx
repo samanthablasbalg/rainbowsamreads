@@ -5,8 +5,8 @@ import {
   getEngagementsWriteEngagementMockHandler,
   getEngagementsWriteEngagementResponseMock,
 } from '@/api/generated/engagements/engagements.msw';
-import { Format, type EngagementRead } from '@/api/generated/readingTracker.schemas';
-import { buildAudioEngagement, buildEngagement } from '@/test/data-generators';
+import { Format, type BookRead, type EngagementRead } from '@/api/generated/readingTracker.schemas';
+import { buildAudioEngagement, buildBook, buildEngagement } from '@/test/data-generators';
 import { server } from '@/test/msw-server';
 import { fireEvent, render, screen, waitFor } from '@/test/render';
 import { localIsoDate } from '@/utils/local-date';
@@ -20,18 +20,18 @@ function buildMixedEngagement() {
   });
 }
 
-function ControlledSheet({ engagement }: { engagement: EngagementRead }) {
+function ControlledSheet({ book, engagement }: { book: BookRead; engagement: EngagementRead }) {
   const [open, setOpen] = useState(true);
   return (
     <>
       {!open && <p>closed</p>}
-      <FinishReadSheet engagement={engagement} open={open} onOpenChange={setOpen} />
+      <FinishReadSheet book={book} engagement={engagement} open={open} onOpenChange={setOpen} />
     </>
   );
 }
 
-function renderSheet(engagement: EngagementRead = buildEngagement()) {
-  return render(<ControlledSheet engagement={engagement} />);
+function renderSheet(book: BookRead = buildBook(), engagement: EngagementRead = buildEngagement()) {
+  return render(<ControlledSheet book={book} engagement={engagement} />);
 }
 
 function captureStatusBody() {
@@ -91,7 +91,7 @@ describe('FinishReadSheet', () => {
   });
 
   it('asks which ruler a two-format read ends on, and preselects neither', async () => {
-    renderSheet(buildMixedEngagement());
+    renderSheet(buildBook(), buildMixedEngagement());
 
     expect(await screen.findByRole('group', { name: 'Closing entry format' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Pages' })).toHaveAttribute('aria-pressed', 'false');
@@ -105,7 +105,7 @@ describe('FinishReadSheet', () => {
   it('sends the ruler that was picked', async () => {
     const user = userEvent.setup();
     const captured = captureStatusBody();
-    renderSheet(buildMixedEngagement());
+    renderSheet(buildBook(), buildMixedEngagement());
 
     await user.click(await screen.findByRole('button', { name: 'Minutes' }));
 
@@ -121,14 +121,14 @@ describe('FinishReadSheet', () => {
   });
 
   it('does not ask when both bound formats read off the same ruler', async () => {
-    renderSheet(buildEngagement({ formats: [Format.print, Format.digital] }));
+    renderSheet(buildBook(), buildEngagement({ formats: [Format.print, Format.digital] }));
 
     await screen.findByRole('dialog');
     expect(screen.queryByRole('group', { name: 'Closing entry format' })).not.toBeInTheDocument();
   });
 
   it('does not ask an audio-only read which ruler it ended on', async () => {
-    renderSheet(buildAudioEngagement());
+    renderSheet(buildBook(), buildAudioEngagement());
 
     await screen.findByRole('dialog');
     expect(screen.queryByRole('group', { name: 'Closing entry format' })).not.toBeInTheDocument();

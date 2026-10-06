@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+import datetime
 import uuid
 
 import httpx2
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import event
+from sqlalchemy.orm import Session
 
-from tests.helpers import _create_book, _fake_volume, _patch_google
+from app.models.engagement import Engagement
+from app.models.enums import ReadingStatus
+from app.models.user import User
+from tests.conftest import app_engine
+from tests.helpers import _create_book, _create_engagement, _fake_volume, _patch_google
 
 
 @pytest.mark.parametrize(
@@ -88,12 +95,111 @@ def test_list_books_returns_all(client: TestClient) -> None:
     assert len(data) == 2
     titles = {book["title"] for book in data}
     assert titles == {"A Memory Called Empire", "Piranesi"}
+    assert all(book["engagement"] is None for book in data)
 
 
 def test_list_books_empty(client: TestClient) -> None:
     response = client.get("/api/books")
     assert response.status_code == 200
     assert response.json() == []
+
+
+def test_list_books_returns_open_engagement_over_more_recent_ended_engagement(
+    client: TestClient, owner_db: Session
+) -> None:
+    book = _create_book(client)
+    ended = _create_engagement(client, book["id"], status="finished")
+    open_engagement = _create_engagement(client, book["id"], status="tbr")
+    ended_row = owner_db.get(Engagement, uuid.UUID(ended["id"]))
+    assert ended_row is not None
+    ended_row.updated_at = datetime.datetime.now(datetime.UTC)
+    owner_db.commit()
+
+    response = client.get("/api/books")
+
+    assert response.status_code == 200
+    [catalog_book] = response.json()
+    assert catalog_book["engagement"] == {
+        "id": open_engagement["id"],
+        "status": "tbr",
+        "formats": ["print"],
+        "cover_url": None,
+    }
+
+
+def test_list_books_returns_most_recently_updated_ended_engagement(
+    client: TestClient, owner_db: Session
+) -> None:
+    book = _create_book(client)
+    older = _create_engagement(client, book["id"], status="finished")
+    newer = _create_engagement(client, book["id"], status="dnf")
+    older_row = owner_db.get(Engagement, uuid.UUID(older["id"]))
+    newer_row = owner_db.get(Engagement, uuid.UUID(newer["id"]))
+    assert older_row is not None
+    assert newer_row is not None
+    older_row.updated_at = datetime.datetime(2026, 1, 1, tzinfo=datetime.UTC)
+    newer_row.updated_at = datetime.datetime(2026, 2, 1, tzinfo=datetime.UTC)
+    owner_db.commit()
+
+    response = client.get("/api/books")
+
+    assert response.status_code == 200
+    [catalog_book] = response.json()
+    assert catalog_book["engagement"]["id"] == newer["id"]
+
+
+def test_list_books_excludes_another_users_engagement(
+    client: TestClient, owner_db: Session
+) -> None:
+    book = _create_book(client)
+    other_user = User(email="another-reader@example.com")
+    owner_db.add(other_user)
+    owner_db.flush()
+    owner_db.add(
+        Engagement(
+            book_id=uuid.UUID(book["id"]),
+            user_id=other_user.id,
+            status=ReadingStatus.reading,
+        )
+    )
+    owner_db.commit()
+
+    response = client.get("/api/books")
+
+    assert response.status_code == 200
+    [catalog_book] = response.json()
+    assert catalog_book["engagement"] is None
+
+
+def test_list_books_query_count_is_constant_as_catalog_grows(
+    client: TestClient,
+) -> None:
+    def get_books_with_statement_count() -> tuple[int, int]:
+        statement_count = 0
+
+        def count_statement(*_: object) -> None:
+            nonlocal statement_count
+            statement_count += 1
+
+        event.listen(app_engine, "before_cursor_execute", count_statement)
+        try:
+            response = client.get("/api/books")
+        finally:
+            event.remove(app_engine, "before_cursor_execute", count_statement)
+        return response.status_code, statement_count
+
+    first = _create_book(client, title="Piranesi")
+    _create_engagement(client, first["id"], status="finished")
+    first_status, first_count = get_books_with_statement_count()
+
+    for title in ("Babel", "Yellowface", "Katabasis"):
+        book = _create_book(client, title=title)
+        _create_engagement(client, book["id"], status="finished")
+    larger_status, larger_count = get_books_with_statement_count()
+
+    assert first_status == 200
+    assert larger_status == 200
+    assert larger_count == first_count
 
 
 # --- Get book ---

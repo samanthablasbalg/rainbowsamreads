@@ -2,6 +2,8 @@ import { Locator, Page } from '@playwright/test';
 import { ConfirmSheetPage } from './confirm-sheet.page';
 import { StartReadingSheetPage, StartableFormat } from './start-reading-sheet.page';
 
+export type CatalogStatus = 'Not tracked' | 'To read' | 'Reading' | 'Finished' | 'DNF';
+
 export class CatalogPage {
   /** @param page - The Playwright page to drive the catalog through. */
   constructor(public readonly page: Page) {}
@@ -21,12 +23,37 @@ export class CatalogPage {
   }
 
   /**
-   * Locates the "Mark as reading" button for a book in the library list.
+   * Locates a book's status control within its catalog row.
    * @param title - The library book's title.
-   * @returns The mark-as-reading button locator for that book.
+   * @param status - The status currently shown by the control.
+   * @returns The status button locator for that book.
    */
-  getMarkAsReadingButton(title: string): Locator {
-    return this.page.getByRole('button', { name: `Mark ${title} as reading` });
+  getStatusButton(title: string, status: CatalogStatus): Locator {
+    return this.getRow(title).getByRole('button', { name: `Status: ${status}` });
+  }
+
+  /**
+   * Locates an item inside the opened status menu.
+   * @param status - The status to pick.
+   * @returns The menu item locator.
+   */
+  getStatusMenuItem(status: Exclude<CatalogStatus, 'Not tracked'>): Locator {
+    return this.page.getByRole('menuitem', { name: status });
+  }
+
+  /**
+   * Picks a status from a catalog row's status menu.
+   * @param title - The library book's title.
+   * @param from - The status currently shown by the control.
+   * @param to - The status to pick.
+   */
+  async chooseStatus(
+    title: string,
+    from: CatalogStatus,
+    to: Exclude<CatalogStatus, 'Not tracked'>
+  ): Promise<void> {
+    await this.getStatusButton(title, from).click();
+    await this.getStatusMenuItem(to).click();
   }
 
   /**
@@ -42,7 +69,7 @@ export class CatalogPage {
     format: StartableFormat = 'Print',
     length?: string
   ): Promise<void> {
-    await this.getMarkAsReadingButton(title).click();
+    await this.chooseStatus(title, 'Not tracked', 'Reading');
     await new StartReadingSheetPage(this.page).startAs(title, format, length);
   }
 

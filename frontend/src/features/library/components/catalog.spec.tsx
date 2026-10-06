@@ -1,13 +1,16 @@
 import { getBooksListBooksMockHandler } from '@/api/generated/books/books.msw';
 import { server } from '@/test/msw-server';
 import { render, screen } from '@/test/render';
-import { buildBook } from '@/test/data-generators';
+import { buildCatalogBook } from '@/test/data-generators';
 import { Catalog } from './catalog';
 
 describe('Catalog', () => {
   it('renders a row per book in the order the API returns them', async () => {
     server.use(
-      getBooksListBooksMockHandler([buildBook({ title: 'Dune' }), buildBook({ title: 'Piranesi' })])
+      getBooksListBooksMockHandler([
+        buildCatalogBook({ title: 'Dune' }),
+        buildCatalogBook({ title: 'Piranesi' }),
+      ])
     );
 
     render(<Catalog />);

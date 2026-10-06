@@ -2,15 +2,21 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { withPointer } from '@/test/pointer-decorator';
 import { expect, screen, userEvent, within } from 'storybook/test';
-import type { BookRead } from '@/api/generated/readingTracker.schemas';
+import { type BookRead, type CreatableReadingStatus } from '@/api/generated/readingTracker.schemas';
 import { Button } from '@/components/ui/button';
 import { buildBook } from '@/test/data-generators';
-import { SHELVED_STATUSES, type ShelvedStatus } from '@/utils/status';
+import { CREATABLE_STATUSES } from '@/utils/status';
 import { StartReadingSheet } from './start-reading-sheet';
 
 const baseBook = buildBook();
 
-function ControlledSheet({ book, statuses }: { book: BookRead; statuses?: ShelvedStatus[] }) {
+function ControlledSheet({
+  book,
+  statuses,
+}: {
+  book: BookRead;
+  statuses?: readonly CreatableReadingStatus[];
+}) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -62,11 +68,11 @@ export const NoLengthKnownAtAll: Story = {
 };
 
 export const ChoosingWhereItGoes: Story = {
-  render: () => <ControlledSheet book={baseBook} statuses={SHELVED_STATUSES} />,
+  render: () => <ControlledSheet book={baseBook} statuses={CREATABLE_STATUSES} />,
 };
 
 export const AddingAFinishedRead: Story = {
-  render: () => <ControlledSheet book={baseBook} statuses={SHELVED_STATUSES} />,
+  render: () => <ControlledSheet book={baseBook} statuses={CREATABLE_STATUSES} />,
   play: async (context) => {
     await openSheet(context);
     await userEvent.click(

@@ -7,9 +7,14 @@
 import { faker } from '@faker-js/faker';
 
 import { DatePrecision, Format, LogUnit, ReadingStatus } from '../readingTracker.schemas';
-import type { BookRead, BookSearchResult, EngagementRead } from '../readingTracker.schemas';
+import type {
+  BookRead,
+  BookSearchResult,
+  CatalogBookRead,
+  EngagementRead,
+} from '../readingTracker.schemas';
 
-export const getBooksListBooksResponseMock = (): BookRead[] =>
+export const getBooksListBooksResponseMock = (): CatalogBookRead[] =>
   Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({
     id: faker.string.uuid(),
     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -47,6 +52,18 @@ export const getBooksListBooksResponseMock = (): BookRead[] =>
     publication_date_precision: faker.helpers.arrayElement(Object.values(DatePrecision)),
     created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
     updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+    engagement: faker.helpers.arrayElement([
+      {
+        id: faker.string.uuid(),
+        status: faker.helpers.arrayElement(Object.values(ReadingStatus)),
+        formats: faker.helpers.arrayElements(Object.values(Format)),
+        cover_url: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+      },
+      null,
+    ]),
   }));
 
 export const getBooksCreateBookResponseMock = (
