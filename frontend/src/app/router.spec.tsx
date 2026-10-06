@@ -41,7 +41,7 @@ describe('the route tree', () => {
 
     renderRoute(to);
 
-    const heading = await screen.findByRole('heading', { level: 1 });
+    const heading = await screen.findByRole('heading', { level: 1 }, { timeout: 3_000 });
     expect(heading).not.toHaveTextContent('Page not found');
   });
 

@@ -20,7 +20,13 @@ const featureZones = readdirSync(new URL('./src/features', import.meta.url), {
   }));
 
 export default defineConfig([
-  globalIgnores(['dist', 'storybook-static', 'src/api/generated', 'public/mockServiceWorker.js']),
+  globalIgnores([
+    'coverage',
+    'dist',
+    'storybook-static',
+    'src/api/generated',
+    'public/mockServiceWorker.js',
+  ]),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
