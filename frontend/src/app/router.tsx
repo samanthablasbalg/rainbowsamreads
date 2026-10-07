@@ -31,7 +31,7 @@ export const routes = [
                 path: '/library',
                 Component: Library,
                 children: [
-                  { index: true, loader: () => redirect('/library/tbr') },
+                  { index: true, loader: () => redirect('/library/tbr'), Component: Pending },
                   {
                     Component: ContentBoundary,
                     HydrateFallback: Pending,

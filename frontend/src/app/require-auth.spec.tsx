@@ -53,6 +53,7 @@ describe('the route guards', () => {
   });
 
   it('shows the error page, not the landing page, when the session request fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     server.use(sessionBroken);
 
     renderRoute('/home');

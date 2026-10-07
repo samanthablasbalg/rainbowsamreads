@@ -5,7 +5,7 @@ import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
 import { type BookRead, type EngagementRead } from '@/api/generated/readingTracker.schemas';
 import { EmptyState } from '@/components/common/empty-state';
 import { StarRating } from '@/components/common/star-rating';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FORMATS } from '@/utils/format';
@@ -80,14 +80,16 @@ export function BookReadings({
                       <p className="font-serif text-sm leading-relaxed">{engagement.review.body}</p>
                     )}
                     <div className="flex gap-4">
-                      <Button
-                        variant="link"
-                        size="xs"
-                        className="h-auto p-0 font-bold text-ring"
-                        render={<Link to={`/reads/${engagement.id}`} />}
+                      <Link
+                        to={`/reads/${engagement.id}`}
+                        className={buttonVariants({
+                          variant: 'link',
+                          size: 'xs',
+                          className: 'h-auto p-0 font-bold text-ring',
+                        })}
                       >
                         Progress log
-                      </Button>
+                      </Link>
                     </div>
                   </div>
                 </CollapsibleContent>

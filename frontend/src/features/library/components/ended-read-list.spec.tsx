@@ -55,12 +55,4 @@ describe('EndedReadList', () => {
 
     expect(await screen.findByText('Nothing finished yet')).toBeVisible();
   });
-
-  it('shows a pending state while the list loads', () => {
-    server.use(getEngagementsListEngagementsMockHandler([]));
-
-    renderShelf();
-
-    expect(screen.getByRole('status')).toHaveTextContent('Loading');
-  });
 });

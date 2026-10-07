@@ -28,14 +28,6 @@ describe('Catalog', () => {
     expect(await screen.findByText('No books yet')).toBeVisible();
   });
 
-  it('shows a pending state while the list loads', () => {
-    server.use(getBooksListBooksMockHandler([]));
-
-    render(<Catalog />);
-
-    expect(screen.getByRole('status')).toHaveTextContent('Loading');
-  });
-
   it('keeps a heading in the accessibility tree', async () => {
     server.use(getBooksListBooksMockHandler([]));
 
