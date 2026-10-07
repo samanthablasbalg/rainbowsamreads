@@ -47,10 +47,9 @@ Two things worth knowing about the wiring:
 ([ADR-0025](decisions/0025-api-services-crud-layering.md)):
 
 - **`app/api/`** — routers. Parse and validate the request, call a service function (or, for routes
-  with no real logic, a `crud` instance directly), commit, shape the response. Router files that
-  outgrow one concern split into a package instead of staying flat — `engagements.py` (698 lines)
-  became `app/api/engagements/{lifecycle,progress_logs,bindings,reviews}.py`, each paired with a
-  matching file under `app/services/engagements/`.
+  with no real logic, a `crud` instance directly), commit, and shape the response. Router files that
+  outgrow one concern split into a package; engagement lifecycle, progress-log, binding, and review
+  routes each have a matching area under `app/services/engagements/`.
 - **`app/services/`** — business logic. One function per operation that has actual rules to enforce
   (`create_book`, `import_book_from_google`, engagement lifecycle transitions, review upsert) —
   plain functions, callable independent of FastAPI, so a rule needed by two routes has exactly one
@@ -105,7 +104,8 @@ erDiagram
     books ||--o{ engagements : "read in"
     books ||--o{ editions : has
     books }o--o{ authors : "written by"
-    engagements }o--o{ editions : "bound via engagement_editions"
+    engagements ||--o{ engagement_editions : binds
+    editions ||--o{ engagement_editions : "used through"
     engagements ||--o{ progress_logs : logs
     engagements ||--o| reviews : "rated by"
 
@@ -125,10 +125,16 @@ erDiagram
     editions {
         uuid id PK
         uuid book_id FK
-        enum edition_format
+        enum format
         string isbn
-        int page_count
-        int audio_minutes
+        int length
+    }
+    engagement_editions {
+        uuid engagement_id FK
+        uuid edition_id FK
+        uuid user_id FK
+        uuid origin_id FK
+        int length_override
     }
     engagements {
         uuid id PK
@@ -141,26 +147,28 @@ erDiagram
     progress_logs {
         uuid id PK
         uuid engagement_id FK
+        uuid user_id FK
         date logged_on
         enum unit
-        int page_start
-        int page_end
-        int minute_start
-        int minute_end
+        int start
+        int end
         bool new_ground
     }
     reviews {
         uuid id PK
         uuid engagement_id FK
+        uuid user_id FK
         decimal rating
         text body
         bool published
     }
 ```
 
-The `engagements`↔`editions` binding (`engagement_editions`) also records each bound copy's owner
-and an optional `length_override`. The top-row tables carry no owner; everything below `engagements`
-is per-user — enforced as follows.
+The `engagements`↔`editions` binding (`engagement_editions`) carries `user_id` so row-level security
+and its composite foreign key can scope the personal binding to the same user as its engagement. It
+also records the binding's source (`origin_id`) and an optional `length_override` for a read whose
+denominator differs from the shared edition. `user_id` scopes the relationship; it does not mean the
+user owns that physical copy. The shared `books`, `authors`, and `editions` tables carry no user.
 
 ---
 
@@ -172,8 +180,10 @@ The central guarantee — a user only ever reads or writes their own rows
 1. **Postgres row-level security.** Each request runs `SELECT set_config('app.current_user_id', …)`
    on its connection (in the `get_db` dependency); RLS policies on the personal tables compare rows
    against that setting, so the _database itself_ refuses another user's rows regardless of the
-   query. Shared reference tables and the auth path use a separate **unscoped** dependency
-   (`get_unscoped_db`), because joins out to `books`/`authors`/`editions` must stay unrestricted.
+   query. Shared reference tables have no RLS policy, so books, authors, and editions remain
+   accessible through the same scoped session and personal-to-shared joins work normally. The
+   separate **unscoped** dependency (`get_unscoped_db`) is reserved for authentication operations
+   that must resolve a user before a scoped session can be established.
 
 2. **Composite foreign keys.** Personal child tables (`progress_logs`, `reviews`,
    `engagement_editions`) don't just carry a `user_id` — they foreign-key to the _composite_

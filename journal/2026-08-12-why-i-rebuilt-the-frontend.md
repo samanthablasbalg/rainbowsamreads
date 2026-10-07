@@ -1,10 +1,15 @@
-# Why I rebuilt the frontend
+# 2026-08-12 — Why I rebuilt the frontend
+
+> This entry preserves how I assessed the project when the Angular-to-React migration landed. It
+> describes the AI-assisted implementation workflow I used then; my current workflow is described in
+> the [project README](../README.md). Claims about framework demand and assistant performance are my
+> judgment at that time, not timeless comparisons.
 
 I decided to completely rebuild my frontend only two months into this project, which on its face is
 a pretty wild decision. I want to explain the path I took to get here and the framing that changed
 for me along the way. The formal record is
-[ADR-0032](decisions/0032-migrate-the-frontend-to-react.md), and this doc aims to give broader
-context.
+[ADR-0032](../docs/decisions/0032-migrate-the-frontend-to-react.md), and this entry aims to give
+broader context.
 
 ## Where I started
 
@@ -52,9 +57,9 @@ built, the more I realized that the skills and instincts I've honed over the pas
 test architecture are much more transferrable than I previously realized. It started to feel like my
 "go with Angular so it will be applicable to your work" rationale didn't sit well with my new
 burgeoning aspirations. I wanted a project that I could show to a potential hiring manager and not
-be immediately dismissed because I built in a framework very few people use. Combining these
-thoughts with my growing tech debt problem, and it just seemed like the right thing to do and the
-right time.
+be immediately dismissed because I built in a framework that appeared less often in the roles I was
+considering. Combining these thoughts with my growing tech debt problem, and it just seemed like the
+right thing to do and the right time.
 
 ## How it's going now
 
@@ -91,6 +96,6 @@ new features!
 ---
 
 The decision in its formal shape — the alternatives I turned down, and the thing that would tell me
-I got it wrong — is in [ADR-0032](decisions/0032-migrate-the-frontend-to-react.md). The structure I
-put in place so that tech debt can't quietly rebuild itself is
-[ADR-0033](decisions/0033-frontend-layering-and-import-direction.md).
+I got it wrong — is in [ADR-0032](../docs/decisions/0032-migrate-the-frontend-to-react.md). The
+dependency boundaries introduced with it are recorded in
+[ADR-0033](../docs/decisions/0033-frontend-layering-and-import-direction.md).

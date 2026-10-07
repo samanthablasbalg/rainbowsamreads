@@ -27,14 +27,21 @@ The foundations are real and running in the deployed app:
   ([ADR-0015](decisions/0015-google-books-access-via-backend-proxy.md)).
 - **Track a current read.** A Currently Reading view, and progress logging for pages and audio
   minutes.
+- **Track a TBR.** Add books before reading begins, browse them on a To Read shelf, and promote the
+  existing TBR entry when reading starts.
+- **Read across formats.** Bind print, digital, and audio editions to one read, switch between pages
+  and minutes while logging, and keep one combined completion percentage.
+- **Record non-linear sessions.** Log re-reading or listening behind the current frontier without
+  counting the same ground twice toward completion.
+- **Re-read deliberately.** Starting a book again after a finished or DNF read creates a new
+  engagement with its own dates, progress, and chosen format.
 - **Finish, DNF, rate, and review** a read.
 - **Fix mistakes.** Correct or delete entries made in error, and edit the dates on reads and
   progress logs after the fact.
 - **Deployed**, with a production build and a logged-out landing page.
 - **A React frontend**, rebuilt from Angular two months in and on a live app
-  ([ADR-0032](decisions/0032-migrate-the-frontend-to-react.md)) — with a layer structure the linter
-  enforces, so the tech debt that prompted it can't quietly rebuild itself
-  ([ADR-0033](decisions/0033-frontend-layering-and-import-direction.md)).
+  ([ADR-0032](decisions/0032-migrate-the-frontend-to-react.md)) — with import-direction rules the
+  linter enforces ([ADR-0033](decisions/0033-frontend-layering-and-import-direction.md)).
 - **The everyday flows, redesigned.** Progress logging in a focused sheet
   ([ADR-0019](decisions/0019-progress-logging-in-a-focused-sheet.md)), and finding a book, adding
   it, and starting a read reworked to match the new designs.
@@ -48,14 +55,12 @@ The foundations are real and running in the deployed app:
 The next horizon, roughly grouped by theme. These are designed or partially designed; the data model
 is mostly ready for them.
 
-- **Fuller reading lifecycle** — paused reads, deliberate re-reads as independent engagements
-  (including re-reading in a different format), and every book showing its current status and the
-  obvious next thing to do with it.
-- **Multi-format and non-linear progress** — one read spanning audio, print, and ebook with a single
-  combined completion; anthologies and omnibuses tracked story-by-story without wrecking the
-  percentage.
-- **TBR pages** — adding and viewing books before reading begins, including declaring an intended
-  reading format before a read begins.
+- **Fuller reading lifecycle** — pause and resume controls, plus status-aware actions across the
+  remaining screens.
+- **Segmented progress** — anthologies and omnibuses tracked story-by-story while preserving an
+  accurate whole-book percentage.
+- **TBR enhancements** — declare an intended reading format before a read begins and add richer
+  sorting and curation beyond the shipped shelf.
 - **Fuzzy dates in the UI** — recording and displaying month- or year-precision dates ("I read this
   in 1994") for backfilling older reads.
 - **Ownership** — tracking owned copies of a book independently of whether it's been read, with an

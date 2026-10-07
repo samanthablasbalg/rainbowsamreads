@@ -92,3 +92,8 @@ whereas the copied commit was being used after the act to provoke a reload durin
 Future API-test reviews should identify which session authored each database change and label the
 arrange, act, and assert boundaries before deciding whether a test needs `commit()`, `expire_all()`,
 or `refresh()`.
+
+## Related reference
+
+[Testing database state across sessions](../reference/testing-database-state-across-sessions.html)
+is the current working guide for choosing among a new HTTP read, expiration, and refresh.

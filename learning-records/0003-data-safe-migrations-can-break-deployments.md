@@ -13,6 +13,11 @@ This insight surfaced while designing issue #103 on 2026-08-29. The working migr
 original values on downgrade. Those round-trip checks proved data preservation but not deployment
 safety.
 
+The reproducible application and migration baseline is
+[`435769e`](https://github.com/samanthablasbalg/rainbowsamreads/commit/435769ef5001e9dac56a7f815a046441b51dbb2e),
+before the expand/contract work split the destructive migration across deployments. It also contains
+the production startup command used in the rollout analysis below.
+
 The repository's production container runs:
 
 ```text
