@@ -70,7 +70,13 @@ data that has already been fetched.
   and passes it.
 - A prop that is present for some callers and absent for others can carry a decision, as
   `engagementId` does for create versus promote.
-- Props are arguments. Only hooks such as `useQuery` make requests. To find the network cost of a
-  screen, look for the queries, not the props.
+- Props are arguments and passing one does not inherently make a request. Hooks, event handlers, and
+  ordinary functions can all initiate requests; trace the code that performs the query or mutation
+  rather than inferring network cost from prop passing.
 - Destructuring and prop passing are free in practice. Object spread (`...props`) makes a new
   shallow object, which is still negligible.
+
+## Related reference
+
+[Response shapes and component interfaces](../reference/response-shapes-and-component-interfaces.html)
+extends this lesson to callers that receive different API projections of the same entity.

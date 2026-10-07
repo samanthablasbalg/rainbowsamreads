@@ -313,3 +313,5 @@ adaptation.
   caller-facing module whose actual data consumption determines the narrow interface.
 - [`FinishReadSheet`](../frontend/src/components/common/finish-read-sheet.tsx): establishes why the
   shared interaction needs engagement formats in addition to id and status.
+- [Response shapes and component interfaces](../reference/response-shapes-and-component-interfaces.html):
+  the current reference distilled from records 0006 and 0008.

@@ -92,17 +92,7 @@ collection. That keeps the backend collections semantically unordered while maki
 JSON deterministic.
 
 FastAPI supports replacing `app.openapi` to customize the generated document. The implementation
-wraps the default method, adds the schemas, and returns the augmented result. Strict mypy reports
-assignment to a declared method as `method-assign`, because arbitrary monkey-patching can break
-method binding. The implementation uses a narrow suppression:
-
-```python
-app.openapi = openapi  # type: ignore[method-assign]
-```
-
-The suppression does not hide an uncertain type mismatch. It documents one intentional instance of
-FastAPI's method-replacement extension pattern while leaving every other error on the line and in
-the file checked normally.
+wraps the default method, adds the schemas, and returns the augmented result.
 
 Because the customization belongs to the application, both the served `/openapi.json` and
 `scripts/export_openapi.py` receive the same schemas. Modifying only the export script would have
@@ -130,19 +120,10 @@ export function isEndedStatus(status: ReadingStatus): status is EndedReadingStat
 }
 ```
 
-The old `ShelvedStatus` alias was deleted rather than pointed at `CreatableReadingStatus`. An alias
-would preserve a second name without adding a second concept. Callers that mean "a status accepted
-when creating an engagement" now use the generated `CreatableReadingStatus` directly.
-
-That does not make these collections a second source of truth: every member still comes from the
-generated objects. The adapter gives callers the representation they actually need and keeps Orval's
-object representation out of feature code. `CREATABLE_STATUSES` is the shared iterable used by
-several callers, while `isOpenStatus()` and `isEndedStatus()` express the domain question a caller
-is asking. The private sets are an implementation detail of those predicates; their value is
-locality and a semantic interface, not a meaningful performance difference at this scale.
-
-This is different from the deleted `ShelvedStatus` alias. That alias gave the same generated type a
-second name without adapting its representation or expressing another operation.
+The adapter is not another source of truth: every member comes from generated objects. It gives
+callers the representation they need—an iterable or a domain predicate—while keeping Orval's object
+shape local to the utility. The old `ShelvedStatus` alias was removed because it only gave the same
+generated type another name; callers now use `CreatableReadingStatus` directly.
 
 The cleanup also removed the dropdown's handwritten `ENDED` array and changed current-engagement
 selection to recognize every generated open status, not only `reading`. Presentation remains

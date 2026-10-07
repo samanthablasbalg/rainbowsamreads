@@ -46,7 +46,7 @@
             <tr>
               <td>Assert</td>
               <td>The test reads what the API persisted</td>
-              <td><code>expire_all()</code>, <code>refresh()</code>, or query again</td>
+              <td><code>expire_all()</code>, <code>refresh()</code>, or make a new HTTP read</td>
             </tr>
           </tbody>
         </table>
@@ -90,6 +90,12 @@ assert edition_obj.length == 250</code></pre>
           the next attribute read reloads it. Use <code>refresh(object)</code> when only one object
           needs an immediate reload.
         </p>
+        <p>
+          Executing another ORM lookup through the same session is not automatically a refresh. The
+          identity map can return an already-loaded object. Expire or refresh it first, or use a
+          query explicitly configured to populate existing state. A separate HTTP read uses the
+          API's independent session and returns a new serialized snapshot.
+        </p>
       </section>
 
       <section>
@@ -112,7 +118,10 @@ client.post(...)        # later database change
           <li>Is this arrange, act, or assert?</li>
           <li>Does another connection need to see test-authored setup? Commit it.</li>
           <li>Did the endpoint author the change? Let the endpoint commit it.</li>
-          <li>Could the test session have cached the object? Expire, refresh, or query again.</li>
+          <li>
+            Could the test session have cached the object? Expire or refresh it before another ORM
+            lookup, or configure that query to repopulate existing state.
+          </li>
           <li>Is the value only in an old JSON response? Fetch a new representation.</li>
         </ol>
       </section>

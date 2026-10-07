@@ -68,5 +68,8 @@ transaction—was the explanation that made the distinction click.
 
 When investigating an unfamiliar field, trace it independently through the request schema, service
 calls, ORM models, and migrations before deciding which entity owns it or whether it is persisted.
-Future learning records should retain the concrete example and reasoning that produced the insight,
-not only an abstract summary of the conclusion.
+
+## Related reference
+
+[Request fields are not database fields](../reference/request-fields-and-persistence.html) keeps the
+example aligned with the current command and model names.

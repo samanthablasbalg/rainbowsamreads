@@ -25,26 +25,18 @@ if you want to poke around inside, email me at **rainbowsamreads@gmail.com** and
 
 ## What it does
 
-I'm a recovering perfectionist, so my instinct was to hide this until it was complete, which, given
-how much of the data model I built for features that don't exist yet, could have taken years.
-Instead, I made myself define an actual MVP: the smallest feature set that I could use for daily
-progress tracking. That is what went live in my first deployment.
-
-Today you can sign in with Google, add books, track your reads, log daily progress, and rate and
-review. It is still pretty rough around the edges, but I am adding new improvements and features
-nearly every day.
+Today you can sign in with Google; build a catalog and TBR; open a book page; start, finish, or DNF
+a read; log and correct daily progress; and rate and review. One read can move between print, ebook,
+and audio, and re-reading ground already covered is recorded without inflating completion. It is
+still a work in progress, but I am adding new improvements and features nearly every day.
 
 It's built mobile-friendly first. A phone is where I do most of my reading-tracking, so that's the
 experience I design around, with the desktop layout built just as deliberately. I even run a
 separate staging environment so I can test in-progress work on my real phone before it ships.
 
-Two months in, I rebuilt the entire frontend from Angular to React. That's a wild thing to do to a
-deployed app that people are using, and [why I did it](docs/frontend-migration.md) is its own
-write-up.
-
-What's next is the part I actually built this for: tracking the reading no app has ever fit right.
-Multi-format and non-linear progress, a proper TBR, book and author pages, ownership, and stats.
-It's all in the [roadmap](docs/roadmap.md).
+What's next is continuing the part I built this for: tracking the reading no app has ever fit right.
+Named segments for anthologies and omnibuses, richer lifecycle controls, ownership, author pages,
+and stats are all in the [roadmap](docs/roadmap.md).
 
 ## How it's tested
 
@@ -59,21 +51,23 @@ Testing is the discipline I bring to building, so it's not an afterthought:
 - **End-to-end:** Playwright with page objects and fixtures, driving real browsers against
   [the same containerized stack as development](docs/decisions/0030-e2e-runs-against-the-compose-dev-stack.md),
   with a test-auth path so runs don't depend on live Google login.
-- **Static analysis:** mypy (strict), Ruff, ESLint, and Prettier, wired into pre-commit and re-run
-  in CI, so nothing merges without passing.
+- **Static analysis:** mypy (strict), Ruff, ESLint, Prettier, and backend dependency checks run in
+  pre-commit; pull-request CI reruns the lint, type, test, build, and generated-code checks.
 
-## Built with an AI assistant
+## How I build with an AI assistant
 
-I'm building this with Claude Code, and learning to build as I go. How I work with it is written up
-in my [CLAUDE.md](CLAUDE.md). I strictly require that every change is explained before any code is
-written, so I actually gain understanding of what is going in and best practices for frameworks and
-languages I've never used before. As I've gotten more comfortable, I've been writing and debugging
-more of it myself, and I've got a queue of tickets I'm now taking on solo.
+A decade-plus in testing has given me strong instincts for what good software looks like, but I have
+pretty big holes in my knowledge about how to actually build something. I started off by having the
+AI explain everything to me before it implemented what I designed, but I found that this wasn't
+helping me actually internalize the concepts the way I hoped.
 
-A decade-plus in testing has given me strong instincts for what good software looks like, and those
-carry over even where the specifics are new. A lot of this never makes it into the commit history. I
-get real satisfaction every time I catch poor or fragile code patterns and send them back before
-they land. I'm learning a lot, and I'm proud of what's here.
+Now, I write the code _and_ retain ownership of the decisions. The assistant teaches unfamiliar
+Python and React concepts, asks focused questions, and reviews my reasoning and changes. It
+implements only when I explicitly delegate a particular task; help with one exercise does not grant
+permission to implement later work. Since 9/18/26, I have been more conscientious about using the
+co-author by-line when the AI does most of the coding and using bare commits to indicate my own
+work, and using `teach` and `diy` labels to indicate the transition from mostly AI-driven PRs to
+work I am now doing mostly myself.
 
 ## The stack
 
@@ -85,5 +79,7 @@ Query · shadcn/ui on Base UI · Tailwind CSS · Storybook
 - **[Architecture](docs/architecture.md)** — the system and data model as one story
 - **[Development guide](docs/development.md)** — how to run the whole stack locally
 - **[Decision records](docs/decisions/README.md)** — the _why_ behind every significant choice
-- **[Learnings](docs/learnings/README.md)** — what I've picked up building hands-on
+- **[Learning records](learning-records/README.md)** — how durable technical insights emerged
+- **[Reference guides](reference/)** — current explanations I return to while working
+- **[Project journal](journal/README.md)** — dated accounts of major changes in the project
 - **[Roadmap](docs/roadmap.md)** — where it's going
