@@ -19,7 +19,11 @@ import type {
   UseSuspenseQueryResult,
 } from '@tanstack/react-query';
 
-import type { StreakRead } from '../readingTracker.schemas';
+import type {
+  HTTPValidationError,
+  InsightsGetStreakParams,
+  StreakRead,
+} from '../readingTracker.schemas';
 
 import { customInstance } from '../../mutator/axios-instance';
 import type { ErrorType } from '../../mutator/axios-instance';
@@ -45,32 +49,36 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
  * @summary Get Streak
  */
 export const insightsGetStreak = (
+  params: InsightsGetStreakParams,
   options?: SecondParameter<typeof customInstance>,
   signal?: AbortSignal
 ) => {
   return customInstance<StreakRead>(
-    { url: `/api/insights/streak`, method: 'GET', signal },
+    { url: `/api/insights/streak`, method: 'GET', params, signal },
     options
   );
 };
 
-export const getInsightsGetStreakQueryKey = () => {
-  return [`/api/insights/streak`] as const;
+export const getInsightsGetStreakQueryKey = (params?: InsightsGetStreakParams) => {
+  return [`/api/insights/streak`, ...(params ? [params] : [])] as const;
 };
 
 export const getInsightsGetStreakQueryOptions = <
   TData = Awaited<ReturnType<typeof insightsGetStreak>>,
-  TError = ErrorType<unknown>,
->(options?: {
-  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof insightsGetStreak>>, TError, TData>>;
-  request?: SecondParameter<typeof customInstance>;
-}) => {
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: InsightsGetStreakParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof insightsGetStreak>>, TError, TData>>;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getInsightsGetStreakQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getInsightsGetStreakQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof insightsGetStreak>>> = ({ signal }) =>
-    insightsGetStreak(requestOptions, signal);
+    insightsGetStreak(params, requestOptions, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof insightsGetStreak>>,
@@ -82,12 +90,13 @@ export const getInsightsGetStreakQueryOptions = <
 export type InsightsGetStreakQueryResult = NonNullable<
   Awaited<ReturnType<typeof insightsGetStreak>>
 >;
-export type InsightsGetStreakQueryError = ErrorType<unknown>;
+export type InsightsGetStreakQueryError = ErrorType<HTTPValidationError>;
 
 export function useInsightsGetStreak<
   TData = Awaited<ReturnType<typeof insightsGetStreak>>,
-  TError = ErrorType<unknown>,
+  TError = ErrorType<HTTPValidationError>,
 >(
+  params: InsightsGetStreakParams,
   options: {
     query: Partial<UseQueryOptions<Awaited<ReturnType<typeof insightsGetStreak>>, TError, TData>> &
       Pick<
@@ -104,8 +113,9 @@ export function useInsightsGetStreak<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useInsightsGetStreak<
   TData = Awaited<ReturnType<typeof insightsGetStreak>>,
-  TError = ErrorType<unknown>,
+  TError = ErrorType<HTTPValidationError>,
 >(
+  params: InsightsGetStreakParams,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof insightsGetStreak>>, TError, TData>> &
       Pick<
@@ -122,8 +132,9 @@ export function useInsightsGetStreak<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useInsightsGetStreak<
   TData = Awaited<ReturnType<typeof insightsGetStreak>>,
-  TError = ErrorType<unknown>,
+  TError = ErrorType<HTTPValidationError>,
 >(
+  params: InsightsGetStreakParams,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof insightsGetStreak>>, TError, TData>>;
     request?: SecondParameter<typeof customInstance>;
@@ -136,15 +147,16 @@ export function useInsightsGetStreak<
 
 export function useInsightsGetStreak<
   TData = Awaited<ReturnType<typeof insightsGetStreak>>,
-  TError = ErrorType<unknown>,
+  TError = ErrorType<HTTPValidationError>,
 >(
+  params: InsightsGetStreakParams,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof insightsGetStreak>>, TError, TData>>;
     request?: SecondParameter<typeof customInstance>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getInsightsGetStreakQueryOptions(options);
+  const queryOptions = getInsightsGetStreakQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;
@@ -155,19 +167,22 @@ export function useInsightsGetStreak<
 
 export const getInsightsGetStreakSuspenseQueryOptions = <
   TData = Awaited<ReturnType<typeof insightsGetStreak>>,
-  TError = ErrorType<unknown>,
->(options?: {
-  query?: Partial<
-    UseSuspenseQueryOptions<Awaited<ReturnType<typeof insightsGetStreak>>, TError, TData>
-  >;
-  request?: SecondParameter<typeof customInstance>;
-}) => {
+  TError = ErrorType<HTTPValidationError>,
+>(
+  params: InsightsGetStreakParams,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof insightsGetStreak>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getInsightsGetStreakQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getInsightsGetStreakQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof insightsGetStreak>>> = ({ signal }) =>
-    insightsGetStreak(requestOptions, signal);
+    insightsGetStreak(params, requestOptions, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
     Awaited<ReturnType<typeof insightsGetStreak>>,
@@ -179,12 +194,13 @@ export const getInsightsGetStreakSuspenseQueryOptions = <
 export type InsightsGetStreakSuspenseQueryResult = NonNullable<
   Awaited<ReturnType<typeof insightsGetStreak>>
 >;
-export type InsightsGetStreakSuspenseQueryError = ErrorType<unknown>;
+export type InsightsGetStreakSuspenseQueryError = ErrorType<HTTPValidationError>;
 
 export function useInsightsGetStreakSuspense<
   TData = Awaited<ReturnType<typeof insightsGetStreak>>,
-  TError = ErrorType<unknown>,
+  TError = ErrorType<HTTPValidationError>,
 >(
+  params: InsightsGetStreakParams,
   options: {
     query: Partial<
       UseSuspenseQueryOptions<Awaited<ReturnType<typeof insightsGetStreak>>, TError, TData>
@@ -195,8 +211,9 @@ export function useInsightsGetStreakSuspense<
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useInsightsGetStreakSuspense<
   TData = Awaited<ReturnType<typeof insightsGetStreak>>,
-  TError = ErrorType<unknown>,
+  TError = ErrorType<HTTPValidationError>,
 >(
+  params: InsightsGetStreakParams,
   options?: {
     query?: Partial<
       UseSuspenseQueryOptions<Awaited<ReturnType<typeof insightsGetStreak>>, TError, TData>
@@ -207,8 +224,9 @@ export function useInsightsGetStreakSuspense<
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useInsightsGetStreakSuspense<
   TData = Awaited<ReturnType<typeof insightsGetStreak>>,
-  TError = ErrorType<unknown>,
+  TError = ErrorType<HTTPValidationError>,
 >(
+  params: InsightsGetStreakParams,
   options?: {
     query?: Partial<
       UseSuspenseQueryOptions<Awaited<ReturnType<typeof insightsGetStreak>>, TError, TData>
@@ -223,8 +241,9 @@ export function useInsightsGetStreakSuspense<
 
 export function useInsightsGetStreakSuspense<
   TData = Awaited<ReturnType<typeof insightsGetStreak>>,
-  TError = ErrorType<unknown>,
+  TError = ErrorType<HTTPValidationError>,
 >(
+  params: InsightsGetStreakParams,
   options?: {
     query?: Partial<
       UseSuspenseQueryOptions<Awaited<ReturnType<typeof insightsGetStreak>>, TError, TData>
@@ -233,7 +252,7 @@ export function useInsightsGetStreakSuspense<
   },
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getInsightsGetStreakSuspenseQueryOptions(options);
+  const queryOptions = getInsightsGetStreakSuspenseQueryOptions(params, options);
 
   const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
     TData,

@@ -334,3 +334,7 @@ export type BooksSearchBooksParams = {
 export type EngagementsListEngagementsParams = {
   status: ReadingStatus;
 };
+
+export type InsightsGetStreakParams = {
+  date: string;
+};

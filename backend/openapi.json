@@ -1173,6 +1173,17 @@
         ],
         "summary": "Get Streak",
         "operationId": "insights-get_streak",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Date"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1180,6 +1191,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StreakRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
