@@ -279,6 +279,11 @@ export interface ReviewUpsert {
   body?: string | null;
 }
 
+export interface StreakRead {
+  count: number;
+  logged_today: boolean;
+}
+
 export type TestLoginRequestPersona =
   (typeof TestLoginRequestPersona)[keyof typeof TestLoginRequestPersona];
 

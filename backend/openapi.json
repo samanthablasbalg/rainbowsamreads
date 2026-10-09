@@ -1165,6 +1165,27 @@
           }
         }
       }
+    },
+    "/api/insights/streak": {
+      "get": {
+        "tags": [
+          "insights"
+        ],
+        "summary": "Get Streak",
+        "operationId": "insights-get_streak",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StreakRead"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2679,6 +2700,25 @@
         },
         "type": "object",
         "title": "ReviewUpsert"
+      },
+      "StreakRead": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "logged_today": {
+            "type": "boolean",
+            "title": "Logged Today"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "count",
+          "logged_today"
+        ],
+        "title": "StreakRead"
       },
       "TestLoginRequest": {
         "properties": {
