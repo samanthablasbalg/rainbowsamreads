@@ -2,6 +2,7 @@ import { useEngagementsListEngagementsSuspense } from '@/api/generated/engagemen
 import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
 import { EmptyState } from '@/components/common/empty-state';
 import { CurrentReadRow } from './current-read-row';
+import { Streak } from './streak';
 
 export function CurrentlyReadingList() {
   const { data: engagements } = useEngagementsListEngagementsSuspense({
@@ -17,6 +18,7 @@ export function CurrentlyReadingList() {
             {engagements.length} {engagements.length === 1 ? 'book' : 'books'}
           </p>
         )}
+        <Streak />
       </div>
 
       {engagements.length === 0 ? (

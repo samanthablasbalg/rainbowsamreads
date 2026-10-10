@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Query-backed React components</title>
+    <link rel="stylesheet" href="../assets/learning.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="lede">Reading Tracker · React + TanStack Query</p>
+        <h1>Query-backed component reference</h1>
+        <p>
+          A query-backed component turns one cache entry's lifecycle into UI. Keep these three
+          questions separate: what identifies the data, what state is the request in, and what
+          should this component render for that state?
+        </p>
+      </header>
+
+      <section>
+        <h2>The component shape</h2>
+        <pre><code>export function Example() {
+  const input = deriveRequestInput();
+  const query = useGeneratedQuery({ input });
+
+  if (query.isPending || query.isError) return null;
+
+  return &lt;output&gt;{query.data.value}&lt;/output&gt;;
+}</code></pre>
+        <p>
+          Call the hook before branching. React requires hooks at the component's top level; the
+          branch controls rendered output, not whether React sees the hook call.
+        </p>
+        <div class="callout">
+          A query hook returns one object. <code>query.data</code>, <code>query.isPending</code>,
+          and <code>query.isError</code> are properties of that object. Writing
+          <code>const { data, isPending, isError } = query</code> is JavaScript shorthand for making
+          local variables from those properties.
+        </div>
+      </section>
+
+      <section>
+        <h2>Choosing among generated exports</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Name shape</th>
+              <th>Meaning</th>
+              <th>Typical consumer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>operationName(...)</code></td>
+              <td>Raw promise-returning HTTP function</td>
+              <td>Imperative or non-React code</td>
+            </tr>
+            <tr>
+              <td><code>get…QueryKey(...)</code></td>
+              <td>Cache identity factory</td>
+              <td>Invalidation and cache access</td>
+            </tr>
+            <tr>
+              <td><code>get…QueryOptions(...)</code></td>
+              <td>Key plus query function</td>
+              <td>Prefetching or advanced composition</td>
+            </tr>
+            <tr>
+              <td><code>use…(...)</code></td>
+              <td>Regular query hook with explicit lifecycle states</td>
+              <td>A component that handles pending/error itself</td>
+            </tr>
+            <tr>
+              <td><code>use…Suspense(...)</code></td>
+              <td>Suspense query hook</td>
+              <td>A subtree whose boundaries own pending/error UI</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          Repeated declarations with the exact same function name are usually TypeScript overloads.
+          Find the one final declaration with a body to see the single runtime implementation.
+        </p>
+      </section>
+
+      <section>
+        <h2>Query identity</h2>
+        <pre><code>request:   GET /thing?date=2026-10-10
+query key: ['/thing', { date: '2026-10-10' }]</code></pre>
+        <p>
+          If a request variable changes the answer, it belongs in the query key. In this repository,
+          Orval's generated key factory already includes the entire params object. Pass the local
+          date into the generated hook; do not construct a second hand-written key in the component.
+        </p>
+      </section>
+
+      <section>
+        <h2>State-to-UI decision table</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Query state</th>
+              <th>Data usable?</th>
+              <th>Typical output</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Pending</td>
+              <td>No</td>
+              <td>Placeholder, spinner, or <code>null</code></td>
+            </tr>
+            <tr>
+              <td>Error</td>
+              <td>No</td>
+              <td>Error UI, fallback, or <code>null</code></td>
+            </tr>
+            <tr>
+              <td>Success</td>
+              <td>Yes</td>
+              <td>UI derived from <code>data</code></td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          The product decides which output is appropriate. Issue #271 explicitly chooses
+          <code>null</code> for both pending and error because the streak is decorative while the
+          reading list is essential.
+        </p>
+      </section>
+
+      <section>
+        <h2>Invalidation later</h2>
+        <pre><code>queryClient.invalidateQueries({ queryKey: generatedKeyFactory() });</code></pre>
+        <p>
+          Invalidation does not manually replace the streak count. It marks matching cached data
+          stale and, when the query is active, TanStack Query refetches it. Use the generated key
+          factory so readers and writers refer to the same cache identity.
+        </p>
+      </section>
+
+      <footer>
+        <p>
+          Primary sources:
+          <a href="https://react.dev/reference/rules/rules-of-hooks">React Rules of Hooks</a>,
+          <a href="https://tanstack.com/query/latest/docs/framework/react/guides/queries"
+            >TanStack Query: Queries</a
+          >,
+          <a href="https://tanstack.com/query/latest/docs/framework/react/guides/query-keys"
+            >Query Keys</a
+          >, and
+          <a href="https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation"
+            >Query Invalidation</a
+          >.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>

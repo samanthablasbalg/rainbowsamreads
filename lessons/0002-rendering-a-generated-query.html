@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Render one generated query</title>
+    <link rel="stylesheet" href="../assets/learning.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="lede">Issue #271 · React + TanStack Query · Lesson 1</p>
+        <h1>Render one generated query</h1>
+        <p>
+          Your first frontend win is intentionally small: make a <code>Streak</code> component that
+          asks for today's streak and renders the returned count only after the request succeeds.
+          Styling, tests, stories, and mutation invalidation come after this data-flow seam works.
+        </p>
+      </header>
+
+      <section>
+        <h2>The mental model</h2>
+        <p>
+          A React component is a JavaScript function that returns markup. A query hook gives that
+          function a changing snapshot of one server request: first pending, then either error or
+          success. The component's job is to map each snapshot to output.
+        </p>
+        <div class="state-flow">
+          <div><strong>Pending</strong>Return <code>null</code>.</div>
+          <div><strong>Error</strong>Return <code>null</code>.</div>
+          <div><strong>Success</strong>Render flame + count.</div>
+        </div>
+        <p>
+          Returning <code>null</code> is React's ordinary way to render nothing. Here it implements
+          two product decisions from the issue: avoid a false zero while loading, and never let
+          decorative streak data take down the reading list.
+        </p>
+      </section>
+
+      <section>
+        <h2>Read the generated interface, not its machinery</h2>
+        <p>
+          At baseline commit <code>96451a54</code>, Orval has already generated everything the
+          component needs in <code>api/generated/insights/insights.ts</code>. You do not need to
+          understand its overloads or write <code>useQuery</code> yourself. The public surface is:
+        </p>
+        <pre><code>useInsightsGetStreak({ date })
+
+// successful data:
+// { count: number; logged_today: boolean }</code></pre>
+        <p>
+          The generated hook builds this cache identity:
+          <code>['/api/insights/streak', { date }]</code>. That is why passing the date once
+          supplies both the HTTP parameter and the date-specific query key required by issue #271.
+        </p>
+        <div class="callout">
+          <strong>Boundary:</strong> call the generated hook; do not import TanStack's
+          <code>useQuery</code>, call Axios, or hand-write a query key inside <code>Streak</code>.
+        </div>
+
+        <h3>One endpoint produces a family of exports</h3>
+        <p>
+          The repeated <code>GetStreak</code> names are not competing ways to fetch different streak
+          data. They are layers generated for the same OpenAPI operation. Classify them by prefix
+          and return type:
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Generated export</th>
+              <th>Its job</th>
+              <th>Use here?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>insightsGetStreak</code></td>
+              <td>Make the raw HTTP request and return a promise.</td>
+              <td>No; it does not give the component reactive query state.</td>
+            </tr>
+            <tr>
+              <td><code>getInsightsGetStreakQueryKey</code></td>
+              <td>Build the cache identity.</td>
+              <td>Later, when invalidating stale streak data.</td>
+            </tr>
+            <tr>
+              <td><code>getInsightsGetStreakQueryOptions</code></td>
+              <td>Package the key and request function for TanStack Query.</td>
+              <td>No; the generated hook already consumes it.</td>
+            </tr>
+            <tr>
+              <td><code>InsightsGetStreakQueryResult</code></td>
+              <td>Describe a TypeScript type; it does nothing at runtime.</td>
+              <td>No.</td>
+            </tr>
+            <tr>
+              <td><code>useInsightsGetStreak</code></td>
+              <td>Run <code>useQuery</code> and return pending/error/success state.</td>
+              <td>Yes.</td>
+            </tr>
+            <tr>
+              <td><code>useInsightsGetStreakSuspense</code></td>
+              <td>Delegate pending and error handling to surrounding boundaries.</td>
+              <td>No; this component must hide itself for those states.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          Several declarations of <code>useInsightsGetStreak</code> are TypeScript overloads for one
+          function, not several hooks. Skip to its final body: it constructs the generated options,
+          calls <code>useQuery</code>, and returns that query result. That return type is the proof
+          that the hook supplies <code>data</code>, <code>isPending</code>, and
+          <code>isError</code>.
+        </p>
+        <h3>Follow the return type into TanStack Query</h3>
+        <p>The generated hook's signature ends with this return type:</p>
+        <pre><code>UseQueryResult&lt;TData, TError&gt; &amp; { queryKey: ... }</code></pre>
+        <p>
+          Orval does not list every property there. <code>UseQueryResult</code> is a type imported
+          from TanStack Query. TanStack defines that result object with properties including
+          <code>data</code>, <code>isPending</code>, <code>isError</code>, <code>error</code>, and
+          many more. Your editor can follow the imported type or show those properties on hover.
+        </p>
+        <p>Make the object visible before using JavaScript destructuring shorthand:</p>
+        <pre><code>const query = useInsightsGetStreak({ date });
+
+query.data;
+query.isPending;
+query.isError;</code></pre>
+        <p>This later line creates three local variables holding those same properties:</p>
+        <pre><code>const { data, isPending, isError } = query;</code></pre>
+        <p>Combining the two lines is only shorthand:</p>
+        <pre><code>const { data, isPending, isError } = useInsightsGetStreak({ date });</code></pre>
+        <p>
+          It does not request special output variables from the hook. The hook returns one object;
+          JavaScript destructuring picks three properties off that object.
+        </p>
+        <details class="checkpoint">
+          <summary>A repeatable way to choose an export</summary>
+          <ol>
+            <li>Find the endpoint's operation words: here, <code>GetStreak</code>.</li>
+            <li>Discard type aliases and the key/options factories for rendering work.</li>
+            <li>Choose a <code>use…</code> export because this is a React component.</li>
+            <li>
+              Choose regular versus Suspense by asking who must own pending and error UI. Issue #271
+              says this component owns both, so choose the regular hook.
+            </li>
+            <li>
+              Hover the chosen export and verify its parameter and return types before writing JSX.
+            </li>
+          </ol>
+        </details>
+      </section>
+
+      <section>
+        <h2>Supply the business date</h2>
+        <p>
+          The repository already owns the timezone-sensitive conversion in
+          <code>utils/local-date.ts</code>. Call <code>localIsoDate()</code>. Do not use
+          <code>new Date().toISOString().slice(0, 10)</code>: that produces a UTC date, while this
+          endpoint explicitly needs the reader's local calendar date.
+        </p>
+        <pre><code>const date = localIsoDate();
+const query = useInsightsGetStreak({ date });</code></pre>
+        <p>
+          This is the only new TanStack Query concept you need for the first pass: the hook starts
+          the query and returns a result object. React renders again when that result changes. Keep
+          the name <code>query</code> at first; destructure it only after its properties feel
+          unsurprising.
+        </p>
+      </section>
+
+      <section>
+        <h2>Checkpoint before typing</h2>
+        <p>Predict what the component should return for each snapshot:</p>
+        <ol class="checklist">
+          <li><code>{ data: undefined, isPending: true, isError: false }</code></li>
+          <li><code>{ data: undefined, isPending: false, isError: true }</code></li>
+          <li><code>{ data: { count: 5, logged_today: false }, ... }</code></li>
+        </ol>
+        <details class="checkpoint">
+          <summary>Check your prediction</summary>
+          <p>
+            The first two return <code>null</code>. The third renders the number 5 and the unlit
+            style of the same flame icon. A zero is still successful data and should render 0.
+          </p>
+        </details>
+      </section>
+
+      <section>
+        <h2>Your implementation mission</h2>
+        <p>
+          Work in <code>frontend/src/features/currently-reading/components/streak.tsx</code>. Treat
+          the file as a fresh exercise based on commit <code>96451a54</code>; this lesson makes no
+          assumptions about its current uncommitted contents.
+        </p>
+        <ol class="checklist">
+          <li>
+            Export a function component named <code>Streak</code>. It takes no props: it owns this
+            page-level query.
+          </li>
+          <li>
+            Import and call <code>localIsoDate()</code>, then pass its result as the required
+            <code>date</code> parameter to <code>useInsightsGetStreak</code>.
+          </li>
+          <li>
+            After the hook call, return <code>null</code> when the query is pending or has failed.
+            Do not put the hook itself inside a condition.
+          </li>
+          <li>
+            In the success path, render <code>data.count</code> beside one
+            <code>HugeiconsIcon</code> using <code>FireIcon</code>. Let
+            <code>data.logged_today</code> choose the icon's class, not which icon component exists.
+          </li>
+          <li>
+            Import <code>Streak</code> into <code>currently-reading-list.tsx</code> and render it
+            above the list content, as the issue requests.
+          </li>
+        </ol>
+        <p>
+          Stop there and show me the two files. Do not add invalidation or tests yet. I will review
+          only whether you can explain the data flow—local date → generated hook → query state →
+          rendered branch—then we will take the next small step. Ask me for a hint at any point.
+        </p>
+      </section>
+
+      <section>
+        <h2>One rule worth retaining</h2>
+        <p>
+          Hooks run at the top level; rendering branches come afterward. React's
+          <a href="https://react.dev/reference/rules/rules-of-hooks">Rules of Hooks</a> explain the
+          first half, and its
+          <a href="https://react.dev/learn/conditional-rendering">conditional rendering guide</a>
+          shows the second. TanStack's
+          <a href="https://tanstack.com/query/latest/docs/framework/react/guides/queries"
+            >query guide</a
+          >
+          documents the pending/error/success state machine used here.
+        </p>
+        <p>
+          Keep the reusable
+          <a href="../reference/query-backed-react-components.html"
+            >query-backed component reference</a
+          >
+          nearby while you work.
+        </p>
+      </section>
+
+      <footer>
+        <p>
+          Repository baseline: <code>96451a54</code>. Issue:
+          <a href="https://github.com/samanthablasbalg/rainbowsamreads/issues/271"
+            >#271 — Show a streak count on the Currently Reading page</a
+          >.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
