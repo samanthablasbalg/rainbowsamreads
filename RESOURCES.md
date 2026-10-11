@@ -23,6 +23,28 @@
   Official guide to marking matching cached queries stale and refetching active ones. Use when a
   successful progress-log mutation makes the displayed streak obsolete.
 
+### Tailwind CSS
+
+- [Tailwind CSS: display](https://tailwindcss.com/docs/display) Official utility reference for
+  `flex` and `inline-flex`. Use when an element must create a flex formatting context while either
+  behaving as a block or flowing inline with surrounding content.
+- [Tailwind CSS: flex-shrink](https://tailwindcss.com/docs/flex-shrink) Official reference for
+  controlling whether a flex item is allowed to become narrower. Use when a compact cluster must
+  stay together while a neighboring item absorbs the available-space constraint.
+- [Tailwind CSS: justify-content](https://tailwindcss.com/docs/justify-content) and
+  [align-items](https://tailwindcss.com/docs/align-items) Official references for main-axis and
+  cross-axis alignment. Use when placing groups across a row or aligning text and icons within a
+  group.
+- [Tailwind CSS: gap](https://tailwindcss.com/docs/gap) Official reference for gutters between flex
+  and grid items. Use when spacing belongs to the relationship between siblings rather than to one
+  child's margin.
+- [Tailwind CSS: color](https://tailwindcss.com/docs/color) Official reference for `text-*`
+  utilities. Use when a parent's inherited text color should wash over both text and an icon that
+  uses `currentColor`.
+- [Tailwind CSS: Detecting classes in source files](https://tailwindcss.com/docs/detecting-classes-in-source-files)
+  Official explanation of why conditional styling must choose complete class-name strings instead of
+  constructing fragments such as `text-${color}`.
+
 ### Python, SQLAlchemy, and Pydantic
 
 - [Python 3.14 tutorial: Classes](https://docs.python.org/3.14/tutorial/classes.html) Primary

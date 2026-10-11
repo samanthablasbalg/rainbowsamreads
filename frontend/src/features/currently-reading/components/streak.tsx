@@ -9,9 +9,13 @@ export function Streak() {
   return (
     <>
       {isPending || isError ? null : (
-        <span role="img" aria-label={`${data.count} day streak`}>
+        <span
+          className="inline-flex items-center justify-between gap-1"
+          role="img"
+          aria-label={`${data.count} day streak`}
+        >
           <HugeiconsIcon icon={Fire02Icon} />
-          {data.count}
+          <span>{data.count}</span>
         </span>
       )}
     </>

@@ -11,14 +11,17 @@ export function CurrentlyReadingList() {
 
   return (
     <section>
-      <div className="mb-4 flex items-baseline justify-between gap-3">
+      <div className="mb-4 flex items-baseline justify-between gap-3 pr-4">
         <h1 className="text-2xl font-semibold">Currently Reading</h1>
-        {engagements.length > 0 && (
-          <p className="text-sm text-muted-foreground">
-            {engagements.length} {engagements.length === 1 ? 'book' : 'books'}
-          </p>
-        )}
-        <Streak />
+        <div className="flex items-center gap-3">
+          {engagements.length > 0 && (
+            <p className="text-sm">
+              {engagements.length} {engagements.length === 1 ? 'book' : 'books'}
+            </p>
+          )}
+          ·
+          <Streak />
+        </div>
       </div>
 
       {engagements.length === 0 ? (
