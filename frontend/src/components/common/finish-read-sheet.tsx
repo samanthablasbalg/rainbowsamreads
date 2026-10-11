@@ -34,6 +34,7 @@ import {
 import { authorNames } from '@/utils/book';
 import { FORMATS } from '@/utils/format';
 import { localIsoDate } from '@/utils/local-date';
+import { getInsightsGetStreakQueryKey } from '@/api/generated/insights/insights';
 
 type FinishableEngagement = Pick<EngagementRead, 'id' | 'formats' | 'cover_url'>;
 
@@ -178,6 +179,9 @@ function useFinishReadForm(book: BookRead, engagement: FinishableEngagement, onC
             queryKey: getBooksListBookEngagementsQueryKey(book.id),
           }),
           queryClient.invalidateQueries({ queryKey: getBooksListBooksQueryKey() }),
+          queryClient.invalidateQueries({
+            queryKey: getInsightsGetStreakQueryKey({ date: localIsoDate() }),
+          }),
         ]);
         onClose();
       },
