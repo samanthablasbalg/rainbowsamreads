@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Drive inherited color from state</title>
+    <link rel="stylesheet" href="../assets/learning.css" />
+    <script src="../assets/quiz.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="lede">Issue #271 · Tailwind CSS · Color lesson</p>
+        <h1>Let state choose a color; let inheritance distribute it</h1>
+        <p>
+          The goal is to make one boolean control a coherent visual state without styling the icon
+          and number separately. This requires three ideas: inherited CSS color, SVG
+          <code>currentColor</code>, and complete Tailwind class names selected by JavaScript.
+        </p>
+      </header>
+
+      <section>
+        <h2><code>text-*</code> sets the CSS <code>color</code> property</h2>
+        <p>
+          Despite the word “text,” a Tailwind class such as <code>text-orange-600</code> sets the
+          CSS <code>color</code> property. That property is inherited: descendants use the parent's
+          computed color unless they set their own.
+        </p>
+        <pre><code>&lt;span className="text-orange-600"&gt;
+  &lt;span&gt;Alert&lt;/span&gt;
+  &lt;span&gt;7&lt;/span&gt;
+&lt;/span&gt;</code></pre>
+        <p>
+          Both inner spans become orange because neither overrides <code>color</code>. The parent is
+          the owner of the shared visual state.
+        </p>
+
+        <form class="quiz" data-quiz>
+          <fieldset>
+            <legend>
+              A label and number must always share one state color. Where is the strongest ownership
+              boundary?
+            </legend>
+            <div class="quiz-options">
+              <label>
+                <input
+                  type="radio"
+                  name="color-owner"
+                  data-correct="true"
+                  data-feedback="Correct. The shared parent owns the state once, and both children inherit it."
+                />
+                Shared parent element
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="color-owner"
+                  data-feedback="That colors only one child and forces another copy of the same decision elsewhere."
+                />
+                Label child element
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="color-owner"
+                  data-feedback="That colors only one child and does not express that the pair shares one state."
+                />
+                Number child element
+              </label>
+            </div>
+          </fieldset>
+          <button type="submit">Check answer</button>
+          <p class="quiz-feedback" data-quiz-feedback aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section>
+        <h2><code>currentColor</code> lets an SVG join the inheritance chain</h2>
+        <p>
+          SVG shapes have properties such as <code>stroke</code> and <code>fill</code>. Setting
+          either to the CSS keyword <code>currentColor</code> tells the shape to use the element's
+          computed <code>color</code> value.
+        </p>
+        <pre><code>&lt;span className="text-orange-600"&gt;
+  &lt;svg&gt;
+    &lt;path stroke="currentColor" /&gt;
+  &lt;/svg&gt;
+  &lt;span&gt;7&lt;/span&gt;
+&lt;/span&gt;</code></pre>
+        <p>
+          The text inherits <code>color</code> normally. The path explicitly asks for that same
+          value through <code>currentColor</code>. One class can therefore tint an icon and adjacent
+          text as a unit.
+        </p>
+        <p>
+          This is not an assumption about all icon libraries. In this repository,
+          <code>HugeiconsIcon</code> defaults its color to <code>currentColor</code>, and the
+          <code>Fire02Icon</code> paths use <code>stroke: currentColor</code>. That is the evidence
+          that inheritance will work here.
+        </p>
+
+        <div class="lab tone-lab">
+          <h3>Try the inheritance chain</h3>
+          <label>
+            <input type="checkbox" />
+            Active state
+          </label>
+          <div class="tone-sample">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M12 22C16.1 22 19.5 18.6 19.5 14.5C19.5 11.5 18 9.5 16.5 8C16.5 10.5 15 11.5 13.5 11C11 10.2 14 5 10.5 2C10.5 7 4.5 8.5 4.5 14.5C4.5 18.6 7.9 22 12 22Z"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+            </svg>
+            <span>7</span>
+          </div>
+          <p>
+            The checkbox changes only the parent's <code>color</code>. The SVG stroke and numeral
+            follow through two different mechanisms: <code>currentColor</code> and normal text
+            inheritance.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Foreground tint and background wash are different operations</h2>
+        <p>
+          A <code>text-*</code> utility changes the inherited foreground color. A
+          <code>bg-*</code> utility paints the element's box. If a design calls for a tinted pill,
+          it may use both: background on the wrapper, foreground for its contents, plus padding and
+          a radius to make the painted box visible.
+        </p>
+        <p>
+          Decide which visual property communicates the state before choosing utilities. “Make the
+          flame lit” may mean changing the foreground only. “Give the whole badge a wash” means the
+          box background is also part of the state. These should not be conflated just because both
+          are colors.
+        </p>
+      </section>
+
+      <section>
+        <h2>React chooses the class; Tailwind supplies its CSS</h2>
+        <p>
+          Tailwind has no knowledge of <code>logged_today</code>. React evaluates ordinary
+          JavaScript during rendering and chooses a class string. Tailwind has already generated the
+          CSS for class names it found in the source.
+        </p>
+        <pre><code>const tone = enabled ? 'text-orange-600' : 'text-stone-500';
+
+return &lt;span className={tone}&gt;...&lt;/span&gt;;</code></pre>
+        <p>
+          Keep each alternative as a complete class name. Tailwind scans source files as plain text;
+          it does not evaluate template-string fragments to discover every possible result.
+        </p>
+
+        <pre><code>A. on ? 'text-orange-600' : 'text-stone-500'
+B. `text-${on ? 'orange' : 'stone'}-600`
+C. { color: on ? 'orange' : 'gray' }</code></pre>
+
+        <form class="quiz" data-quiz>
+          <fieldset>
+            <legend>Which version gives Tailwind two complete, detectable class names?</legend>
+            <div class="quiz-options">
+              <label>
+                <input
+                  type="radio"
+                  name="class-detection"
+                  data-correct="true"
+                  data-feedback="Correct. Both complete utility names occur literally in the source."
+                />
+                Example A
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="class-detection"
+                  data-feedback="This constructs the class from fragments, so neither complete result is visible to Tailwind's scanner."
+                />
+                Example B
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="class-detection"
+                  data-feedback="This changes an inline style, so it bypasses the project's Tailwind theme tokens rather than selecting a utility."
+                />
+                Example C
+              </label>
+            </div>
+          </fieldset>
+          <button type="submit">Check answer</button>
+          <p class="quiz-feedback" data-quiz-feedback aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section>
+        <h2>Theme tokens are the project's color vocabulary</h2>
+        <p>
+          This repository maps CSS variables to Tailwind color utilities in
+          <code>frontend/src/styles.css</code>. A declaration such as
+          <code>--color-example: var(--example)</code> makes utilities including
+          <code>text-example</code> and <code>bg-example</code> available.
+        </p>
+        <p>
+          The variable can change between <code>:root</code> and <code>.dark</code> while the
+          utility name remains stable. Choose a project token by its design role rather than copying
+          a raw hex value into the component. Then inspect both themes; a foreground/background pair
+          that works in light mode is not automatically legible in dark mode.
+        </p>
+      </section>
+
+      <section>
+        <h2>Transfer it to the streak</h2>
+        <p>Apply the model without copying a finished component:</p>
+        <ol class="checklist">
+          <li>Identify the lowest element that contains both the icon and count.</li>
+          <li>
+            Verify from the rendered SVG or library source that the icon uses
+            <code>currentColor</code>.
+          </li>
+          <li>Find the repository color tokens representing the lit and unlit visual roles.</li>
+          <li>Map each <code>logged_today</code> value to one complete Tailwind class string.</li>
+          <li>
+            Put that state class on the owner from step 1 and avoid repeating it on the children.
+          </li>
+          <li>
+            Check both states and both color schemes before deciding whether foreground is enough.
+          </li>
+        </ol>
+        <p>Bring back the component and answer:</p>
+        <pre><code>React's job is: ___
+Tailwind's job is: ___
+CSS inheritance's job is: ___
+currentColor's job is: ___</code></pre>
+        <p>
+          I will review those four boundaries and the implementation together. Ask me for a hint or
+          a smaller experiment if one of the mechanisms is still unclear.
+        </p>
+      </section>
+
+      <footer>
+        <p>
+          Primary sources:
+          <a href="https://tailwindcss.com/docs/color">Tailwind color</a>,
+          <a href="https://tailwindcss.com/docs/background-color">background color</a>, and
+          <a href="https://tailwindcss.com/docs/detecting-classes-in-source-files"
+            >detecting classes in source files</a
+          >. Repository baseline: <code>d6434ae8</code>.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
