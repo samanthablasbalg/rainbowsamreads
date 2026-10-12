@@ -53,6 +53,7 @@ export default defineConfig({
           maxWorkers: 3,
           api: {
             host: process.env.VITEST_BROWSER_HOST,
+            allowExec: false,
           },
           browser: {
             enabled: true,

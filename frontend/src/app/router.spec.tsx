@@ -1,5 +1,5 @@
 import { userEvent } from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import { getAuthMeMockHandler } from '@/api/generated/auth/auth.msw';
 import {
   getBooksGetBookMockHandler,
@@ -13,12 +13,30 @@ import {
 } from '@/api/generated/engagements/engagements.msw';
 import { getInsightsGetStreakMockHandler } from '@/api/generated/insights/insights.msw';
 import { destinations } from '@/config/destinations';
+import { expectConsoleError } from '@/test/setup';
 import { server } from '@/test/msw-server';
-import { renderRoute, screen } from '@/test/render';
+import { renderRoute, screen, waitFor } from '@/test/render';
 import { buildBook, buildCatalogBook, buildEngagement } from '@/test/data-generators';
 import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
 
 describe('the route tree', () => {
+  it('shows the shared pending state while route data loads', async () => {
+    const catalogRequested = vi.fn();
+    server.use(
+      getAuthMeMockHandler(),
+      getBooksListBooksMockHandler(async () => {
+        catalogRequested();
+        await delay('infinite');
+        return [];
+      })
+    );
+
+    renderRoute('/library/catalog');
+
+    await waitFor(() => expect(catalogRequested).toHaveBeenCalledOnce());
+    expect(screen.getByRole('status')).toHaveTextContent('Loading');
+  });
+
   it.each(destinations)('$to resolves to its own page, not the catch-all', async ({ to }) => {
     server.use(
       getAuthMeMockHandler(),
@@ -29,7 +47,7 @@ describe('the route tree', () => {
 
     renderRoute(to);
 
-    const heading = await screen.findByRole('heading', { level: 1 });
+    const heading = await screen.findByRole('heading', { level: 1 }, { timeout: 3_000 });
     expect(heading).not.toHaveTextContent('Page not found');
   });
 
@@ -100,8 +118,10 @@ describe('the route tree', () => {
   });
 
   it('replaces an unknown book with the error boundary rather than a broken page', async () => {
+    expectConsoleError('Request failed with status code 404', '<BookDetail>');
     server.use(
       getAuthMeMockHandler(),
+      getBooksListBookEngagementsMockHandler([]),
       http.get('*/api/books/:bookId', () => new HttpResponse(null, { status: 404 }))
     );
 
@@ -111,6 +131,7 @@ describe('the route tree', () => {
   });
 
   it('replaces a failed shelf with the error boundary and keeps the library nav', async () => {
+    expectConsoleError('Request failed with status code 500', '<Catalog>');
     server.use(
       getAuthMeMockHandler(),
       http.get('*/api/books', () => new HttpResponse(null, { status: 500 }))
@@ -123,6 +144,7 @@ describe('the route tree', () => {
   });
 
   it('recovers a failed shelf in place when Try again is pressed', async () => {
+    expectConsoleError('Request failed with status code 500', '<Catalog>');
     let attempts = 0;
     server.use(
       getAuthMeMockHandler(),

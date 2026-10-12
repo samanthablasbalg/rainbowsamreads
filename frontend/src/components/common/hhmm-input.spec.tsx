@@ -98,7 +98,7 @@ describe('HhmmInput', () => {
   it('puts the caret at the end when the field takes focus', () => {
     const field = renderInput('02:05');
 
-    field.focus();
+    act(() => field.focus()); // Focus moves the caret through React state.
 
     expect(field).toHaveFocus();
     expect(field.selectionStart).toBe(5);

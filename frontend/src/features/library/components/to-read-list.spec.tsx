@@ -27,12 +27,4 @@ describe('ToReadList', () => {
 
     expect(await screen.findByText('Nothing to read yet')).toBeVisible();
   });
-
-  it('shows a pending state while the list loads', () => {
-    server.use(getEngagementsListEngagementsMockHandler([]));
-
-    render(<ToReadList />);
-
-    expect(screen.getByRole('status')).toHaveTextContent('Loading');
-  });
 });

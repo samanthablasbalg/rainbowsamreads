@@ -1,6 +1,8 @@
 import { HttpResponse, delay, http } from 'msw';
 import { getAuthMeMockHandler } from '@/api/generated/auth/auth.msw';
 import { getEngagementsListEngagementsMockHandler } from '@/api/generated/engagements/engagements.msw';
+import { getInsightsGetStreakMockHandler } from '@/api/generated/insights/insights.msw';
+import { expectConsoleError } from '@/test/setup';
 import { server } from '@/test/msw-server';
 import { renderRoute, screen } from '@/test/render';
 
@@ -36,7 +38,11 @@ describe('the route guards', () => {
   });
 
   it('sends the landing page to the app when already signed in', async () => {
-    server.use(getAuthMeMockHandler(), getEngagementsListEngagementsMockHandler());
+    server.use(
+      getAuthMeMockHandler(),
+      getEngagementsListEngagementsMockHandler(),
+      getInsightsGetStreakMockHandler()
+    );
 
     renderRoute('/');
 
@@ -53,6 +59,11 @@ describe('the route guards', () => {
   });
 
   it('shows the error page, not the landing page, when the session request fails', async () => {
+    expectConsoleError('Request failed with status code 500', '<RequireAuth>');
+    expectConsoleError(
+      'React Router caught the following error during render',
+      'Request failed with status code 500'
+    );
     server.use(sessionBroken);
 
     renderRoute('/home');

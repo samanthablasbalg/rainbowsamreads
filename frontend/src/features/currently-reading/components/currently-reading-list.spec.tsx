@@ -22,7 +22,10 @@ function reading(title: string) {
 
 describe('CurrentlyReadingList', () => {
   it('renders a card per engagement in the order the API returns them', async () => {
-    server.use(getEngagementsListEngagementsMockHandler([reading('Dune'), reading('Piranesi')]));
+    server.use(
+      getEngagementsListEngagementsMockHandler([reading('Dune'), reading('Piranesi')]),
+      getInsightsGetStreakMockHandler()
+    );
 
     render(<CurrentlyReadingList />);
 
@@ -81,13 +84,5 @@ describe('CurrentlyReadingList', () => {
       expect(queryClient.getQueryState(queryKey)?.status).toBe('error');
     });
     expect(screen.queryByText('·')).not.toBeInTheDocument();
-  });
-
-  it('shows a pending state while the list loads', () => {
-    server.use(getEngagementsListEngagementsMockHandler([]));
-
-    render(<CurrentlyReadingList />);
-
-    expect(screen.getByRole('status')).toHaveTextContent('Loading');
   });
 });
