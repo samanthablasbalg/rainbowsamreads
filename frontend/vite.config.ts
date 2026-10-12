@@ -51,12 +51,12 @@ export default defineConfig({
           // Must live on the project: Vitest reads project.config.maxWorkers for the
           // browser pool, so `--maxWorkers` on the CLI is silently ignored.
           maxWorkers: 3,
+          api: {
+            host: process.env.VITEST_BROWSER_HOST,
+          },
           browser: {
             enabled: true,
             headless: true,
-            api: {
-              host: process.env.VITEST_BROWSER_HOST,
-            },
             provider: playwright({
               connectOptions: {
                 wsEndpoint: 'ws://browsers:5000/',

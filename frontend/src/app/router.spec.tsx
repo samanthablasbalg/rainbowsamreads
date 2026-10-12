@@ -11,6 +11,7 @@ import {
   getEngagementsListEngagementsMockHandler,
   getEngagementsListProgressLogsMockHandler,
 } from '@/api/generated/engagements/engagements.msw';
+import { getInsightsGetStreakMockHandler } from '@/api/generated/insights/insights.msw';
 import { destinations } from '@/config/destinations';
 import { server } from '@/test/msw-server';
 import { renderRoute, screen } from '@/test/render';
@@ -22,7 +23,8 @@ describe('the route tree', () => {
     server.use(
       getAuthMeMockHandler(),
       getBooksListBooksMockHandler(),
-      getEngagementsListEngagementsMockHandler()
+      getEngagementsListEngagementsMockHandler(),
+      getInsightsGetStreakMockHandler()
     );
 
     renderRoute(to);
