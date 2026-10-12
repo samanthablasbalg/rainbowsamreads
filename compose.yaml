@@ -368,7 +368,7 @@ services:
       - ${HOME}/.claude:/root/.claude
       # This must not be ~/.codex: that belongs to the macOS Codex app and contains
       # MCP commands pointing into /Applications. The CLI gets an isolated Linux
-      # home, while scripts/codex keeps its skill links pointed at .claude/skills.
+      # home; project skills travel with each checkout under .agents/skills.
       - ${HOME}/.codex-docker:/root/.codex-docker
       - ${HOME}/.gitconfig:/root/.gitconfig
       # Not covered by .gitconfig above. With core.excludesFile unset, git reads

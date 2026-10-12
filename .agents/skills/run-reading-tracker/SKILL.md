@@ -119,7 +119,7 @@ test commands and reports results differently; follow `.claude/hooks/test-comman
   and the harness above is the whole interface. A one-off script that launches its own browser is
   how this goes wrong — it ends in `chromium.launch()` failing, and then in installing system
   packages, which is forbidden.
-- **Writing e2e tests is a different job** with harder rules: `.claude/skills/playwright-new-test/`.
+- **Writing e2e tests is a different job** with harder rules: `.agents/skills/playwright-new-test/`.
 
 ## Troubleshooting
 

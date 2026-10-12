@@ -10,34 +10,10 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
-# Codex expects each skill directly under its own skills directory. Most canonical copies live in
-# .claude/skills; Codex-specific skills live in .codex/skills. Link both on every launch and refuse
-# to replace a real Codex skill with the same name.
-sync_skills='set -eu
-skills_dir="$CODEX_HOME/skills"
-mkdir -p "$skills_dir"
-for skill_root in "$PWD"/.claude/skills "$PWD"/.codex/skills; do
-  [ -d "$skill_root" ] || continue
-  for skill in "$skill_root"/*; do
-    [ -d "$skill" ] || continue
-    link="$skills_dir/${skill##*/}"
-    if [ -L "$link" ] && [ "$(readlink "$link")" = "$skill" ]; then
-      continue
-    fi
-    if [ -e "$link" ] || [ -L "$link" ]; then
-      echo "Codex skill collision: $link is not this project'"'"'s link." >&2
-      exit 1
-    fi
-    ln -s "$skill" "$link"
-  done
-done
-exec codex "$@"'
-
 # Idempotent and near-instant once running. OPENAI_API_KEY is optional: interactive
 # `codex login` inside the container persists through the mounted config directory.
 # Keep approval prompts, but disable Codex's nested Linux sandbox: Docker already
 # bounds this process and forbids the user namespace bubblewrap needs.
 docker compose up workspace -d >/dev/null
-exec docker compose exec -e OPENAI_API_KEY workspace \
-  sh -c "$sync_skills" -- \
+exec docker compose exec -e OPENAI_API_KEY workspace codex \
   --no-daemon --sandbox danger-full-access --ask-for-approval on-request "$@"

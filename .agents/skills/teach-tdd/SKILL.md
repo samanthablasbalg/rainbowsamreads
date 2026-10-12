@@ -13,8 +13,8 @@ Run a live feature-development session in which the user is the primary driver.
 
 Before guiding the work, read these files completely:
 
-- `.claude/skills/teach/SKILL.md`
-- `.claude/skills/tdd/SKILL.md`, plus its references when that skill requires them
+- `.agents/skills/teach/SKILL.md`
+- `.agents/skills/tdd/SKILL.md`, plus its references when that skill requires them
 - `MISSION.md`
 - `NOTES.md`, if it exists
 
