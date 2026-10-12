@@ -159,7 +159,7 @@ services:
   # frontend. Not just for e2e — a human hitting the published port gets the
   # same single-origin view.
   proxy:
-    image: caddy:2.11.4-alpine
+    image: caddy:2.11.7-alpine
     volumes:
       - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
     ports:
