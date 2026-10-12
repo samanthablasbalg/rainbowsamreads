@@ -4,7 +4,12 @@
  * Reading Tracker
  * OpenAPI spec version: 0.1.0
  */
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import {
+  queryOptions as queryOptionsBuilder,
+  useMutation,
+  useQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -76,6 +81,9 @@ export const engagementsWriteEngagement = (
   );
 };
 
+export const getEngagementsWriteEngagementMutationKey = () =>
+  ['engagementsWriteEngagement'] as const;
+
 export const getEngagementsWriteEngagementMutationOptions = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown,
@@ -83,17 +91,17 @@ export const getEngagementsWriteEngagementMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof engagementsWriteEngagement>>,
     TError,
-    { data: EngagementWrite },
+    EngagementsWriteEngagementMutationVariables,
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof engagementsWriteEngagement>>,
   TError,
-  { data: EngagementWrite },
+  EngagementsWriteEngagementMutationVariables,
   TContext
 > => {
-  const mutationKey = ['engagementsWriteEngagement'];
+  const mutationKey = getEngagementsWriteEngagementMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
@@ -102,7 +110,7 @@ export const getEngagementsWriteEngagementMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof engagementsWriteEngagement>>,
-    { data: EngagementWrite }
+    EngagementsWriteEngagementMutationVariables
   > = (props) => {
     const { data } = props ?? {};
 
@@ -117,6 +125,7 @@ export type EngagementsWriteEngagementMutationResult = NonNullable<
 >;
 export type EngagementsWriteEngagementMutationBody = EngagementWrite;
 export type EngagementsWriteEngagementMutationError = ErrorType<HTTPValidationError>;
+export type EngagementsWriteEngagementMutationVariables = { data: EngagementWrite };
 
 /**
  * @summary Write Engagement
@@ -129,7 +138,7 @@ export const useEngagementsWriteEngagement = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof engagementsWriteEngagement>>,
       TError,
-      { data: EngagementWrite },
+      EngagementsWriteEngagementMutationVariables,
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -138,7 +147,7 @@ export const useEngagementsWriteEngagement = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof engagementsWriteEngagement>>,
   TError,
-  { data: EngagementWrite },
+  EngagementsWriteEngagementMutationVariables,
   TContext
 > => {
   return useMutation(getEngagementsWriteEngagementMutationOptions(options), queryClient);
@@ -296,11 +305,17 @@ export const getEngagementsListEngagementsSuspenseQueryOptions = <
     signal,
   }) => engagementsListEngagements(params, requestOptions, signal);
 
-  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+  return queryOptionsBuilder({
+    queryKey,
+    ...queryOptions,
+    queryFn: queryOptions?.queryFn ?? queryFn,
+  }) as UseSuspenseQueryOptions<
     Awaited<ReturnType<typeof engagementsListEngagements>>,
     TError,
     TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  > & { queryKey: DataTag<QueryKey, TData, TError> } & {
+    throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never };
+  };
 };
 
 export type EngagementsListEngagementsSuspenseQueryResult = NonNullable<
@@ -395,6 +410,9 @@ export const engagementsUpdateEngagementDates = (
   );
 };
 
+export const getEngagementsUpdateEngagementDatesMutationKey = () =>
+  ['engagementsUpdateEngagementDates'] as const;
+
 export const getEngagementsUpdateEngagementDatesMutationOptions = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown,
@@ -402,17 +420,17 @@ export const getEngagementsUpdateEngagementDatesMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>,
     TError,
-    { engagementId: string; data: EngagementDatesUpdate },
+    EngagementsUpdateEngagementDatesMutationVariables,
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>,
   TError,
-  { engagementId: string; data: EngagementDatesUpdate },
+  EngagementsUpdateEngagementDatesMutationVariables,
   TContext
 > => {
-  const mutationKey = ['engagementsUpdateEngagementDates'];
+  const mutationKey = getEngagementsUpdateEngagementDatesMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
@@ -421,7 +439,7 @@ export const getEngagementsUpdateEngagementDatesMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>,
-    { engagementId: string; data: EngagementDatesUpdate }
+    EngagementsUpdateEngagementDatesMutationVariables
   > = (props) => {
     const { engagementId, data } = props ?? {};
 
@@ -436,6 +454,10 @@ export type EngagementsUpdateEngagementDatesMutationResult = NonNullable<
 >;
 export type EngagementsUpdateEngagementDatesMutationBody = EngagementDatesUpdate;
 export type EngagementsUpdateEngagementDatesMutationError = ErrorType<HTTPValidationError>;
+export type EngagementsUpdateEngagementDatesMutationVariables = {
+  engagementId: string;
+  data: EngagementDatesUpdate;
+};
 
 /**
  * @summary Update Engagement Dates
@@ -448,7 +470,7 @@ export const useEngagementsUpdateEngagementDates = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>,
       TError,
-      { engagementId: string; data: EngagementDatesUpdate },
+      EngagementsUpdateEngagementDatesMutationVariables,
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -457,7 +479,7 @@ export const useEngagementsUpdateEngagementDates = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof engagementsUpdateEngagementDates>>,
   TError,
-  { engagementId: string; data: EngagementDatesUpdate },
+  EngagementsUpdateEngagementDatesMutationVariables,
   TContext
 > => {
   return useMutation(getEngagementsUpdateEngagementDatesMutationOptions(options), queryClient);
@@ -616,11 +638,17 @@ export const getEngagementsGetEngagementSuspenseQueryOptions = <
     signal,
   }) => engagementsGetEngagement(engagementId, requestOptions, signal);
 
-  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+  return queryOptionsBuilder({
+    queryKey,
+    ...queryOptions,
+    queryFn: queryOptions?.queryFn ?? queryFn,
+  }) as UseSuspenseQueryOptions<
     Awaited<ReturnType<typeof engagementsGetEngagement>>,
     TError,
     TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  > & { queryKey: DataTag<QueryKey, TData, TError> } & {
+    throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never };
+  };
 };
 
 export type EngagementsGetEngagementSuspenseQueryResult = NonNullable<
@@ -708,6 +736,9 @@ export const engagementsDeleteEngagement = (
   );
 };
 
+export const getEngagementsDeleteEngagementMutationKey = () =>
+  ['engagementsDeleteEngagement'] as const;
+
 export const getEngagementsDeleteEngagementMutationOptions = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown,
@@ -715,17 +746,17 @@ export const getEngagementsDeleteEngagementMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof engagementsDeleteEngagement>>,
     TError,
-    { engagementId: string },
+    EngagementsDeleteEngagementMutationVariables,
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof engagementsDeleteEngagement>>,
   TError,
-  { engagementId: string },
+  EngagementsDeleteEngagementMutationVariables,
   TContext
 > => {
-  const mutationKey = ['engagementsDeleteEngagement'];
+  const mutationKey = getEngagementsDeleteEngagementMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
@@ -734,7 +765,7 @@ export const getEngagementsDeleteEngagementMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof engagementsDeleteEngagement>>,
-    { engagementId: string }
+    EngagementsDeleteEngagementMutationVariables
   > = (props) => {
     const { engagementId } = props ?? {};
 
@@ -749,6 +780,7 @@ export type EngagementsDeleteEngagementMutationResult = NonNullable<
 >;
 
 export type EngagementsDeleteEngagementMutationError = ErrorType<HTTPValidationError>;
+export type EngagementsDeleteEngagementMutationVariables = { engagementId: string };
 
 /**
  * @summary Delete Engagement
@@ -761,7 +793,7 @@ export const useEngagementsDeleteEngagement = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof engagementsDeleteEngagement>>,
       TError,
-      { engagementId: string },
+      EngagementsDeleteEngagementMutationVariables,
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -770,7 +802,7 @@ export const useEngagementsDeleteEngagement = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof engagementsDeleteEngagement>>,
   TError,
-  { engagementId: string },
+  EngagementsDeleteEngagementMutationVariables,
   TContext
 > => {
   return useMutation(getEngagementsDeleteEngagementMutationOptions(options), queryClient);
@@ -796,6 +828,8 @@ export const engagementsLogProgress = (
   );
 };
 
+export const getEngagementsLogProgressMutationKey = () => ['engagementsLogProgress'] as const;
+
 export const getEngagementsLogProgressMutationOptions = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown,
@@ -803,17 +837,17 @@ export const getEngagementsLogProgressMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof engagementsLogProgress>>,
     TError,
-    { engagementId: string; data: ProgressLogCreate },
+    EngagementsLogProgressMutationVariables,
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof engagementsLogProgress>>,
   TError,
-  { engagementId: string; data: ProgressLogCreate },
+  EngagementsLogProgressMutationVariables,
   TContext
 > => {
-  const mutationKey = ['engagementsLogProgress'];
+  const mutationKey = getEngagementsLogProgressMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
@@ -822,7 +856,7 @@ export const getEngagementsLogProgressMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof engagementsLogProgress>>,
-    { engagementId: string; data: ProgressLogCreate }
+    EngagementsLogProgressMutationVariables
   > = (props) => {
     const { engagementId, data } = props ?? {};
 
@@ -837,6 +871,10 @@ export type EngagementsLogProgressMutationResult = NonNullable<
 >;
 export type EngagementsLogProgressMutationBody = ProgressLogCreate;
 export type EngagementsLogProgressMutationError = ErrorType<HTTPValidationError>;
+export type EngagementsLogProgressMutationVariables = {
+  engagementId: string;
+  data: ProgressLogCreate;
+};
 
 /**
  * @summary Log Progress
@@ -849,7 +887,7 @@ export const useEngagementsLogProgress = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof engagementsLogProgress>>,
       TError,
-      { engagementId: string; data: ProgressLogCreate },
+      EngagementsLogProgressMutationVariables,
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -858,7 +896,7 @@ export const useEngagementsLogProgress = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof engagementsLogProgress>>,
   TError,
-  { engagementId: string; data: ProgressLogCreate },
+  EngagementsLogProgressMutationVariables,
   TContext
 > => {
   return useMutation(getEngagementsLogProgressMutationOptions(options), queryClient);
@@ -1021,11 +1059,17 @@ export const getEngagementsListProgressLogsSuspenseQueryOptions = <
     signal,
   }) => engagementsListProgressLogs(engagementId, requestOptions, signal);
 
-  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+  return queryOptionsBuilder({
+    queryKey,
+    ...queryOptions,
+    queryFn: queryOptions?.queryFn ?? queryFn,
+  }) as UseSuspenseQueryOptions<
     Awaited<ReturnType<typeof engagementsListProgressLogs>>,
     TError,
     TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  > & { queryKey: DataTag<QueryKey, TData, TError> } & {
+    throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never };
+  };
 };
 
 export type EngagementsListProgressLogsSuspenseQueryResult = NonNullable<
@@ -1137,6 +1181,9 @@ export const engagementsUpdateProgressLog = (
   );
 };
 
+export const getEngagementsUpdateProgressLogMutationKey = () =>
+  ['engagementsUpdateProgressLog'] as const;
+
 export const getEngagementsUpdateProgressLogMutationOptions = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown,
@@ -1144,17 +1191,17 @@ export const getEngagementsUpdateProgressLogMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof engagementsUpdateProgressLog>>,
     TError,
-    { engagementId: string; logId: string; data: ProgressLogUpdate },
+    EngagementsUpdateProgressLogMutationVariables,
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof engagementsUpdateProgressLog>>,
   TError,
-  { engagementId: string; logId: string; data: ProgressLogUpdate },
+  EngagementsUpdateProgressLogMutationVariables,
   TContext
 > => {
-  const mutationKey = ['engagementsUpdateProgressLog'];
+  const mutationKey = getEngagementsUpdateProgressLogMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
@@ -1163,7 +1210,7 @@ export const getEngagementsUpdateProgressLogMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof engagementsUpdateProgressLog>>,
-    { engagementId: string; logId: string; data: ProgressLogUpdate }
+    EngagementsUpdateProgressLogMutationVariables
   > = (props) => {
     const { engagementId, logId, data } = props ?? {};
 
@@ -1178,6 +1225,11 @@ export type EngagementsUpdateProgressLogMutationResult = NonNullable<
 >;
 export type EngagementsUpdateProgressLogMutationBody = ProgressLogUpdate;
 export type EngagementsUpdateProgressLogMutationError = ErrorType<HTTPValidationError>;
+export type EngagementsUpdateProgressLogMutationVariables = {
+  engagementId: string;
+  logId: string;
+  data: ProgressLogUpdate;
+};
 
 /**
  * @summary Update Progress Log
@@ -1190,7 +1242,7 @@ export const useEngagementsUpdateProgressLog = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof engagementsUpdateProgressLog>>,
       TError,
-      { engagementId: string; logId: string; data: ProgressLogUpdate },
+      EngagementsUpdateProgressLogMutationVariables,
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -1199,7 +1251,7 @@ export const useEngagementsUpdateProgressLog = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof engagementsUpdateProgressLog>>,
   TError,
-  { engagementId: string; logId: string; data: ProgressLogUpdate },
+  EngagementsUpdateProgressLogMutationVariables,
   TContext
 > => {
   return useMutation(getEngagementsUpdateProgressLogMutationOptions(options), queryClient);
@@ -1219,6 +1271,9 @@ export const engagementsDeleteProgressLog = (
   );
 };
 
+export const getEngagementsDeleteProgressLogMutationKey = () =>
+  ['engagementsDeleteProgressLog'] as const;
+
 export const getEngagementsDeleteProgressLogMutationOptions = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown,
@@ -1226,17 +1281,17 @@ export const getEngagementsDeleteProgressLogMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof engagementsDeleteProgressLog>>,
     TError,
-    { engagementId: string; logId: string },
+    EngagementsDeleteProgressLogMutationVariables,
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof engagementsDeleteProgressLog>>,
   TError,
-  { engagementId: string; logId: string },
+  EngagementsDeleteProgressLogMutationVariables,
   TContext
 > => {
-  const mutationKey = ['engagementsDeleteProgressLog'];
+  const mutationKey = getEngagementsDeleteProgressLogMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
@@ -1245,7 +1300,7 @@ export const getEngagementsDeleteProgressLogMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof engagementsDeleteProgressLog>>,
-    { engagementId: string; logId: string }
+    EngagementsDeleteProgressLogMutationVariables
   > = (props) => {
     const { engagementId, logId } = props ?? {};
 
@@ -1260,6 +1315,7 @@ export type EngagementsDeleteProgressLogMutationResult = NonNullable<
 >;
 
 export type EngagementsDeleteProgressLogMutationError = ErrorType<HTTPValidationError>;
+export type EngagementsDeleteProgressLogMutationVariables = { engagementId: string; logId: string };
 
 /**
  * @summary Delete Progress Log
@@ -1272,7 +1328,7 @@ export const useEngagementsDeleteProgressLog = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof engagementsDeleteProgressLog>>,
       TError,
-      { engagementId: string; logId: string },
+      EngagementsDeleteProgressLogMutationVariables,
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -1281,7 +1337,7 @@ export const useEngagementsDeleteProgressLog = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof engagementsDeleteProgressLog>>,
   TError,
-  { engagementId: string; logId: string },
+  EngagementsDeleteProgressLogMutationVariables,
   TContext
 > => {
   return useMutation(getEngagementsDeleteProgressLogMutationOptions(options), queryClient);
@@ -1440,11 +1496,17 @@ export const getEngagementsListBindingsSuspenseQueryOptions = <
     signal,
   }) => engagementsListBindings(engagementId, requestOptions, signal);
 
-  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+  return queryOptionsBuilder({
+    queryKey,
+    ...queryOptions,
+    queryFn: queryOptions?.queryFn ?? queryFn,
+  }) as UseSuspenseQueryOptions<
     Awaited<ReturnType<typeof engagementsListBindings>>,
     TError,
     TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  > & { queryKey: DataTag<QueryKey, TData, TError> } & {
+    throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never };
+  };
 };
 
 export type EngagementsListBindingsSuspenseQueryResult = NonNullable<
@@ -1533,6 +1595,8 @@ export const engagementsDeleteBinding = (
   );
 };
 
+export const getEngagementsDeleteBindingMutationKey = () => ['engagementsDeleteBinding'] as const;
+
 export const getEngagementsDeleteBindingMutationOptions = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown,
@@ -1540,17 +1604,17 @@ export const getEngagementsDeleteBindingMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof engagementsDeleteBinding>>,
     TError,
-    { engagementId: string; editionId: string },
+    EngagementsDeleteBindingMutationVariables,
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof engagementsDeleteBinding>>,
   TError,
-  { engagementId: string; editionId: string },
+  EngagementsDeleteBindingMutationVariables,
   TContext
 > => {
-  const mutationKey = ['engagementsDeleteBinding'];
+  const mutationKey = getEngagementsDeleteBindingMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
@@ -1559,7 +1623,7 @@ export const getEngagementsDeleteBindingMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof engagementsDeleteBinding>>,
-    { engagementId: string; editionId: string }
+    EngagementsDeleteBindingMutationVariables
   > = (props) => {
     const { engagementId, editionId } = props ?? {};
 
@@ -1574,6 +1638,7 @@ export type EngagementsDeleteBindingMutationResult = NonNullable<
 >;
 
 export type EngagementsDeleteBindingMutationError = ErrorType<HTTPValidationError>;
+export type EngagementsDeleteBindingMutationVariables = { engagementId: string; editionId: string };
 
 /**
  * @summary Delete Binding
@@ -1586,7 +1651,7 @@ export const useEngagementsDeleteBinding = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof engagementsDeleteBinding>>,
       TError,
-      { engagementId: string; editionId: string },
+      EngagementsDeleteBindingMutationVariables,
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -1595,7 +1660,7 @@ export const useEngagementsDeleteBinding = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof engagementsDeleteBinding>>,
   TError,
-  { engagementId: string; editionId: string },
+  EngagementsDeleteBindingMutationVariables,
   TContext
 > => {
   return useMutation(getEngagementsDeleteBindingMutationOptions(options), queryClient);
@@ -1621,6 +1686,8 @@ export const engagementsUpsertReview = (
   );
 };
 
+export const getEngagementsUpsertReviewMutationKey = () => ['engagementsUpsertReview'] as const;
+
 export const getEngagementsUpsertReviewMutationOptions = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown,
@@ -1628,17 +1695,17 @@ export const getEngagementsUpsertReviewMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof engagementsUpsertReview>>,
     TError,
-    { engagementId: string; data: ReviewUpsert },
+    EngagementsUpsertReviewMutationVariables,
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof engagementsUpsertReview>>,
   TError,
-  { engagementId: string; data: ReviewUpsert },
+  EngagementsUpsertReviewMutationVariables,
   TContext
 > => {
-  const mutationKey = ['engagementsUpsertReview'];
+  const mutationKey = getEngagementsUpsertReviewMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
@@ -1647,7 +1714,7 @@ export const getEngagementsUpsertReviewMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof engagementsUpsertReview>>,
-    { engagementId: string; data: ReviewUpsert }
+    EngagementsUpsertReviewMutationVariables
   > = (props) => {
     const { engagementId, data } = props ?? {};
 
@@ -1662,6 +1729,7 @@ export type EngagementsUpsertReviewMutationResult = NonNullable<
 >;
 export type EngagementsUpsertReviewMutationBody = ReviewUpsert;
 export type EngagementsUpsertReviewMutationError = ErrorType<HTTPValidationError>;
+export type EngagementsUpsertReviewMutationVariables = { engagementId: string; data: ReviewUpsert };
 
 /**
  * @summary Upsert Review
@@ -1674,7 +1742,7 @@ export const useEngagementsUpsertReview = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof engagementsUpsertReview>>,
       TError,
-      { engagementId: string; data: ReviewUpsert },
+      EngagementsUpsertReviewMutationVariables,
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -1683,7 +1751,7 @@ export const useEngagementsUpsertReview = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof engagementsUpsertReview>>,
   TError,
-  { engagementId: string; data: ReviewUpsert },
+  EngagementsUpsertReviewMutationVariables,
   TContext
 > => {
   return useMutation(getEngagementsUpsertReviewMutationOptions(options), queryClient);

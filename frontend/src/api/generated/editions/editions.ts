@@ -4,7 +4,12 @@
  * Reading Tracker
  * OpenAPI spec version: 0.1.0
  */
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import {
+  queryOptions as queryOptionsBuilder,
+  useMutation,
+  useQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -69,6 +74,8 @@ export const editionsCreateEdition = (
   );
 };
 
+export const getEditionsCreateEditionMutationKey = () => ['editionsCreateEdition'] as const;
+
 export const getEditionsCreateEditionMutationOptions = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown,
@@ -76,17 +83,17 @@ export const getEditionsCreateEditionMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof editionsCreateEdition>>,
     TError,
-    { data: EditionCreate },
+    EditionsCreateEditionMutationVariables,
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof editionsCreateEdition>>,
   TError,
-  { data: EditionCreate },
+  EditionsCreateEditionMutationVariables,
   TContext
 > => {
-  const mutationKey = ['editionsCreateEdition'];
+  const mutationKey = getEditionsCreateEditionMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
@@ -95,7 +102,7 @@ export const getEditionsCreateEditionMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof editionsCreateEdition>>,
-    { data: EditionCreate }
+    EditionsCreateEditionMutationVariables
   > = (props) => {
     const { data } = props ?? {};
 
@@ -110,6 +117,7 @@ export type EditionsCreateEditionMutationResult = NonNullable<
 >;
 export type EditionsCreateEditionMutationBody = EditionCreate;
 export type EditionsCreateEditionMutationError = ErrorType<HTTPValidationError>;
+export type EditionsCreateEditionMutationVariables = { data: EditionCreate };
 
 /**
  * @summary Create Edition
@@ -122,7 +130,7 @@ export const useEditionsCreateEdition = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof editionsCreateEdition>>,
       TError,
-      { data: EditionCreate },
+      EditionsCreateEditionMutationVariables,
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -131,7 +139,7 @@ export const useEditionsCreateEdition = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof editionsCreateEdition>>,
   TError,
-  { data: EditionCreate },
+  EditionsCreateEditionMutationVariables,
   TContext
 > => {
   return useMutation(getEditionsCreateEditionMutationOptions(options), queryClient);
@@ -280,11 +288,15 @@ export const getEditionsGetEditionSuspenseQueryOptions = <
   const queryFn: QueryFunction<Awaited<ReturnType<typeof editionsGetEdition>>> = ({ signal }) =>
     editionsGetEdition(editionId, requestOptions, signal);
 
-  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
-    Awaited<ReturnType<typeof editionsGetEdition>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  return queryOptionsBuilder({
+    queryKey,
+    ...queryOptions,
+    queryFn: queryOptions?.queryFn ?? queryFn,
+  }) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof editionsGetEdition>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  } & {
+    throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never };
+  };
 };
 
 export type EditionsGetEditionSuspenseQueryResult = NonNullable<
@@ -379,6 +391,8 @@ export const editionsUpdateEdition = (
   );
 };
 
+export const getEditionsUpdateEditionMutationKey = () => ['editionsUpdateEdition'] as const;
+
 export const getEditionsUpdateEditionMutationOptions = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown,
@@ -386,17 +400,17 @@ export const getEditionsUpdateEditionMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof editionsUpdateEdition>>,
     TError,
-    { editionId: string; data: EditionUpdate },
+    EditionsUpdateEditionMutationVariables,
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof editionsUpdateEdition>>,
   TError,
-  { editionId: string; data: EditionUpdate },
+  EditionsUpdateEditionMutationVariables,
   TContext
 > => {
-  const mutationKey = ['editionsUpdateEdition'];
+  const mutationKey = getEditionsUpdateEditionMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
@@ -405,7 +419,7 @@ export const getEditionsUpdateEditionMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof editionsUpdateEdition>>,
-    { editionId: string; data: EditionUpdate }
+    EditionsUpdateEditionMutationVariables
   > = (props) => {
     const { editionId, data } = props ?? {};
 
@@ -420,6 +434,7 @@ export type EditionsUpdateEditionMutationResult = NonNullable<
 >;
 export type EditionsUpdateEditionMutationBody = EditionUpdate;
 export type EditionsUpdateEditionMutationError = ErrorType<HTTPValidationError>;
+export type EditionsUpdateEditionMutationVariables = { editionId: string; data: EditionUpdate };
 
 /**
  * @summary Update Edition
@@ -432,7 +447,7 @@ export const useEditionsUpdateEdition = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof editionsUpdateEdition>>,
       TError,
-      { editionId: string; data: EditionUpdate },
+      EditionsUpdateEditionMutationVariables,
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -441,7 +456,7 @@ export const useEditionsUpdateEdition = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof editionsUpdateEdition>>,
   TError,
-  { editionId: string; data: EditionUpdate },
+  EditionsUpdateEditionMutationVariables,
   TContext
 > => {
   return useMutation(getEditionsUpdateEditionMutationOptions(options), queryClient);

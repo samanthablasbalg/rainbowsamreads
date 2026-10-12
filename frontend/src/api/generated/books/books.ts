@@ -4,7 +4,12 @@
  * Reading Tracker
  * OpenAPI spec version: 0.1.0
  */
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import {
+  queryOptions as queryOptionsBuilder,
+  useMutation,
+  useQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -176,11 +181,15 @@ export const getBooksListBooksSuspenseQueryOptions = <
   const queryFn: QueryFunction<Awaited<ReturnType<typeof booksListBooks>>> = ({ signal }) =>
     booksListBooks(requestOptions, signal);
 
-  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
-    Awaited<ReturnType<typeof booksListBooks>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  return queryOptionsBuilder({
+    queryKey,
+    ...queryOptions,
+    queryFn: queryOptions?.queryFn ?? queryFn,
+  }) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof booksListBooks>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  } & {
+    throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never };
+  };
 };
 
 export type BooksListBooksSuspenseQueryResult = NonNullable<
@@ -270,6 +279,8 @@ export const booksCreateBook = (
   );
 };
 
+export const getBooksCreateBookMutationKey = () => ['booksCreateBook'] as const;
+
 export const getBooksCreateBookMutationOptions = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown,
@@ -277,17 +288,17 @@ export const getBooksCreateBookMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof booksCreateBook>>,
     TError,
-    { data: BookCreate },
+    BooksCreateBookMutationVariables,
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof booksCreateBook>>,
   TError,
-  { data: BookCreate },
+  BooksCreateBookMutationVariables,
   TContext
 > => {
-  const mutationKey = ['booksCreateBook'];
+  const mutationKey = getBooksCreateBookMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
@@ -296,7 +307,7 @@ export const getBooksCreateBookMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof booksCreateBook>>,
-    { data: BookCreate }
+    BooksCreateBookMutationVariables
   > = (props) => {
     const { data } = props ?? {};
 
@@ -311,6 +322,7 @@ export type BooksCreateBookMutationResult = NonNullable<
 >;
 export type BooksCreateBookMutationBody = BookCreate;
 export type BooksCreateBookMutationError = ErrorType<HTTPValidationError>;
+export type BooksCreateBookMutationVariables = { data: BookCreate };
 
 /**
  * @summary Create Book
@@ -320,7 +332,7 @@ export const useBooksCreateBook = <TError = ErrorType<HTTPValidationError>, TCon
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof booksCreateBook>>,
       TError,
-      { data: BookCreate },
+      BooksCreateBookMutationVariables,
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -329,7 +341,7 @@ export const useBooksCreateBook = <TError = ErrorType<HTTPValidationError>, TCon
 ): UseMutationResult<
   Awaited<ReturnType<typeof booksCreateBook>>,
   TError,
-  { data: BookCreate },
+  BooksCreateBookMutationVariables,
   TContext
 > => {
   return useMutation(getBooksCreateBookMutationOptions(options), queryClient);
@@ -471,11 +483,15 @@ export const getBooksSearchBooksSuspenseQueryOptions = <
   const queryFn: QueryFunction<Awaited<ReturnType<typeof booksSearchBooks>>> = ({ signal }) =>
     booksSearchBooks(params, requestOptions, signal);
 
-  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
-    Awaited<ReturnType<typeof booksSearchBooks>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  return queryOptionsBuilder({
+    queryKey,
+    ...queryOptions,
+    queryFn: queryOptions?.queryFn ?? queryFn,
+  }) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof booksSearchBooks>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  } & {
+    throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never };
+  };
 };
 
 export type BooksSearchBooksSuspenseQueryResult = NonNullable<
@@ -569,6 +585,8 @@ export const booksImportBook = (
   );
 };
 
+export const getBooksImportBookMutationKey = () => ['booksImportBook'] as const;
+
 export const getBooksImportBookMutationOptions = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown,
@@ -576,17 +594,17 @@ export const getBooksImportBookMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof booksImportBook>>,
     TError,
-    { data: BookImportRequest },
+    BooksImportBookMutationVariables,
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof booksImportBook>>,
   TError,
-  { data: BookImportRequest },
+  BooksImportBookMutationVariables,
   TContext
 > => {
-  const mutationKey = ['booksImportBook'];
+  const mutationKey = getBooksImportBookMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
@@ -595,7 +613,7 @@ export const getBooksImportBookMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof booksImportBook>>,
-    { data: BookImportRequest }
+    BooksImportBookMutationVariables
   > = (props) => {
     const { data } = props ?? {};
 
@@ -610,6 +628,7 @@ export type BooksImportBookMutationResult = NonNullable<
 >;
 export type BooksImportBookMutationBody = BookImportRequest;
 export type BooksImportBookMutationError = ErrorType<HTTPValidationError>;
+export type BooksImportBookMutationVariables = { data: BookImportRequest };
 
 /**
  * @summary Import Book
@@ -619,7 +638,7 @@ export const useBooksImportBook = <TError = ErrorType<HTTPValidationError>, TCon
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof booksImportBook>>,
       TError,
-      { data: BookImportRequest },
+      BooksImportBookMutationVariables,
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -628,7 +647,7 @@ export const useBooksImportBook = <TError = ErrorType<HTTPValidationError>, TCon
 ): UseMutationResult<
   Awaited<ReturnType<typeof booksImportBook>>,
   TError,
-  { data: BookImportRequest },
+  BooksImportBookMutationVariables,
   TContext
 > => {
   return useMutation(getBooksImportBookMutationOptions(options), queryClient);
@@ -770,11 +789,15 @@ export const getBooksGetBookSuspenseQueryOptions = <
   const queryFn: QueryFunction<Awaited<ReturnType<typeof booksGetBook>>> = ({ signal }) =>
     booksGetBook(bookId, requestOptions, signal);
 
-  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
-    Awaited<ReturnType<typeof booksGetBook>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  return queryOptionsBuilder({
+    queryKey,
+    ...queryOptions,
+    queryFn: queryOptions?.queryFn ?? queryFn,
+  }) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof booksGetBook>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  } & {
+    throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never };
+  };
 };
 
 export type BooksGetBookSuspenseQueryResult = NonNullable<Awaited<ReturnType<typeof booksGetBook>>>;
@@ -857,6 +880,8 @@ export const booksDeleteBook = (
   return customInstance<void>({ url: `/api/books/${bookId}`, method: 'DELETE', signal }, options);
 };
 
+export const getBooksDeleteBookMutationKey = () => ['booksDeleteBook'] as const;
+
 export const getBooksDeleteBookMutationOptions = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown,
@@ -864,17 +889,17 @@ export const getBooksDeleteBookMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof booksDeleteBook>>,
     TError,
-    { bookId: string },
+    BooksDeleteBookMutationVariables,
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof booksDeleteBook>>,
   TError,
-  { bookId: string },
+  BooksDeleteBookMutationVariables,
   TContext
 > => {
-  const mutationKey = ['booksDeleteBook'];
+  const mutationKey = getBooksDeleteBookMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
@@ -883,7 +908,7 @@ export const getBooksDeleteBookMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof booksDeleteBook>>,
-    { bookId: string }
+    BooksDeleteBookMutationVariables
   > = (props) => {
     const { bookId } = props ?? {};
 
@@ -898,6 +923,7 @@ export type BooksDeleteBookMutationResult = NonNullable<
 >;
 
 export type BooksDeleteBookMutationError = ErrorType<HTTPValidationError>;
+export type BooksDeleteBookMutationVariables = { bookId: string };
 
 /**
  * @summary Delete Book
@@ -907,7 +933,7 @@ export const useBooksDeleteBook = <TError = ErrorType<HTTPValidationError>, TCon
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof booksDeleteBook>>,
       TError,
-      { bookId: string },
+      BooksDeleteBookMutationVariables,
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -916,7 +942,7 @@ export const useBooksDeleteBook = <TError = ErrorType<HTTPValidationError>, TCon
 ): UseMutationResult<
   Awaited<ReturnType<typeof booksDeleteBook>>,
   TError,
-  { bookId: string },
+  BooksDeleteBookMutationVariables,
   TContext
 > => {
   return useMutation(getBooksDeleteBookMutationOptions(options), queryClient);
@@ -1075,11 +1101,17 @@ export const getBooksListBookEngagementsSuspenseQueryOptions = <
     signal,
   }) => booksListBookEngagements(bookId, requestOptions, signal);
 
-  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
+  return queryOptionsBuilder({
+    queryKey,
+    ...queryOptions,
+    queryFn: queryOptions?.queryFn ?? queryFn,
+  }) as UseSuspenseQueryOptions<
     Awaited<ReturnType<typeof booksListBookEngagements>>,
     TError,
     TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  > & { queryKey: DataTag<QueryKey, TData, TError> } & {
+    throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never };
+  };
 };
 
 export type BooksListBookEngagementsSuspenseQueryResult = NonNullable<

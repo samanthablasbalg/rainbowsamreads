@@ -4,7 +4,12 @@
  * Reading Tracker
  * OpenAPI spec version: 0.1.0
  */
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import {
+  queryOptions as queryOptionsBuilder,
+  useMutation,
+  useQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -171,11 +176,15 @@ export const getAuthLoginSuspenseQueryOptions = <
   const queryFn: QueryFunction<Awaited<ReturnType<typeof authLogin>>> = ({ signal }) =>
     authLogin(requestOptions, signal);
 
-  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
-    Awaited<ReturnType<typeof authLogin>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  return queryOptionsBuilder({
+    queryKey,
+    ...queryOptions,
+    queryFn: queryOptions?.queryFn ?? queryFn,
+  }) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof authLogin>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  } & {
+    throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never };
+  };
 };
 
 export type AuthLoginSuspenseQueryResult = NonNullable<Awaited<ReturnType<typeof authLogin>>>;
@@ -356,11 +365,15 @@ export const getAuthCallbackSuspenseQueryOptions = <
   const queryFn: QueryFunction<Awaited<ReturnType<typeof authCallback>>> = ({ signal }) =>
     authCallback(requestOptions, signal);
 
-  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
-    Awaited<ReturnType<typeof authCallback>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  return queryOptionsBuilder({
+    queryKey,
+    ...queryOptions,
+    queryFn: queryOptions?.queryFn ?? queryFn,
+  }) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof authCallback>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  } & {
+    throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never };
+  };
 };
 
 export type AuthCallbackSuspenseQueryResult = NonNullable<Awaited<ReturnType<typeof authCallback>>>;
@@ -534,11 +547,15 @@ export const getAuthMeSuspenseQueryOptions = <
   const queryFn: QueryFunction<Awaited<ReturnType<typeof authMe>>> = ({ signal }) =>
     authMe(requestOptions, signal);
 
-  return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
-    Awaited<ReturnType<typeof authMe>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  return queryOptionsBuilder({
+    queryKey,
+    ...queryOptions,
+    queryFn: queryOptions?.queryFn ?? queryFn,
+  }) as UseSuspenseQueryOptions<Awaited<ReturnType<typeof authMe>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  } & {
+    throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never };
+  };
 };
 
 export type AuthMeSuspenseQueryResult = NonNullable<Awaited<ReturnType<typeof authMe>>>;
@@ -611,6 +628,8 @@ export const authLogout = (
   );
 };
 
+export const getAuthLogoutMutationKey = () => ['authLogout'] as const;
+
 export const getAuthLogoutMutationOptions = <
   TError = ErrorType<unknown>,
   TContext = unknown,
@@ -618,7 +637,7 @@ export const getAuthLogoutMutationOptions = <
   mutation?: UseMutationOptions<Awaited<ReturnType<typeof authLogout>>, TError, void, TContext>;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<Awaited<ReturnType<typeof authLogout>>, TError, void, TContext> => {
-  const mutationKey = ['authLogout'];
+  const mutationKey = getAuthLogoutMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
@@ -668,6 +687,8 @@ export const authTestLogin = (
   );
 };
 
+export const getAuthTestLoginMutationKey = () => ['authTestLogin'] as const;
+
 export const getAuthTestLoginMutationOptions = <
   TError = ErrorType<HTTPValidationError>,
   TContext = unknown,
@@ -675,17 +696,17 @@ export const getAuthTestLoginMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof authTestLogin>>,
     TError,
-    { data?: TestLoginRequest },
+    AuthTestLoginMutationVariables,
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof authTestLogin>>,
   TError,
-  { data?: TestLoginRequest },
+  AuthTestLoginMutationVariables,
   TContext
 > => {
-  const mutationKey = ['authTestLogin'];
+  const mutationKey = getAuthTestLoginMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
@@ -694,7 +715,7 @@ export const getAuthTestLoginMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof authTestLogin>>,
-    { data?: TestLoginRequest }
+    AuthTestLoginMutationVariables
   > = (props) => {
     const { data } = props ?? {};
 
@@ -707,6 +728,7 @@ export const getAuthTestLoginMutationOptions = <
 export type AuthTestLoginMutationResult = NonNullable<Awaited<ReturnType<typeof authTestLogin>>>;
 export type AuthTestLoginMutationBody = TestLoginRequest | undefined;
 export type AuthTestLoginMutationError = ErrorType<HTTPValidationError>;
+export type AuthTestLoginMutationVariables = { data?: TestLoginRequest };
 
 /**
  * @summary Test Login
@@ -716,7 +738,7 @@ export const useAuthTestLogin = <TError = ErrorType<HTTPValidationError>, TConte
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof authTestLogin>>,
       TError,
-      { data?: TestLoginRequest },
+      AuthTestLoginMutationVariables,
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -725,7 +747,7 @@ export const useAuthTestLogin = <TError = ErrorType<HTTPValidationError>, TConte
 ): UseMutationResult<
   Awaited<ReturnType<typeof authTestLogin>>,
   TError,
-  { data?: TestLoginRequest },
+  AuthTestLoginMutationVariables,
   TContext
 > => {
   return useMutation(getAuthTestLoginMutationOptions(options), queryClient);

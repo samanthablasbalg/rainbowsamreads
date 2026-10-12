@@ -1,0 +1,83 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directories:
+      - /frontend
+      - /e2e
+    schedule:
+      interval: weekly
+    versioning-strategy: increase-if-necessary
+    groups:
+      # Each family is declared twice because `applies-to` takes a single value.
+      # The security half is the one that matters: a lone @vitest/mocker advisory
+      # bump is what left vitest 5 sitting next to @vitest/coverage-v8 4.
+      vitest:
+        patterns:
+          - vitest
+          - '@vitest/*'
+      vitest-security:
+        applies-to: security-updates
+        patterns:
+          - vitest
+          - '@vitest/*'
+      storybook:
+        patterns:
+          - storybook
+          - '@storybook/*'
+          - eslint-plugin-storybook
+          - '@chromatic-com/storybook'
+      storybook-security:
+        applies-to: security-updates
+        patterns:
+          - storybook
+          - '@storybook/*'
+          - eslint-plugin-storybook
+          - '@chromatic-com/storybook'
+      # The driver the browsers service runs and the one the specs import are
+      # the same package, so both pins move or neither does. `directories` above
+      # puts them in one PR; the image they sit on is the docker-compose entry.
+      playwright:
+        patterns:
+          - playwright
+          - '@playwright/test'
+      playwright-security:
+        applies-to: security-updates
+        patterns:
+          - playwright
+          - '@playwright/test'
+
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+    groups:
+      # requirements.txt pins transitives too, so one PR per pin is unworkable.
+      backend:
+        patterns:
+          - '*'
+      backend-security:
+        applies-to: security-updates
+        patterns:
+          - '*'
+
+  # compose.yaml: the playwright browsers image, postgres and caddy.
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+
+  # Dockerfile and Dockerfile.dev: the python and node base images.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - '*'
