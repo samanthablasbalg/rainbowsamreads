@@ -13,16 +13,19 @@ import {
 } from '@/api/generated/engagements/engagements.msw';
 import { getInsightsGetStreakMockHandler } from '@/api/generated/insights/insights.msw';
 import { destinations } from '@/config/destinations';
+import { expectConsoleError } from '@/test/setup';
 import { server } from '@/test/msw-server';
-import { renderRoute, screen } from '@/test/render';
+import { renderRoute, screen, waitFor } from '@/test/render';
 import { buildBook, buildCatalogBook, buildEngagement } from '@/test/data-generators';
 import { ReadingStatus } from '@/api/generated/readingTracker.schemas';
 
 describe('the route tree', () => {
-  it('shows the shared pending state while route data loads', () => {
+  it('shows the shared pending state while route data loads', async () => {
+    const catalogRequested = vi.fn();
     server.use(
       getAuthMeMockHandler(),
       getBooksListBooksMockHandler(async () => {
+        catalogRequested();
         await delay('infinite');
         return [];
       })
@@ -30,6 +33,7 @@ describe('the route tree', () => {
 
     renderRoute('/library/catalog');
 
+    await waitFor(() => expect(catalogRequested).toHaveBeenCalledOnce());
     expect(screen.getByRole('status')).toHaveTextContent('Loading');
   });
 
@@ -114,7 +118,7 @@ describe('the route tree', () => {
   });
 
   it('replaces an unknown book with the error boundary rather than a broken page', async () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expectConsoleError('Request failed with status code 404', '<BookDetail>');
     server.use(
       getAuthMeMockHandler(),
       getBooksListBookEngagementsMockHandler([]),
@@ -127,7 +131,7 @@ describe('the route tree', () => {
   });
 
   it('replaces a failed shelf with the error boundary and keeps the library nav', async () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expectConsoleError('Request failed with status code 500', '<Catalog>');
     server.use(
       getAuthMeMockHandler(),
       http.get('*/api/books', () => new HttpResponse(null, { status: 500 }))
@@ -140,7 +144,7 @@ describe('the route tree', () => {
   });
 
   it('recovers a failed shelf in place when Try again is pressed', async () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expectConsoleError('Request failed with status code 500', '<Catalog>');
     let attempts = 0;
     server.use(
       getAuthMeMockHandler(),

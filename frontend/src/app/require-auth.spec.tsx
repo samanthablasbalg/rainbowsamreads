@@ -1,6 +1,7 @@
 import { HttpResponse, delay, http } from 'msw';
 import { getAuthMeMockHandler } from '@/api/generated/auth/auth.msw';
 import { getEngagementsListEngagementsMockHandler } from '@/api/generated/engagements/engagements.msw';
+import { expectConsoleError } from '@/test/setup';
 import { server } from '@/test/msw-server';
 import { renderRoute, screen } from '@/test/render';
 
@@ -53,7 +54,11 @@ describe('the route guards', () => {
   });
 
   it('shows the error page, not the landing page, when the session request fails', async () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expectConsoleError('Request failed with status code 500', '<RequireAuth>');
+    expectConsoleError(
+      'React Router caught the following error during render',
+      'Request failed with status code 500'
+    );
     server.use(sessionBroken);
 
     renderRoute('/home');

@@ -4,10 +4,27 @@ import { configure } from '@testing-library/react';
 
 const unhandledRequests: string[] = [];
 const consoleMessages: string[] = [];
+const expectedConsoleErrors: string[][] = [];
+
+export function expectConsoleError(...substrings: string[]) {
+  expectedConsoleErrors.push(substrings);
+}
 
 function recordConsoleCall(method: 'error' | 'warn') {
   return (...messages: unknown[]) => {
-    consoleMessages.push(`console.${method}: ${messages.map(String).join(' ')}`);
+    const message = messages.map(String).join(' ');
+    const expectedIndex =
+      method === 'error'
+        ? expectedConsoleErrors.findIndex((substrings) =>
+            substrings.every((substring) => message.includes(substring))
+          )
+        : -1;
+
+    if (expectedIndex >= 0) {
+      expectedConsoleErrors.splice(expectedIndex, 1);
+    } else {
+      consoleMessages.push(`console.${method}: ${message}`);
+    }
   };
 }
 
@@ -55,11 +72,19 @@ afterEach(() => {
 
   const requests = unhandledRequests.splice(0);
   const messages = consoleMessages.splice(0);
+  const missingConsoleErrors = expectedConsoleErrors.splice(0);
   const failures = [
     ...(requests.length > 0
       ? [`Unhandled MSW request${requests.length === 1 ? '' : 's'}:\n${requests.join('\n')}`]
       : []),
     ...(messages.length > 0 ? [`Unexpected console output:\n${messages.join('\n')}`] : []),
+    ...(missingConsoleErrors.length > 0
+      ? [
+          `Expected console.error output was not observed:\n${missingConsoleErrors
+            .map((substrings) => substrings.join(' + '))
+            .join('\n')}`,
+        ]
+      : []),
   ];
 
   if (failures.length > 0) {
