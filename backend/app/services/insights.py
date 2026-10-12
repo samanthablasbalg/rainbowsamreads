@@ -11,7 +11,10 @@ from app.schemas import StreakRead
 
 def calculate_streak(db: Session, date: datetime.date) -> StreakRead:
     deduplicated_logs = (
-        select(ProgressLog.logged_on).distinct().cte("deduplicated_logs")
+        select(ProgressLog.logged_on)
+        .where(ProgressLog.logged_on <= date)
+        .distinct()
+        .cte("deduplicated_logs")
     )
     row_number = func.row_number().over(order_by=deduplicated_logs.c.logged_on)
     sequenced_logs = select(
@@ -35,16 +38,10 @@ def calculate_streak(db: Session, date: datetime.date) -> StreakRead:
     )
 
     streaks = db.execute(statement).all()
-    logged_today = (
-        True
-        if streaks and len(streaks) > 0 and streaks[0].streak_end == date
-        else False
-    )
+    logged_today = True if streaks and streaks[0].streak_end == date else False
     logged_yesterday = (
         True
-        if streaks
-        and len(streaks) > 0
-        and streaks[0].streak_end == date - datetime.timedelta(days=1)
+        if streaks and streaks[0].streak_end == (date - datetime.timedelta(days=1))
         else False
     )
     if not streaks or (not logged_today and not logged_yesterday):

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+import datetime
 import http.cookiejar
 import json
 import os
 import urllib.error
 import urllib.request
 from typing import cast
+from zoneinfo import ZoneInfo
 
 import psycopg2
 from dotenv import load_dotenv
@@ -16,6 +18,7 @@ load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env
 
 DATABASE_URL = os.environ.get("DATABASE_URL") or owner_database_url()
 BASE_URL = os.environ.get("BASE_URL", "http://proxy:8080")
+LOCAL_DATE = datetime.datetime.now(ZoneInfo("America/New_York")).date().isoformat()
 
 # A plain urllib call carries no cookies, so without this, every request below
 # would look like an anonymous visitor and get 401'd — see login().
@@ -115,6 +118,7 @@ def start_reading(book_id: str, fmt: str, edition_length: int | None = None) -> 
         "book_id": book_id,
         "status": "reading",
         "edition_format": fmt,
+        "started_on": LOCAL_DATE,
     }
     if edition_length is not None:
         body["edition_length"] = edition_length
@@ -133,6 +137,7 @@ def log_progress(
     body: dict[str, object] = {
         "page_start": resume_from(engagement_id, LogUnit.pages),
         "page_end": current_page,
+        "logged_on": LOCAL_DATE,
     }
     if note is not None:
         body["note"] = note
@@ -145,12 +150,16 @@ def log_audio_progress(engagement_id: str, current_minute: int) -> None:
         {
             "minute_start": resume_from(engagement_id, LogUnit.minutes),
             "minute_end": current_minute,
+            "logged_on": LOCAL_DATE,
         },
     )
 
 
 def finish(engagement_id: str) -> None:
-    post("/engagements", {"id": engagement_id, "status": "finished"})
+    post(
+        "/engagements",
+        {"id": engagement_id, "status": "finished", "effective_on": LOCAL_DATE},
+    )
 
 
 def dnf(engagement_id: str) -> None:
