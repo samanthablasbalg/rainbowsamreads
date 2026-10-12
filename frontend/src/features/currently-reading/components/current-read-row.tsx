@@ -26,6 +26,8 @@ import { authorNames, coverSrc } from '@/utils/book';
 import { statusUpdateBody } from '@/utils/status';
 import { ProgressLogSheet } from '@/components/common/progress-log-sheet';
 import { AddFormatSheet } from './add-format-sheet';
+import { getInsightsGetStreakQueryKey } from '@/api/generated/insights/insights';
+import { localIsoDate } from '@/utils/local-date';
 
 const CONFIRMATIONS = {
   dnf: {
@@ -60,7 +62,16 @@ export function CurrentReadRow({ engagement }: { engagement: EngagementRead }) {
     mutation: { onSuccess: invalidateEngagements },
   });
   const deleteEngagement = useEngagementsDeleteEngagement({
-    mutation: { onSuccess: invalidateEngagements },
+    mutation: {
+      onSuccess: async () => {
+        await Promise.all([
+          invalidateEngagements(),
+          queryClient.invalidateQueries({
+            queryKey: getInsightsGetStreakQueryKey({ date: localIsoDate() }),
+          }),
+        ]);
+      },
+    },
   });
 
   function handleConfirm() {

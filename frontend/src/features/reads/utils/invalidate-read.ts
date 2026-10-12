@@ -4,6 +4,7 @@ import {
   getEngagementsListEngagementsQueryKey,
   getEngagementsListProgressLogsQueryKey,
 } from '@/api/generated/engagements/engagements';
+import { getInsightsGetStreakQueryKey } from '@/api/generated/insights/insights';
 
 // None of the three keys is a prefix of another -- they differ at their first element --
 // so one invalidation cannot stand in for the rest.
@@ -14,5 +15,8 @@ export function invalidateRead(queryClient: QueryClient, engagementId: string) {
     }),
     queryClient.invalidateQueries({ queryKey: getEngagementsGetEngagementQueryKey(engagementId) }),
     queryClient.invalidateQueries({ queryKey: getEngagementsListEngagementsQueryKey() }),
+    queryClient.invalidateQueries({
+      queryKey: getInsightsGetStreakQueryKey(),
+    }),
   ]);
 }

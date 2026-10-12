@@ -54,6 +54,45 @@ test('Logging progress advances the card in place and survives reload', async ({
   });
 });
 
+test("Logging progress extends yesterday's streak", async ({ page, apiClient }) => {
+  const currentlyReading = new CurrentlyReadingPage(page);
+  const sheet = new ProgressLogSheetPage(page);
+
+  await test.step('Freeze browser time and seed a book with progress logged yesterday', async () => {
+    await page.clock.setFixedTime(Date.now());
+    const yesterday = await page.evaluate(() => {
+      const date = new Date();
+      date.setDate(date.getDate() - 1);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    });
+    const bookId = await apiClient.createBook('Piranesi', 'Susanna Clarke', 272);
+    const engagementId = await apiClient.markAsReading(bookId);
+    await apiClient.patchEngagementDates(engagementId, { started_on: yesterday });
+    await apiClient.logProgress(engagementId, 100, yesterday);
+  });
+
+  await test.step("Navigate and verify yesterday's streak from the live backend", async () => {
+    await currentlyReading.goto();
+    await expect(currentlyReading.getStreak(1)).toBeVisible();
+    await expect(currentlyReading.getStreakFlame(1)).not.toHaveClass(/text-orange-500/);
+  });
+
+  await test.step('Log progress today', async () => {
+    await currentlyReading.openLogSheet('Piranesi');
+    await sheet.enterPosition('200');
+    await sheet.save('Piranesi');
+    await expect(sheet.sheet).toHaveCount(0);
+  });
+
+  await test.step('Verify the refreshed streak includes today', async () => {
+    await expect(currentlyReading.getStreak(2)).toBeVisible();
+    await expect(currentlyReading.getStreakFlame(2)).toHaveClass(/text-orange-500/);
+  });
+});
+
 test('Backdating a log stores it under the chosen day', async ({ page, apiClient }) => {
   const currentlyReading = new CurrentlyReadingPage(page);
   const sheet = new ProgressLogSheetPage(page);

@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reason about nested flex layouts</title>
+    <link rel="stylesheet" href="../assets/learning.css" />
+    <script src="../assets/quiz.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="lede">Issue #271 · Tailwind CSS · Layout lesson</p>
+        <h1>Build the box relationships before choosing classes</h1>
+        <p>
+          The goal is not to memorize a class string for one header. It is to look at any design,
+          identify which things must move together, and give each relationship the correct layout
+          owner.
+        </p>
+      </header>
+
+      <section>
+        <h2>A layout utility changes one relationship</h2>
+        <p>
+          Every element participates in two relationships. Its <em>outer display</em> controls how
+          the element sits beside its siblings. Its <em>inner display</em> controls how its children
+          are laid out.
+        </p>
+        <div class="concept-grid">
+          <article class="concept-card">
+            <h3><code>flex</code></h3>
+            <p>
+              The element is block-level among its siblings. Inside it, its direct children become
+              flex items.
+            </p>
+          </article>
+          <article class="concept-card">
+            <h3><code>inline-flex</code></h3>
+            <p>
+              The element flows inline among its siblings. Inside it, its direct children still
+              become flex items.
+            </p>
+          </article>
+        </div>
+        <p>
+          The difference is outside the container, not inside it. This is why both can put an icon
+          and a label in a row, while <code>inline-flex</code> is often convenient when the whole
+          group should behave like a phrase or badge.
+        </p>
+      </section>
+
+      <section>
+        <h2>Flex sees one level of the tree</h2>
+        <p>Consider a toolbar with this element tree:</p>
+        <pre><code>toolbar
+├── title
+└── account-group
+    ├── name
+    └── avatar</code></pre>
+        <p>
+          If <code>toolbar</code> is a flex container, its flex items are <code>title</code> and
+          <code>account-group</code>. The name and avatar are descendants, but they are not direct
+          children of the toolbar. The toolbar cannot set the spacing between them.
+        </p>
+        <p>
+          If the name and avatar need their own row, <code>account-group</code> must become a second
+          flex container. One element can be a flex item in its parent and a flex container for its
+          own children at the same time.
+        </p>
+
+        <form class="quiz" data-quiz>
+          <fieldset>
+            <legend>
+              If both containers use flex, how many relationships are being controlled?
+            </legend>
+            <div class="quiz-options">
+              <label>
+                <input
+                  type="radio"
+                  name="relationship-count"
+                  data-feedback="Not quite. Flex does not flatten nested descendants into one shared row."
+                />
+                One box relationship
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="relationship-count"
+                  data-correct="true"
+                  data-feedback="Correct. The toolbar controls its two children; the account group controls its own two children."
+                />
+                Two box relationships
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="relationship-count"
+                  data-feedback="Not quite. There are four visible leaf elements, but only two parent-child layout relationships."
+                />
+                Four box relationships
+              </label>
+            </div>
+          </fieldset>
+          <button type="submit">Check answer</button>
+          <p class="quiz-feedback" data-quiz-feedback aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section>
+        <h2>Main axis and cross axis answer different questions</h2>
+        <p>
+          A default flex row has a horizontal <em>main axis</em> and a vertical <em>cross axis</em>.
+          Tailwind keeps those two questions in different utility families:
+        </p>
+        <div class="concept-grid">
+          <article class="concept-card">
+            <h3><code>justify-*</code></h3>
+            <p>
+              Positions the flex items along the main axis. In a row, this means left/right and how
+              horizontal free space is distributed.
+            </p>
+          </article>
+          <article class="concept-card">
+            <h3><code>items-*</code></h3>
+            <p>
+              Aligns flex items along the cross axis. In a row, this means their vertical
+              relationship.
+            </p>
+          </article>
+        </div>
+
+        <div class="lab">
+          <h3>What <code>justify-between</code> actually distributes</h3>
+          <div class="demo-strip" data-layout="between" aria-label="Three flex items spaced apart">
+            <span class="demo-box">A</span>
+            <span class="demo-box">B</span>
+            <span class="demo-box">C</span>
+          </div>
+          <p>
+            Space is inserted between every pair of direct children. With three children, you get
+            three visual anchors. If B and C should remain a tight unit, changing the gap or
+            alignment cannot express that. The element tree must first say that B and C are a group.
+          </p>
+        </div>
+
+        <div class="lab">
+          <h3>Cross-axis alignment</h3>
+          <p><code>items-start</code> aligns the top edges:</p>
+          <div class="demo-strip" data-align="start">
+            <span class="demo-box large-type">Title</span>
+            <span class="demo-box">metadata</span>
+            <span class="demo-box tall">icon</span>
+          </div>
+          <p><code>items-center</code> aligns the centers:</p>
+          <div class="demo-strip" data-align="center">
+            <span class="demo-box large-type">Title</span>
+            <span class="demo-box">metadata</span>
+            <span class="demo-box tall">icon</span>
+          </div>
+          <p><code>items-baseline</code> aligns text baselines where the items provide them:</p>
+          <div class="demo-strip" data-align="baseline">
+            <span class="demo-box large-type">Title</span>
+            <span class="demo-box">metadata</span>
+            <span class="demo-box">label</span>
+          </div>
+          <p>
+            These are design choices, not stronger and weaker versions of the same utility. A row
+            dominated by typography may want baseline alignment. A compact icon-and-label group
+            often wants center alignment. Nested containers allow both decisions in one component.
+          </p>
+        </div>
+
+        <form class="quiz" data-quiz>
+          <fieldset>
+            <legend>
+              An icon is too high beside a short label. Which relationship needs investigation?
+            </legend>
+            <div class="quiz-options">
+              <label>
+                <input
+                  type="radio"
+                  name="axis"
+                  data-feedback="Not this one. Main-axis distribution controls horizontal free space in a row."
+                />
+                Main axis spacing
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="axis"
+                  data-correct="true"
+                  data-feedback="Correct. Vertical alignment in a flex row belongs to the cross axis and the items-* family."
+                />
+                Cross axis alignment
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="axis"
+                  data-feedback="Sizing can affect the appearance, but it does not define how two differently sized items align vertically."
+                />
+                Flex item sizing
+              </label>
+            </div>
+          </fieldset>
+          <button type="submit">Check answer</button>
+          <p class="quiz-feedback" data-quiz-feedback aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section>
+        <h2>Spacing belongs to the parent-child relationship</h2>
+        <p>
+          A flex container's <code>gap</code> inserts gutters only between its direct children. It
+          does not add space before the first child or after the last one. That makes a gap express
+          “these siblings belong together, with this much separation” more directly than giving
+          individual children left and right margins.
+        </p>
+        <p>
+          Nested groups can—and usually should—have different gaps. A toolbar may use a generous gap
+          between major controls while an icon-label pair uses a much smaller one. There is no
+          single gap that can describe both relationships.
+        </p>
+      </section>
+
+      <section>
+        <h2>Keeping a row together is a sizing problem</h2>
+        <p>
+          Flex rows do not wrap their flex items by default, but flex items are allowed to shrink.
+          Text inside a shrinking item can still wrap at spaces. These utilities answer different
+          questions:
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Utility</th>
+              <th>What it changes</th>
+              <th>Diagnostic question</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>shrink-0</code></td>
+              <td>The flex item refuses to become narrower than its base size.</td>
+              <td>Must this entire group preserve its width while a sibling yields space?</td>
+            </tr>
+            <tr>
+              <td><code>whitespace-nowrap</code></td>
+              <td>Text inside the element cannot break at normal whitespace.</td>
+              <td>Is the group intact, but a phrase inside it breaks onto two lines?</td>
+            </tr>
+            <tr>
+              <td><code>flex-wrap</code></td>
+              <td>Flex items may move onto additional flex lines.</td>
+              <td>Should whole sibling items deliberately flow onto another row?</td>
+            </tr>
+            <tr>
+              <td><code>min-w-0</code></td>
+              <td>A flex item may shrink below its content's automatic minimum width.</td>
+              <td>Should long content truncate or wrap instead of forcing the row wider?</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout">
+          Do not add all four defensively. First create the right grouping, resize the page, and
+          identify the actual failure: item wrapping, text wrapping, refusal to shrink, or overflow.
+        </div>
+      </section>
+
+      <section>
+        <h2>Practice on an unrelated component</h2>
+        <p>
+          The intended result is a toolbar with a title at one edge and two close actions at the
+          other:
+        </p>
+        <pre><code>Reports                                      Export  Share</code></pre>
+        <p>Which structure can independently control both relationships?</p>
+        <pre><code>A. toolbar → title, export, share
+B. toolbar → title, actions → export, share
+C. toolbar → heading → title, export, share</code></pre>
+        <form class="quiz" data-quiz>
+          <fieldset>
+            <legend>Choose the element tree, not the final visual appearance.</legend>
+            <div class="quiz-options">
+              <label>
+                <input
+                  type="radio"
+                  name="tree-choice"
+                  data-feedback="This leaves all three elements as peers, so the outer container cannot treat the two actions as one unit."
+                />
+                Example A
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="tree-choice"
+                  data-correct="true"
+                  data-feedback="Correct. The toolbar owns edge-to-edge placement, while the action group can own spacing between its two children."
+                />
+                Example B
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="tree-choice"
+                  data-feedback="This groups the title with one action, which does not match the two visual relationships in the target."
+                />
+                Example C
+              </label>
+            </div>
+          </fieldset>
+          <button type="submit">Check answer</button>
+          <p class="quiz-feedback" data-quiz-feedback aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section>
+        <h2>Transfer it to Currently Reading</h2>
+        <p>
+          Now work in <code>currently-reading-list.tsx</code> and <code>streak.tsx</code>. Do not
+          begin by typing classes. Draw the element tree you need, then make one layout decision per
+          parent-child relationship.
+        </p>
+        <ol class="checklist">
+          <li>Circle the visual groups in the target header.</li>
+          <li>For each group, name its direct children.</li>
+          <li>
+            Choose whether the group should behave as a block or inline box among its siblings.
+          </li>
+          <li>Choose its main-axis distribution and cross-axis alignment.</li>
+          <li>Choose a gap appropriate to that relationship.</li>
+          <li>Resize before adding any sizing utility; add one only for a failure you can name.</li>
+        </ol>
+        <p>Bring back your two components with this explanation filled in:</p>
+        <pre><code>Container 1 owns: ___ and ___
+Its main-axis job is: ___
+Its cross-axis job is: ___
+
+Container 2 owns: ___ and ___
+Its main-axis job is: ___
+Its cross-axis job is: ___
+
+Container 3 owns: ___ and ___
+Its main-axis job is: ___
+Its cross-axis job is: ___</code></pre>
+        <p>
+          I will review the reasoning before the class names. Then continue to
+          <a href="0004-state-driven-color-with-currentcolor.html"
+            >State-driven color with <code>currentColor</code></a
+          >. Ask me for a hint or challenge any distinction that is still unclear.
+        </p>
+      </section>
+
+      <footer>
+        <p>
+          Primary sources:
+          <a href="https://tailwindcss.com/docs/display">Tailwind display</a>,
+          <a href="https://tailwindcss.com/docs/justify-content">justify-content</a>,
+          <a href="https://tailwindcss.com/docs/align-items">align-items</a>,
+          <a href="https://tailwindcss.com/docs/gap">gap</a>, and
+          <a href="https://tailwindcss.com/docs/flex-shrink">flex-shrink</a>. Repository baseline:
+          <code>d6434ae8</code>.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>

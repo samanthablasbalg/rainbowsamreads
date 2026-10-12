@@ -32,6 +32,24 @@ export class CurrentlyReadingPage {
   }
 
   /**
+   * Locates the current reading streak by its accessible count.
+   * @param count - The expected number of consecutive reading days.
+   * @returns The streak indicator locator.
+   */
+  getStreak(count: number): Locator {
+    return this.page.getByRole('img', { name: `${count} day streak`, exact: true });
+  }
+
+  /**
+   * Locates the flame whose color shows whether progress was logged today.
+   * @param count - The expected number of consecutive reading days.
+   * @returns The flame icon locator.
+   */
+  getStreakFlame(count: number): Locator {
+    return this.getStreak(count).locator('svg');
+  }
+
+  /**
    * Opens the progress-log sheet for a book (a dialog on wide viewports, a
    * bottom sheet on narrow ones — same content either way).
    * @param title - The book's title.

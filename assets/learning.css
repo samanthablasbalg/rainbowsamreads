@@ -105,6 +105,220 @@ th {
   margin-bottom: 0.7rem;
 }
 
+.checkpoint {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  background: #fffefb;
+}
+
+.checkpoint summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.concept-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.concept-card,
+.lab,
+.quiz {
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  background: #fffefb;
+}
+
+.concept-card > :first-child,
+.lab > :first-child,
+.quiz > :first-child {
+  margin-top: 0;
+}
+
+.concept-card > :last-child,
+.lab > :last-child,
+.quiz > :last-child {
+  margin-bottom: 0;
+}
+
+.lab {
+  margin: 1.5rem 0;
+}
+
+.demo-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 4rem;
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border: 1px dashed var(--line);
+  border-radius: 0.35rem;
+  background: var(--paper);
+}
+
+.demo-strip[data-layout='between'] {
+  justify-content: space-between;
+}
+
+.demo-strip[data-align='start'] {
+  align-items: flex-start;
+}
+
+.demo-strip[data-align='center'] {
+  align-items: center;
+}
+
+.demo-strip[data-align='baseline'] {
+  align-items: baseline;
+}
+
+.demo-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #9ab6aa;
+  border-radius: 0.3rem;
+  background: var(--accent-soft);
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 0.8rem;
+}
+
+.demo-box.tall {
+  min-height: 3.5rem;
+}
+
+.demo-box.large-type {
+  font-family: inherit;
+  font-size: 1.5rem;
+}
+
+.quiz {
+  margin: 1.5rem 0;
+}
+
+.quiz fieldset {
+  padding: 0;
+  border: 0;
+}
+
+.quiz legend {
+  margin-bottom: 0.8rem;
+  font-weight: 700;
+}
+
+.quiz-options {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.quiz-options label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+.quiz-options label:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.quiz button {
+  margin-top: 0.9rem;
+  padding: 0.55rem 0.9rem;
+  border: 0;
+  border-radius: 0.3rem;
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.quiz-feedback {
+  min-height: 1.6em;
+  margin-bottom: 0;
+  font-weight: 700;
+}
+
+.quiz-feedback[data-state='correct'] {
+  color: #256443;
+}
+
+.quiz-feedback[data-state='incorrect'] {
+  color: #9c3f2d;
+}
+
+.tone-lab {
+  margin: 1rem 0;
+}
+
+.tone-lab label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.tone-sample {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 1rem;
+  color: #777168;
+  font-family: system-ui, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.tone-sample svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.tone-lab:has(input:checked) .tone-sample {
+  color: #df5b1f;
+}
+
+.state-flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.state-flow > div {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+}
+
+.state-flow strong {
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+@media (max-width: 38rem) {
+  .concept-grid,
+  .state-flow {
+    grid-template-columns: 1fr;
+  }
+}
+
 footer {
   margin-top: 4rem;
   color: var(--muted);

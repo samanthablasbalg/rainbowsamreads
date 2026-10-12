@@ -40,6 +40,7 @@ import { FORMATS } from '@/utils/format';
 import { formatMinutesAsHhmm } from '@/utils/format-minutes';
 import { localIsoDate } from '@/utils/local-date';
 import { formatPosition, parsePosition } from '@/utils/position';
+import { getInsightsGetStreakQueryKey } from '@/api/generated/insights/insights';
 
 type ProgressLogSheetProps = {
   engagement: EngagementRead;
@@ -434,9 +435,14 @@ function useProgressLogForm(engagement: EngagementRead, onClose: () => void) {
         // For the read page, which mounts this sheet too. Unconditional: from Currently
         // Reading these land on queries nothing is rendering, costing a cache write.
         queryClient.setQueryData(getEngagementsGetEngagementQueryKey(fresh.id), fresh);
-        await queryClient.invalidateQueries({
-          queryKey: getEngagementsListProgressLogsQueryKey(engagement.id),
-        });
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: getEngagementsListProgressLogsQueryKey(engagement.id),
+          }),
+          queryClient.invalidateQueries({
+            queryKey: getInsightsGetStreakQueryKey({ date: localIsoDate() }),
+          }),
+        ]);
 
         onClose();
       },

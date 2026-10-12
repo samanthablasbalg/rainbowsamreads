@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tailwind layout reasoning checklist</title>
+    <link rel="stylesheet" href="../assets/learning.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="lede">Reading Tracker · Tailwind CSS</p>
+        <h1>Layout reasoning checklist</h1>
+        <p>
+          Use these questions before searching for a utility. They diagnose the relationship that
+          needs styling without prescribing a component-specific class string.
+        </p>
+      </header>
+
+      <section>
+        <h2>Structure</h2>
+        <ol class="checklist">
+          <li>Which visual elements must move as one group?</li>
+          <li>Which element should own that group?</li>
+          <li>What are that owner's direct children?</li>
+          <li>Does the DOM tree express the same groups as the design?</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Axes</h2>
+        <ol class="checklist">
+          <li>Is the main axis a row or a column?</li>
+          <li>How should free space be distributed along the main axis?</li>
+          <li>How should differently sized children align along the cross axis?</li>
+          <li>Does a nested relationship need a different alignment rule?</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Sizing and wrapping</h2>
+        <ol class="checklist">
+          <li>Are whole flex items wrapping, or is text wrapping inside one item?</li>
+          <li>Which sibling should yield space when the container narrows?</li>
+          <li>Does a compact group need to preserve its intrinsic width?</li>
+          <li>Is overflow preferable to wrapping at the smallest supported width?</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>State color</h2>
+        <ol class="checklist">
+          <li>Is the state changing foreground color, background color, or both?</li>
+          <li>What is the lowest parent that owns every element sharing the state?</li>
+          <li>Do descendant SVGs use <code>currentColor</code>?</li>
+          <li>Are all conditional Tailwind class names complete strings in source?</li>
+          <li>Do the chosen theme tokens work in light and dark modes?</li>
+        </ol>
+      </section>
+
+      <footer>
+        <p>
+          Use alongside
+          <a href="../lessons/0003-reasoning-about-nested-flex-layouts.html"
+            >Reason about nested flex layouts</a
+          >
+          and
+          <a href="../lessons/0004-state-driven-color-with-currentcolor.html"
+            >Drive inherited color from state</a
+          >.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>

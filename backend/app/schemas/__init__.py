@@ -18,6 +18,7 @@ from app.schemas.engagement import (
     EngagementRead,
     EngagementWrite,
 )
+from app.schemas.insights import StreakRead
 from app.schemas.progress_log import (
     MinuteProgressLogRead,
     PageProgressLogRead,
@@ -51,4 +52,5 @@ __all__ = [
     "progress_log_read",
     "ReviewRead",
     "ReviewUpsert",
+    "StreakRead",
 ]

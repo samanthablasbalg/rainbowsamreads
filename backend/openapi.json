@@ -1165,6 +1165,49 @@
           }
         }
       }
+    },
+    "/api/insights/streak": {
+      "get": {
+        "tags": [
+          "insights"
+        ],
+        "summary": "Get Streak",
+        "operationId": "insights-get_streak",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StreakRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2679,6 +2722,25 @@
         },
         "type": "object",
         "title": "ReviewUpsert"
+      },
+      "StreakRead": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "logged_today": {
+            "type": "boolean",
+            "title": "Logged Today"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "count",
+          "logged_today"
+        ],
+        "title": "StreakRead"
       },
       "TestLoginRequest": {
         "properties": {
