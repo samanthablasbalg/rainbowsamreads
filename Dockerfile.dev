@@ -16,7 +16,7 @@
 # and adds a uid-matching problem. HOME is /root — where the host mounts for
 # ~/.claude, ~/.gitconfig and gh auth land.
 
-FROM python:3.14-slim
+FROM python:3.15-slim
 
 # Node, lifted out of the official image rather than installed from an apt repo
 # or a curl-pipe-bash script: same source of truth as the production
