@@ -1,16 +1,20 @@
 import { defineConfig, devices } from '@playwright/test';
-import { AUTH_FILE } from './auth-file';
+
+const configuredWorkers = process.env['E2E_WORKERS'];
+const workers = configuredWorkers == null ? (process.env['CI'] ? 2 : 4) : Number(configuredWorkers);
+
+if (!Number.isInteger(workers) || workers < 1 || workers > 16) {
+  throw new Error('E2E_WORKERS must be an integer from 1 through 16');
+}
 
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
   timeout: 30 * 1000,
-  workers: 1,
+  workers,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,
-  reporter: process.env['CI']
-    ? [['github'], ['list'], ['html', { open: 'never' }]]
-    : [['html', { open: 'never' }]],
+  reporter: process.env['CI'] ? [['github'], ['list'], ['blob']] : [['html', { open: 'never' }]],
   use: {
     // The Caddy proxy, resolved by service name on the compose network —
     // the same single origin for /api/* and everything else that a human
@@ -31,21 +35,23 @@ export default defineConfig({
   },
   projects: [
     {
-      // Logs in once via the env-gated /auth/test-login bypass and saves the
-      // session to AUTH_FILE; the projects below load it as storageState so
-      // every page/request starts already authenticated.
-      name: 'auth setup',
-      testMatch: /auth\.setup\.ts/,
+      name: 'catalog teardown',
+      testMatch: /catalog\.teardown\.ts/,
+    },
+    {
+      name: 'catalog setup',
+      testMatch: /catalog\.setup\.ts/,
+      teardown: 'catalog teardown',
     },
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'], storageState: AUTH_FILE },
-      dependencies: ['auth setup'],
+      use: { ...devices['Desktop Chrome'] },
+      dependencies: ['catalog setup'],
     },
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'], storageState: AUTH_FILE },
-      dependencies: ['auth setup'],
+      use: { ...devices['Desktop Firefox'] },
+      dependencies: ['catalog setup'],
     },
     {
       // The only project that exercises the small-screen path: at ≤599px the
@@ -53,8 +59,8 @@ export default defineConfig({
       // (412px wide, touch) trips that breakpoint. (Firefox can't do mobile
       // device emulation, so the mobile project is Chromium-engine.)
       name: 'mobile',
-      use: { ...devices['Pixel 7'], storageState: AUTH_FILE },
-      dependencies: ['auth setup'],
+      use: { ...devices['Pixel 7'] },
+      dependencies: ['catalog setup'],
     },
   ],
 });

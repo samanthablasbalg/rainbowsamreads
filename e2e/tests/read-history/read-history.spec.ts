@@ -1,10 +1,14 @@
 import { expect, test } from '../../fixtures/api-client';
+import { E2E_CATALOG } from '../../catalog/e2e-catalog';
 import { CardMenuPage } from '../../page-objects/card-menu.page';
 import { ConfirmSheetPage } from '../../page-objects/confirm-sheet.page';
 import { CurrentlyReadingPage } from '../../page-objects/currently-reading.page';
 import { EntryEditSheetPage } from '../../page-objects/entry-edit-sheet.page';
 import { FinishedBooksPage } from '../../page-objects/finished-books.page';
 import { ReadHistoryPage } from '../../page-objects/read-history.page';
+
+const piranesi = E2E_CATALOG.piranesi;
+const dune = E2E_CATALOG.dune;
 
 test('A read’s page is reachable from currently reading and lists its entries', async ({
   page,
@@ -14,9 +18,8 @@ test('A read’s page is reachable from currently reading and lists its entries'
   const cardMenu = new CardMenuPage(page);
   const history = new ReadHistoryPage(page);
 
-  await test.step('Seed a book in progress with two entries on different days', async () => {
-    const bookId = await apiClient.createBook('Piranesi', 'Susanna Clarke', 272);
-    const engId = await apiClient.markAsReading(bookId);
+  await test.step('Start Piranesi and add entries on two different days', async () => {
+    const engId = await apiClient.markAsReading(piranesi.id);
     await apiClient.patchEngagementDates(engId, { started_on: '2025-06-01' });
     await apiClient.logProgress(engId, 50, '2025-06-14');
     await apiClient.logProgress(engId, 100, '2025-06-15');
@@ -24,8 +27,8 @@ test('A read’s page is reachable from currently reading and lists its entries'
 
   await test.step('Navigate to the read’s page via the currently-reading shelf', async () => {
     await currentlyReading.goto();
-    await currentlyReading.openCardMenu('Piranesi');
-    await cardMenu.getViewHistoryItem('Piranesi').click();
+    await currentlyReading.openCardMenu(piranesi.title);
+    await cardMenu.getViewHistoryItem(piranesi.title).click();
   });
 
   await test.step('Verify both entries and the read’s dates are shown', async () => {
@@ -41,9 +44,8 @@ test('A finished read’s page is reachable from the finished shelf', async ({ p
   const cardMenu = new CardMenuPage(page);
   const history = new ReadHistoryPage(page);
 
-  await test.step('Seed a finished book with one entry', async () => {
-    const bookId = await apiClient.createBook('Dune', 'Frank Herbert', 412);
-    const engId = await apiClient.markAsReading(bookId);
+  await test.step('Finish Dune with one progress entry', async () => {
+    const engId = await apiClient.markAsReading(dune.id);
     await apiClient.patchEngagementDates(engId, { started_on: '2025-06-01' });
     await apiClient.logProgress(engId, 100, '2025-06-15');
     await apiClient.markAsFinished(engId);
@@ -51,8 +53,8 @@ test('A finished read’s page is reachable from the finished shelf', async ({ p
 
   await test.step('Navigate to the read’s page via the finished shelf', async () => {
     await finished.goto();
-    await finished.openRowMenu('Dune');
-    await cardMenu.getViewHistoryItem('Dune').click();
+    await finished.openRowMenu(dune.title);
+    await cardMenu.getViewHistoryItem(dune.title).click();
   });
 
   await test.step('Verify the entry is listed', async () => {
@@ -66,9 +68,8 @@ test('Editing an entry’s date persists and renders the new date', async ({ pag
 
   let engId = '';
 
-  await test.step('Seed a book with an early start date and one entry', async () => {
-    const bookId = await apiClient.createBook('Piranesi', 'Susanna Clarke', 272);
-    engId = await apiClient.markAsReading(bookId);
+  await test.step('Start Piranesi early and add one progress entry', async () => {
+    engId = await apiClient.markAsReading(piranesi.id);
     await apiClient.patchEngagementDates(engId, { started_on: '2025-01-01' });
     await apiClient.logProgress(engId, 50, '2025-06-01');
   });
@@ -99,9 +100,8 @@ test('Editing the newest entry’s end page persists and shows the updated range
 
   let engId = '';
 
-  await test.step('Seed a book with one entry ending at page 50', async () => {
-    const bookId = await apiClient.createBook('Piranesi', 'Susanna Clarke', 272);
-    engId = await apiClient.markAsReading(bookId);
+  await test.step('Start Piranesi and log progress to page 50', async () => {
+    engId = await apiClient.markAsReading(piranesi.id);
     await apiClient.patchEngagementDates(engId, { started_on: '2025-06-01' });
     await apiClient.logProgress(engId, 50, '2025-06-15');
   });
@@ -133,9 +133,8 @@ test('Deleting the newest entry reverts progress to the prior entry', async ({
 
   let engId = '';
 
-  await test.step('Seed a book logged to page 100 then page 200', async () => {
-    const bookId = await apiClient.createBook('Dune', 'Frank Herbert', 412);
-    engId = await apiClient.markAsReading(bookId);
+  await test.step('Start Dune and log progress to pages 100 and 200', async () => {
+    engId = await apiClient.markAsReading(dune.id);
     await apiClient.patchEngagementDates(engId, { started_on: '2025-06-01' });
     await apiClient.logProgress(engId, 100, '2025-06-14');
     await apiClient.logProgress(engId, 200, '2025-06-15');
@@ -159,8 +158,8 @@ test('Deleting the newest entry reverts progress to the prior entry', async ({
 
   await test.step('Verify the progress bar reverted to the prior entry', async () => {
     await currentlyReading.goto();
-    await expect(currentlyReading.getProgressBar('Dune')).toHaveAccessibleName(
-      'Dune progress: 24%'
+    await expect(currentlyReading.getProgressBar(dune.title)).toHaveAccessibleName(
+      `${dune.title} progress: 24%`
     );
   });
 });
@@ -173,12 +172,11 @@ test('A mixed read’s history shows each session in the ruler it was logged on'
 
   let engId = '';
 
-  await test.step('Seed a page session, then an audio session the next day', async () => {
-    const bookId = await apiClient.createBook('Piranesi', 'Susanna Clarke', 272);
-    engId = await apiClient.markAsReading(bookId);
+  await test.step('Log a page session, then an audio session the next day', async () => {
+    engId = await apiClient.markAsReading(piranesi.id);
     await apiClient.patchEngagementDates(engId, { started_on: '2025-06-01' });
     await apiClient.logProgress(engId, 136, '2025-06-14');
-    await apiClient.addFormat(engId, 'audio', 600);
+    await apiClient.addFormat(engId, 'audio');
     await apiClient.logAudioProgress(engId, 360, '2025-06-15');
   });
 

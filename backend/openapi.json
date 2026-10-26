@@ -102,7 +102,8 @@
               "schema": {
                 "$ref": "#/components/schemas/TestLoginRequest",
                 "default": {
-                  "persona": "e2e"
+                  "persona": "e2e",
+                  "worker_index": 0
                 }
               }
             }
@@ -2752,6 +2753,13 @@
             ],
             "title": "Persona",
             "default": "e2e"
+          },
+          "worker_index": {
+            "type": "integer",
+            "maximum": 15.0,
+            "minimum": 0.0,
+            "title": "Worker Index",
+            "default": 0
           }
         },
         "type": "object",

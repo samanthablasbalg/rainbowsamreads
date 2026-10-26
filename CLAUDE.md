@@ -96,8 +96,8 @@ Development happens **inside the dev container** (ADR-0028), and so does this se
   suite PASSED** — it is not "no output". On failure read that file; don't re-run to see it.
 - `prettier:*` runs from `frontend/` but covers the **whole repo** (the scripts pass `..`).
 - Migrations apply themselves when the stack starts; run `alembic` by hand only when authoring one.
-- **An e2e run truncates the dev database.** Reseed afterwards, then log out and in — the seed
-  replaces the user row with a new id.
+- E2E runs reset only test-worker personal data and remove their E2E-owned catalog records. The
+  development user's data survives, so a normal run needs no reseed.
 - `playwright: command not found` means `e2e/node_modules` is an empty volume: `cd e2e && npm ci`.
 
 ## Architecture

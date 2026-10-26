@@ -17,7 +17,8 @@ external Playwright-docs default.
   compose into the single `test`/`expect` that specs import: **chain to compose** (each file
   `.extend`s the previous test, not `@playwright/test`), **depend to order** (a fixture runs after
   another by destructuring it).
-- `e2e/api/api-client.ts` — `ApiClient` for backend data setup.
+- `e2e/api/api-client.ts` — `ApiClient` for creating personal test state.
+- `e2e/catalog/e2e-catalog.ts` — the immutable shared catalog installed for each Playwright run.
 
 ## Where the suite runs
 
@@ -36,22 +37,26 @@ consequences shape how specs are written:
 
 ## Auth & isolation
 
-Every route is login-gated (Google OAuth). The `auth setup` project (`tests/auth.setup.ts`) logs in
-once per run via the env-gated `POST /auth/test-login` bypass (`ALLOW_TEST_LOGIN=true`, set on the
-`api` service) and saves the session to `e2e/.auth/user.json`; `chromium`/`firefox`/`mobile` load it
-as `storageState`, so every `page`/`request` starts already authenticated. One call is enough —
-there is one origin for the cookie to land under. `test-login` takes a `persona` (`"e2e"` default,
-or `"dev"`) that picks a fixed, hardcoded email — never a caller-supplied one — so the bypass can
-never mint a session for an arbitrary address.
+Every route is login-gated (Google OAuth). Each Playwright worker logs in once through the env-gated
+`POST /api/auth/test-login` bypass (`ALLOW_TEST_LOGIN=true`, set on the `api` service). The
+worker-scoped fixture passes `parallelIndex` in the bounded `0..15` range and supplies the returned
+storage state to its tests. A restarted worker therefore keeps the same identity. The route derives
+the worker's fixed email internally; it never accepts a caller-supplied address.
 
-- **Data isolation** is per-test truncation. Specs import `test`/`expect` from the `fixtures/` tree
-  — never `@playwright/test` directly — and the base `test` carries an `auto` fixture that truncates
-  every table before each test **except `users`** — truncating it would orphan the session
-  `auth setup` already established. With `workers: 1` that means each test starts from an
-  otherwise-empty DB, so tests use **fixed** identifiers and need **no** per-test cleanup or unique
-  suffixes.
-- **Data setup** goes through `ApiClient` (`e2e/api/api-client.ts`), built from the `request`
-  fixture.
+Specs import `test`/`expect` from the `fixtures/` chain — never `@playwright/test` directly. Setup
+and teardown project files are the exception because they run outside the ordinary fixture chain.
+
+- **Personal state:** an automatic fixture deletes only the current worker user's rows before each
+  test, in one transaction. It leaves every other worker and the development user untouched.
+- **Shared catalog:** the `catalog setup` project installs deterministic E2E books, authors, and
+  editions once. Ordinary specs read records from `E2E_CATALOG` and create only engagements, logs,
+  reviews, and other personal state. The teardown project removes only the E2E-owned catalog rows
+  and test-user state; a local run leaves development data intact.
+- **Shared catalog writes:** a test whose behavior is creating or deleting catalog data uses the
+  `catalogWriter` fixture. It supplies a unique title/author/external ID and performs targeted
+  cleanup after the test. Ordinary specs do not call `ApiClient.createBook()`.
+- **Personal setup:** use `ApiClient`, built from the `request` fixture. Name `test.step()` phases
+  for the state they create, such as `Start Piranesi` or `Log progress`.
 
 ## Running
 
@@ -61,6 +66,8 @@ Run these from `e2e/`.
   repo's default reporter is `html`; always pass `--reporter=dot` for a readable run.
 - **Always pass `--project=chromium`.** All three projects run by default, and `firefox` and
   `mobile` produce no information an agent can act on.
+- Local runs default to four workers and CI runs to two. Set `E2E_WORKERS=1..16` only when a task
+  specifically needs a different concurrency level.
 - **`exit=0` means the suite PASSED.** A hook rewrites every test command, so a bare exit code is
   the whole result — it is not "no output". On failure the hook says
   `FAILED. The full output is in /tmp/test.log.` — read that file, do not re-run the suite.
@@ -91,7 +98,7 @@ line is setup, action, or assertion. Production-code habits are anti-patterns:
 - **No wrapper indirection or `unknown`-type juggling** — no one-off helper abstractions, no
   branching on response shape.
 - If you're adding a safety net, you're solving the wrong problem. Trust the framework (auto-waits,
-  `afterEach` cleanup, timeouts) and the setup (provisioned schema, truncated DB).
+  fixture cleanup, timeouts) and the setup (provisioned schema, isolated worker state).
 
 ### Locators
 
@@ -123,7 +130,7 @@ line is setup, action, or assertion. Production-code habits are anti-patterns:
   sub-feature) and **propose a split** to the user rather than piling on; a spec over 10 tests is
   too big.
 - No `describe` block unless the file genuinely needs more than one setup.
-- **Every action lives in a `test.step()`** — setup included (data seeding via `ApiClient`, route
+- **Every action lives in a `test.step()`** — setup included (personal state via `ApiClient`, route
   stubs, navigation). Loose actions at the top of the test body don't appear in the report; a reader
   should see the test's phases — setup → exercise → verify — from the step list alone.
 - **Verification is its own step**, titled for what it checks, so the verify phase is visible. The
@@ -141,33 +148,34 @@ line is setup, action, or assertion. Production-code habits are anti-patterns:
 - Don't hardcode timeouts; rely on Playwright's auto-waiting and 30s default. Only set an explicit
   timeout when it genuinely differs from the default. (No shared `TIMEOUTS` constant yet — add one
   if real values start to accumulate.)
-- No per-test cleanup of created data — the `auto` truncate fixture resets the DB before each test.
-  (Cleanup that genuinely outlives the DB, e.g. files, goes in `afterEach`.)
+- Personal-row cleanup belongs to the automatic reset fixture. Shared catalog writes use
+  `catalogWriter`'s targeted cleanup. Cleanup that genuinely outlives the database, such as files,
+  goes in `afterEach`.
 - Tests are independent: no reliance on execution order, no shared mutable state — each must pass
   alone and under `--repeat-each`.
-- Under the current truncate model, artifacts use **fixed, readable** identifiers (no
-  timestamp/random suffix) — `workers: 1` plus per-test truncation means there's nothing to collide
-  with. (This flips to unique suffixes when the suite goes parallel.)
+- Ordinary specs use the fixed records in `E2E_CATALOG`. Tests that intentionally write shared
+  catalog data get every unique identifier from `catalogWriter`.
 
 ### Code quality
 
 - No comments in **test code** — specs self-document via `test.step()` titles; only
-  `// eslint-disable-*` is allowed. (POMs, helpers, and the seed may keep concise _why_-comments.)
+  `// eslint-disable-*` is allowed. (POMs, fixtures, and helpers may keep concise _why_-comments.)
 - No `test.only`, no `console.log`, no hardcoded credentials.
 - File uploads use `setInputFiles()` or a `page.waitForEvent('filechooser')` listener — never click
   a chooser button without it.
 
 ### API data setup (`ApiClient`)
 
-Tests that need backend data create it through `ApiClient` (`e2e/api/api-client.ts`), built from the
+Tests create personal backend state through `ApiClient` (`e2e/api/api-client.ts`), built from the
 `request` fixture — never inline HTTP in the spec:
 
 - **Setup only — never assertions.** `ApiClient` creates data; tests assert. No `expect` inside it.
 - **Type the responses — no `unknown`, no defensive parsing.** Extract directly
   (`(await res.json()).id`); a malformed response should fail loudly, not be handled gracefully.
-- **Methods are verbs** (`createBook`, `markAsReading`) and earn their place by reuse — don't add a
+- **Methods are verbs** (`markAsReading`, `logProgress`) and earn their place by reuse — don't add a
   one-off wrapper for a single caller.
-- Teardown is the `auto` truncate fixture's job, not `ApiClient`'s — it has no delete methods.
+- Personal teardown is the automatic reset fixture's job, not `ApiClient`'s. Shared catalog writers
+  are isolated behind `catalogWriter`.
 
 ## Naming
 

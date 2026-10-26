@@ -1,4 +1,5 @@
 import { expect, test } from '../../fixtures/api-client';
+import { E2E_CATALOG } from '../../catalog/e2e-catalog';
 import { SearchPanelPage } from '../../page-objects/search-panel.page';
 import { StartReadingSheetPage } from '../../page-objects/start-reading-sheet.page';
 import { CurrentlyReadingPage } from '../../page-objects/currently-reading.page';
@@ -53,15 +54,14 @@ test('A failed search shows an error, not a crash', async ({ page }) => {
   });
 });
 
-test('Adding a catalog result to my library sets its status', async ({ page, apiClient }) => {
+test('Adding a catalog result to my library sets its status', async ({ page }) => {
   const searchPanel = new SearchPanelPage(page);
   const currentlyReading = new CurrentlyReadingPage(page);
   const sheet = new StartReadingSheetPage(page);
   const finishedBooks = new FinishedBooksPage(page);
-  const title = "The Cartographer's Quiet Room";
+  const title = E2E_CATALOG.cartographersQuietRoom.title;
 
-  await test.step('Create a catalog book with no engagement', async () => {
-    await apiClient.createBook(title, 'Mira Voss', 288);
+  await test.step('Open the app with a catalog book that has no engagement', async () => {
     await currentlyReading.goto();
   });
 

@@ -1,7 +1,10 @@
 import { expect, test } from '../../fixtures/api-client';
+import { E2E_CATALOG } from '../../catalog/e2e-catalog';
 import { EntryEditSheetPage } from '../../page-objects/entry-edit-sheet.page';
 import { ProgressLogSheetPage } from '../../page-objects/progress-log-sheet.page';
 import { ReadHistoryPage } from '../../page-objects/read-history.page';
+
+const piranesi = E2E_CATALOG.piranesi;
 
 test('Logging progress with a note shows the note on the entry', async ({ page, apiClient }) => {
   const history = new ReadHistoryPage(page);
@@ -9,9 +12,8 @@ test('Logging progress with a note shows the note on the entry', async ({ page, 
 
   let engId = '';
 
-  await test.step('Seed a book in progress read to page 50', async () => {
-    const bookId = await apiClient.createBook('Piranesi', 'Susanna Clarke', 272);
-    engId = await apiClient.markAsReading(bookId);
+  await test.step('Start Piranesi and log progress to page 50', async () => {
+    engId = await apiClient.markAsReading(piranesi.id);
     await apiClient.patchEngagementDates(engId, { started_on: '2025-06-01' });
     await apiClient.logProgress(engId, 50, '2025-06-14');
   });
@@ -26,7 +28,7 @@ test('Logging progress with a note shows the note on the entry', async ({ page, 
     await sheet.openDatePicker();
     await sheet.setDate('2025-06-15');
     await sheet.addNote('The Beauty of the House is immeasurable.');
-    await sheet.save('Piranesi');
+    await sheet.save(piranesi.title);
     await expect(sheet.sheet).toHaveCount(0);
   });
 
@@ -43,9 +45,8 @@ test('Noting two quotes on the page already reached keeps both', async ({ page, 
 
   let engId = '';
 
-  await test.step('Seed a book in progress read to page 100', async () => {
-    const bookId = await apiClient.createBook('Piranesi', 'Susanna Clarke', 272);
-    engId = await apiClient.markAsReading(bookId);
+  await test.step('Start Piranesi and log progress to page 100', async () => {
+    engId = await apiClient.markAsReading(piranesi.id);
     await apiClient.patchEngagementDates(engId, { started_on: '2025-06-01' });
     await apiClient.logProgress(engId, 100, '2025-06-14');
   });
@@ -60,7 +61,7 @@ test('Noting two quotes on the page already reached keeps both', async ({ page, 
     await sheet.openDatePicker();
     await sheet.setDate('2025-06-15');
     await sheet.addNote('The first quote from this page.');
-    await sheet.save('Piranesi');
+    await sheet.save(piranesi.title);
     await expect(sheet.sheet).toHaveCount(0);
   });
 
@@ -70,7 +71,7 @@ test('Noting two quotes on the page already reached keeps both', async ({ page, 
     await sheet.openDatePicker();
     await sheet.setDate('2025-06-15');
     await sheet.addNote('The second quote from this page.');
-    await sheet.save('Piranesi');
+    await sheet.save(piranesi.title);
     await expect(sheet.sheet).toHaveCount(0);
   });
 
@@ -90,9 +91,8 @@ test('Adding a note to an existing entry persists it', async ({ page, apiClient 
 
   let engId = '';
 
-  await test.step('Seed a book with one entry carrying no note', async () => {
-    const bookId = await apiClient.createBook('Piranesi', 'Susanna Clarke', 272);
-    engId = await apiClient.markAsReading(bookId);
+  await test.step('Start Piranesi and add one entry without a note', async () => {
+    engId = await apiClient.markAsReading(piranesi.id);
     await apiClient.patchEngagementDates(engId, { started_on: '2025-06-01' });
     await apiClient.logProgress(engId, 50, '2025-06-15');
   });
