@@ -1,10 +1,17 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const configuredWorkers = process.env['E2E_WORKERS'];
+const workers = configuredWorkers == null ? (process.env['CI'] ? 2 : 4) : Number(configuredWorkers);
+
+if (!Number.isInteger(workers) || workers < 1 || workers > 16) {
+  throw new Error('E2E_WORKERS must be an integer from 1 through 16');
+}
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
   timeout: 30 * 1000,
-  workers: 1,
+  workers,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,
   reporter: process.env['CI'] ? [['github'], ['list'], ['blob']] : [['html', { open: 'never' }]],
