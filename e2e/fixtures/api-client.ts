@@ -1,9 +1,9 @@
-import { test as base } from './clean-db';
+import { test as base } from './reset-personal-data';
 import { ApiClient } from '../api/api-client';
 
-// Extends the clean-db fixture (which truncates the DB before each test) with
-// an `apiClient` for backend data setup. Specs that need to seed data import
-// `test`/`expect` from here; the wipe rides along via the chain.
+// Extends the personal-data reset with an `apiClient` for backend data setup.
+// Specs import `test`/`expect` from here, so both authentication and isolation
+// stay behind one fixture interface.
 
 export const test = base.extend<{ apiClient: ApiClient }>({
   apiClient: async ({ request }, use) => {
@@ -11,4 +11,4 @@ export const test = base.extend<{ apiClient: ApiClient }>({
   },
 });
 
-export { expect } from './clean-db';
+export { expect } from './reset-personal-data';

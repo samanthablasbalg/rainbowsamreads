@@ -37,21 +37,20 @@ export class ApiClient {
    * Starts a reading engagement for a book.
    * @param bookId - The book to start reading.
    * @param editionFormat - The format of the edition to read.
-   * @param editionLength - Optional total length in the edition's unit; used to capture a missing
-   *   edition length when the read starts.
+   * @param options.lengthOverride - Optional length that applies only to this engagement.
    * @returns The new engagement's id.
    */
   async markAsReading(
     bookId: string,
     editionFormat = 'print',
-    editionLength?: number
+    options: { lengthOverride?: number } = {}
   ): Promise<string> {
     const response = await this.request.post('/api/engagements', {
       data: {
         book_id: bookId,
         status: 'reading',
         edition_format: editionFormat,
-        ...(editionLength != null && { edition_length: editionLength }),
+        ...(options.lengthOverride != null && { length_override: options.lengthOverride }),
       },
     });
     if (!response.ok()) {
@@ -78,7 +77,7 @@ export class ApiClient {
   }
 
   /**
-   * Where the sheet would prefill "From" -- a session names both its ends, so seeding
+   * Where the sheet would prefill "From" -- a session names both its ends, so creating
    * one that just carries on from the last needs this first.
    * @param engagementId - The engagement to read.
    * @param unit - Which ruler to read the resume point on.
@@ -94,7 +93,7 @@ export class ApiClient {
    * @param engagementId - The engagement to log against.
    * @param currentPage - The page reached.
    * @param loggedOn - The date the session happened, yyyy-mm-dd. Defaults to today,
-   *   which makes every seeded log share one date -- pass distinct dates when a test
+   *   which makes every created log share one date -- pass distinct dates when a test
    *   needs to tell its entries apart, since a row is named for its date.
    */
   async logProgress(engagementId: string, currentPage: number, loggedOn?: string): Promise<void> {
@@ -160,7 +159,7 @@ export class ApiClient {
    * Marks an engagement as finished.
    * @param engagementId - The engagement to finish.
    * @param effectiveOn - The date the read ended, yyyy-mm-dd. Defaults to today. Pass it
-   *   when a test needs the finish date to sit on a seeded log rather than on today.
+   *   when a test needs the finish date to sit on an existing log rather than on today.
    */
   async markAsFinished(engagementId: string, effectiveOn?: string): Promise<void> {
     await this.request.post(`/api/engagements`, {

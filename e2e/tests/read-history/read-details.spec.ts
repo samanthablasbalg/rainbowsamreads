@@ -1,4 +1,5 @@
 import { expect, test } from '../../fixtures/api-client';
+import { E2E_CATALOG } from '../../catalog/e2e-catalog';
 import { ReadHistoryPage } from '../../page-objects/read-history.page';
 
 test('Editing the read’s start date persists and renders the new date', async ({
@@ -9,9 +10,8 @@ test('Editing the read’s start date persists and renders the new date', async 
 
   let engId = '';
 
-  await test.step('Seed a book in progress', async () => {
-    const bookId = await apiClient.createBook('Piranesi', 'Susanna Clarke', 272);
-    engId = await apiClient.markAsReading(bookId);
+  await test.step('Start reading Piranesi', async () => {
+    engId = await apiClient.markAsReading(E2E_CATALOG.piranesi.id);
   });
 
   await test.step('Navigate to the read’s page', async () => {
@@ -35,15 +35,18 @@ test('Correcting the read’s length recomputes its completion percentage', asyn
 
   let engId = '';
 
-  await test.step('Seed a 400 page book read to page 200', async () => {
-    const bookId = await apiClient.createBook('Piranesi', 'Susanna Clarke', 400);
-    engId = await apiClient.markAsReading(bookId);
+  await test.step('Start Piranesi with a 400-page override and read to page 200', async () => {
+    engId = await apiClient.markAsReading(E2E_CATALOG.piranesi.id, 'print', {
+      lengthOverride: 400,
+    });
     await apiClient.logProgress(engId, 200);
   });
 
   await test.step('Navigate to the read’s page', async () => {
     await history.goto(engId);
-    await expect(history.progressBar).toHaveAccessibleName('Piranesi progress: 50%');
+    await expect(history.progressBar).toHaveAccessibleName(
+      `${E2E_CATALOG.piranesi.title} progress: 50%`
+    );
   });
 
   await test.step('Correct the length to 250 pages through the inline editor', async () => {
@@ -53,7 +56,9 @@ test('Correcting the read’s length recomputes its completion percentage', asyn
   await test.step('Verify the shorter length and the percentage it reflows to', async () => {
     await expect(history.lengthInput).toHaveCount(0);
     await expect(history.lengthButton).toHaveText('250 pages');
-    await expect(history.progressBar).toHaveAccessibleName('Piranesi progress: 80%');
+    await expect(history.progressBar).toHaveAccessibleName(
+      `${E2E_CATALOG.piranesi.title} progress: 80%`
+    );
   });
 });
 
@@ -65,9 +70,8 @@ test('Moving the start date onto the first session takes that session with it', 
 
   let engId = '';
 
-  await test.step('Seed a read started Jan 1 with sessions on Jan 1 and Jan 10', async () => {
-    const bookId = await apiClient.createBook('Piranesi', 'Susanna Clarke', 272);
-    engId = await apiClient.markAsReading(bookId);
+  await test.step('Start Piranesi on Jan 1 with sessions on Jan 1 and Jan 10', async () => {
+    engId = await apiClient.markAsReading(E2E_CATALOG.piranesi.id);
     await apiClient.patchEngagementDates(engId, { started_on: '2025-01-01' });
     await apiClient.logProgress(engId, 50, '2025-01-01');
     await apiClient.logProgress(engId, 100, '2025-01-10');
@@ -100,9 +104,8 @@ test('Moving the finish date back onto an earlier day takes the closing session 
 
   let engId = '';
 
-  await test.step('Seed a read finished on Jun 13, its last session that same day', async () => {
-    const bookId = await apiClient.createBook('Piranesi', 'Susanna Clarke', 272);
-    engId = await apiClient.markAsReading(bookId);
+  await test.step('Finish Piranesi on Jun 13 with its last session that day', async () => {
+    engId = await apiClient.markAsReading(E2E_CATALOG.piranesi.id);
     await apiClient.patchEngagementDates(engId, { started_on: '2025-06-01' });
     await apiClient.logProgress(engId, 100, '2025-06-05');
     await apiClient.logProgress(engId, 272, '2025-06-13');

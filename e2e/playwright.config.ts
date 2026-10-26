@@ -28,12 +28,23 @@ export default defineConfig({
   },
   projects: [
     {
+      name: 'catalog teardown',
+      testMatch: /catalog\.teardown\.ts/,
+    },
+    {
+      name: 'catalog setup',
+      testMatch: /catalog\.setup\.ts/,
+      teardown: 'catalog teardown',
+    },
+    {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      dependencies: ['catalog setup'],
     },
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
+      dependencies: ['catalog setup'],
     },
     {
       // The only project that exercises the small-screen path: at ≤599px the
@@ -42,6 +53,7 @@ export default defineConfig({
       // device emulation, so the mobile project is Chromium-engine.)
       name: 'mobile',
       use: { ...devices['Pixel 7'] },
+      dependencies: ['catalog setup'],
     },
   ],
 });
