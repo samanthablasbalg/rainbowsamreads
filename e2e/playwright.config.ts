@@ -8,9 +8,7 @@ export default defineConfig({
   workers: 1,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,
-  reporter: process.env['CI']
-    ? [['github'], ['list'], ['html', { open: 'never' }]]
-    : [['html', { open: 'never' }]],
+  reporter: process.env['CI'] ? [['github'], ['list'], ['blob']] : [['html', { open: 'never' }]],
   use: {
     // The Caddy proxy, resolved by service name on the compose network —
     // the same single origin for /api/* and everything else that a human
