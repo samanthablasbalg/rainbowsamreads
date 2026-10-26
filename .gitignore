@@ -1,6 +1,7 @@
 # Editors, OS, agents
 .claude/worktrees/
 .DS_Store
+.worktrees/
 
 # Secrets and virtual environments
 .env
