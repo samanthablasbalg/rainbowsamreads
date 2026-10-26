@@ -294,6 +294,11 @@ export const TestLoginRequestPersona = {
 
 export interface TestLoginRequest {
   persona?: TestLoginRequestPersona;
+  /**
+   * @minimum 0
+   * @maximum 15
+   */
+  worker_index?: number;
 }
 
 export type CreatableReadingStatus =

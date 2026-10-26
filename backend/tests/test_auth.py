@@ -176,7 +176,9 @@ def test_test_login_dev_persona_logs_in_as_the_dev_user(
 ) -> None:
     monkeypatch.setenv("ALLOW_TEST_LOGIN", "true")
 
-    response = client.post("/api/auth/test-login", json={"persona": "dev"})
+    response = client.post(
+        "/api/auth/test-login", json={"persona": "dev", "worker_index": 4}
+    )
     assert response.status_code == 200
 
     user = db.execute(
@@ -189,21 +191,54 @@ def test_test_login_dev_persona_logs_in_as_the_dev_user(
     assert me.json()["id"] == str(user.id)
 
 
+def test_test_login_uses_distinct_users_for_different_worker_indices(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALLOW_TEST_LOGIN", "true")
+
+    first_login = client.post("/api/auth/test-login", json={"worker_index": 1})
+    assert first_login.status_code == 200
+    first_user = client.get("/api/auth/me")
+    assert first_user.status_code == 200
+
+    second_login = client.post("/api/auth/test-login", json={"worker_index": 2})
+    assert second_login.status_code == 200
+    second_user = client.get("/api/auth/me")
+    assert second_user.status_code == 200
+
+    assert first_user.json()["email"] == "test-user-1@example.com"
+    assert second_user.json()["email"] == "test-user-2@example.com"
+    assert first_user.json()["id"] != second_user.json()["id"]
+
+
 def test_test_login_reuses_the_same_user_on_repeat_calls(
     client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("ALLOW_TEST_LOGIN", "true")
 
-    client.post("/api/auth/test-login")
+    first_login = client.post("/api/auth/test-login", json={"worker_index": 3})
+    assert first_login.status_code == 200
     first_id = client.get("/api/auth/me").json()["id"]
 
-    client.post("/api/auth/test-login")
+    second_login = client.post("/api/auth/test-login", json={"worker_index": 3})
+    assert second_login.status_code == 200
     second_id = client.get("/api/auth/me").json()["id"]
 
     assert first_id == second_id
     users = (
-        db.execute(select(User).where(User.email == E2E_TEST_USER_EMAIL))
+        db.execute(select(User).where(User.email == "test-user-3@example.com"))
         .scalars()
         .all()
     )
     assert len(users) == 1
+
+
+@pytest.mark.parametrize("worker_index", [-1, 16])
+def test_test_login_rejects_worker_index_outside_the_bounded_pool(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, worker_index: int
+) -> None:
+    monkeypatch.setenv("ALLOW_TEST_LOGIN", "true")
+
+    response = client.post("/api/auth/test-login", json={"worker_index": worker_index})
+
+    assert response.status_code == 422

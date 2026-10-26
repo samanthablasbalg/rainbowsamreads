@@ -6,7 +6,7 @@ from typing import Literal, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.crud import user_crud
@@ -18,6 +18,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 E2E_TEST_USER_EMAIL = "test-user@example.com"
 DEV_TEST_USER_EMAIL = "blasbalgs@gmail.com"
+MAX_E2E_WORKER_INDEX = 15
 
 _TEST_LOGIN_PERSONAS: dict[str, str] = {
     "e2e": E2E_TEST_USER_EMAIL,
@@ -27,6 +28,7 @@ _TEST_LOGIN_PERSONAS: dict[str, str] = {
 
 class TestLoginRequest(BaseModel):
     persona: Literal["e2e", "dev"] = "e2e"
+    worker_index: int = Field(default=0, ge=0, le=MAX_E2E_WORKER_INDEX)
 
 
 class CurrentUser(BaseModel):
@@ -45,6 +47,12 @@ def _get_or_create_user(db: Session, email: str) -> User:
     user = user_crud.get_or_create(db, lookup={"email": email})
     db.commit()
     return user
+
+
+def _test_login_email(payload: TestLoginRequest) -> str:
+    if payload.persona == "dev" or payload.worker_index == 0:
+        return _TEST_LOGIN_PERSONAS[payload.persona]
+    return f"test-user-{payload.worker_index}@example.com"
 
 
 def _allowlist() -> set[str]:
@@ -125,7 +133,7 @@ def test_login(
 ) -> dict[str, bool]:
     if os.getenv("ALLOW_TEST_LOGIN") != "true":
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    email = _TEST_LOGIN_PERSONAS[payload.persona]
+    email = _test_login_email(payload)
     user = _get_or_create_user(db, email)
     request.session["user_id"] = str(user.id)
     request.session["email"] = email
