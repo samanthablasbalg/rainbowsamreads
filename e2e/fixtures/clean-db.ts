@@ -1,10 +1,10 @@
-import { test as base } from '@playwright/test';
 import { Client } from 'pg';
+import { test as base } from './worker-session';
 
-// Base of the fixtures chain. Every spec imports `test`/`expect` from a fixture
-// in this dir (never from @playwright/test directly); this one wipes the e2e
-// database before each test, so tests never see each other's data. Scenario
-// fixtures (e.g. a "five books in the library" one) extend this to inherit both.
+// Data-reset layer of the fixtures chain. Every spec imports `test`/`expect`
+// from a fixture in this dir (never from @playwright/test directly); this one
+// wipes the e2e database before each test, so tests never see each other's data.
+// Scenario fixtures extend this to inherit both authentication and cleanup.
 
 // Hardcoded rather than read from the environment: there is one database now, and
 // this string is correct from inside any container on the compose network. It
@@ -23,9 +23,9 @@ export const test = base.extend<{ cleanDb: void }>({
       // Ask Postgres which tables exist instead of hand-maintaining a list, so new
       // tables get wiped automatically. `pg_tables` is a built-in catalog; `public`
       // is the schema our app's tables live in. Skip `alembic_version` (records which
-      // migrations have run) and `users` (the auth setup project logs in once for the
-      // whole run via a find-or-create test-login call; truncating it here would orphan
-      // that session — CASCADE only truncates tables that reference the ones listed, so
+      // migrations have run) and `users` (worker-session logs in once per worker via a
+      // find-or-create test-login call; truncating it here would orphan that worker's
+      // session — CASCADE only truncates tables that reference the ones listed, so
       // leaving `users` out doesn't stop `engagements` etc. from being wiped).
       const { rows } = await client.query<{ tablename: string }>(
         `SELECT tablename FROM pg_tables
@@ -48,4 +48,4 @@ export const test = base.extend<{ cleanDb: void }>({
   ],
 });
 
-export { expect } from '@playwright/test';
+export { expect } from './worker-session';

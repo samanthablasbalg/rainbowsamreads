@@ -1,5 +1,4 @@
 import { defineConfig, devices } from '@playwright/test';
-import { AUTH_FILE } from './auth-file';
 
 export default defineConfig({
   testDir: './tests',
@@ -29,21 +28,12 @@ export default defineConfig({
   },
   projects: [
     {
-      // Logs in once via the env-gated /auth/test-login bypass and saves the
-      // session to AUTH_FILE; the projects below load it as storageState so
-      // every page/request starts already authenticated.
-      name: 'auth setup',
-      testMatch: /auth\.setup\.ts/,
-    },
-    {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'], storageState: AUTH_FILE },
-      dependencies: ['auth setup'],
+      use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'], storageState: AUTH_FILE },
-      dependencies: ['auth setup'],
+      use: { ...devices['Desktop Firefox'] },
     },
     {
       // The only project that exercises the small-screen path: at ≤599px the
@@ -51,8 +41,7 @@ export default defineConfig({
       // (412px wide, touch) trips that breakpoint. (Firefox can't do mobile
       // device emulation, so the mobile project is Chromium-engine.)
       name: 'mobile',
-      use: { ...devices['Pixel 7'], storageState: AUTH_FILE },
-      dependencies: ['auth setup'],
+      use: { ...devices['Pixel 7'] },
     },
   ],
 });
