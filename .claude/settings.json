@@ -15,8 +15,6 @@
       "Bash(cd * && npm run lint *)",
       "Bash(cd * && npm run typecheck *)",
       "Bash(cd * && npm run build *)",
-      "Bash(npm test > /tmp/test.log 2>&1*)",
-      "Bash(cd * && npm test > /tmp/test.log 2>&1*)",
       "Bash(* /tmp/*)",
       "Edit(/tmp/*)"
     ],

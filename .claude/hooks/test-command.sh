@@ -5,12 +5,12 @@
 # Whatever shape the agent typed - bare, piped to `tail`, redirected somewhere
 # else, prefixed with `cd` - is rewritten to:
 #
-#     <runner invocation> > /tmp/test.log 2>&1; echo exit=$?
+#     <runner invocation> > <unique log path> 2>&1; echo exit=$?
 #
 # The point is unchanged from the hook this replaces: a test run must never
 # stream to the terminal or get truncated by a pager, because a truncated run
 # is what leads to running the suite again to see what got cut off. The exit
-# code is the whole answer on a pass; /tmp/test.log is there for a failure.
+# code is the whole answer on a pass; the unique log is there for a failure.
 #
 # Rewriting rather than rejecting is deliberate. A rejection costs a round trip
 # and the agent just retries; a rewrite cannot be argued with.
@@ -18,8 +18,6 @@
 # POSIX `case`, never `[[ ]]`: hook commands run under /bin/sh, which is dash
 # here. dash has no `[[`, so a bash-syntax test errors, the condition reads as
 # false, and the hook silently exits 0 - doing nothing, forever.
-
-LOG=/tmp/test.log
 
 cmd=$(jq -r '.tool_input.command // ""')
 [ -n "$cmd" ] || exit 0
@@ -68,13 +66,15 @@ case "$last" in
   *) exit 0 ;;
 esac
 
-new="$core > $LOG 2>&1; c=\$?; echo exit=\$c; [ \$c -eq 0 ] || echo \"FAILED. The full output is in $LOG. Read that file. Do NOT re-run the suite.\""
+test_log_path=$(mktemp /tmp/reading-tracker-test.XXXXXX) || exit 1
+new="$core > $test_log_path 2>&1; c=\$?; echo exit=\$c; [ \$c -eq 0 ] || echo \"FAILED. The full output is in $test_log_path. Read that file. Do NOT re-run the suite.\""
+reason="Test run captured to $test_log_path. Read it only if the exit code is non-zero."
 
-jq -cn --arg c "$new" '{
+jq -cn --arg c "$new" --arg reason "$reason" '{
   hookSpecificOutput: {
     hookEventName: "PreToolUse",
     permissionDecision: "allow",
-    permissionDecisionReason: "Test run captured to /tmp/test.log. Read it only if the exit code is non-zero.",
+    permissionDecisionReason: $reason,
     updatedInput: { command: $c }
   }
 }'

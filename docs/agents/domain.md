@@ -19,9 +19,9 @@ it upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and
 
 ## Writing an ADR
 
-`.claude/skills/domain-modeling/ADR-FORMAT.md` is the standard — template, status vocabulary,
-numbering, when a decision earns a record, and the index row that has to go with it. It has been
-adapted to this repo and outranks any ADR default a skill carries.
+`docs/agents/adr-format.md` is the project-owned standard—template, status vocabulary, numbering,
+when a decision earns a record, and the index row that has to go with it. It outranks any ADR
+default carried by an upstream skill.
 
 Significant decisions are recorded there rather than restated in other docs or PR summaries.
 

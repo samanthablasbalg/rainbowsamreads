@@ -13,7 +13,7 @@
     "typecheck": "tsc -b --noEmit",
     "check": "npm run lint && npm run typecheck && npm test",
     "prettier:check": "prettier --check .. --ignore-path ../.gitignore --ignore-path ../.prettierignore",
-    "prettier:format": "prettier --write .. --ignore-path ../.gitignore --ignore-path ../.prettierignore",
+    "format": "prettier --write .. --ignore-path ../.gitignore --ignore-path ../.prettierignore",
     "generate:api": "orval --config orval.config.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
