@@ -3,7 +3,7 @@ name = "reading-tracker-backend"
 version = "0.1.0"
 requires-python = ">=3.14,<3.15"
 dependencies = [
-    "alembic>=1.18.4,<2",
+    "alembic>=1.20.1,<2",
     "authlib>=1.7.2,<2",
     "fastapi>=0.136.3,<1",
     "httpx>=0.28.1,<1",
@@ -12,7 +12,7 @@ dependencies = [
     "psycopg2-binary>=2.9.12,<3",
     "pydantic>=2.13.4,<3",
     "python-dotenv>=1.2.2,<2",
-    "sqlalchemy>=2.0.50,<2.1",
+    "sqlalchemy>=2.0.55,<2.1",
     "starlette>=1.3.1,<2",
     "uvicorn>=0.49.0,<1",
 ]
