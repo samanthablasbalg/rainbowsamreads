@@ -8,8 +8,8 @@ when_to_use:
   Auto-invoke when the user says "write a Playwright test", "add an e2e test", "create a test for
   <feature>", "test that <behavior>", or points at a issue/plan and asks for an e2e test.
 allowed-tools:
-  Bash(npx playwright test:*), Bash(npx playwright cli:*), Bash(npm test:*), Bash(python -m
-  scripts.seed_dev)
+  Bash(npx playwright test:*), Bash(npx playwright cli:*), Bash(npm test:*), Bash(npm --prefix
+  frontend run prettier:format), Bash(python -m scripts.seed_dev)
 ---
 
 # Author a new Playwright e2e test
@@ -19,14 +19,13 @@ Playwright test for the reading tracker app.
 
 ## How this skill works (read first)
 
-- **NEVER touch the backend with raw HTTP. No `curl`, `wget`, `fetch`, `httpie`, or any hand-rolled
-  request — in ANY step, for ANY reason.** Spec data setup goes through `ApiClient` only (Step 5),
-  and `ApiClient` exists _only_ inside a test's fixture context — it is NOT available while driving.
-  While driving, the data you get is what the run skill's Setup step seeded and nothing else —
-  `snapshot` and look at what's there. Do not add data through the app's own UI either: adding a
-  book calls the live Google Books API. If the scenario genuinely needs something the seed doesn't
-  have, STOP and ask the user. Reaching around the harness with `curl` is the single most forbidden
-  move in this skill.
+- **Use the documented interfaces.** Spec data setup goes through `ApiClient` only (Step 5), and
+  `ApiClient` exists _only_ inside a test's fixture context — it is not available while driving. The
+  run skill's documented test-login request is the sole raw-HTTP exception. Do not use `curl`,
+  `wget`, `fetch`, `httpie`, or a hand-rolled request for setup or inspection. While driving, use
+  the seeded data already present and inspect it with `snapshot`. Do not add data through the app's
+  UI: adding a book calls the live Google Books API. If the scenario needs data the seed lacks, stop
+  and ask the user.
 - **NEVER manipulate a database out-of-band.** No `alembic stamp` / `alembic downgrade`, no raw
   `psql`/SQL DDL (`ALTER` / `DROP` / `CREATE` / `ADD COLUMN`), no hand-editing of `alembic_version`
   or the schema — against ANY database. The schema is owned entirely by the `api` service, which
@@ -51,9 +50,8 @@ Playwright test for the reading tracker app.
   fails in a way that reads as a broken endpoint, and the recovery attempts from there (installing
   browsers, `curl`, driving scripts) are all forbidden.
 - **The live snapshot is the source of truth for locators.** React source is a _hint_.
-- **Conventions are auto-loaded** from `.claude/rules/playwright-e2e.md` (it loads whenever you
-  touch `e2e/**`). This file is the _procedure_; that rule is the _standards_ — follow both, and
-  don't restate the rule's contents here.
+- **Read `.claude/rules/playwright-e2e.md` before touching `e2e/**`.** Claude loads it by path;
+  Codex reaches it through `AGENTS.md`. This file is the _procedure_; that rule is the _standard_.
 - **Always tear down when you are done driving** — the run skill's Tear down step, and confirm it
   reports `(no browsers)`. Skipping it leaves a browser running in another container.
 - **Stop and ask — don't spin.** If the _environment_ is broken — the app is a blank screen or won't
@@ -170,12 +168,12 @@ matching the component's style. (The rule covers what's allowed; e.g. no `data-t
 
 ## Step 5 — Build / extend the Page Object, then write the spec
 
-Both follow the auto-loaded conventions rule — don't restate its rules here. Skill-specific
+Both follow the conventions rule referenced above — don't restate its rules here. Skill-specific
 mechanics:
 
 - **POM** at `e2e/page-objects/<feature>.page.ts`: the role-based locators the CLI emitted become
   `readonly Locator` props; add action/verification methods. Extend an existing POM if one fits.
-  (Conventions are in the auto-loaded rule; existing POMs under `e2e/page-objects/` are the model.)
+  (Conventions are in the referenced rule; existing POMs under `e2e/page-objects/` are the model.)
 - **Spec** at `e2e/tests/<feature>/<name>.spec.ts`: import `test`/`expect` from the `fixtures/` tree
   (never `@playwright/test` directly), plus the POM. Group steps by test phase — setup → exercise →
   verify, each step titled for what it does (see the rule's Structure section). All element access
@@ -184,15 +182,15 @@ mechanics:
 ## Step 6 — Run & fix (bounded)
 
 ```bash
-npm test -- tests/<feature>/<name>.spec.ts --reporter=dot
+npm test -- tests/<feature>/<name>.spec.ts --project=chromium --reporter=dot
 ```
 
 Up to **3 fix-and-rerun cycles**. **Timeouts are almost never the real problem** — if it times out,
 the element probably isn't appearing at all; fix the **locator in the POM** (re-derive from a fresh
 snapshot, going back through Step 3) or improve source a11y (Step 4) rather than extending timeouts.
 
-**Going back to Step 3 after a test run means seeding again.** The suite truncates the database
-before every test, so the `dev` data you drove against in Step 3 is gone once you have run a spec.
+The suite resets test-worker personal data and removes E2E-owned catalog records. It does not remove
+the development user's seeded data, so returning to Step 3 does not require another seed.
 
 **Stop and ask the user** if: the 3 cycles are exhausted; you can't find a working locator; you're
 unsure whether the behavior is a bug; or you're guessing rather than working from
@@ -200,11 +198,12 @@ snapshot/console/network evidence. State what you tried, what failed, what would
 
 ## Step 7 — Validate
 
-1. Green run: `npm test -- tests/<feature>/<name>.spec.ts --reporter=dot`
+1. Green run: `npm test -- tests/<feature>/<name>.spec.ts --project=chromium --reporter=dot`
 2. Stability: same command + `--repeat-each=10` — any failure means flaky = **not done**.
 3. **Quality gate:** the test is not done if it breaks any item in the `## Quality gate` of
    `.claude/rules/playwright-e2e.md`. Check it against that list (don't rely on memory).
-4. Format: `npm run format` (also enforced on commit via husky/lint-staged).
+4. Format from the repository root: `npm --prefix frontend run prettier:format`. The repository's
+   pre-commit configuration also runs the repo-wide Prettier check.
 
 Confirm the browser is torn down — `npx playwright cli list` reports `(no browsers)` — then
 summarize what you created (POM + spec) and the validation results.
