@@ -18,6 +18,8 @@
 
 FROM python:3.14-slim
 
+COPY --from=ghcr.io/astral-sh/uv:0.13.5 /uv /bin/uv
+
 # Node, lifted out of the official image rather than installed from an apt repo
 # or a curl-pipe-bash script: same source of truth as the production
 # Dockerfile's build stage, and no network script runs at build time.
@@ -75,14 +77,15 @@ RUN npm install -g @anthropic-ai/claude-code @openai/codex
 # installed it. Outside the repo, this installs at build time and is simply
 # there.
 #
-# requirements.txt is the only file from the repo this image contains. That is
-# deliberate: when it changes, Docker invalidates this layer and a rebuild picks
-# the change up. It is last in the file so a dependency bump does not invalidate
+# pyproject.toml and uv.lock are the only files from the repo this image contains.
+# When either changes, Docker invalidates this layer and a rebuild installs the
+# exact locked environment. They are last so dependency changes do not invalidate
 # the toolchain layers above.
-COPY backend/requirements.txt /tmp/requirements.txt
-RUN python -m venv /opt/venv \
-    && /opt/venv/bin/pip install --no-cache-dir -r /tmp/requirements.txt \
-    && rm /tmp/requirements.txt
+COPY backend/pyproject.toml backend/uv.lock /tmp/backend/
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv \
+    UV_PYTHON_DOWNLOADS=0
+RUN uv sync --locked --no-cache --project /tmp/backend \
+    && rm -rf /tmp/backend
 
 # The venv goes first on PATH, so python, pytest, ruff, mypy and pre-commit
 # resolve to it with no activation step. This is what makes
