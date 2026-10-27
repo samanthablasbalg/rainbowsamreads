@@ -4,8 +4,8 @@
 # The usual reason to let pre-commit manage hook environments is that it can't
 # assume the tool is present. Development happens in the container
 # (Dockerfile.dev), where it is. A managed copy would buy nothing and cost a
-# second version of ruff and mypy to keep in step with backend/requirements.txt
-# by hand. So those versions are written down in one place only.
+# second version of ruff and mypy to keep in step with backend/uv.lock by hand.
+# So those versions are written down in one place only.
 repos:
   - repo: local
     hooks:

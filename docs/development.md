@@ -47,6 +47,7 @@ Run these inside `workspace` unless the table says otherwise:
 | ------------------------------------ | --------------------------------------------------------- |
 | Backend tests                        | `cd backend && pytest`                                    |
 | One backend test                     | `cd backend && pytest tests/test_books.py::test_name`     |
+| Check the backend dependency lock    | `cd backend && uv lock --check`                           |
 | Frontend unit tests                  | `cd frontend && npm test`                                 |
 | Frontend lint, types, and unit tests | `cd frontend && npm run check`                            |
 | Storybook browser tests              | `cd frontend && npm run test:storybook`                   |
@@ -203,7 +204,12 @@ in [ADR-0030](decisions/0030-e2e-runs-against-the-compose-dev-stack.md).
 Source files are bind-mounted, so ordinary edits appear immediately. Installed dependencies need a
 different action:
 
-- After changing `backend/requirements.txt` or `Dockerfile.dev`, run `docker compose build`.
+- Add or remove backend runtime dependencies with `uv add <package>` / `uv remove <package>` from
+  `backend/`. Use `uv add --dev <package>` for test and static-analysis tools. These commands update
+  both `pyproject.toml`, which declares direct dependencies, and `uv.lock`, which records the exact
+  complete environment; commit both files and never edit `uv.lock` by hand.
+- After changing `backend/pyproject.toml`, `backend/uv.lock`, or `Dockerfile.dev`, run
+  `docker compose build`.
 - After changing `frontend/package.json` or its lockfile, run `cd frontend && npm ci` inside
   `workspace`.
 - After changing `e2e/package.json` or its lockfile, restart `browsers` so its install guard updates

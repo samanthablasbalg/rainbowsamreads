@@ -12,8 +12,13 @@ FROM python:3.14-slim
 
 WORKDIR /app
 
-COPY backend/requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY --from=ghcr.io/astral-sh/uv:0.13.5 /uv /bin/uv
+
+ENV UV_PYTHON_DOWNLOADS=0 \
+    PATH="/app/.venv/bin:$PATH"
+
+COPY backend/pyproject.toml backend/uv.lock ./
+RUN uv sync --locked --no-dev --no-cache
 
 COPY backend/ ./
 
