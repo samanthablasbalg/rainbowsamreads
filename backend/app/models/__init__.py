@@ -12,6 +12,7 @@ from app.models.enums import (
     ReadingStatus,
 )
 from app.models.progress_log import ProgressLog
+from app.models.recommender import BookRecommendation, Recommender
 from app.models.review import Review
 from app.models.standalone_entry import StandaloneEntry
 from app.models.user import User
@@ -22,6 +23,7 @@ __all__ = [
     "Book",
     "BookAuthor",
     "BookAuthorRole",
+    "BookRecommendation",
     "BookSource",
     "DatePrecision",
     "Edition",
@@ -31,6 +33,7 @@ __all__ = [
     "ProgressLog",
     "Format",
     "ReadingStatus",
+    "Recommender",
     "Review",
     "StandaloneEntry",
     "User",
