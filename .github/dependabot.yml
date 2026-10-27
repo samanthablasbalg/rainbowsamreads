@@ -47,19 +47,41 @@ updates:
           - playwright
           - '@playwright/test'
 
-  - package-ecosystem: pip
+  - package-ecosystem: uv
     directory: /backend
     schedule:
       interval: weekly
     groups:
-      # requirements.txt pins transitives too, so one PR per pin is unworkable.
-      backend:
+      backend-framework:
+        patterns:
+          - fastapi
+          - pydantic
+          - pydantic-core
+          - starlette
+          - uvicorn
+      backend-database:
+        patterns:
+          - alembic
+          - sqlalchemy
+      backend-auth:
+        patterns:
+          - authlib
+          - httpx
+          - itsdangerous
+      backend-tooling:
+        dependency-type: development
         patterns:
           - '*'
       backend-security:
         applies-to: security-updates
         patterns:
           - '*'
+    ignore:
+      # SQLAlchemy 2.1 changes bare PostgreSQL URLs from psycopg2 to psycopg3.
+      # Remove this after the dedicated driver migration.
+      - dependency-name: sqlalchemy
+        versions:
+          - '>=2.1'
 
   # compose.yaml: the playwright browsers image, postgres and caddy.
   - package-ecosystem: docker-compose
@@ -72,6 +94,12 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Adopt new Python minors deliberately after the package ecosystem has
+      # published compatible wheels; keep receiving patch and digest updates.
+      - dependency-name: python
+        update-types:
+          - version-update:semver-minor
 
   - package-ecosystem: github-actions
     directory: /
