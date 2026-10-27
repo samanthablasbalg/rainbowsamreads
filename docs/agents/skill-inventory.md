@@ -65,7 +65,12 @@ date, not an established baseline.
 `domain-modeling/ADR-FORMAT.md` was changed in commit `13b11612` after the upstream collection was
 installed. The adaptation makes `docs/decisions` the ADR directory, uses this repository's status
 vocabulary and numbering, and requires the existing decision-log and README index updates. Preserve
-that file as local policy when comparing or updating the upstream skill.
+that policy when comparing or updating the upstream skill.
+
+Issue #266 moved the adapted standard to the project-owned `docs/agents/adr-format.md`, reached
+through `docs/agents/domain.md`. The installed `domain-modeling` skill can therefore follow upstream
+without carrying a local patch; upstream updates must preserve the project-owned standard and its
+pointer instead.
 
 No other upstream-sourced skill has a recorded repository edit after commit `35a7acfe`. Because the
 initial import is not a proven pristine upstream baseline, classify those skills as unmodified in
