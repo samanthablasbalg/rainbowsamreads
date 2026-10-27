@@ -5,13 +5,14 @@ description:
   at it, screenshot a page, or confirm a change works in the real app rather than in tests.
 ---
 
-The app already runs — `docker compose up` serves it at `http://proxy:8080`. There is nothing to
-build, install or start. You drive it with `npx playwright cli`, which attaches to the browser in
-the `browsers` service; that is the harness, and the commands below are the whole of it.
+The agent runs inside the `workspace` container. The app is served at `http://proxy:8080` when the
+Compose app services are running, but the agent cannot start those services from inside the
+container. Drive it with `npx playwright cli`, which attaches to the browser in the `browsers`
+service.
 
 Every `playwright cli` command runs from `e2e/`. That is where `npx playwright` resolves — repo root
-has no `node_modules`, so running it there would fetch a package. (Setup and Test run from
-`backend/` and `frontend/`; they say so.)
+has no `node_modules`, so running it there would fetch a package. Seeding, when authorized, runs
+from `backend/`.
 
 ## Prerequisites
 
@@ -20,19 +21,24 @@ Browser binaries live in the `browsers` service and nowhere else, deliberately, 
 `Dockerfile.dev` (see the comment on `browsers` in `compose.yaml`). A missing browser means you are
 in the wrong container, never that a package is missing.
 
-**Assume the stack is up.** It is kept running for interactive work, and Claude Code itself runs
-inside it. Do not probe it first; just attach.
+The workspace container being available does not prove the app services or Storybook are running.
+Try the requested attach or navigation once. If a service is unavailable, report the failing command
+and error; do not install packages or retry through another harness.
 
-## Setup
+## Optional seeded fixtures
 
-An empty app tells you nothing. From `backend/`:
+Use the development data already present for inspection and screenshots. Those requests do not
+authorize replacing it.
+
+When the user explicitly requests seeded fixtures, or an authorized calling workflow requires the
+canonical fixture set, run this from `backend/`:
 
 ```bash
 python -m scripts.seed_dev
 ```
 
-Prints `Done. 8 books seeded.` It truncates every table and recreates the user with a **new id**, so
-seed _first_ and log in _after_. The dev database is disposable.
+It truncates every application table and recreates the development user with a **new id**, so seed
+before logging in. Do not run it speculatively.
 
 ## Run (agent path)
 
@@ -67,8 +73,9 @@ Expect `(no browsers)`.
 
 ### Personas and routes
 
-`persona: "dev"` owns the data `seed_dev.py` creates. `persona: "e2e"` owns the suite's data, which
-every e2e run truncates.
+`persona: "dev"` owns the data `seed_dev.py` creates. `persona: "e2e"` owns test-worker personal
+data. E2E runs reset that data and remove E2E-owned catalog records without removing the development
+user's data.
 
 `/` is the **guest** landing — an authenticated user sees nothing there. Go straight to a real
 route: `/home`, `/library/catalog`, `/library/tbr`, `/library/finished`, `/library/dnf`,
@@ -76,30 +83,26 @@ route: `/home`, `/library/catalog`, `/library/tbr`, `/library/finished`, `/libra
 
 ### Storybook
 
-Up at `http://storybook:6006`, same harness, and often the faster way to investigate a component —
-no login, no seeding, no route to reach. → `references/storybook.md`
+Storybook is a separately started Compose service, not part of the standing stack. When available at
+`http://storybook:6006`, it uses the same harness and is often the faster way to investigate a
+component. → `references/storybook.md`
 
 ## Run (human path)
 
-`http://localhost:8080` in a browser on the Mac. `localhost` works there and only there. Storybook
-is at `http://localhost:6006`.
+`http://localhost:8080` in a browser on the Mac. `localhost` works there and only there. When its
+separate service is running, Storybook is at `http://localhost:6006`.
 
-## Test
+## Verification
 
-```bash
-cd backend && pytest
-cd frontend && npm test
-cd frontend && npm run test:storybook
-cd e2e && npm test -- --project=chromium --reporter=dot
-```
+Browser inspection verifies the behavior the user asked to see. Run automated checks only when the
+task calls for them, using `docs/agents/commands.md`; the working tree does not establish that any
+suite passes.
 
-All four pass on a clean tree. **Only ever run e2e on chromium** — a bare `npm test` also runs
-`firefox` and `mobile`, for no information an agent can act on.
+Chromium is the focused E2E default. Use another configured project when the behavior is browser- or
+viewport-specific, or when the user requests broader coverage.
 
 Codex receives the commands' normal output. **Claude only:** its `PreToolUse` guardrail rewrites
 test commands and reports results differently; follow `.claude/hooks/test-command.md`.
-
-**An e2e run truncates the dev database before every test.** Reseed afterwards.
 
 ## Gotchas
 

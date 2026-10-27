@@ -15,8 +15,9 @@ Symptom → fix. Every entry is an error hit while building this skill, not a ge
   Run from `e2e/`.
 - **`401 (Unauthorized)` on `/api/auth/me`**: you have not logged in yet in this session. Run the
   `test-login` eval from SKILL.md.
-- **The page renders but shows no books**: the database was truncated (an e2e run does this before
-  every test) or you logged in before seeding. Reseed, then log in again — in that order.
+- **The page renders but shows no books**: the development user has no current fixtures, or the
+  session was created before an authorized reseed changed the user's id. Do not reseed merely to
+  inspect the app. If reseeding was authorized, seed and then log in again.
 - **`No matches found` for something you can see on the page**: the app was still rendering
   `Loading…` when `find` ran. Run it again. Never add a sleep.
 - **`goto` cannot reach `proxy:8080` at all**: a service is down, or the whole stack is. You cannot

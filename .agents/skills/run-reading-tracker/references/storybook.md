@@ -1,8 +1,8 @@
 # Storybook
 
-Storybook runs at `http://storybook:6006` and is up alongside the rest of the stack. It is often the
-faster way to investigate a component: one component in isolation, no login, no seeding, and no
-route to navigate to.
+Storybook is a separately started Compose service. When it is running, it is available at
+`http://storybook:6006` and is often the faster way to investigate a component: one component in
+isolation, no login, no seeding, and no route to navigate to.
 
 Same harness as the app — attach first (see SKILL.md), then:
 
