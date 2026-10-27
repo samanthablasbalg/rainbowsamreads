@@ -4,16 +4,15 @@
 command — whatever shape it was typed in — to:
 
 ```
-<runner invocation> > /tmp/test.log 2>&1; echo exit=$?
+<runner invocation> > /tmp/reading-tracker-test.XXXXXX 2>&1; echo exit=$?
 ```
 
 It exists so a run can never stream to the terminal or be truncated by a pager, because a truncated
 run is what leads to running the suite a second time to see what got cut off.
 
 - **`exit=0` means the suite PASSED.** Not truncated, not silent failure, nothing missing.
-- **On failure the hook prints:**
-  `FAILED. The full output is in /tmp/test.log. Read that file. Do NOT re-run the suite.` Read the
-  log. Do not re-run.
+- **Every run gets a unique log.** Concurrent sessions cannot overwrite each other's output.
+- **On failure the hook prints the exact log path.** Read that file. Do not re-run the suite.
 - **Decoration is stripped.** A trailing `| tail -40`, `2>&1`, `> somewhere.log`, or `; echo` is cut
   before the command runs, as is a leading `cd foo &&` chain (the runner is taken as the last link).
   Type the bare documented command.

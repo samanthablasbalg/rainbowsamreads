@@ -69,8 +69,8 @@ Run these from `e2e/`.
 - Local runs default to four workers and CI runs to two. Set `E2E_WORKERS=1..16` only when a task
   specifically needs a different concurrency level.
 - **`exit=0` means the suite PASSED.** A hook rewrites every test command, so a bare exit code is
-  the whole result — it is not "no output". On failure the hook says
-  `FAILED. The full output is in /tmp/test.log.` — read that file, do not re-run the suite.
+  the whole result — it is not "no output". On failure the hook prints the unique log path for that
+  run; read that file instead of re-running the suite.
 - Flakiness check: `--repeat-each=10`. Any failure = flaky = not done.
 - If `playwright` isn't found, `e2e/node_modules` is an empty volume — run `npm ci`.
 
