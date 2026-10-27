@@ -97,7 +97,7 @@ describe('the route tree', () => {
     server.use(
       getAuthMeMockHandler(),
       getEngagementsGetEngagementMockHandler(buildEngagement()),
-      getEngagementsListProgressLogsMockHandler()
+      getEngagementsListProgressLogsMockHandler([])
     );
 
     renderRoute('/reads/engagement-Piranesi');
