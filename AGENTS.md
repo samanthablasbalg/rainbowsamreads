@@ -59,4 +59,4 @@ before changing authentication, database access, ownership, or row-level securit
 - **Frontend tests:** Before editing tests under `frontend/src/`, read
   `.claude/rules/frontend-testing.md`.
 - **End-to-end tests:** Before editing tests under `e2e/`, read `.claude/rules/playwright-e2e.md`.
-- **Skills:** Before moving or updating skills, read `docs/agents/skill-inventory.md`.
+- **Skills:** Before installing, moving, or updating skills, read `docs/agents/skills.md`.
