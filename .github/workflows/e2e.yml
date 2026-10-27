@@ -107,7 +107,7 @@ jobs:
       # browser, so installing the small e2e package directly on the runner
       # avoids starting a second Compose stack after all test jobs have ended.
       - name: Set up Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
