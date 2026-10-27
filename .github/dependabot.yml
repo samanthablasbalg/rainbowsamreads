@@ -3,30 +3,38 @@ version: 2
 multi-ecosystem-groups:
   playwright:
     schedule:
-      interval: weekly
+      interval: monthly
 
 updates:
-  # Regular npm updates, excluding Playwright
+  # Routine Playwright updates belong to the cross-ecosystem group below. The
+  # version-only ignores leave security updates eligible for the npm groups.
   - package-ecosystem: npm
     directories:
       - /frontend
       - /e2e
     schedule:
-      interval: weekly
+      interval: monthly
     versioning-strategy: increase-if-necessary
     ignore:
       - dependency-name: playwright
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+          - version-update:semver-patch
       - dependency-name: '@playwright/test'
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+          - version-update:semver-patch
     groups:
-      # Each family is declared twice because `applies-to` takes a single value.
-      # The security half is the one that matters: a lone @vitest/mocker advisory
-      # bump is what left vitest 5 sitting next to @vitest/coverage-v8 4.
-      vitest:
+      # Keep tightly coupled package families in the same routine update PR.
+      react:
         patterns:
-          - vitest
-          - '@vitest/*'
-      vitest-security:
-        applies-to: security-updates
+          - react
+          - react-dom
+          - '@types/react'
+          - '@types/react-dom'
+      vitest:
         patterns:
           - vitest
           - '@vitest/*'
@@ -36,6 +44,20 @@ updates:
           - '@storybook/*'
           - eslint-plugin-storybook
           - '@chromatic-com/storybook'
+      # Security updates run independently of the monthly version schedule. Keep
+      # coupled package families together, then catch every remaining advisory.
+      react-security:
+        applies-to: security-updates
+        patterns:
+          - react
+          - react-dom
+          - '@types/react'
+          - '@types/react-dom'
+      vitest-security:
+        applies-to: security-updates
+        patterns:
+          - vitest
+          - '@vitest/*'
       storybook-security:
         applies-to: security-updates
         patterns:
@@ -43,6 +65,24 @@ updates:
           - '@storybook/*'
           - eslint-plugin-storybook
           - '@chromatic-com/storybook'
+      playwright-security:
+        applies-to: security-updates
+        patterns:
+          - playwright
+          - '@playwright/test'
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - '*'
+      # A generator upgrade deserves its own review. Frontend CI regenerates the
+      # client and fails if the committed output is stale.
+      orval:
+        patterns:
+          - orval
+      # Dependabot otherwise opens one PR for every unmatched dependency.
+      npm-other:
+        patterns:
+          - '*'
 
   - package-ecosystem: npm
     directories:
@@ -56,7 +96,7 @@ updates:
   - package-ecosystem: uv
     directory: /backend
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       backend-framework:
         patterns:
@@ -82,6 +122,10 @@ updates:
         applies-to: security-updates
         patterns:
           - '*'
+      # Keep unmatched runtime dependencies out of one-PR-per-package limbo.
+      backend-other:
+        patterns:
+          - '*'
     ignore:
       # SQLAlchemy 2.1 changes bare PostgreSQL URLs from psycopg2 to psycopg3.
       # Remove this after the dedicated driver migration.
@@ -93,9 +137,21 @@ updates:
   - package-ecosystem: docker-compose
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     ignore:
       - dependency-name: playwright
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+          - version-update:semver-patch
+    groups:
+      compose-security:
+        applies-to: security-updates
+        patterns:
+          - '*'
+      compose:
+        patterns:
+          - '*'
 
   - package-ecosystem: docker-compose
     directory: /
@@ -107,19 +163,31 @@ updates:
   - package-ecosystem: docker
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     ignore:
       # Adopt new Python minors deliberately after the package ecosystem has
       # published compatible wheels; keep receiving patch and digest updates.
       - dependency-name: python
         update-types:
           - version-update:semver-minor
+    groups:
+      base-images-security:
+        applies-to: security-updates
+        patterns:
+          - '*'
+      base-images:
+        patterns:
+          - '*'
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
+      actions-security:
+        applies-to: security-updates
+        patterns:
+          - '*'
       actions:
         patterns:
           - '*'
