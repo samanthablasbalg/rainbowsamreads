@@ -6,7 +6,6 @@ multi-ecosystem-groups:
       interval: weekly
 
 updates:
-  # Regular npm updates, excluding Playwright
   - package-ecosystem: npm
     directories:
       - /frontend
@@ -14,9 +13,10 @@ updates:
     schedule:
       interval: weekly
     versioning-strategy: increase-if-necessary
-    ignore:
-      - dependency-name: playwright
-      - dependency-name: '@playwright/test'
+    patterns:
+      - playwright
+      - '@playwright/test'
+    multi-ecosystem-group: playwright
     groups:
       # Each family is declared twice because `applies-to` takes a single value.
       # The security half is the one that matters: a lone @vitest/mocker advisory
@@ -43,16 +43,6 @@ updates:
           - '@storybook/*'
           - eslint-plugin-storybook
           - '@chromatic-com/storybook'
-
-  - package-ecosystem: npm
-    directories:
-      - /frontend
-      - /e2e
-    patterns:
-      - playwright
-      - '@playwright/test'
-    multi-ecosystem-group: playwright
-
   - package-ecosystem: uv
     directory: /backend
     schedule:
@@ -94,11 +84,6 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    ignore:
-      - dependency-name: playwright
-
-  - package-ecosystem: docker-compose
-    directory: /
     patterns:
       - playwright
     multi-ecosystem-group: playwright
