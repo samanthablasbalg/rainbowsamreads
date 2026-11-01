@@ -7,6 +7,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
 from app.models.enums import DatePrecision, Format, ReadingStatus
+from app.schemas.recommender import RecommenderRead
 
 NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
@@ -72,3 +73,15 @@ class CatalogEngagementRead(BaseModel):
 
 class CatalogBookRead(BookRead):
     engagement: CatalogEngagementRead | None
+
+
+class BookRecommendationRead(BaseModel):
+    recommender: RecommenderRead
+    note: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BookRecommendationWrite(BaseModel):
+    name: NonEmptyStr
+    note: str | None = None

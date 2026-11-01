@@ -3,6 +3,8 @@ from app.schemas.book import (
     BookCreate,
     BookImportRequest,
     BookRead,
+    BookRecommendationRead,
+    BookRecommendationWrite,
     BookSearchResult,
     CatalogBookRead,
     CatalogEngagementRead,
@@ -27,7 +29,7 @@ from app.schemas.progress_log import (
     ProgressLogUpdate,
     progress_log_read,
 )
-from app.schemas.recommendation import BookRecommendationRead, BookRecommendationWrite
+from app.schemas.recommender import RecommenderRead
 from app.schemas.review import ReviewRead, ReviewUpsert
 
 __all__ = [

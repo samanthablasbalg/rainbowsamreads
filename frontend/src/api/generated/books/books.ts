@@ -31,6 +31,8 @@ import type {
   BookCreate,
   BookImportRequest,
   BookRead,
+  BookRecommendationRead,
+  BookRecommendationWrite,
   BookSearchResult,
   BooksSearchBooksParams,
   CatalogBookRead,
@@ -1176,6 +1178,355 @@ export function useBooksListBookEngagementsSuspense<
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getBooksListBookEngagementsSuspenseQueryOptions(bookId, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+/**
+ * @summary Add Recommender
+ */
+export const booksAddRecommender = (
+  bookId: string,
+  bookRecommendationWrite: BookRecommendationWrite,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<BookRecommendationRead>(
+    {
+      url: `/api/books/${bookId}/recommendations`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: bookRecommendationWrite,
+      signal,
+    },
+    options
+  );
+};
+
+export const getBooksAddRecommenderMutationKey = () => ['booksAddRecommender'] as const;
+
+export const getBooksAddRecommenderMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof booksAddRecommender>>,
+    TError,
+    BooksAddRecommenderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof booksAddRecommender>>,
+  TError,
+  BooksAddRecommenderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getBooksAddRecommenderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof booksAddRecommender>>,
+    BooksAddRecommenderMutationVariables
+  > = (props) => {
+    const { bookId, data } = props ?? {};
+
+    return booksAddRecommender(bookId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type BooksAddRecommenderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof booksAddRecommender>>
+>;
+export type BooksAddRecommenderMutationBody = BookRecommendationWrite;
+export type BooksAddRecommenderMutationError = ErrorType<HTTPValidationError>;
+export type BooksAddRecommenderMutationVariables = {
+  bookId: string;
+  data: BookRecommendationWrite;
+};
+
+/**
+ * @summary Add Recommender
+ */
+export const useBooksAddRecommender = <TError = ErrorType<HTTPValidationError>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof booksAddRecommender>>,
+      TError,
+      BooksAddRecommenderMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof booksAddRecommender>>,
+  TError,
+  BooksAddRecommenderMutationVariables,
+  TContext
+> => {
+  return useMutation(getBooksAddRecommenderMutationOptions(options), queryClient);
+};
+/**
+ * @summary List Book Recommendations
+ */
+export const booksListBookRecommendations = (
+  bookId: string,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<BookRecommendationRead[]>(
+    { url: `/api/books/${bookId}/recommendations`, method: 'GET', signal },
+    options
+  );
+};
+
+export const getBooksListBookRecommendationsQueryKey = (bookId: string) => {
+  return [`/api/books/${bookId}/recommendations`] as const;
+};
+
+export const getBooksListBookRecommendationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof booksListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof booksListBookRecommendations>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getBooksListBookRecommendationsQueryKey(bookId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof booksListBookRecommendations>>> = ({
+    signal,
+  }) => booksListBookRecommendations(bookId, requestOptions, signal);
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: bookId !== null && bookId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof booksListBookRecommendations>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type BooksListBookRecommendationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof booksListBookRecommendations>>
+>;
+export type BooksListBookRecommendationsQueryError = ErrorType<HTTPValidationError>;
+
+export function useBooksListBookRecommendations<
+  TData = Awaited<ReturnType<typeof booksListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof booksListBookRecommendations>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof booksListBookRecommendations>>,
+          TError,
+          Awaited<ReturnType<typeof booksListBookRecommendations>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useBooksListBookRecommendations<
+  TData = Awaited<ReturnType<typeof booksListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof booksListBookRecommendations>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof booksListBookRecommendations>>,
+          TError,
+          Awaited<ReturnType<typeof booksListBookRecommendations>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useBooksListBookRecommendations<
+  TData = Awaited<ReturnType<typeof booksListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof booksListBookRecommendations>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List Book Recommendations
+ */
+
+export function useBooksListBookRecommendations<
+  TData = Awaited<ReturnType<typeof booksListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof booksListBookRecommendations>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getBooksListBookRecommendationsQueryOptions(bookId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getBooksListBookRecommendationsSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof booksListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof booksListBookRecommendations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getBooksListBookRecommendationsQueryKey(bookId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof booksListBookRecommendations>>> = ({
+    signal,
+  }) => booksListBookRecommendations(bookId, requestOptions, signal);
+
+  return queryOptionsBuilder({
+    queryKey,
+    ...queryOptions,
+    queryFn: queryOptions?.queryFn ?? queryFn,
+  }) as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof booksListBookRecommendations>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> } & {
+    throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never };
+  };
+};
+
+export type BooksListBookRecommendationsSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof booksListBookRecommendations>>
+>;
+export type BooksListBookRecommendationsSuspenseQueryError = ErrorType<HTTPValidationError>;
+
+export function useBooksListBookRecommendationsSuspense<
+  TData = Awaited<ReturnType<typeof booksListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof booksListBookRecommendations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useBooksListBookRecommendationsSuspense<
+  TData = Awaited<ReturnType<typeof booksListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof booksListBookRecommendations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useBooksListBookRecommendationsSuspense<
+  TData = Awaited<ReturnType<typeof booksListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof booksListBookRecommendations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List Book Recommendations
+ */
+
+export function useBooksListBookRecommendationsSuspense<
+  TData = Awaited<ReturnType<typeof booksListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof booksListBookRecommendations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getBooksListBookRecommendationsSuspenseQueryOptions(bookId, options);
 
   const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
     TData,

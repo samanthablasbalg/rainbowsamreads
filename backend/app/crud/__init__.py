@@ -1,9 +1,9 @@
 from app.models.author import Author
-from app.models.book import Book, BookAuthor
+from app.models.book import Book, BookAuthor, BookRecommendation
 from app.models.edition import Edition, EngagementEdition
 from app.models.engagement import Engagement
 from app.models.progress_log import ProgressLog
-from app.models.recommendation import BookRecommendation, Recommender
+from app.models.recommender import Recommender
 from app.models.review import Review
 from app.models.user import User
 

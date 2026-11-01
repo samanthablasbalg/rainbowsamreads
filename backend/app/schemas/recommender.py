@@ -13,15 +13,3 @@ class RecommenderRead(BaseModel):
     name: str
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class BookRecommendationRead(BaseModel):
-    recommender: RecommenderRead
-    note: str | None = None
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class BookRecommendationWrite(BaseModel):
-    name: NonEmptyStr
-    note: str | None = None

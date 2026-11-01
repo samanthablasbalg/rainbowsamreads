@@ -7,10 +7,17 @@ from sqlalchemy import case, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased, selectinload
 
-from app.crud import author_crud, book_author_crud, book_crud, edition_crud
+from app.crud import (
+    author_crud,
+    book_author_crud,
+    book_crud,
+    book_recommendation_crud,
+    edition_crud,
+    recommender_crud,
+)
 from app.exceptions import ConflictError, InvalidOperationError, NotFoundError
 from app.models.author import Author
-from app.models.book import Book, BookAuthor
+from app.models.book import Book, BookAuthor, BookRecommendation
 from app.models.edition import Edition, EngagementEdition
 from app.models.engagement import Engagement
 from app.models.enums import (
@@ -237,3 +244,29 @@ def capture_edition_length(book: Book, edition: Edition, length: int) -> None:
     else:
         if book.default_page_count is None:
             book.default_page_count = length
+
+
+def add_recommender_to_book(
+    db: Session, book_id: uuid.UUID, user_id: uuid.UUID, name: str, note: str | None
+) -> BookRecommendation:
+    recommender = recommender_crud.get_or_create(
+        db, lookup={"user_id": user_id, "name": name}
+    )
+    try:
+        book_recommendation = book_recommendation_crud.create(
+            db,
+            BookRecommendation(
+                book_id=book_id,
+                user_id=user_id,
+                recommender_id=recommender.id,
+                note=note,
+            ),
+        )
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise ConflictError(
+            "Recommender with this name already exists for this book."
+        ) from None
+
+    return book_recommendation
