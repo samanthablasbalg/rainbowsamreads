@@ -9,9 +9,15 @@ import type { RequestHandlerOptions } from 'msw';
 
 import type { BookRecommendationRead } from '../readingTracker.schemas';
 
-import { getRootAddRecommenderResponseMock } from './default.faker';
+import {
+  getRootAddRecommenderResponseMock,
+  getRootListBookRecommendationsResponseMock,
+} from './default.faker';
 
-export { getRootAddRecommenderResponseMock } from './default.faker';
+export {
+  getRootAddRecommenderResponseMock,
+  getRootListBookRecommendationsResponseMock,
+} from './default.faker';
 
 export const getRootAddRecommenderMockHandler = (
   overrideResponse?:
@@ -22,7 +28,7 @@ export const getRootAddRecommenderMockHandler = (
   options?: RequestHandlerOptions
 ) => {
   return http.post(
-    '*/api/books/:bookId/recommenders',
+    '*/api/books/:bookId/recommendations',
     async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
@@ -36,4 +42,31 @@ export const getRootAddRecommenderMockHandler = (
     options
   );
 };
-export const getDefaultMock = () => [getRootAddRecommenderMockHandler()];
+
+export const getRootListBookRecommendationsMockHandler = (
+  overrideResponse?:
+    | BookRecommendationRead[]
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0]
+      ) => Promise<BookRecommendationRead[]> | BookRecommendationRead[]),
+  options?: RequestHandlerOptions
+) => {
+  return http.get(
+    '*/api/books/:bookId/recommendations',
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === 'function'
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getRootListBookRecommendationsResponseMock(),
+        { status: 200 }
+      );
+    },
+    options
+  );
+};
+export const getDefaultMock = () => [
+  getRootAddRecommenderMockHandler(),
+  getRootListBookRecommendationsMockHandler(),
+];

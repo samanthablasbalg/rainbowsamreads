@@ -4,12 +4,27 @@
  * Reading Tracker
  * OpenAPI spec version: 0.1.0
  */
-import { useMutation } from '@tanstack/react-query';
+import {
+  queryOptions as queryOptionsBuilder,
+  useMutation,
+  useQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
   MutationFunction,
   QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
   UseMutationOptions,
   UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult,
+  UseSuspenseQueryOptions,
+  UseSuspenseQueryResult,
 } from '@tanstack/react-query';
 
 import type {
@@ -23,6 +38,21 @@ import type { ErrorType } from '../../mutator/axios-instance';
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
+const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
+  const result = { queryKey } as T & { queryKey: K };
+  for (const key of Object.keys(query)) {
+    // The explicit queryKey always wins, matching the previous
+    // `{ ...query, queryKey }` spread where it was set last.
+    if (key === 'queryKey') continue;
+    Object.defineProperty(result, key, {
+      enumerable: true,
+      configurable: true,
+      get: () => (query as Record<string, unknown>)[key],
+    });
+  }
+  return result;
+};
+
 /**
  * @summary Add Recommender
  */
@@ -34,7 +64,7 @@ export const rootAddRecommender = (
 ) => {
   return customInstance<BookRecommendationRead>(
     {
-      url: `/api/books/${bookId}/recommenders`,
+      url: `/api/books/${bookId}/recommendations`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       data: bookRecommendationWrite,
@@ -111,3 +141,260 @@ export const useRootAddRecommender = <TError = ErrorType<HTTPValidationError>, T
 > => {
   return useMutation(getRootAddRecommenderMutationOptions(options), queryClient);
 };
+/**
+ * @summary List Book Recommendations
+ */
+export const rootListBookRecommendations = (
+  bookId: string,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<BookRecommendationRead[]>(
+    { url: `/api/books/${bookId}/recommendations`, method: 'GET', signal },
+    options
+  );
+};
+
+export const getRootListBookRecommendationsQueryKey = (bookId: string) => {
+  return [`/api/books/${bookId}/recommendations`] as const;
+};
+
+export const getRootListBookRecommendationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof rootListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof rootListBookRecommendations>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getRootListBookRecommendationsQueryKey(bookId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof rootListBookRecommendations>>> = ({
+    signal,
+  }) => rootListBookRecommendations(bookId, requestOptions, signal);
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: bookId !== null && bookId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof rootListBookRecommendations>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type RootListBookRecommendationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof rootListBookRecommendations>>
+>;
+export type RootListBookRecommendationsQueryError = ErrorType<HTTPValidationError>;
+
+export function useRootListBookRecommendations<
+  TData = Awaited<ReturnType<typeof rootListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof rootListBookRecommendations>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof rootListBookRecommendations>>,
+          TError,
+          Awaited<ReturnType<typeof rootListBookRecommendations>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useRootListBookRecommendations<
+  TData = Awaited<ReturnType<typeof rootListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof rootListBookRecommendations>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof rootListBookRecommendations>>,
+          TError,
+          Awaited<ReturnType<typeof rootListBookRecommendations>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useRootListBookRecommendations<
+  TData = Awaited<ReturnType<typeof rootListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof rootListBookRecommendations>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List Book Recommendations
+ */
+
+export function useRootListBookRecommendations<
+  TData = Awaited<ReturnType<typeof rootListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof rootListBookRecommendations>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getRootListBookRecommendationsQueryOptions(bookId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getRootListBookRecommendationsSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof rootListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof rootListBookRecommendations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getRootListBookRecommendationsQueryKey(bookId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof rootListBookRecommendations>>> = ({
+    signal,
+  }) => rootListBookRecommendations(bookId, requestOptions, signal);
+
+  return queryOptionsBuilder({
+    queryKey,
+    ...queryOptions,
+    queryFn: queryOptions?.queryFn ?? queryFn,
+  }) as UseSuspenseQueryOptions<
+    Awaited<ReturnType<typeof rootListBookRecommendations>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> } & {
+    throwOnError?: ((this: never, error: TError) => boolean) & { readonly __inferenceOnly: never };
+  };
+};
+
+export type RootListBookRecommendationsSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof rootListBookRecommendations>>
+>;
+export type RootListBookRecommendationsSuspenseQueryError = ErrorType<HTTPValidationError>;
+
+export function useRootListBookRecommendationsSuspense<
+  TData = Awaited<ReturnType<typeof rootListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options: {
+    query: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof rootListBookRecommendations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useRootListBookRecommendationsSuspense<
+  TData = Awaited<ReturnType<typeof rootListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof rootListBookRecommendations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useRootListBookRecommendationsSuspense<
+  TData = Awaited<ReturnType<typeof rootListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof rootListBookRecommendations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List Book Recommendations
+ */
+
+export function useRootListBookRecommendationsSuspense<
+  TData = Awaited<ReturnType<typeof rootListBookRecommendations>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  bookId: string,
+  options?: {
+    query?: Partial<
+      UseSuspenseQueryOptions<
+        Awaited<ReturnType<typeof rootListBookRecommendations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getRootListBookRecommendationsSuspenseQueryOptions(bookId, options);
+
+  const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}

@@ -1210,7 +1210,7 @@
         }
       }
     },
-    "/api/books/{book_id}/recommenders": {
+    "/api/books/{book_id}/recommendations": {
       "post": {
         "summary": "Add Recommender",
         "operationId": "root-add_recommender",
@@ -1243,6 +1243,48 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BookRecommendationRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Book Recommendations",
+        "operationId": "root-list_book_recommendations",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookRecommendationRead"
+                  },
+                  "title": "Response Root-List Book Recommendations"
                 }
               }
             }

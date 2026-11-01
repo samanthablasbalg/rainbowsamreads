@@ -3,12 +3,14 @@ import uuid
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.crud import book_crud
+from app.crud import book_crud, book_recommendation_crud
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.recommendation import BookRecommendationRead, BookRecommendationWrite
-from app.services.recommendations import add_recommender_to_book
+from app.services.recommendations import (
+    add_recommender_to_book,
+)
 
 router = APIRouter()
 
@@ -16,7 +18,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/books/{book_id}/recommenders",
+    "/books/{book_id}/recommendations",
     response_model=BookRecommendationRead,
     status_code=status.HTTP_201_CREATED,
 )
@@ -36,13 +38,16 @@ def add_recommender(
     return BookRecommendationRead.model_validate(book_recommendation)
 
 
-# @router.get("/{engagement_id}/progress-logs", response_model=list[ProgressLogRead])
-# def list_progress_logs(
-#     engagement_id: uuid.UUID,
-#     db: Session = Depends(get_db),
-# ) -> list[ProgressLogRead]:
-#     logs = progress_log_service.list_for_engagement(db, engagement_id)
-#     return [progress_log_read(log) for log in logs]
+@router.get(
+    "/books/{book_id}/recommendations", response_model=list[BookRecommendationRead]
+)
+def list_book_recommendations(
+    book_id: uuid.UUID,
+    db: Session = Depends(get_db),
+) -> list[BookRecommendationRead]:
+    book_crud.get_or_raise(db, book_id)
+    recommendations = book_recommendation_crud.list_by(db, book_id=book_id)
+    return [BookRecommendationRead.model_validate(rec) for rec in recommendations]
 
 
 # @router.delete(

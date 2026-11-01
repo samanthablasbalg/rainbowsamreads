@@ -18,3 +18,12 @@ export const getRootAddRecommenderResponseMock = (
   note: faker.helpers.arrayElement([faker.string.alpha({ length: { min: 10, max: 20 } }), null]),
   ...overrideResponse,
 });
+
+export const getRootListBookRecommendationsResponseMock = (): BookRecommendationRead[] =>
+  Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({
+    recommender: {
+      id: faker.string.uuid(),
+      name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    },
+    note: faker.helpers.arrayElement([faker.string.alpha({ length: { min: 10, max: 20 } }), null]),
+  }));
