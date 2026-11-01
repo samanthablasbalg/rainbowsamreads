@@ -12,7 +12,7 @@ from app.models.enums import (
     ReadingStatus,
 )
 from app.models.progress_log import ProgressLog
-from app.models.recommender import BookRecommendation, Recommender
+from app.models.recommendation import BookRecommendation, Recommender
 from app.models.review import Review
 from app.models.standalone_entry import StandaloneEntry
 from app.models.user import User

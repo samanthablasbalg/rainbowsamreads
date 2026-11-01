@@ -1209,6 +1209,56 @@
           }
         }
       }
+    },
+    "/api/books/{book_id}/recommenders": {
+      "post": {
+        "summary": "Add Recommender",
+        "operationId": "root-add_recommender",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookRecommendationWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookRecommendationRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1411,6 +1461,54 @@
           "updated_at"
         ],
         "title": "BookRead"
+      },
+      "BookRecommendationRead": {
+        "properties": {
+          "recommender": {
+            "$ref": "#/components/schemas/RecommenderRead"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recommender"
+        ],
+        "title": "BookRecommendationRead"
+      },
+      "BookRecommendationWrite": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "BookRecommendationWrite"
       },
       "BookSearchResult": {
         "properties": {
@@ -2658,6 +2756,25 @@
           "dnf"
         ],
         "title": "ReadingStatus"
+      },
+      "RecommenderRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "RecommenderRead"
       },
       "ReviewRead": {
         "properties": {

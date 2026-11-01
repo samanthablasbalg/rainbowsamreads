@@ -1,10 +1,12 @@
 import uuid
 
 from sqlalchemy import ForeignKey, ForeignKeyConstraint, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 from app.models.mixins import TimestampMixin
+
+# Keep Recommender and BookRecommendation together
 
 
 class Recommender(Base):
@@ -32,3 +34,5 @@ class BookRecommendation(TimestampMixin, Base):
     book_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("books.id"), primary_key=True)
     recommender_id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     note: Mapped[str | None]
+
+    recommender: Mapped[Recommender] = relationship()
