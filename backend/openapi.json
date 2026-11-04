@@ -1353,6 +1353,73 @@
           }
         }
       }
+    },
+    "/api/recommenders/": {
+      "get": {
+        "tags": [
+          "recommenders"
+        ],
+        "summary": "List Recommenders",
+        "operationId": "recommenders-list_recommenders",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecommenderRead"
+                  },
+                  "type": "array",
+                  "title": "Response Recommenders-List Recommenders"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recommenders/{recommender_id}": {
+      "get": {
+        "tags": [
+          "recommenders"
+        ],
+        "summary": "Get Recommender",
+        "operationId": "recommenders-get_recommender",
+        "parameters": [
+          {
+            "name": "recommender_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Recommender Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommenderRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

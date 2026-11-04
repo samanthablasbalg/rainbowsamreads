@@ -157,10 +157,10 @@ def test_delete_recommendation_leaves_recommender_intact(client: TestClient) -> 
 
     assert delete_response.status_code == 204
 
-    # # Ensure the recommender still exists
-    # get_recommender_response = client.get(f"/api/recommenders/{recommender_id}")
-    # assert get_recommender_response.status_code == 200
-    # assert get_recommender_response.json()["name"] == "Elmer Fudd"
+    # Ensure the recommender still exists
+    get_recommender_response = client.get(f"/api/recommenders/{recommender_id}")
+    assert get_recommender_response.status_code == 200
+    assert get_recommender_response.json()["name"] == "Elmer Fudd"
 
 
 def test_empty_recommendation_returns_422(client: TestClient) -> None:
