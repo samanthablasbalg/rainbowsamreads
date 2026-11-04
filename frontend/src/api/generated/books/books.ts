@@ -1535,3 +1535,89 @@ export function useBooksListBookRecommendationsSuspense<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+/**
+ * @summary Delete Recommendation
+ */
+export const booksDeleteRecommendation = (
+  bookId: string,
+  recommenderId: string,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal
+) => {
+  return customInstance<void>(
+    { url: `/api/books/${bookId}/recommendations/${recommenderId}`, method: 'DELETE', signal },
+    options
+  );
+};
+
+export const getBooksDeleteRecommendationMutationKey = () => ['booksDeleteRecommendation'] as const;
+
+export const getBooksDeleteRecommendationMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof booksDeleteRecommendation>>,
+    TError,
+    BooksDeleteRecommendationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof booksDeleteRecommendation>>,
+  TError,
+  BooksDeleteRecommendationMutationVariables,
+  TContext
+> => {
+  const mutationKey = getBooksDeleteRecommendationMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof booksDeleteRecommendation>>,
+    BooksDeleteRecommendationMutationVariables
+  > = (props) => {
+    const { bookId, recommenderId } = props ?? {};
+
+    return booksDeleteRecommendation(bookId, recommenderId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type BooksDeleteRecommendationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof booksDeleteRecommendation>>
+>;
+
+export type BooksDeleteRecommendationMutationError = ErrorType<HTTPValidationError>;
+export type BooksDeleteRecommendationMutationVariables = { bookId: string; recommenderId: string };
+
+/**
+ * @summary Delete Recommendation
+ */
+export const useBooksDeleteRecommendation = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof booksDeleteRecommendation>>,
+      TError,
+      BooksDeleteRecommendationMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof booksDeleteRecommendation>>,
+  TError,
+  BooksDeleteRecommendationMutationVariables,
+  TContext
+> => {
+  return useMutation(getBooksDeleteRecommendationMutationOptions(options), queryClient);
+};

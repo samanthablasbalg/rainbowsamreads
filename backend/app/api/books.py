@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session, selectinload
 
-from app.crud import book_crud, book_recommendation_crud
+from app.crud import book_crud, book_recommendation_crud, recommender_crud
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.book import Book, BookAuthor
@@ -254,16 +254,19 @@ def list_book_recommendations(
     return [BookRecommendationRead.model_validate(rec) for rec in recommendations]
 
 
-# @router.delete(
-#     "/{engagement_id}/progress-logs/{log_id}",
-#     status_code=status.HTTP_204_NO_CONTENT,
-# )
-# def delete_progress_log(
-#     engagement_id: uuid.UUID,
-#     log_id: uuid.UUID,
-#     db: Session = Depends(get_db),
-# ) -> None:
-#     engagement = engagement_crud.get_or_raise(db, engagement_id)
-#     log = _find_log(engagement, log_id)
-#     progress_log_service.delete_progress_log(db, engagement, log)
-#     db.commit()
+@router.delete(
+    "/{book_id}/recommendations/{recommender_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_recommendation(
+    book_id: uuid.UUID,
+    recommender_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    book = book_crud.get_or_raise(db, book_id)
+    recommender = recommender_crud.get_or_raise(db, recommender_id)
+    book_service.delete_recommendation_from_book(
+        db, book.id, current_user.id, recommender.id
+    )
+    db.commit()

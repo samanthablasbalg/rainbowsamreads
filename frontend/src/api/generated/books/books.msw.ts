@@ -240,6 +240,24 @@ export const getBooksListBookRecommendationsMockHandler = (
     options
   );
 };
+
+export const getBooksDeleteRecommendationMockHandler = (
+  overrideResponse?:
+    void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void),
+  options?: RequestHandlerOptions
+) => {
+  return http.delete(
+    '*/api/books/:bookId/recommendations/:recommenderId',
+    async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+      if (typeof overrideResponse === 'function') {
+        await overrideResponse(info);
+      }
+
+      return new HttpResponse(null, { status: 204 });
+    },
+    options
+  );
+};
 export const getBooksMock = () => [
   getBooksListBooksMockHandler(),
   getBooksCreateBookMockHandler(),
@@ -250,4 +268,5 @@ export const getBooksMock = () => [
   getBooksListBookEngagementsMockHandler(),
   getBooksAddRecommenderMockHandler(),
   getBooksListBookRecommendationsMockHandler(),
+  getBooksDeleteRecommendationMockHandler(),
 ];

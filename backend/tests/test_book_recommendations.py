@@ -138,6 +138,31 @@ def test_list_recommendations_for_book_with_none_returns_empty_list(
     assert len(response.json()) == 0
 
 
+def test_delete_recommendation_leaves_recommender_intact(client: TestClient) -> None:
+    book = _create_book(client)
+
+    response = client.post(
+        f"/api/books/{book['id']}/recommendations",
+        json={
+            "name": "Elmer Fudd",
+            "note": "I own a mansion and a yacht",
+        },
+    )
+
+    recommender_id = response.json()["recommender"]["id"]
+
+    delete_response = client.delete(
+        f"/api/books/{book['id']}/recommendations/{recommender_id}"
+    )
+
+    assert delete_response.status_code == 204
+
+    # # Ensure the recommender still exists
+    # get_recommender_response = client.get(f"/api/recommenders/{recommender_id}")
+    # assert get_recommender_response.status_code == 200
+    # assert get_recommender_response.json()["name"] == "Elmer Fudd"
+
+
 def test_empty_recommendation_returns_422(client: TestClient) -> None:
     book = _create_book(client)
 

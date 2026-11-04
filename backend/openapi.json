@@ -511,6 +511,52 @@
         }
       }
     },
+    "/api/books/{book_id}/recommendations/{recommender_id}": {
+      "delete": {
+        "tags": [
+          "books"
+        ],
+        "summary": "Delete Recommendation",
+        "operationId": "books-delete_recommendation",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          },
+          {
+            "name": "recommender_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Recommender Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/editions": {
       "post": {
         "tags": [

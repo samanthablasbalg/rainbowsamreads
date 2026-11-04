@@ -270,3 +270,18 @@ def add_recommender_to_book(
         ) from None
 
     return book_recommendation
+
+
+def delete_recommendation_from_book(
+    db: Session, book_id: uuid.UUID, user_id: uuid.UUID, recommender_id: uuid.UUID
+) -> None:
+    print(
+        f"Deleting recommendation for book {book_id} by "
+        f"user {user_id} from recommender {recommender_id}"
+    )
+    book_recommendation = book_recommendation_crud.get_by(
+        db, user_id=user_id, book_id=book_id, recommender_id=recommender_id
+    )
+    if not book_recommendation:
+        raise NotFoundError("Recommendation not found for this book.")
+    book_recommendation_crud.delete(db, book_recommendation)
