@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi.testclient import TestClient
 
 from tests.helpers import _create_book
@@ -19,6 +21,23 @@ def test_add_recommender_to_book_creates_new_recommender(
     assert response.status_code == 201
     assert response.json()["recommender"]["name"] == "Elmer Fudd"
     assert response.json()["note"] == "I own a mansion and a yacht"
+
+
+def test_add_recommender_without_note_creates_new_recommender(
+    client: TestClient,
+) -> None:
+    book = _create_book(client)
+
+    response = client.post(
+        f"/api/books/{book['id']}/recommendations",
+        json={
+            "name": "Elmer Fudd",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["recommender"]["name"] == "Elmer Fudd"
+    assert response.json()["note"] is None
 
 
 def test_same_recommender_on_second_book_reuses_existing_recommender(
@@ -117,3 +136,28 @@ def test_list_recommendations_for_book_with_none_returns_empty_list(
 
     assert response.status_code == 200
     assert len(response.json()) == 0
+
+
+def test_empty_recommendation_returns_422(client: TestClient) -> None:
+    book = _create_book(client)
+
+    response = client.post(
+        f"/api/books/{book['id']}/recommendations",
+        json={},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["msg"] == "Field required"
+
+
+def test_add_recommendation_to_unknown_book_returns_404(client: TestClient) -> None:
+    response = client.post(
+        f"/api/books/{uuid.uuid4()}/recommendations",
+        json={
+            "name": "Elmer Fudd",
+            "note": "I own a mansion and a yacht",
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Book not found"
