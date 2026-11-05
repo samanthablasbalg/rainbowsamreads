@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -18,7 +20,7 @@ def list_recommenders(
 
 @router.get("/{recommender_id}", response_model=RecommenderRead)
 def get_recommender(
-    recommender_id: str,
+    recommender_id: uuid.UUID,
     db: Session = Depends(get_db),
 ) -> RecommenderRead:
     recommender = recommender_crud.get_or_raise(db, recommender_id)
