@@ -10,6 +10,8 @@ import { StartReadingSheetPage } from '../../page-objects/start-reading-sheet.pa
 import { TbrBooksPage } from '../../page-objects/tbr-books.page';
 
 const piranesi = E2E_CATALOG.piranesi;
+const dune = E2E_CATALOG.dune;
+const recommenderName = 'Toni Morrison';
 const today = new Date().toLocaleDateString('en-US', {
   day: 'numeric',
   month: 'short',
@@ -153,5 +155,62 @@ test('Adding an untracked book to TBR from the book page shelves it on To Read',
   await test.step('It is on the To Read shelf', async () => {
     await tbrBooks.goto();
     await expect(tbrBooks.getEntry(piranesi.title)).toBeVisible();
+  });
+});
+
+test('Adding a new recommender shows it on the book page', async ({ page }) => {
+  const bookPage = new BookPage(page);
+
+  await test.step('Open Piranesi with no recommender', async () => {
+    await bookPage.goto(piranesi.id);
+    await expect(bookPage.recommenderInput).toBeVisible();
+  });
+
+  await test.step('Add Toni Morrison as a new recommender', async () => {
+    await bookPage.addNewRecommender(recommenderName);
+  });
+
+  await test.step('Toni Morrison is shown as the recommender', async () => {
+    await expect(bookPage.getRecommender(recommenderName)).toBeVisible();
+    await expect(bookPage.recommenderInput).toHaveCount(0);
+  });
+});
+
+test('Selecting an existing recommender shows it on the book page', async ({ page, apiClient }) => {
+  const bookPage = new BookPage(page);
+
+  await test.step('Store Toni Morrison as a recommender on another book', async () => {
+    await apiClient.addRecommender(dune.id, recommenderName);
+    await bookPage.goto(piranesi.id);
+    await expect(bookPage.recommenderInput).toBeVisible();
+  });
+
+  await test.step('Select Toni Morrison for Piranesi', async () => {
+    await bookPage.selectRecommender(recommenderName);
+  });
+
+  await test.step('The existing recommender is shown on Piranesi', async () => {
+    await expect(bookPage.getRecommender(recommenderName)).toBeVisible();
+    await expect(bookPage.recommenderInput).toHaveCount(0);
+  });
+});
+
+test('Removing a recommender leaves it available for reuse', async ({ page, apiClient }) => {
+  const bookPage = new BookPage(page);
+
+  await test.step('Open Piranesi with Toni Morrison as its recommender', async () => {
+    await apiClient.addRecommender(piranesi.id, recommenderName);
+    await bookPage.goto(piranesi.id);
+    await expect(bookPage.getRecommender(recommenderName)).toBeVisible();
+  });
+
+  await test.step('Remove the recommendation from Piranesi', async () => {
+    await bookPage.removeRecommender(recommenderName);
+    await expect(bookPage.recommenderInput).toBeVisible();
+  });
+
+  await test.step('Toni Morrison remains available in the recommender list', async () => {
+    await bookPage.recommenderInput.click();
+    await expect(bookPage.getRecommenderOption(recommenderName)).toBeVisible();
   });
 });

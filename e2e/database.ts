@@ -26,6 +26,8 @@ export async function resetPersonalData(client: Client, userId: string): Promise
     'reviews',
     'engagement_editions',
     'engagements',
+    'book_recommendations',
+    'recommenders',
     'standalone_entries',
     'blog_posts',
   ]) {

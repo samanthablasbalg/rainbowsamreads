@@ -77,6 +77,20 @@ export class ApiClient {
   }
 
   /**
+   * Associates a recommender with a book.
+   * @param bookId - The recommended book.
+   * @param name - The recommender's exact name.
+   */
+  async addRecommender(bookId: string, name: string): Promise<void> {
+    const response = await this.request.post(`/api/books/${bookId}/recommendations`, {
+      data: { name },
+    });
+    if (!response.ok()) {
+      throw new Error(`Failed to add recommender: ${await response.text()}`);
+    }
+  }
+
+  /**
    * Where the sheet would prefill "From" -- a session names both its ends, so creating
    * one that just carries on from the last needs this first.
    * @param engagementId - The engagement to read.
