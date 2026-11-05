@@ -4,6 +4,7 @@ import { getAuthMeMockHandler } from '@/api/generated/auth/auth.msw';
 import {
   getBooksGetBookMockHandler,
   getBooksListBookEngagementsMockHandler,
+  getBooksListBookRecommendationsMockHandler,
   getBooksListBooksMockHandler,
 } from '@/api/generated/books/books.msw';
 import {
@@ -12,6 +13,7 @@ import {
   getEngagementsListProgressLogsMockHandler,
 } from '@/api/generated/engagements/engagements.msw';
 import { getInsightsGetStreakMockHandler } from '@/api/generated/insights/insights.msw';
+import { getRecommendersListRecommendersMockHandler } from '@/api/generated/recommenders/recommenders.msw';
 import { destinations } from '@/config/destinations';
 import { expectConsoleError } from '@/test/setup';
 import { server } from '@/test/msw-server';
@@ -109,7 +111,9 @@ describe('the route tree', () => {
     server.use(
       getAuthMeMockHandler(),
       getBooksGetBookMockHandler(buildBook()),
-      getBooksListBookEngagementsMockHandler([])
+      getBooksListBookEngagementsMockHandler([]),
+      getBooksListBookRecommendationsMockHandler([]),
+      getRecommendersListRecommendersMockHandler([])
     );
 
     renderRoute('/books/book-Piranesi');

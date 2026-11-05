@@ -2,7 +2,9 @@ import userEvent from '@testing-library/user-event';
 import {
   getBooksGetBookMockHandler,
   getBooksListBookEngagementsMockHandler,
+  getBooksListBookRecommendationsMockHandler,
 } from '@/api/generated/books/books.msw';
+import { getRecommendersListRecommendersMockHandler } from '@/api/generated/recommenders/recommenders.msw';
 import { DatePrecision } from '@/api/generated/readingTracker.schemas';
 import { server } from '@/test/msw-server';
 import { render, screen } from '@/test/render';
@@ -10,6 +12,13 @@ import { buildBook, buildEngagement } from '@/test/data-generators';
 import { BookDetail } from './book-detail';
 
 describe('BookDetail', () => {
+  beforeEach(() => {
+    server.use(
+      getBooksListBookRecommendationsMockHandler([]),
+      getRecommendersListRecommendersMockHandler([])
+    );
+  });
+
   it('renders the book it was given the id of', async () => {
     server.use(
       getBooksGetBookMockHandler(
