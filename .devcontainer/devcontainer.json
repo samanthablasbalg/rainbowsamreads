@@ -18,7 +18,8 @@
       "settings": {
         "python.defaultInterpreterPath": "/opt/venv/bin/python",
         "python.analysis.extraPaths": ["backend"],
-        "terminal.integrated.defaultProfile.linux": "zsh"
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "python.terminal.activateEnvironment": false
       },
       "extensions": [
         "ms-python.python",
