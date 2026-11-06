@@ -5,9 +5,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import { HttpResponse, http } from 'msw';
-import type { RequestHandlerOptions } from 'msw';
+import type { HttpResponseResolver, PathParams, RequestHandlerOptions } from 'msw';
 
-import type { EditionRead } from '../readingTracker.schemas';
+import type { EditionCreate, EditionRead, EditionUpdate } from '../readingTracker.schemas';
 
 import {
   getEditionsCreateEditionResponseMock,
@@ -25,13 +25,13 @@ export const getEditionsCreateEditionMockHandler = (
   overrideResponse?:
     | EditionRead
     | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0]
+        info: Parameters<HttpResponseResolver<PathParams, EditionCreate>>[0]
       ) => Promise<EditionRead> | EditionRead),
   options?: RequestHandlerOptions
 ) => {
-  return http.post(
+  return http.post<PathParams, EditionCreate>(
     '*/api/editions',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<PathParams, EditionCreate>>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -48,12 +48,14 @@ export const getEditionsCreateEditionMockHandler = (
 export const getEditionsGetEditionMockHandler = (
   overrideResponse?:
     | EditionRead
-    | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<EditionRead> | EditionRead),
+    | ((
+        info: Parameters<HttpResponseResolver<{ editionId: string }>>[0]
+      ) => Promise<EditionRead> | EditionRead),
   options?: RequestHandlerOptions
 ) => {
-  return http.get(
+  return http.get<{ editionId: string }>(
     '*/api/editions/:editionId',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<{ editionId: string }>>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -71,13 +73,13 @@ export const getEditionsUpdateEditionMockHandler = (
   overrideResponse?:
     | EditionRead
     | ((
-        info: Parameters<Parameters<typeof http.patch>[1]>[0]
+        info: Parameters<HttpResponseResolver<{ editionId: string }, EditionUpdate>>[0]
       ) => Promise<EditionRead> | EditionRead),
   options?: RequestHandlerOptions
 ) => {
-  return http.patch(
+  return http.patch<{ editionId: string }, EditionUpdate>(
     '*/api/editions/:editionId',
-    async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<{ editionId: string }, EditionUpdate>>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'

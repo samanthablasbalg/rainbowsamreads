@@ -5,13 +5,18 @@
  * OpenAPI spec version: 0.1.0
  */
 import { HttpResponse, http } from 'msw';
-import type { RequestHandlerOptions } from 'msw';
+import type { HttpResponseResolver, PathParams, RequestHandlerOptions } from 'msw';
 
 import type {
+  EngagementDatesUpdate,
   EngagementEditionRead,
   EngagementRead,
+  EngagementWrite,
   MinuteProgressLogRead,
   PageProgressLogRead,
+  ProgressLogCreate,
+  ProgressLogUpdate,
+  ReviewUpsert,
 } from '../readingTracker.schemas';
 
 import {
@@ -42,13 +47,13 @@ export const getEngagementsWriteEngagementMockHandler = (
   overrideResponse?:
     | EngagementRead
     | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0]
+        info: Parameters<HttpResponseResolver<PathParams, EngagementWrite>>[0]
       ) => Promise<EngagementRead> | EngagementRead),
   options?: RequestHandlerOptions
 ) => {
-  return http.post(
+  return http.post<PathParams, EngagementWrite>(
     '*/api/engagements',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<PathParams, EngagementWrite>>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -65,14 +70,12 @@ export const getEngagementsWriteEngagementMockHandler = (
 export const getEngagementsListEngagementsMockHandler = (
   overrideResponse?:
     | EngagementRead[]
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0]
-      ) => Promise<EngagementRead[]> | EngagementRead[]),
+    | ((info: Parameters<HttpResponseResolver>[0]) => Promise<EngagementRead[]> | EngagementRead[]),
   options?: RequestHandlerOptions
 ) => {
   return http.get(
     '*/api/engagements',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -90,13 +93,15 @@ export const getEngagementsUpdateEngagementDatesMockHandler = (
   overrideResponse?:
     | EngagementRead
     | ((
-        info: Parameters<Parameters<typeof http.patch>[1]>[0]
+        info: Parameters<HttpResponseResolver<{ engagementId: string }, EngagementDatesUpdate>>[0]
       ) => Promise<EngagementRead> | EngagementRead),
   options?: RequestHandlerOptions
 ) => {
-  return http.patch(
+  return http.patch<{ engagementId: string }, EngagementDatesUpdate>(
     '*/api/engagements/:engagementId/dates',
-    async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
+    async (
+      info: Parameters<HttpResponseResolver<{ engagementId: string }, EngagementDatesUpdate>>[0]
+    ) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -114,13 +119,13 @@ export const getEngagementsGetEngagementMockHandler = (
   overrideResponse?:
     | EngagementRead
     | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0]
+        info: Parameters<HttpResponseResolver<{ engagementId: string }>>[0]
       ) => Promise<EngagementRead> | EngagementRead),
   options?: RequestHandlerOptions
 ) => {
-  return http.get(
+  return http.get<{ engagementId: string }>(
     '*/api/engagements/:engagementId',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<{ engagementId: string }>>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -136,12 +141,15 @@ export const getEngagementsGetEngagementMockHandler = (
 
 export const getEngagementsDeleteEngagementMockHandler = (
   overrideResponse?:
-    void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void),
+    | void
+    | ((
+        info: Parameters<HttpResponseResolver<{ engagementId: string }>>[0]
+      ) => Promise<void> | void),
   options?: RequestHandlerOptions
 ) => {
-  return http.delete(
+  return http.delete<{ engagementId: string }>(
     '*/api/engagements/:engagementId',
-    async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<{ engagementId: string }>>[0]) => {
       if (typeof overrideResponse === 'function') {
         await overrideResponse(info);
       }
@@ -157,16 +165,18 @@ export const getEngagementsLogProgressMockHandler = (
     | PageProgressLogRead
     | MinuteProgressLogRead
     | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0]
+        info: Parameters<HttpResponseResolver<{ engagementId: string }, ProgressLogCreate>>[0]
       ) =>
         | Promise<PageProgressLogRead | MinuteProgressLogRead>
         | PageProgressLogRead
         | MinuteProgressLogRead),
   options?: RequestHandlerOptions
 ) => {
-  return http.post(
+  return http.post<{ engagementId: string }, ProgressLogCreate>(
     '*/api/engagements/:engagementId/progress-logs',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+    async (
+      info: Parameters<HttpResponseResolver<{ engagementId: string }, ProgressLogCreate>>[0]
+    ) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -184,15 +194,15 @@ export const getEngagementsListProgressLogsMockHandler = (
   overrideResponse?:
     | (PageProgressLogRead | MinuteProgressLogRead)[]
     | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0]
+        info: Parameters<HttpResponseResolver<{ engagementId: string }>>[0]
       ) =>
         | Promise<(PageProgressLogRead | MinuteProgressLogRead)[]>
         | (PageProgressLogRead | MinuteProgressLogRead)[]),
   options?: RequestHandlerOptions
 ) => {
-  return http.get(
+  return http.get<{ engagementId: string }>(
     '*/api/engagements/:engagementId/progress-logs',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<{ engagementId: string }>>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -211,16 +221,22 @@ export const getEngagementsUpdateProgressLogMockHandler = (
     | PageProgressLogRead
     | MinuteProgressLogRead
     | ((
-        info: Parameters<Parameters<typeof http.patch>[1]>[0]
+        info: Parameters<
+          HttpResponseResolver<{ engagementId: string; logId: string }, ProgressLogUpdate>
+        >[0]
       ) =>
         | Promise<PageProgressLogRead | MinuteProgressLogRead>
         | PageProgressLogRead
         | MinuteProgressLogRead),
   options?: RequestHandlerOptions
 ) => {
-  return http.patch(
+  return http.patch<{ engagementId: string; logId: string }, ProgressLogUpdate>(
     '*/api/engagements/:engagementId/progress-logs/:logId',
-    async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
+    async (
+      info: Parameters<
+        HttpResponseResolver<{ engagementId: string; logId: string }, ProgressLogUpdate>
+      >[0]
+    ) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -236,12 +252,15 @@ export const getEngagementsUpdateProgressLogMockHandler = (
 
 export const getEngagementsDeleteProgressLogMockHandler = (
   overrideResponse?:
-    void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void),
+    | void
+    | ((
+        info: Parameters<HttpResponseResolver<{ engagementId: string; logId: string }>>[0]
+      ) => Promise<void> | void),
   options?: RequestHandlerOptions
 ) => {
-  return http.delete(
+  return http.delete<{ engagementId: string; logId: string }>(
     '*/api/engagements/:engagementId/progress-logs/:logId',
-    async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<{ engagementId: string; logId: string }>>[0]) => {
       if (typeof overrideResponse === 'function') {
         await overrideResponse(info);
       }
@@ -256,13 +275,13 @@ export const getEngagementsListBindingsMockHandler = (
   overrideResponse?:
     | EngagementEditionRead[]
     | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0]
+        info: Parameters<HttpResponseResolver<{ engagementId: string }>>[0]
       ) => Promise<EngagementEditionRead[]> | EngagementEditionRead[]),
   options?: RequestHandlerOptions
 ) => {
-  return http.get(
+  return http.get<{ engagementId: string }>(
     '*/api/engagements/:engagementId/editions',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<{ engagementId: string }>>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -278,12 +297,17 @@ export const getEngagementsListBindingsMockHandler = (
 
 export const getEngagementsDeleteBindingMockHandler = (
   overrideResponse?:
-    void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void),
+    | void
+    | ((
+        info: Parameters<HttpResponseResolver<{ engagementId: string; editionId: string }>>[0]
+      ) => Promise<void> | void),
   options?: RequestHandlerOptions
 ) => {
-  return http.delete(
+  return http.delete<{ engagementId: string; editionId: string }>(
     '*/api/engagements/:engagementId/editions/:editionId',
-    async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+    async (
+      info: Parameters<HttpResponseResolver<{ engagementId: string; editionId: string }>>[0]
+    ) => {
       if (typeof overrideResponse === 'function') {
         await overrideResponse(info);
       }
@@ -298,13 +322,13 @@ export const getEngagementsUpsertReviewMockHandler = (
   overrideResponse?:
     | EngagementRead
     | ((
-        info: Parameters<Parameters<typeof http.put>[1]>[0]
+        info: Parameters<HttpResponseResolver<{ engagementId: string }, ReviewUpsert>>[0]
       ) => Promise<EngagementRead> | EngagementRead),
   options?: RequestHandlerOptions
 ) => {
-  return http.put(
+  return http.put<{ engagementId: string }, ReviewUpsert>(
     '*/api/engagements/:engagementId/review',
-    async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<{ engagementId: string }, ReviewUpsert>>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'

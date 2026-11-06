@@ -5,7 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import { HttpResponse, http } from 'msw';
-import type { RequestHandlerOptions } from 'msw';
+import type { HttpResponseResolver, RequestHandlerOptions } from 'msw';
 
 import type { RecommenderRead } from '../readingTracker.schemas';
 
@@ -23,13 +23,13 @@ export const getRecommendersListRecommendersMockHandler = (
   overrideResponse?:
     | RecommenderRead[]
     | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0]
+        info: Parameters<HttpResponseResolver>[0]
       ) => Promise<RecommenderRead[]> | RecommenderRead[]),
   options?: RequestHandlerOptions
 ) => {
   return http.get(
     '*/api/recommenders/',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -47,13 +47,13 @@ export const getRecommendersGetRecommenderMockHandler = (
   overrideResponse?:
     | RecommenderRead
     | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0]
+        info: Parameters<HttpResponseResolver<{ recommenderId: string }>>[0]
       ) => Promise<RecommenderRead> | RecommenderRead),
   options?: RequestHandlerOptions
 ) => {
-  return http.get(
+  return http.get<{ recommenderId: string }>(
     '*/api/recommenders/:recommenderId',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<{ recommenderId: string }>>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'

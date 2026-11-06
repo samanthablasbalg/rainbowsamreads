@@ -5,9 +5,14 @@
  * OpenAPI spec version: 0.1.0
  */
 import { HttpResponse, http } from 'msw';
-import type { RequestHandlerOptions } from 'msw';
+import type { HttpResponseResolver, PathParams, RequestHandlerOptions } from 'msw';
 
-import type { AuthLogout200, AuthTestLogin200, CurrentUser } from '../readingTracker.schemas';
+import type {
+  AuthLogout200,
+  AuthTestLogin200,
+  CurrentUser,
+  TestLoginRequest,
+} from '../readingTracker.schemas';
 
 import {
   getAuthLogoutResponseMock,
@@ -23,12 +28,12 @@ export {
 
 export const getAuthLoginMockHandler = (
   overrideResponse?:
-    unknown | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<unknown> | unknown),
+    unknown | ((info: Parameters<HttpResponseResolver>[0]) => Promise<unknown> | unknown),
   options?: RequestHandlerOptions
 ) => {
   return http.get(
     '*/api/auth/login',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver>[0]) => {
       if (typeof overrideResponse === 'function') {
         await overrideResponse(info);
       }
@@ -41,12 +46,12 @@ export const getAuthLoginMockHandler = (
 
 export const getAuthCallbackMockHandler = (
   overrideResponse?:
-    unknown | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<unknown> | unknown),
+    unknown | ((info: Parameters<HttpResponseResolver>[0]) => Promise<unknown> | unknown),
   options?: RequestHandlerOptions
 ) => {
   return http.get(
     '*/api/auth/callback',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver>[0]) => {
       if (typeof overrideResponse === 'function') {
         await overrideResponse(info);
       }
@@ -60,12 +65,12 @@ export const getAuthCallbackMockHandler = (
 export const getAuthMeMockHandler = (
   overrideResponse?:
     | CurrentUser
-    | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<CurrentUser> | CurrentUser),
+    | ((info: Parameters<HttpResponseResolver>[0]) => Promise<CurrentUser> | CurrentUser),
   options?: RequestHandlerOptions
 ) => {
   return http.get(
     '*/api/auth/me',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -82,14 +87,12 @@ export const getAuthMeMockHandler = (
 export const getAuthLogoutMockHandler = (
   overrideResponse?:
     | AuthLogout200
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0]
-      ) => Promise<AuthLogout200> | AuthLogout200),
+    | ((info: Parameters<HttpResponseResolver>[0]) => Promise<AuthLogout200> | AuthLogout200),
   options?: RequestHandlerOptions
 ) => {
   return http.post(
     '*/api/auth/logout',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -107,13 +110,13 @@ export const getAuthTestLoginMockHandler = (
   overrideResponse?:
     | AuthTestLogin200
     | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0]
+        info: Parameters<HttpResponseResolver<PathParams, TestLoginRequest>>[0]
       ) => Promise<AuthTestLogin200> | AuthTestLogin200),
   options?: RequestHandlerOptions
 ) => {
-  return http.post(
+  return http.post<PathParams, TestLoginRequest>(
     '*/api/auth/test-login',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<PathParams, TestLoginRequest>>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'

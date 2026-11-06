@@ -5,7 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import { HttpResponse, http } from 'msw';
-import type { RequestHandlerOptions } from 'msw';
+import type { HttpResponseResolver, RequestHandlerOptions } from 'msw';
 
 import type { StreakRead } from '../readingTracker.schemas';
 
@@ -15,13 +15,12 @@ export { getInsightsGetStreakResponseMock } from './insights.faker';
 
 export const getInsightsGetStreakMockHandler = (
   overrideResponse?:
-    | StreakRead
-    | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<StreakRead> | StreakRead),
+    StreakRead | ((info: Parameters<HttpResponseResolver>[0]) => Promise<StreakRead> | StreakRead),
   options?: RequestHandlerOptions
 ) => {
   return http.get(
     '*/api/insights/streak',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
