@@ -283,7 +283,7 @@ export const getBooksListBookEngagementsResponseMock = (): EngagementRead[] =>
     review: faker.helpers.arrayElement([
       {
         rating: faker.helpers.arrayElement([
-          faker.helpers.fromRegExp('^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$'),
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
           null,
         ]),
         body: faker.helpers.arrayElement([
