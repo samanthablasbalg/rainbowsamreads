@@ -5,11 +5,14 @@
  * OpenAPI spec version: 0.1.0
  */
 import { HttpResponse, http } from 'msw';
-import type { RequestHandlerOptions } from 'msw';
+import type { HttpResponseResolver, PathParams, RequestHandlerOptions } from 'msw';
 
 import type {
+  BookCreate,
+  BookImportRequest,
   BookRead,
   BookRecommendationRead,
+  BookRecommendationWrite,
   BookSearchResult,
   CatalogBookRead,
   EngagementRead,
@@ -41,13 +44,13 @@ export const getBooksListBooksMockHandler = (
   overrideResponse?:
     | CatalogBookRead[]
     | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0]
+        info: Parameters<HttpResponseResolver>[0]
       ) => Promise<CatalogBookRead[]> | CatalogBookRead[]),
   options?: RequestHandlerOptions
 ) => {
   return http.get(
     '*/api/books',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -64,12 +67,14 @@ export const getBooksListBooksMockHandler = (
 export const getBooksCreateBookMockHandler = (
   overrideResponse?:
     | BookRead
-    | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<BookRead> | BookRead),
+    | ((
+        info: Parameters<HttpResponseResolver<PathParams, BookCreate>>[0]
+      ) => Promise<BookRead> | BookRead),
   options?: RequestHandlerOptions
 ) => {
-  return http.post(
+  return http.post<PathParams, BookCreate>(
     '*/api/books',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<PathParams, BookCreate>>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -87,13 +92,13 @@ export const getBooksSearchBooksMockHandler = (
   overrideResponse?:
     | BookSearchResult[]
     | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0]
+        info: Parameters<HttpResponseResolver>[0]
       ) => Promise<BookSearchResult[]> | BookSearchResult[]),
   options?: RequestHandlerOptions
 ) => {
   return http.get(
     '*/api/books/search',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -110,12 +115,14 @@ export const getBooksSearchBooksMockHandler = (
 export const getBooksImportBookMockHandler = (
   overrideResponse?:
     | BookRead
-    | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<BookRead> | BookRead),
+    | ((
+        info: Parameters<HttpResponseResolver<PathParams, BookImportRequest>>[0]
+      ) => Promise<BookRead> | BookRead),
   options?: RequestHandlerOptions
 ) => {
-  return http.post(
+  return http.post<PathParams, BookImportRequest>(
     '*/api/books/import',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<PathParams, BookImportRequest>>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -132,12 +139,14 @@ export const getBooksImportBookMockHandler = (
 export const getBooksGetBookMockHandler = (
   overrideResponse?:
     | BookRead
-    | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<BookRead> | BookRead),
+    | ((
+        info: Parameters<HttpResponseResolver<{ bookId: string }>>[0]
+      ) => Promise<BookRead> | BookRead),
   options?: RequestHandlerOptions
 ) => {
-  return http.get(
+  return http.get<{ bookId: string }>(
     '*/api/books/:bookId',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<{ bookId: string }>>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -153,12 +162,13 @@ export const getBooksGetBookMockHandler = (
 
 export const getBooksDeleteBookMockHandler = (
   overrideResponse?:
-    void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void),
+    | void
+    | ((info: Parameters<HttpResponseResolver<{ bookId: string }>>[0]) => Promise<void> | void),
   options?: RequestHandlerOptions
 ) => {
-  return http.delete(
+  return http.delete<{ bookId: string }>(
     '*/api/books/:bookId',
-    async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<{ bookId: string }>>[0]) => {
       if (typeof overrideResponse === 'function') {
         await overrideResponse(info);
       }
@@ -173,13 +183,13 @@ export const getBooksListBookEngagementsMockHandler = (
   overrideResponse?:
     | EngagementRead[]
     | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0]
+        info: Parameters<HttpResponseResolver<{ bookId: string }>>[0]
       ) => Promise<EngagementRead[]> | EngagementRead[]),
   options?: RequestHandlerOptions
 ) => {
-  return http.get(
+  return http.get<{ bookId: string }>(
     '*/api/books/:bookId/engagements',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<{ bookId: string }>>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -197,13 +207,15 @@ export const getBooksAddRecommenderMockHandler = (
   overrideResponse?:
     | BookRecommendationRead
     | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0]
+        info: Parameters<HttpResponseResolver<{ bookId: string }, BookRecommendationWrite>>[0]
       ) => Promise<BookRecommendationRead> | BookRecommendationRead),
   options?: RequestHandlerOptions
 ) => {
-  return http.post(
+  return http.post<{ bookId: string }, BookRecommendationWrite>(
     '*/api/books/:bookId/recommendations',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+    async (
+      info: Parameters<HttpResponseResolver<{ bookId: string }, BookRecommendationWrite>>[0]
+    ) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -221,13 +233,13 @@ export const getBooksListBookRecommendationsMockHandler = (
   overrideResponse?:
     | BookRecommendationRead[]
     | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0]
+        info: Parameters<HttpResponseResolver<{ bookId: string }>>[0]
       ) => Promise<BookRecommendationRead[]> | BookRecommendationRead[]),
   options?: RequestHandlerOptions
 ) => {
-  return http.get(
+  return http.get<{ bookId: string }>(
     '*/api/books/:bookId/recommendations',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+    async (info: Parameters<HttpResponseResolver<{ bookId: string }>>[0]) => {
       return HttpResponse.json(
         overrideResponse !== undefined
           ? typeof overrideResponse === 'function'
@@ -243,12 +255,17 @@ export const getBooksListBookRecommendationsMockHandler = (
 
 export const getBooksDeleteRecommendationMockHandler = (
   overrideResponse?:
-    void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void),
+    | void
+    | ((
+        info: Parameters<HttpResponseResolver<{ bookId: string; recommenderId: string }>>[0]
+      ) => Promise<void> | void),
   options?: RequestHandlerOptions
 ) => {
-  return http.delete(
+  return http.delete<{ bookId: string; recommenderId: string }>(
     '*/api/books/:bookId/recommendations/:recommenderId',
-    async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+    async (
+      info: Parameters<HttpResponseResolver<{ bookId: string; recommenderId: string }>>[0]
+    ) => {
       if (typeof overrideResponse === 'function') {
         await overrideResponse(info);
       }
