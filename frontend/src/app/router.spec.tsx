@@ -166,6 +166,38 @@ describe('the route tree', () => {
     expect(await screen.findByText('No books yet')).toBeVisible();
   });
 
+  it.each(['recommendations', 'recommenders'])(
+    'replaces failed %s with the error boundary and retries the request',
+    async (failedRead) => {
+      const user = userEvent.setup();
+      expectConsoleError('Request failed with status code 500', '<BookMetadata>');
+      let attempts = 0;
+      const response = () => {
+        attempts += 1;
+        return attempts === 1 ? new HttpResponse(null, { status: 500 }) : HttpResponse.json([]);
+      };
+
+      server.use(
+        getAuthMeMockHandler(),
+        getBooksGetBookMockHandler(buildBook()),
+        getBooksListBookEngagementsMockHandler([]),
+        http.get('*/api/books/:bookId/recommendations', () =>
+          failedRead === 'recommendations' ? response() : HttpResponse.json([])
+        ),
+        http.get('*/api/recommenders/', () =>
+          failedRead === 'recommenders' ? response() : HttpResponse.json([])
+        )
+      );
+
+      renderRoute('/books/book-Piranesi');
+
+      await user.click(await screen.findByRole('button', { name: 'Try again' }));
+
+      expect(await screen.findByRole('combobox')).toBeVisible();
+      expect(attempts).toBe(2);
+    }
+  );
+
   it('/library redirects to tbr', async () => {
     server.use(getAuthMeMockHandler(), getEngagementsListEngagementsMockHandler());
 

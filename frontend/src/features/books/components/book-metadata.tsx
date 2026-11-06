@@ -17,13 +17,13 @@ import {
 } from '@/components/ui/combobox';
 import {
   getRecommendersListRecommendersQueryKey,
-  useRecommendersListRecommenders,
+  useRecommendersListRecommendersSuspense,
 } from '@/api/generated/recommenders/recommenders';
 import {
   getBooksListBookRecommendationsQueryKey,
   useBooksAddRecommender,
   useBooksDeleteRecommendation,
-  useBooksListBookRecommendations,
+  useBooksListBookRecommendationsSuspense,
 } from '@/api/generated';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -53,12 +53,12 @@ export function BookMetadata({
 }) {
   const [inputValue, setInputValue] = useState('');
   const name = inputValue.trim();
-  const { data: recommenders = [] } = useRecommendersListRecommenders();
+  const { data: recommenders } = useRecommendersListRecommendersSuspense();
   const recommenderNames = recommenders
     .map((recommender) => recommender.name)
     .toSorted((a, b) => a.localeCompare(b));
 
-  const { data: recommendations = [] } = useBooksListBookRecommendations(book.id);
+  const { data: recommendations } = useBooksListBookRecommendationsSuspense(book.id);
   const recommendation = recommendations[0] ?? null;
 
   const queryClient = useQueryClient();
