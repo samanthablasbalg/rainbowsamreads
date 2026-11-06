@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, screen, userEvent, within } from 'storybook/test';
 import { getBooksListBookRecommendationsMockHandler } from '@/api/generated/books/books.msw';
@@ -39,9 +40,11 @@ const meta = {
   args: { book, engagements },
   decorators: [
     (Story) => (
-      <div className="w-60">
-        <Story />
-      </div>
+      <Suspense fallback={null}>
+        <div className="w-60">
+          <Story />
+        </div>
+      </Suspense>
     ),
   ],
   async beforeEach({ msw }) {
