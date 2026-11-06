@@ -10,8 +10,12 @@ export type BookStatus = 'Not tracked' | 'To read' | 'Reading' | 'Finished' | 'D
  * picking Reading hands off to the start-reading sheet to open a new read.
  */
 export class BookPage {
+  readonly recommenderInput: Locator;
+
   /** @param page - The Playwright page to drive the book page through. */
-  constructor(public readonly page: Page) {}
+  constructor(public readonly page: Page) {
+    this.recommenderInput = page.getByRole('combobox', { name: 'Add...' });
+  }
 
   /**
    * Navigates to a book's page.
@@ -69,5 +73,52 @@ export class BookPage {
   ): Promise<void> {
     await this.chooseStatus(from, 'Reading');
     await new StartReadingSheetPage(this.page).startAs(title, format, length);
+  }
+
+  /**
+   * Locates a stored recommender in the open combobox.
+   * @param name - The recommender's exact name.
+   * @returns The matching option.
+   */
+  getRecommenderOption(name: string): Locator {
+    return this.page.getByRole('option', { name, exact: true });
+  }
+
+  /**
+   * Locates the recommender currently shown on the book.
+   * @param name - The recommender's exact name.
+   * @returns The static recommender text.
+   */
+  getRecommender(name: string): Locator {
+    return this.page.getByText(name, { exact: true });
+  }
+
+  /**
+   * Locates the control that removes a recommendation.
+   * @param name - The recommender's exact name.
+   * @returns The remove button.
+   */
+  getRemoveRecommendationButton(name: string): Locator {
+    return this.page.getByRole('button', {
+      name: `Remove recommendation by ${name}`,
+      exact: true,
+    });
+  }
+
+  /** Creates a recommender from the combobox's empty result. */
+  async addNewRecommender(name: string): Promise<void> {
+    await this.recommenderInput.fill(name);
+    await this.page.getByRole('button', { name: `Add “${name}”`, exact: true }).click();
+  }
+
+  /** Selects an existing recommender from the combobox. */
+  async selectRecommender(name: string): Promise<void> {
+    await this.recommenderInput.click();
+    await this.getRecommenderOption(name).click();
+  }
+
+  /** Removes the book's recommendation. */
+  async removeRecommender(name: string): Promise<void> {
+    await this.getRemoveRecommendationButton(name).click();
   }
 }

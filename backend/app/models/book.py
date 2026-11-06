@@ -5,13 +5,14 @@ import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, ForeignKeyConstraint, String
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 from app.models.enums import BookAuthorRole, DatePrecision, date_precision_type
 from app.models.mixins import TimestampMixin
+from app.models.recommender import Recommender
 
 if TYPE_CHECKING:
     from app.models.author import Author
@@ -76,3 +77,20 @@ class BookAuthor(Base):
 
     book: Mapped[Book] = relationship(back_populates="book_authors")
     author: Mapped[Author] = relationship(back_populates="book_authors")
+
+
+class BookRecommendation(TimestampMixin, Base):
+    __tablename__ = "book_recommendations"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["recommender_id", "user_id"],
+            ["recommenders.id", "recommenders.user_id"],
+        ),
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    book_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("books.id"), primary_key=True)
+    recommender_id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    note: Mapped[str | None]
+
+    recommender: Mapped[Recommender] = relationship()

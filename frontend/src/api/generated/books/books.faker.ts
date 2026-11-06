@@ -9,6 +9,7 @@ import { faker } from '@faker-js/faker';
 import { DatePrecision, Format, LogUnit, ReadingStatus } from '../readingTracker.schemas';
 import type {
   BookRead,
+  BookRecommendationRead,
   BookSearchResult,
   CatalogBookRead,
   EngagementRead,
@@ -294,4 +295,24 @@ export const getBooksListBookEngagementsResponseMock = (): EngagementRead[] =>
     ]),
     created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
     updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
+  }));
+
+export const getBooksAddRecommenderResponseMock = (
+  overrideResponse: Partial<Extract<BookRecommendationRead, object>> = {}
+): BookRecommendationRead => ({
+  recommender: {
+    id: faker.string.uuid(),
+    name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  },
+  note: faker.helpers.arrayElement([faker.string.alpha({ length: { min: 10, max: 20 } }), null]),
+  ...overrideResponse,
+});
+
+export const getBooksListBookRecommendationsResponseMock = (): BookRecommendationRead[] =>
+  Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({
+    recommender: {
+      id: faker.string.uuid(),
+      name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    },
+    note: faker.helpers.arrayElement([faker.string.alpha({ length: { min: 10, max: 20 } }), null]),
   }));

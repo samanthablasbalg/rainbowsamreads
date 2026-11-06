@@ -14,11 +14,12 @@ from sqlalchemy.orm import Session
 
 from app.models.author import Author
 from app.models.blog_post import BlogPost
-from app.models.book import Book
+from app.models.book import Book, BookRecommendation
 from app.models.edition import Edition, EngagementEdition
 from app.models.engagement import Engagement
 from app.models.enums import LogUnit, ReadingStatus
 from app.models.progress_log import ProgressLog
+from app.models.recommender import Recommender
 from app.models.review import Review
 from app.models.standalone_entry import StandaloneEntry
 from app.models.user import User
@@ -31,6 +32,8 @@ OWNED_MODELS = (
     ProgressLog,
     Review,
     EngagementEdition,
+    BookRecommendation,
+    Recommender,
 )
 
 
@@ -76,6 +79,15 @@ def _seed_owned_graph(
     owner_db.add(
         EngagementEdition(
             engagement_id=engagement.id, edition_id=edition_id, user_id=user_id
+        )
+    )
+    recommender = Recommender(user_id=user_id, name="Bugs Bunny")
+    owner_db.add(recommender)
+    owner_db.add(
+        BookRecommendation(
+            book_id=book_id,
+            recommender=recommender,
+            user_id=user_id,
         )
     )
     owner_db.commit()
