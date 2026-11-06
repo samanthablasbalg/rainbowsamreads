@@ -5,6 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.interfaces import ORMOption
 
@@ -78,4 +79,11 @@ class CRUDBase[ModelType: Base]:
         if existing is not None:
             return existing
         obj = self.model(**lookup, **(defaults or {}))
-        return self.create(db, obj)
+        try:
+            with db.begin_nested():
+                return self.create(db, obj)
+        except IntegrityError:
+            existing = self.get_by(db, **lookup)
+            if existing is None:
+                raise
+            return existing

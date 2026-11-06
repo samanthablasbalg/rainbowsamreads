@@ -413,6 +413,150 @@
         }
       }
     },
+    "/api/books/{book_id}/recommendations": {
+      "post": {
+        "tags": [
+          "books"
+        ],
+        "summary": "Add Recommender",
+        "operationId": "books-add_recommender",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookRecommendationWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookRecommendationRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "books"
+        ],
+        "summary": "List Book Recommendations",
+        "operationId": "books-list_book_recommendations",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookRecommendationRead"
+                  },
+                  "title": "Response Books-List Book Recommendations"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/books/{book_id}/recommendations/{recommender_id}": {
+      "delete": {
+        "tags": [
+          "books"
+        ],
+        "summary": "Delete Recommendation",
+        "operationId": "books-delete_recommendation",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Book Id"
+            }
+          },
+          {
+            "name": "recommender_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Recommender Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/editions": {
       "post": {
         "tags": [
@@ -1209,6 +1353,74 @@
           }
         }
       }
+    },
+    "/api/recommenders/": {
+      "get": {
+        "tags": [
+          "recommenders"
+        ],
+        "summary": "List Recommenders",
+        "operationId": "recommenders-list_recommenders",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecommenderRead"
+                  },
+                  "type": "array",
+                  "title": "Response Recommenders-List Recommenders"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recommenders/{recommender_id}": {
+      "get": {
+        "tags": [
+          "recommenders"
+        ],
+        "summary": "Get Recommender",
+        "operationId": "recommenders-get_recommender",
+        "parameters": [
+          {
+            "name": "recommender_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Recommender Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommenderRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1411,6 +1623,54 @@
           "updated_at"
         ],
         "title": "BookRead"
+      },
+      "BookRecommendationRead": {
+        "properties": {
+          "recommender": {
+            "$ref": "#/components/schemas/RecommenderRead"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recommender"
+        ],
+        "title": "BookRecommendationRead"
+      },
+      "BookRecommendationWrite": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "BookRecommendationWrite"
       },
       "BookSearchResult": {
         "properties": {
@@ -2658,6 +2918,25 @@
           "dnf"
         ],
         "title": "ReadingStatus"
+      },
+      "RecommenderRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "RecommenderRead"
       },
       "ReviewRead": {
         "properties": {

@@ -46,6 +46,22 @@ export interface BookRead {
   updated_at: string;
 }
 
+export interface RecommenderRead {
+  id: string;
+  name: string;
+}
+
+export interface BookRecommendationRead {
+  recommender: RecommenderRead;
+  note?: string | null;
+}
+
+export interface BookRecommendationWrite {
+  /** @minLength 1 */
+  name: string;
+  note?: string | null;
+}
+
 export type BookSearchResultState =
   (typeof BookSearchResultState)[keyof typeof BookSearchResultState];
 
