@@ -28,7 +28,6 @@ import {
 import { InputGroupAddon } from '@/components/ui/input-group';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { CREATABLE_STATUSES } from '@/utils/status';
-import { SearchButton } from './search-button';
 import { SearchResultRow } from './search-result-row';
 
 const DEBOUNCE_MS = 300;
@@ -52,7 +51,6 @@ const SECTIONS: { heading: string; hint: string | null; state: BookSearchResultS
 ];
 
 export function SearchBar() {
-  const [expanded, setExpanded] = useState(false);
   const [sheet, setSheet] = useState<PendingSheet | null>(null);
   const queryClient = useQueryClient();
 
@@ -63,39 +61,29 @@ export function SearchBar() {
         // The sheet reads the book back by id; seeding what the import just returned
         // spares it a round trip for a book we are already holding.
         queryClient.setQueryData(getBooksGetBookQueryKey(book.id), book);
-        collapse();
+        importBook.reset();
         setSheet({ bookId: book.id, cancelLabel: 'No thanks — just import' });
       },
     },
   });
 
-  function collapse() {
-    setExpanded(false);
-    importBook.reset();
-  }
-
   function handleAdd(result: BookSearchResult) {
-    collapse();
+    importBook.reset();
     setSheet({ bookId: result.book_id! });
   }
 
   return (
     <>
-      {expanded ? (
-        <SearchPanel
-          onCollapse={collapse}
-          onAdd={handleAdd}
-          onImport={(result) =>
-            importBook.mutate({ data: { google_books_id: result.google_books_id! } })
-          }
-          importingGoogleBooksId={
-            importBook.isPending ? importBook.variables.data.google_books_id : null
-          }
-          importFailed={importBook.isError}
-        />
-      ) : (
-        <SearchButton onClick={() => setExpanded(true)} />
-      )}
+      <SearchPanel
+        onAdd={handleAdd}
+        onImport={(result) =>
+          importBook.mutate({ data: { google_books_id: result.google_books_id! } })
+        }
+        importingGoogleBooksId={
+          importBook.isPending ? importBook.variables.data.google_books_id : null
+        }
+        importFailed={importBook.isError}
+      />
       {sheet && <AddToLibrarySheet {...sheet} onClose={() => setSheet(null)} />}
     </>
   );
@@ -123,20 +111,13 @@ function AddToLibrarySheet({
 }
 
 type SearchPanelProps = {
-  onCollapse: () => void;
   onAdd: (result: BookSearchResult) => void;
   onImport: (result: BookSearchResult) => void;
   importingGoogleBooksId: string | null;
   importFailed: boolean;
 };
 
-function SearchPanel({
-  onCollapse,
-  onAdd,
-  onImport,
-  importingGoogleBooksId,
-  importFailed,
-}: SearchPanelProps) {
+function SearchPanel({ onAdd, onImport, importingGoogleBooksId, importFailed }: SearchPanelProps) {
   // The popup anchors to this, not the input: the input sits inside an InputGroup and so
   // starts after the leading icon.
   const barRef = useRef<HTMLDivElement>(null);
@@ -160,14 +141,6 @@ function SearchPanel({
     <>
       <div
         ref={barRef}
-        // Only reached while the popup is shut. Once it is open Base UI handles Escape
-        // itself and stops the event here, which is what `onOpenChange` below is for.
-        onKeyDown={(event) => event.key === 'Escape' && onCollapse()}
-        // Focus leaving the bar, not any outside click, so it stays open while the
-        // pointer is in the results list.
-        onBlur={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget)) onCollapse();
-        }}
         className="absolute inset-y-0 right-4 z-20 flex w-[calc(100%---spacing(8))] items-center bg-background transition-[width] duration-200 ease-out lg:right-6 lg:w-96 starting:w-9"
       >
         <Combobox
@@ -178,16 +151,12 @@ function SearchPanel({
           // imported, which is what its own button is for.
           onValueChange={(result: BookSearchResult | null) => {
             if (!result?.book_id) return;
-            onCollapse();
             navigate(`/books/${result.book_id}`);
           }}
           inputValue={query}
           onInputValueChange={setQuery}
-          open={enabled}
-          onOpenChange={(open) => !open && onCollapse()}
         >
           <ComboboxInput
-            autoFocus
             showTrigger={false}
             showClear
             aria-label="Search books"
