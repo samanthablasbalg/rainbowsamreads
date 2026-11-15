@@ -72,52 +72,6 @@ export function SearchBar() {
     setSheet({ bookId: result.book_id! });
   }
 
-  return (
-    <>
-      <SearchPanel
-        onAdd={handleAdd}
-        onImport={(result) =>
-          importBook.mutate({ data: { google_books_id: result.google_books_id! } })
-        }
-        importingGoogleBooksId={
-          importBook.isPending ? importBook.variables.data.google_books_id : null
-        }
-        importFailed={importBook.isError}
-      />
-      {sheet && <AddToLibrarySheet {...sheet} onClose={() => setSheet(null)} />}
-    </>
-  );
-}
-
-// The sheet needs the book's default lengths, which a search result doesn't carry, so
-// the id is read back into the full book before the sheet can open on it.
-function AddToLibrarySheet({
-  bookId,
-  cancelLabel,
-  onClose,
-}: PendingSheet & { onClose: () => void }) {
-  const { data: book } = useBooksGetBook(bookId);
-  if (!book) return null;
-
-  return (
-    <StartReadingSheet
-      book={book}
-      statuses={CREATABLE_STATUSES}
-      {...(cancelLabel && { cancelLabel })}
-      open
-      onOpenChange={(open) => !open && onClose()}
-    />
-  );
-}
-
-type SearchPanelProps = {
-  onAdd: (result: BookSearchResult) => void;
-  onImport: (result: BookSearchResult) => void;
-  importingGoogleBooksId: string | null;
-  importFailed: boolean;
-};
-
-function SearchPanel({ onAdd, onImport, importingGoogleBooksId, importFailed }: SearchPanelProps) {
   // The popup anchors to this, not the input: the input sits inside an InputGroup and so
   // starts after the leading icon.
   const barRef = useRef<HTMLDivElement>(null);
@@ -137,11 +91,23 @@ function SearchPanel({ onAdd, onImport, importingGoogleBooksId, importFailed }: 
 
   const results: BookSearchResult[] = enabled && data ? data : [];
 
+  const importingGoogleBooksId = importBook.isPending
+    ? importBook.variables.data.google_books_id
+    : null;
+  const importFailed = importBook.isError;
+
+  const onAdd = (result: BookSearchResult) => {
+    handleAdd(result);
+  };
+  const onImport = (result: BookSearchResult) => {
+    importBook.mutate({ data: { google_books_id: result.google_books_id! } });
+  };
+
   return (
     <>
       <div
         ref={barRef}
-        className="absolute inset-y-0 right-4 z-20 flex w-[calc(100%---spacing(8))] items-center bg-background transition-[width] duration-200 ease-out lg:right-6 lg:w-96 starting:w-9"
+        className="absolute inset-y-0 right-4 flex w-[calc(100%---spacing(8))] items-center"
       >
         <Combobox
           items={results}
@@ -185,8 +151,8 @@ function SearchPanel({ onAdd, onImport, importingGoogleBooksId, importFailed }: 
                         key={result.book_id ?? result.google_books_id}
                         result={result}
                         importing={importingGoogleBooksId === result.google_books_id}
-                        onAdd={() => onAdd(result)}
-                        onImport={() => onImport(result)}
+                        onAdd={onAdd}
+                        onImport={onImport}
                       />
                     ))}
                   </ComboboxGroup>
@@ -212,6 +178,28 @@ function SearchPanel({ onAdd, onImport, importingGoogleBooksId, importFailed }: 
           </ComboboxContent>
         </Combobox>
       </div>
+      {sheet && <AddToLibrarySheet {...sheet} onClose={() => setSheet(null)} />}
     </>
+  );
+}
+
+// The sheet needs the book's default lengths, which a search result doesn't carry, so
+// the id is read back into the full book before the sheet can open on it.
+function AddToLibrarySheet({
+  bookId,
+  cancelLabel,
+  onClose,
+}: PendingSheet & { onClose: () => void }) {
+  const { data: book } = useBooksGetBook(bookId);
+  if (!book) return null;
+
+  return (
+    <StartReadingSheet
+      book={book}
+      statuses={CREATABLE_STATUSES}
+      {...(cancelLabel && { cancelLabel })}
+      open
+      onOpenChange={(open) => !open && onClose()}
+    />
   );
 }

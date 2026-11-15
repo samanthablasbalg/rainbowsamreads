@@ -234,7 +234,7 @@ describe('SearchBar', () => {
       await user.click(await screen.findByRole('button', { name: 'No thanks — just import' }));
 
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-      expect(screen.getByRole('button', { name: 'Search books' })).toBeInTheDocument();
+      expect(screen.getByRole('combobox', { name: 'Search books' })).toBeInTheDocument();
     });
 
     it('keeps the results up and reports a failed import', async () => {
