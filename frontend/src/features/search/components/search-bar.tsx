@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Search01Icon } from '@hugeicons/core-free-icons';
 import {
@@ -67,11 +67,6 @@ export function SearchBar() {
     },
   });
 
-  function handleAdd(result: BookSearchResult) {
-    importBook.reset();
-    setSheet({ bookId: result.book_id! });
-  }
-
   // The popup anchors to this, not the input: the input sits inside an InputGroup and so
   // starts after the leading icon.
   const barRef = useRef<HTMLDivElement>(null);
@@ -81,15 +76,15 @@ export function SearchBar() {
   // Both, not just the debounced one: the debounce still holds the old query for
   // DEBOUNCE_MS after the field is cleared, which would keep the panel open on stale
   // results.
-  const enabled =
+  const hasSearchableQuery =
     query.trim().length >= MIN_QUERY_LENGTH && debouncedQuery.length >= MIN_QUERY_LENGTH;
 
   const { data, isFetching, isError } = useBooksSearchBooks(
     { q: debouncedQuery },
-    { query: { enabled, placeholderData: keepPreviousData } }
+    { query: { enabled: hasSearchableQuery } }
   );
 
-  const results: BookSearchResult[] = enabled && data ? data : [];
+  const results: BookSearchResult[] = hasSearchableQuery && data ? data : [];
 
   const importingGoogleBooksId = importBook.isPending
     ? importBook.variables.data.google_books_id
@@ -97,7 +92,8 @@ export function SearchBar() {
   const importFailed = importBook.isError;
 
   const onAdd = (result: BookSearchResult) => {
-    handleAdd(result);
+    importBook.reset();
+    setSheet({ bookId: result.book_id! });
   };
   const onImport = (result: BookSearchResult) => {
     importBook.mutate({ data: { google_books_id: result.google_books_id! } });
