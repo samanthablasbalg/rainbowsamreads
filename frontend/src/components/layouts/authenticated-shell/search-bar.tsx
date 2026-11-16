@@ -101,10 +101,7 @@ export function SearchBar() {
 
   return (
     <>
-      <div
-        ref={barRef}
-        className="absolute inset-y-0 right-4 flex w-[calc(100%---spacing(8))] items-center"
-      >
+      <div ref={barRef} className="inset-y-0 right-4 items-center">
         <Combobox
           items={results}
           filter={null}
@@ -130,48 +127,50 @@ export function SearchBar() {
             </InputGroupAddon>
           </ComboboxInput>
 
-          <ComboboxContent anchor={barRef}>
-            <ComboboxList>
-              {SECTIONS.map(({ heading, hint, state }) => {
-                const sectionResults = results.filter((result) => result.state === state);
-                if (sectionResults.length === 0) return null;
+          {hasSearchableQuery && (
+            <ComboboxContent anchor={barRef} className="w-[min(25rem,var(--available-width))]">
+              <ComboboxList>
+                {SECTIONS.map(({ heading, hint, state }) => {
+                  const sectionResults = results.filter((result) => result.state === state);
+                  if (sectionResults.length === 0) return null;
 
-                return (
-                  <ComboboxGroup key={state}>
-                    <ComboboxLabel>
-                      {heading}
-                      {hint && <span className="opacity-70"> · {hint}</span>}
-                    </ComboboxLabel>
-                    {sectionResults.map((result) => (
-                      <SearchResultRow
-                        key={result.book_id ?? result.google_books_id}
-                        result={result}
-                        importing={importingGoogleBooksId === result.google_books_id}
-                        onAdd={onAdd}
-                        onImport={onImport}
-                      />
-                    ))}
-                  </ComboboxGroup>
-                );
-              })}
-            </ComboboxList>
+                  return (
+                    <ComboboxGroup key={state}>
+                      <ComboboxLabel>
+                        {heading}
+                        {hint && <span className="opacity-70"> · {hint}</span>}
+                      </ComboboxLabel>
+                      {sectionResults.map((result) => (
+                        <SearchResultRow
+                          key={result.book_id ?? result.google_books_id}
+                          result={result}
+                          importing={importingGoogleBooksId === result.google_books_id}
+                          onAdd={onAdd}
+                          onImport={onImport}
+                        />
+                      ))}
+                    </ComboboxGroup>
+                  );
+                })}
+              </ComboboxList>
 
-            {/* Outside ComboboxEmpty, which only renders when the list is empty -- a failed
+              {/* Outside ComboboxEmpty, which only renders when the list is empty -- a failed
               import leaves the results it was launched from on screen. */}
-            {importFailed && (
-              <ErrorText className="px-3 py-2">Import failed — please try again.</ErrorText>
-            )}
-
-            <ComboboxEmpty>
-              {isFetching ? (
-                'Searching…'
-              ) : isError ? (
-                <span role="alert">Search failed — please try again.</span>
-              ) : (
-                'No results.'
+              {importFailed && (
+                <ErrorText className="px-3 py-2">Import failed — please try again.</ErrorText>
               )}
-            </ComboboxEmpty>
-          </ComboboxContent>
+
+              <ComboboxEmpty>
+                {isFetching ? (
+                  'Searching…'
+                ) : isError ? (
+                  <span role="alert">Search failed — please try again.</span>
+                ) : (
+                  'No results.'
+                )}
+              </ComboboxEmpty>
+            </ComboboxContent>
+          )}
         </Combobox>
       </div>
       {sheet && <AddToLibrarySheet {...sheet} onClose={() => setSheet(null)} />}

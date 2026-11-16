@@ -1,7 +1,6 @@
 import type * as React from 'react';
 import { MobileNav } from './mobile-nav';
 import { RailNav } from './rail-nav';
-import { Wordmark } from './wordmark';
 import { AccountMenuSheet } from './account-menu';
 
 export function AuthenticatedShell({
@@ -18,16 +17,9 @@ export function AuthenticatedShell({
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex min-h-15 items-center justify-between gap-2 border-b border-border bg-background px-4 py-3 lg:justify-end lg:px-6">
-          <div className="lg:hidden">
-            <Wordmark />
-          </div>
-          <div className="flex items-center gap-1">
-            {search}
-            <div className="lg:hidden">
-              <AccountMenuSheet />
-            </div>
-          </div>
+        <header className="flex sticky top-0 z-30 min-h-15 items-center justify-between gap-2 border-b border-border bg-background px-4 py-3 lg:justify-end lg:px-6 lg:hidden">
+          {search}
+          <AccountMenuSheet />
         </header>
 
         <main className="flex-1 px-4 pt-4 pb-4 lg:px-6 lg:pb-8">{children}</main>
