@@ -193,7 +193,7 @@ describe('the route tree', () => {
 
       await user.click(await screen.findByRole('button', { name: 'Try again' }));
 
-      expect(await screen.findByRole('combobox')).toBeVisible();
+      expect(await screen.findByRole('combobox', { name: 'Recommender' })).toBeVisible();
       expect(attempts).toBe(2);
     }
   );

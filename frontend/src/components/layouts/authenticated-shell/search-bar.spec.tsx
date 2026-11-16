@@ -87,7 +87,7 @@ async function search(results: BookSearchResult[]) {
   stubSearch(results);
   const user = await renderSearchBar();
   await user.type(screen.getByRole('combobox', { name: 'Search books' }), 'piranesi');
-  await waitFor(() => expect(screen.getByRole('option', { name: /./ })).toBeVisible());
+  expect(await screen.findByRole('option', { name: /./ })).toBeVisible();
   return user;
 }
 
@@ -117,7 +117,7 @@ describe('SearchBar', () => {
     const user = await renderSearchBar();
     await user.type(screen.getByRole('combobox', { name: 'Search books' }), 'piranesi');
 
-    await waitFor(() => expect(screen.getByRole('option', { name: /Piranesi/ })).toBeVisible());
+    expect(await screen.findByRole('option', { name: /Piranesi/ })).toBeVisible();
     expect(screen.getByText('In your library')).toBeInTheDocument();
     expect(screen.getByText('Already in the app')).toBeInTheDocument();
     expect(screen.getByText('New — from Google Books')).toBeInTheDocument();
@@ -140,9 +140,7 @@ describe('SearchBar', () => {
     const user = await renderSearchBar();
     await user.type(screen.getByRole('combobox', { name: 'Search books' }), 'piranesi');
 
-    await waitFor(() =>
-      expect(screen.getByText('Search failed — please try again.')).toBeVisible()
-    );
+    expect(await screen.findByText('Search failed — please try again.')).toBeVisible();
   });
 
   it('says so when a search matches nothing', async () => {
@@ -151,7 +149,7 @@ describe('SearchBar', () => {
     const user = await renderSearchBar();
     await user.type(screen.getByRole('combobox', { name: 'Search books' }), 'piranesi');
 
-    await waitFor(() => expect(screen.getByText('No results.')).toBeVisible());
+    expect(await screen.findByText('No results.')).toBeVisible();
   });
 
   it('closes the combobox on Escape', async () => {
@@ -159,13 +157,11 @@ describe('SearchBar', () => {
 
     const user = await renderSearchBar();
     await user.type(screen.getByRole('combobox', { name: 'Search books' }), 'piranesi');
-    await waitFor(() => expect(screen.getByRole('option', { name: /Piranesi/ })).toBeVisible());
+    expect(await screen.findByRole('option', { name: /Piranesi/ })).toBeVisible();
 
     await user.keyboard('{Escape}');
 
-    await waitFor(() =>
-      expect(screen.queryByRole('option', { name: /Piranesi/ })).not.toBeInTheDocument()
-    );
+    expect(screen.queryByRole('option', { name: /Piranesi/ })).not.toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Search books' })).toBeInTheDocument();
   });
 
@@ -183,12 +179,9 @@ describe('SearchBar', () => {
 
     const user = await renderSearchBar();
     await user.type(screen.getByRole('combobox', { name: 'Search books' }), 'gideon');
-    await waitFor(() => expect(screen.getByRole('option', { name: /Gideon/ })).toBeVisible());
+    expect(await screen.findByRole('option', { name: /Gideon/ })).toBeVisible();
 
     await user.click(document.body);
-    await waitFor(() =>
-      expect(screen.getByRole('combobox', { name: 'Search books' })).toBeInTheDocument()
-    );
     await user.type(screen.getByRole('combobox', { name: 'Search books' }), 'dune');
 
     await waitFor(() => expect(queries).toContain('dune'));
@@ -233,7 +226,7 @@ describe('SearchBar', () => {
       await user.click(screen.getByRole('button', { name: 'Import The Left Hand of Darkness' }));
       await user.click(await screen.findByRole('button', { name: 'No thanks — just import' }));
 
-      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
       expect(screen.getByRole('combobox', { name: 'Search books' })).toBeInTheDocument();
     });
 
