@@ -14,7 +14,7 @@ export class BookPage {
 
   /** @param page - The Playwright page to drive the book page through. */
   constructor(public readonly page: Page) {
-    this.recommenderInput = page.getByRole('combobox', { name: 'Add...' });
+    this.recommenderInput = page.getByRole('combobox', { name: 'Recommender' });
   }
 
   /**
