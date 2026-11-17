@@ -17,23 +17,10 @@ export class SearchPanelPage {
   }
 
   /**
-   * Opens the search bar: the collapsed icon on desktop, or the full-screen
-   * dialog on mobile. Both expose the same "Search books" trigger and the
-   * same accessible name on the resulting input, so no viewport branching is
-   * needed here or in `searchFor`.
-   */
-  async openSearchBar(): Promise<void> {
-    await this.page.getByRole('button', { name: 'Search books' }).click();
-  }
-
-  /**
-   * Opens the bar and types the query. There is nothing to submit: the bar
-   * searches on a debounce, and Enter would land on the highlighted result and
-   * dismiss the popup, which collapses the bar.
+   * Types the search query.
    * @param query - The text to search for.
    */
   async searchFor(query: string): Promise<void> {
-    await this.openSearchBar();
     await this.searchInput.fill(query);
   }
 

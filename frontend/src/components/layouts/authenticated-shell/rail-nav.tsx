@@ -2,14 +2,14 @@ import { NavLink } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from '@/lib/utils';
 import { destinations } from '@/config/destinations';
-import { Wordmark } from './wordmark';
 import { AccountMenuDropdown } from './account-menu';
+import { SearchBar } from '@/components/layouts/authenticated-shell/search-bar';
 
 export function RailNav() {
   return (
     <div className="flex h-full w-56 shrink-0 flex-col border-r border-border bg-background">
       <div className="p-4">
-        <Wordmark />
+        <SearchBar />
       </div>
 
       <nav aria-label="Main" className="flex flex-1 flex-col gap-1 p-2">

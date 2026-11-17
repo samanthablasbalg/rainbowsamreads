@@ -8,8 +8,8 @@ import { STATUS_LABELS } from '@/utils/status';
 type SearchResultRowProps = {
   result: BookSearchResult;
   importing: boolean;
-  onAdd: () => void;
-  onImport: () => void;
+  onAdd: (result: BookSearchResult) => void;
+  onImport: (result: BookSearchResult) => void;
 };
 
 export function SearchResultRow({ result, importing, onAdd, onImport }: SearchResultRowProps) {
@@ -43,7 +43,7 @@ export function SearchResultRow({ result, importing, onAdd, onImport }: SearchRe
           aria-label={`Import ${result.title}`}
           onClick={(event) => {
             event.stopPropagation();
-            onImport();
+            onImport(result);
           }}
         >
           {importing ? 'Importing…' : 'Import'}
@@ -56,7 +56,7 @@ export function SearchResultRow({ result, importing, onAdd, onImport }: SearchRe
           aria-label={`Add ${result.title} to your library`}
           onClick={(event) => {
             event.stopPropagation();
-            onAdd();
+            onAdd(result);
           }}
         >
           Add

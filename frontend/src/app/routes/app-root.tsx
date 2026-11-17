@@ -1,6 +1,6 @@
 import { Outlet, ScrollRestoration } from 'react-router';
 import { AuthenticatedShell } from '@/components/layouts/authenticated-shell/authenticated-shell';
-import { SearchBar } from '@/features/search/components/search-bar';
+import { SearchBar } from '@/components/layouts/authenticated-shell/search-bar';
 
 export function AppRoot() {
   return (

@@ -140,7 +140,7 @@ export function BookMetadata({
               }
             }}
           >
-            <ComboboxInput placeholder="Add..." />
+            <ComboboxInput aria-label="Recommender" placeholder="Add..." />
             <ComboboxContent>
               <ComboboxEmpty>
                 {name ? (
