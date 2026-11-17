@@ -38,6 +38,11 @@ updates:
         patterns:
           - vitest
           - '@vitest/*'
+      typescript:
+        patterns:
+          - typescript
+          - typescript-eslint
+          - '@typescript-eslint/*'
       storybook:
         patterns:
           - storybook
@@ -80,9 +85,14 @@ updates:
         patterns:
           - orval
       # Dependabot otherwise opens one PR for every unmatched dependency.
+      # Keep major upgrades isolated so unrelated breaking changes cannot hide
+      # one another inside this catch-all group.
       npm-other:
         patterns:
           - '*'
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: npm
     directories:
